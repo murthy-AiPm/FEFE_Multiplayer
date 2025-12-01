@@ -14,6 +14,7 @@ public class MainMenu : MonoBehaviour
 
     public async void StartClient()
     {
-        await ClientSingleton.Instance.GameManager.StartClientAsync(joinCodeField.text);
+  
+            await ClientSingleton.Instance.GameManager.StartClientAsync(joinCodeField.text);
     }
 }
