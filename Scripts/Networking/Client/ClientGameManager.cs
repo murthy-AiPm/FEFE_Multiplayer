@@ -13,7 +13,7 @@ public class ClientGameManager
 {
     private const string MenuSceneName = "Menu";
     private JoinAllocation allocation;
-    private const string GameSceneName = "Game";
+   // private const string GameSceneName = "Game";
     public async Task<bool> InitAsync()
     {
         await UnityServices.InitializeAsync();
@@ -27,7 +27,10 @@ public class ClientGameManager
 
         return false;
     }
-
+    public void GoToMenu()
+    {
+        SceneManager.LoadScene(MenuSceneName);
+    }
 
     public async Task StartClientAsync(string joinCode)
     {
@@ -49,13 +52,10 @@ public class ClientGameManager
 
         NetworkManager.Singleton.StartClient();
 
-        NetworkManager.Singleton.SceneManager.LoadScene(GameSceneName, LoadSceneMode.Single);
+       // NetworkManager.Singleton.SceneManager.LoadScene(GameSceneName, LoadSceneMode.Single);
 
     }
 
-    public void GoToMenu()
-    {
-        SceneManager.LoadScene(MenuSceneName);
-    }
+
 
 }
