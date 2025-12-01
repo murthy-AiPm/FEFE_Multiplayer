@@ -1,11 +1,19 @@
+using System.Collections;
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class MainMenu : MonoBehaviour
 {
-    [SerializeField] private GameObject landingPagePanel = null;
+    [SerializeField] private TMP_InputField joinCodeField;
 
-    public void HostLobby()
+    public async void StartHost()
     {
-        landingPagePanel.SetActive(false);
+        await HostSingleton.Instance.GameManager.StartHostAsync();
+    }
+
+    public async void StartClient()
+    {
+        await ClientSingleton.Instance.GameManager.StartClientAsync(joinCodeField.text);
     }
 }

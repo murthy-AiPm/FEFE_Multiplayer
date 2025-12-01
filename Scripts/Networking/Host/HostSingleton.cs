@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 public class HostSingleton : MonoBehaviour
 {
     private static HostSingleton instance;
-    private HostGameManager gameManager;
+    public HostGameManager GameManager { get; private set; }
 
     public static HostSingleton Instance
     {
@@ -14,7 +14,7 @@ public class HostSingleton : MonoBehaviour
 
             instance = FindAnyObjectByType<HostSingleton>();
 
-            if(instance = null)
+            if(instance == null)
             {
                 Debug.LogError("No HostSingleton in the scene!");
                 return null;
@@ -30,7 +30,7 @@ public class HostSingleton : MonoBehaviour
 
     public void  CreateHost()
     {
-        gameManager =  new HostGameManager();
+        GameManager =  new HostGameManager();
 
     }
   
