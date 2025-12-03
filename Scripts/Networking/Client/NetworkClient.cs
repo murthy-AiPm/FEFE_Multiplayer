@@ -20,6 +20,14 @@ public class NetworkClient : IDisposable
 
     private void OnClientDisconnect(ulong clientId)
     {
+        // Only handle this in pure client mode
+        if (!networkManager.IsClient || networkManager.IsHost)
+        {
+            // If we're hosting (IsHost), don't force ourselves back to menu
+            return;
+        }
+
+        // Only care about host (0) or our own client
         if (clientId != 0 && clientId != networkManager.LocalClientId) { return; }
 
         if (SceneManager.GetActiveScene().name != MenuSceneName)
@@ -31,6 +39,10 @@ public class NetworkClient : IDisposable
         {
             networkManager.Shutdown();
         }
+
+        // Optional: restore cursor just in case
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     public void Dispose()
