@@ -6,6 +6,11 @@ using UnityEngine;
 public class ClientSingleton : MonoBehaviour
 {
     private static ClientSingleton instance;
+    public static bool TryGet(out ClientSingleton singleton)
+    {
+        singleton = instance != null ? instance : FindObjectOfType<ClientSingleton>();
+        return singleton != null;
+    }
 
     public ClientGameManager GameManager { get; private set; }
 
@@ -15,7 +20,7 @@ public class ClientSingleton : MonoBehaviour
         {
             if (instance != null) { return instance; }
 
-            instance = FindObjectOfType<ClientSingleton>();
+            instance = FindFirstObjectByType<ClientSingleton>();
 
             if (instance == null)
             {
@@ -27,8 +32,15 @@ public class ClientSingleton : MonoBehaviour
         }
     }
 
-    private void Start()
+    private void Awake()
     {
+        if (instance != null && instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        instance = this;
         DontDestroyOnLoad(gameObject);
     }
 

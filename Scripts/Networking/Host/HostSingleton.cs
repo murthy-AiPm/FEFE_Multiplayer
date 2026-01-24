@@ -15,7 +15,7 @@ public class HostSingleton : MonoBehaviour
         {
             if (instance != null) { return instance; }
 
-            instance = FindObjectOfType<HostSingleton>();
+            instance = FindFirstObjectByType<HostSingleton>();
 
             if (instance == null)
             {
@@ -27,10 +27,21 @@ public class HostSingleton : MonoBehaviour
         }
     }
 
-    private void Start()
+    private void Awake()
     {
+        if (instance != null && instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        instance = this;
         DontDestroyOnLoad(gameObject);
     }
+    //private void Start()
+    //{
+    //    DontDestroyOnLoad(gameObject);
+    //}
 
     public void CreateHost()
     {
@@ -41,4 +52,11 @@ public class HostSingleton : MonoBehaviour
     {
         GameManager?.Dispose();
     }
+
+    public static bool TryGet(out HostSingleton singleton)
+    {
+        singleton = instance != null ? instance : FindObjectOfType<HostSingleton>();
+        return singleton != null;
+    }
+
 }
