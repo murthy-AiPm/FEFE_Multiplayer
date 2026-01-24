@@ -30,6 +30,8 @@ public class NetworkServer : IDisposable
         NetworkManager.ConnectionApprovalRequest request,
         NetworkManager.ConnectionApprovalResponse response)
     {
+        Debug.Log($"[NetworkServer] Client {request.ClientNetworkId} requesting to join");
+
         string payload = System.Text.Encoding.UTF8.GetString(request.Payload);
         UserData userData = JsonUtility.FromJson<UserData>(payload);
 
@@ -39,6 +41,8 @@ public class NetworkServer : IDisposable
         response.Approved = true;
         response.CreatePlayerObject = false;
 
+        Debug.Log($"[NetworkServer] Client {request.ClientNetworkId} approved, spawning player");
+
         if (response.Approved)
         {
             SpawnPlayerAtSpawnPoint(request.ClientNetworkId);
@@ -47,16 +51,31 @@ public class NetworkServer : IDisposable
 
     private void SpawnPlayerAtSpawnPoint(ulong clientId)
     {
+        Debug.Log($"[NetworkServer] SpawnPlayerAtSpawnPoint for client {clientId}");
+
         Vector3 spawnPosition = Vector3.zero;
         Quaternion spawnRotation = Quaternion.identity;
 
         if (PlayerSpawnManager.Instance != null)
         {
-            PlayerSpawnManager.Instance.TryGetSpawnPoint(clientId, out spawnPosition, out spawnRotation);
+            if (PlayerSpawnManager.Instance.TryGetSpawnPoint(clientId, out spawnPosition, out spawnRotation))
+            {
+                Debug.Log($"[NetworkServer] Got spawn point at {spawnPosition}");
+            }
+            else
+            {
+                Debug.LogError($"[NetworkServer] Failed to get spawn point for client {clientId}");
+            }
+        }
+        else
+        {
+            Debug.LogError("[NetworkServer] PlayerSpawnManager is NULL!");
         }
 
         if (playerPrefabReference != null)
         {
+            Debug.Log($"[NetworkServer] Instantiating player at {spawnPosition}");
+
             GameObject playerInstance = UnityEngine.Object.Instantiate(
                 playerPrefabReference,
                 spawnPosition,
@@ -67,12 +86,19 @@ public class NetworkServer : IDisposable
 
             if (networkObject != null)
             {
+                Debug.Log($"[NetworkServer] Spawning NetworkObject for client {clientId}");
                 networkObject.SpawnAsPlayerObject(clientId, true);
+                Debug.Log($"[NetworkServer] SUCCESS: Player spawned for client {clientId}");
             }
             else
             {
+                Debug.LogError("[NetworkServer] NetworkObject component missing!");
                 UnityEngine.Object.Destroy(playerInstance);
             }
+        }
+        else
+        {
+            Debug.LogError("[NetworkServer] playerPrefabReference is NULL!");
         }
     }
 
