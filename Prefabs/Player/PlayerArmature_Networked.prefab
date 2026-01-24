@@ -18,7 +18,7 @@ GameObject:
   - component: {fileID: -3970911106103123760}
   - component: {fileID: 6615861758913589765}
   - component: {fileID: -3698511438116549995}
-  m_Layer: 8
+  m_Layer: 0
   m_Name: PlayerArmature_Networked
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -34,7 +34,7 @@ Transform:
   m_GameObject: {fileID: 113662012359672519}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.44, y: 0, z: 2.39}
+  m_LocalPosition: {x: -1.99, y: 1.64, z: 4.06}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -293,7 +293,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   m_PlayerInput: {fileID: 4551733508534614326}
   m_StarterAssetsInputs: {fileID: 8967742387850473167}
-  m_ThirdPersonController: {fileID: 7743455583846567822}
+  m_ThirdPersonController: {fileID: 0}
   vcam: {fileID: 6526050808156149766}
 --- !u!114 &6615861758913589765
 MonoBehaviour:
@@ -323,7 +323,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ClientNetworkTransform
   ShowTopMostFoldoutHeaderGroup: 1
-  NetworkTransformExpanded: 0
+  NetworkTransformExpanded: 1
   AutoOwnerAuthorityTickOffset: 1
   PositionInterpolationType: 0
   RotationInterpolationType: 0
