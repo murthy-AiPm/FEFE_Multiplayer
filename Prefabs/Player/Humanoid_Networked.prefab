@@ -5267,6 +5267,7 @@ GameObject:
   - component: {fileID: -4153668730730091732}
   - component: {fileID: -898412960083703398}
   - component: {fileID: 7660184262089134886}
+  - component: {fileID: -7512046817055868133}
   m_Layer: 9
   m_Name: Humanoid_Networked
   m_TagString: Player
@@ -5685,6 +5686,22 @@ MonoBehaviour:
   input: {fileID: 7917548007009137436}
   tps: {fileID: 4386495661157894936}
   animDriver: {fileID: 6978861129665255111}
+--- !u!114 &-7512046817055868133
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5393498967000253258}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c651081927e1522449d3af7dec581823, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OwnerOnlyCameraRig
+  ShowTopMostFoldoutHeaderGroup: 1
+  freeLook: {fileID: 0}
+  ownerPriority: 20
+  nonOwnerPriority: 0
 --- !u!1 &5494743898452995527
 GameObject:
   m_ObjectHideFlags: 0
@@ -8980,7 +8997,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1193484295935413195, guid: fdd653c42a61852429e157968a9cb924, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1193484295935413198, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1193484295996209014, guid: fdd653c42a61852429e157968a9cb924, type: 3}
       propertyPath: m_LocalPosition.x
