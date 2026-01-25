@@ -61,7 +61,7 @@ public class HostGameManager : IDisposable
             {
                 {
                     "JoinCode", new DataObject(
-                        visibility: DataObject.VisibilityOptions.Member,
+                        visibility: DataObject.VisibilityOptions.Public,
                         value: joinCode
                     )
                 }
