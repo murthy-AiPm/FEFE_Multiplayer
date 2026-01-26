@@ -1,20 +1,22 @@
 using System;
 using System.Collections.Generic;
 using Unity.Netcode;
-using Unity.Collections;
 using UnityEngine;
 
 /// <summary>
-/// Network manager for character selection. Syncs player selections across all clients.
+/// Simplified character selection manager. 
+/// Stores selections in static dictionary that persists between scenes.
+/// No NetworkObject required - just a regular MonoBehaviour.
 /// </summary>
-public class CharacterSelectManager : NetworkBehaviour
+public class CharacterSelectManager : MonoBehaviour
 {
     public static CharacterSelectManager Instance { get; private set; }
 
-    [SerializeField] private CharacterDatabase characterDatabase;
+    // Static storage that persists between scenes - this is the source of truth for spawning
+    private static Dictionary<ulong, int> persistedSelections = new Dictionary<ulong, int>();
+    private static Dictionary<ulong, string> persistedNames = new Dictionary<ulong, string>();
 
-    // Stores each player's selection: key = clientId, value = characterIndex (-1 = not selected)
-    private NetworkList<PlayerSelectionData> playerSelections;
+    [SerializeField] private CharacterDatabase characterDatabase;
 
     public event Action OnPlayerSelectionsChanged;
 
@@ -22,191 +24,129 @@ public class CharacterSelectManager : NetworkBehaviour
 
     private void Awake()
     {
+        // Singleton pattern
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
-        playerSelections = new NetworkList<PlayerSelectionData>();
+        DontDestroyOnLoad(gameObject);
     }
 
-    public override void OnNetworkSpawn()
+    private void Start()
     {
-        if (IsServer)
+        // Register local player automatically
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
         {
-            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
-            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+            ulong localId = NetworkManager.Singleton.LocalClientId;
+            string localName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Player");
 
-            // Add existing clients (including host)
-            foreach (var clientId in NetworkManager.Singleton.ConnectedClientsIds)
+            if (!persistedNames.ContainsKey(localId))
             {
-                AddPlayer(clientId);
+                persistedNames[localId] = localName;
+                persistedSelections[localId] = -1; // Not selected yet
             }
+
+            OnPlayerSelectionsChanged?.Invoke();
         }
-
-        playerSelections.OnListChanged += OnSelectionsListChanged;
-
-        // Initial refresh
-        OnPlayerSelectionsChanged?.Invoke();
-    }
-
-    public override void OnNetworkDespawn()
-    {
-        if (IsServer)
-        {
-            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
-            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
-        }
-
-        playerSelections.OnListChanged -= OnSelectionsListChanged;
     }
 
     private void OnDestroy()
     {
-        Instance = null;
+        if (Instance == this)
+            Instance = null;
     }
 
-    private void OnClientConnected(ulong clientId)
+    /// <summary>
+    /// Static method to get character index - works even after scene transition
+    /// </summary>
+    public static int GetPersistedCharacterIndex(ulong clientId)
     {
-        AddPlayer(clientId);
-    }
-
-    private void OnClientDisconnected(ulong clientId)
-    {
-        RemovePlayer(clientId);
-    }
-
-    private void AddPlayer(ulong clientId)
-    {
-        // Check if already exists
-        for (int i = 0; i < playerSelections.Count; i++)
+        if (persistedSelections.TryGetValue(clientId, out int index))
         {
-            if (playerSelections[i].ClientId == clientId) return;
+            Debug.Log($"[CharacterSelectManager] GetPersistedCharacterIndex: Client {clientId} = {index}");
+            return Mathf.Max(0, index); // Return 0 if -1 (not selected)
         }
-
-        playerSelections.Add(new PlayerSelectionData
-        {
-            ClientId = clientId,
-            CharacterIndex = -1,
-            IsReady = false,
-            PlayerName = GetPlayerName(clientId)
-        });
+        Debug.Log($"[CharacterSelectManager] GetPersistedCharacterIndex: Client {clientId} not found, returning 0");
+        return 0;
     }
 
-    private void RemovePlayer(ulong clientId)
+    /// <summary>
+    /// Clear all selections (call when returning to menu)
+    /// </summary>
+    public static void ClearAllSelections()
     {
-        for (int i = playerSelections.Count - 1; i >= 0; i--)
-        {
-            if (playerSelections[i].ClientId == clientId)
-            {
-                playerSelections.RemoveAt(i);
-                break;
-            }
-        }
+        persistedSelections.Clear();
+        persistedNames.Clear();
     }
 
-    private FixedString32Bytes GetPlayerName(ulong clientId)
+    /// <summary>
+    /// Call this from UI to select a character
+    /// </summary>
+    public void SelectCharacter(int characterIndex)
     {
-        // Try to get from NetworkServer if available (host)
-        if (HostSingleton.Instance?.GameManager?.networkServer != null)
-        {
-            var userData = HostSingleton.Instance.GameManager.networkServer.GetUserDataByClientID(clientId);
-            if (userData != null)
-                return userData.userName;
-        }
-        return $"Player {clientId}";
-    }
+        if (NetworkManager.Singleton == null) return;
 
-    private void OnSelectionsListChanged(NetworkListEvent<PlayerSelectionData> changeEvent)
-    {
+        ulong clientId = NetworkManager.Singleton.LocalClientId;
+
+        persistedSelections[clientId] = characterIndex;
+        Debug.Log($"[CharacterSelectManager] SelectCharacter: Client {clientId} selected character {characterIndex}");
+
         OnPlayerSelectionsChanged?.Invoke();
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    public void SelectCharacterServerRpc(int characterIndex, ServerRpcParams rpcParams = default)
+    /// <summary>
+    /// Set ready state
+    /// </summary>
+    public void SetReady(bool ready)
     {
-        ulong clientId = rpcParams.Receive.SenderClientId;
+        Debug.Log($"[CharacterSelectManager] SetReady: {ready}");
+        OnPlayerSelectionsChanged?.Invoke();
+    }
 
-        for (int i = 0; i < playerSelections.Count; i++)
+    /// <summary>
+    /// Get all current selections for UI display
+    /// </summary>
+    public List<PlayerSelectionDisplay> GetAllSelections()
+    {
+        var list = new List<PlayerSelectionDisplay>();
+
+        foreach (var kvp in persistedSelections)
         {
-            if (playerSelections[i].ClientId == clientId)
+            string name = persistedNames.TryGetValue(kvp.Key, out string n) ? n : $"Player {kvp.Key}";
+            list.Add(new PlayerSelectionDisplay
             {
-                var data = playerSelections[i];
-                data.CharacterIndex = characterIndex;
-                playerSelections[i] = data;
-                break;
-            }
+                ClientId = kvp.Key,
+                PlayerName = name,
+                CharacterIndex = kvp.Value,
+                IsReady = false
+            });
         }
-    }
 
-    [ServerRpc(RequireOwnership = false)]
-    public void SetReadyServerRpc(bool ready, ServerRpcParams rpcParams = default)
-    {
-        ulong clientId = rpcParams.Receive.SenderClientId;
-
-        for (int i = 0; i < playerSelections.Count; i++)
-        {
-            if (playerSelections[i].ClientId == clientId)
-            {
-                var data = playerSelections[i];
-                data.IsReady = ready;
-                playerSelections[i] = data;
-                break;
-            }
-        }
-    }
-
-    public PlayerSelectionData? GetLocalPlayerSelection()
-    {
-        ulong localId = NetworkManager.Singleton.LocalClientId;
-        for (int i = 0; i < playerSelections.Count; i++)
-        {
-            if (playerSelections[i].ClientId == localId)
-                return playerSelections[i];
-        }
-        return null;
-    }
-
-    public List<PlayerSelectionData> GetAllSelections()
-    {
-        var list = new List<PlayerSelectionData>();
-        for (int i = 0; i < playerSelections.Count; i++)
-        {
-            list.Add(playerSelections[i]);
-        }
         return list;
     }
 
-    public int GetPlayerCharacterIndex(ulong clientId)
+    /// <summary>
+    /// Get local player's current selection
+    /// </summary>
+    public int GetLocalSelection()
     {
-        for (int i = 0; i < playerSelections.Count; i++)
-        {
-            if (playerSelections[i].ClientId == clientId)
-                return playerSelections[i].CharacterIndex;
-        }
-        return 0; // Default to first character
+        if (NetworkManager.Singleton == null) return -1;
+
+        ulong clientId = NetworkManager.Singleton.LocalClientId;
+        return persistedSelections.TryGetValue(clientId, out int index) ? index : -1;
     }
 }
 
 /// <summary>
-/// Data structure for player selection, must be unmanaged for NetworkList
+/// Simple display data for UI
 /// </summary>
-public struct PlayerSelectionData : INetworkSerializable, IEquatable<PlayerSelectionData>
+public struct PlayerSelectionDisplay
 {
     public ulong ClientId;
+    public string PlayerName;
     public int CharacterIndex;
     public bool IsReady;
-    public FixedString32Bytes PlayerName;
-
-    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-    {
-        serializer.SerializeValue(ref ClientId);
-        serializer.SerializeValue(ref CharacterIndex);
-        serializer.SerializeValue(ref IsReady);
-        serializer.SerializeValue(ref PlayerName);
-    }
-
-    public bool Equals(PlayerSelectionData other)
-    {
-        return ClientId == other.ClientId &&
-               CharacterIndex == other.CharacterIndex &&
-               IsReady == other.IsReady &&
-               PlayerName.Equals(other.PlayerName);
-    }
 }

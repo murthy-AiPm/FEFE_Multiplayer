@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Unity.Netcode;
 
 public class CharacterSelectUI : MonoBehaviour
 {
@@ -36,9 +37,8 @@ public class CharacterSelectUI : MonoBehaviour
 
         CreateCharacterButtons();
         SetupButtons();
-
-        // Display join code if host
         DisplayJoinCode();
+        RefreshPlayerList();
     }
 
     private void OnEnable()
@@ -83,9 +83,8 @@ public class CharacterSelectUI : MonoBehaviour
         {
             startGameButton.onClick.AddListener(OnStartGameClicked);
             // Only host can start game
-            startGameButton.gameObject.SetActive(
-                Unity.Netcode.NetworkManager.Singleton != null &&
-                Unity.Netcode.NetworkManager.Singleton.IsHost);
+            bool isHost = NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost;
+            startGameButton.gameObject.SetActive(isHost);
         }
 
         UpdateReadyButton();
@@ -95,13 +94,10 @@ public class CharacterSelectUI : MonoBehaviour
     {
         if (joinCodeText == null) return;
 
-        // Check if we're the host first (before accessing HostSingleton)
-        bool isHost = Unity.Netcode.NetworkManager.Singleton != null &&
-                      Unity.Netcode.NetworkManager.Singleton.IsHost;
+        bool isHost = NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost;
 
         if (isHost)
         {
-            // Safe to access HostSingleton now
             var hostInstance = FindObjectOfType<HostSingleton>();
             if (hostInstance != null && hostInstance.GameManager != null)
             {
@@ -118,7 +114,6 @@ public class CharacterSelectUI : MonoBehaviour
         }
         else
         {
-            // Client - hide join code
             joinCodeText.gameObject.SetActive(false);
         }
     }
@@ -134,9 +129,11 @@ public class CharacterSelectUI : MonoBehaviour
         if (selectedCharacterIndex >= 0 && selectedCharacterIndex < characterButtons.Count)
             characterButtons[selectedCharacterIndex].SetSelected(true);
 
-        // Send to server
+        // Store the selection
         if (selectManager != null)
-            selectManager.SelectCharacterServerRpc(index);
+        {
+            selectManager.SelectCharacter(index);
+        }
 
         UpdateReadyButton();
     }
@@ -152,7 +149,7 @@ public class CharacterSelectUI : MonoBehaviour
         isReady = !isReady;
 
         if (selectManager != null)
-            selectManager.SetReadyServerRpc(isReady);
+            selectManager.SetReady(isReady);
 
         UpdateReadyButton();
     }
@@ -168,20 +165,23 @@ public class CharacterSelectUI : MonoBehaviour
 
     private void OnStartGameClicked()
     {
-        if (!Unity.Netcode.NetworkManager.Singleton.IsHost) return;
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsHost) return;
+
+        if (selectedCharacterIndex < 0)
+        {
+            Debug.Log("Please select a character first!");
+            return;
+        }
 
         // Host starts the game - load Game scene
-        if (HostSingleton.Instance?.GameManager != null)
-        {
-            Unity.Netcode.NetworkManager.Singleton.SceneManager.LoadScene(
-                "Game",
-                UnityEngine.SceneManagement.LoadSceneMode.Single);
-        }
+        NetworkManager.Singleton.SceneManager.LoadScene(
+            "Game",
+            UnityEngine.SceneManagement.LoadSceneMode.Single);
     }
 
     private void RefreshPlayerList()
     {
-        if (selectManager == null) return;
+        if (selectManager == null || playerCardPrefab == null || playerCardContainer == null) return;
 
         var selections = selectManager.GetAllSelections();
         var activeIds = new HashSet<ulong>();
@@ -192,15 +192,15 @@ public class CharacterSelectUI : MonoBehaviour
 
             if (!playerCards.TryGetValue(selection.ClientId, out var card))
             {
-                // Create new card
                 card = Instantiate(playerCardPrefab, playerCardContainer);
-                bool isLocal = Unity.Netcode.NetworkManager.Singleton.LocalClientId == selection.ClientId;
-                card.Initialize(selection.PlayerName.ToString(), isLocal);
+                bool isLocal = NetworkManager.Singleton != null &&
+                               NetworkManager.Singleton.LocalClientId == selection.ClientId;
+                card.Initialize(selection.PlayerName, isLocal);
                 playerCards[selection.ClientId] = card;
             }
 
             // Update card
-            if (selection.CharacterIndex >= 0)
+            if (selection.CharacterIndex >= 0 && characterDatabase != null)
             {
                 var charData = characterDatabase.GetCharacter(selection.CharacterIndex);
                 card.SetCharacter(charData);

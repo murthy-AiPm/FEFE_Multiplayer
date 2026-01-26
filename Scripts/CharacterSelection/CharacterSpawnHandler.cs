@@ -29,7 +29,7 @@ public class CharacterSpawnHandler : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         if (!IsServer) return;
-        
+
         if (NetworkManager.Singleton != null)
             NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
     }
@@ -47,12 +47,9 @@ public class CharacterSpawnHandler : NetworkBehaviour
             if (client.PlayerObject != null) return; // Already has a player object
         }
 
-        // Get character index from CharacterSelectManager
-        int characterIndex = 0;
-        if (CharacterSelectManager.Instance != null)
-        {
-            characterIndex = CharacterSelectManager.Instance.GetPlayerCharacterIndex(clientId);
-        }
+        // Get character index from static persisted data
+        int characterIndex = CharacterSelectManager.GetPersistedCharacterIndex(clientId);
+        Debug.Log($"[CharacterSpawnHandler] Spawning character {characterIndex} for client {clientId}");
 
         // Clamp to valid range
         if (characterIndex < 0 || characterIndex >= characterDatabase.CharacterCount)
@@ -71,11 +68,11 @@ public class CharacterSpawnHandler : NetworkBehaviour
         // Spawn the character
         var playerObject = Instantiate(characterData.prefab, spawnPos, Quaternion.identity);
         var networkObject = playerObject.GetComponent<NetworkObject>();
-        
+
         if (networkObject != null)
         {
             networkObject.SpawnAsPlayerObject(clientId);
-            Debug.Log($"[CharacterSpawnHandler] Spawned character {characterIndex} for client {clientId}");
+            Debug.Log($"[CharacterSpawnHandler] Spawned character {characterIndex} for client {clientId} at {spawnPos}");
         }
         else
         {
