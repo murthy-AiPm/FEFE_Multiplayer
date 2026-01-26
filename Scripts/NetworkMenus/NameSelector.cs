@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -14,6 +12,18 @@ public class NameSelector : MonoBehaviour
 
     public const string PlayerNameKey = "PlayerName";
 
+    public static string GetUniquePlayerNameKey()
+    {
+#if UNITY_EDITOR
+        // Use different key for virtual players vs main editor
+        if (UnityEditor.MPE.ProcessService.level == UnityEditor.MPE.ProcessLevel.Secondary)
+        {
+            return PlayerNameKey + "_VirtualPlayer";
+        }
+#endif
+        return PlayerNameKey;
+    }
+
     private void Start()
     {
         if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
@@ -22,7 +32,7 @@ public class NameSelector : MonoBehaviour
             return;
         }
 
-        nameField.text = PlayerPrefs.GetString(PlayerNameKey, string.Empty);
+        nameField.text = PlayerPrefs.GetString(GetUniquePlayerNameKey(), string.Empty);
         HandleNameChanged();
     }
 
@@ -35,8 +45,7 @@ public class NameSelector : MonoBehaviour
 
     public void Connect()
     {
-        PlayerPrefs.SetString(PlayerNameKey, nameField.text);
-
+        PlayerPrefs.SetString(GetUniquePlayerNameKey(), nameField.text);
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
     }
 }
