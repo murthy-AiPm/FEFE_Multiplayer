@@ -25,6 +25,7 @@ public class HostGameManager : IDisposable
     private const int MaxConnections = 20;
     private const string GameSceneName = "Game";
 
+    private const string CharacterSelectSceneName = "CharacterSelect";
     public async Task StartHostAsync()
     {
         try
@@ -94,7 +95,7 @@ public class HostGameManager : IDisposable
 
         NetworkManager.Singleton.StartHost();
 
-        NetworkManager.Singleton.SceneManager.LoadScene(GameSceneName, LoadSceneMode.Single);
+        NetworkManager.Singleton.SceneManager.LoadScene(CharacterSelectSceneName, LoadSceneMode.Single);
     }
 
     private IEnumerator HearbeatLobby(float waitTimeSeconds)

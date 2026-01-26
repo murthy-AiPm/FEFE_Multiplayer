@@ -30,7 +30,7 @@ public class NetworkServer : IDisposable
         authIdToUserData[userData.userAuthId] = userData;
 
         response.Approved = true;
-        response.CreatePlayerObject = true;
+        response.CreatePlayerObject = false;
     }
 
     private void OnNetworkReady()
