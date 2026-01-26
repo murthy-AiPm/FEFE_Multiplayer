@@ -458,7 +458,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CharacterSelectUI
   characterDatabase: {fileID: 11400000, guid: 700c2ee40d706ba47ae34db6115728e1, type: 2}
-  selectManager: {fileID: 0}
+  selectManager: {fileID: 7605066507807814316, guid: c82518bf51b0be84cb25420da9cc18ea, type: 3}
   characterButtonContainer: {fileID: 1000016299}
   characterButtonPrefab: {fileID: -5195813813432300440, guid: 6cd98b28f5631bf4cb04840c50ccf68c, type: 3}
   playerCardContainer: {fileID: 1665293156}
