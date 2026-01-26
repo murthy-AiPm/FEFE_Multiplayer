@@ -36,7 +36,7 @@ public class CharacterSelectUI : MonoBehaviour
 
         CreateCharacterButtons();
         SetupButtons();
-        
+
         // Display join code if host
         DisplayJoinCode();
     }
@@ -84,7 +84,7 @@ public class CharacterSelectUI : MonoBehaviour
             startGameButton.onClick.AddListener(OnStartGameClicked);
             // Only host can start game
             startGameButton.gameObject.SetActive(
-                Unity.Netcode.NetworkManager.Singleton != null && 
+                Unity.Netcode.NetworkManager.Singleton != null &&
                 Unity.Netcode.NetworkManager.Singleton.IsHost);
         }
 
@@ -95,14 +95,30 @@ public class CharacterSelectUI : MonoBehaviour
     {
         if (joinCodeText == null) return;
 
-        if (HostSingleton.Instance?.GameManager != null)
+        // Check if we're the host first (before accessing HostSingleton)
+        bool isHost = Unity.Netcode.NetworkManager.Singleton != null &&
+                      Unity.Netcode.NetworkManager.Singleton.IsHost;
+
+        if (isHost)
         {
-            // Host can display the code - you'd need to expose joinCode from HostGameManager
-            // For now, we'll leave it or you can add a property to HostGameManager
-            joinCodeText.text = "Join Code: Check Console";
+            // Safe to access HostSingleton now
+            var hostInstance = FindObjectOfType<HostSingleton>();
+            if (hostInstance != null && hostInstance.GameManager != null)
+            {
+                string code = hostInstance.GameManager.JoinCode;
+                if (!string.IsNullOrEmpty(code))
+                {
+                    joinCodeText.text = $"Join Code: {code}";
+                    joinCodeText.gameObject.SetActive(true);
+                    return;
+                }
+            }
+            joinCodeText.text = "Join Code: (check console)";
+            joinCodeText.gameObject.SetActive(true);
         }
         else
         {
+            // Client - hide join code
             joinCodeText.gameObject.SetActive(false);
         }
     }
@@ -134,7 +150,7 @@ public class CharacterSelectUI : MonoBehaviour
         }
 
         isReady = !isReady;
-        
+
         if (selectManager != null)
             selectManager.SetReadyServerRpc(isReady);
 
@@ -158,7 +174,7 @@ public class CharacterSelectUI : MonoBehaviour
         if (HostSingleton.Instance?.GameManager != null)
         {
             Unity.Netcode.NetworkManager.Singleton.SceneManager.LoadScene(
-                "Game", 
+                "Game",
                 UnityEngine.SceneManagement.LoadSceneMode.Single);
         }
     }
@@ -193,7 +209,7 @@ public class CharacterSelectUI : MonoBehaviour
             {
                 card.SetCharacter(null);
             }
-            
+
             card.SetReady(selection.IsReady);
         }
 

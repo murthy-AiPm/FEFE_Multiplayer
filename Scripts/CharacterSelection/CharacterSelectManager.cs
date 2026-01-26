@@ -41,6 +41,9 @@ public class CharacterSelectManager : NetworkBehaviour
         }
 
         playerSelections.OnListChanged += OnSelectionsListChanged;
+
+        // Initial refresh
+        OnPlayerSelectionsChanged?.Invoke();
     }
 
     public override void OnNetworkDespawn()
