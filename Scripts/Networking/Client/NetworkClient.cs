@@ -30,6 +30,15 @@ public class NetworkClient : IDisposable
         // Only care about host (0) or our own client
         if (clientId != 0 && clientId != networkManager.LocalClientId) { return; }
 
+        Disconnect();
+
+        // Optional: restore cursor just in case
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    internal void Disconnect()
+    {
         if (SceneManager.GetActiveScene().name != MenuSceneName)
         {
             SceneManager.LoadScene(MenuSceneName);
@@ -39,12 +48,7 @@ public class NetworkClient : IDisposable
         {
             networkManager.Shutdown();
         }
-
-        // Optional: restore cursor just in case
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
     }
-
     public void Dispose()
     {
         if (networkManager != null)
@@ -52,4 +56,5 @@ public class NetworkClient : IDisposable
             networkManager.OnClientDisconnectCallback -= OnClientDisconnect;
         }
     }
+
 }

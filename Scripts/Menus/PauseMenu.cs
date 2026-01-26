@@ -21,7 +21,7 @@ public class PauseMenu : MonoBehaviour
     public void Pause()
     {
         pausePanel.SetActive(true);
-        Time.timeScale = 0f;
+        //Time.timeScale = 0f;
         isPaused = true;
 
         Cursor.lockState = CursorLockMode.None;
@@ -31,7 +31,7 @@ public class PauseMenu : MonoBehaviour
     public void Resume()
     {
         pausePanel.SetActive(false);
-        Time.timeScale = 1f;
+       // Time.timeScale = 1f;
         isPaused = false;
 
         Cursor.lockState = CursorLockMode.Locked;
@@ -45,30 +45,17 @@ public class PauseMenu : MonoBehaviour
 
     public void BackToMainMenu()
     {
-        Time.timeScale = 1f;
-
-        var nm = NetworkManager.Singleton;
-        if (nm != null)
+        if (NetworkManager.Singleton.IsHost)
         {
-            if (nm.IsHost)
-            {
-                if (HostSingleton.Instance?.GameManager != null)
-                    HostSingleton.Instance.GameManager.Dispose();
-            }
-
-            if (nm.IsListening || nm.IsConnectedClient)
-                nm.Shutdown();
+            HostSingleton.Instance.GameManager.ShutDown();
         }
 
-        if (HostSingleton.Instance != null) Destroy(HostSingleton.Instance.gameObject);
-        if (ClientSingleton.Instance != null) Destroy(ClientSingleton.Instance.gameObject);
-
-        SceneManager.LoadScene("Menu");
+        ClientSingleton.Instance.GameManager.Disconnect();
     }
 
     public void ExitGame()
     {
-        Time.timeScale = 1f;
+        //.timeScale = 1f;
 
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
