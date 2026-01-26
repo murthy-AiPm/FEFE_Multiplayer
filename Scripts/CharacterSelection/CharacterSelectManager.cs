@@ -37,26 +37,52 @@ public class CharacterSelectManager : MonoBehaviour
 
     private void Start()
     {
-        // Register local player automatically
-        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+        RegisterLocalPlayer();
+
+        // Subscribe to connection events for when clients join
+        if (NetworkManager.Singleton != null)
         {
-            ulong localId = NetworkManager.Singleton.LocalClientId;
-            string localName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Player");
-
-            if (!persistedNames.ContainsKey(localId))
-            {
-                persistedNames[localId] = localName;
-                persistedSelections[localId] = -1; // Not selected yet
-            }
-
-            OnPlayerSelectionsChanged?.Invoke();
+            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
         }
+    }
+
+    private void OnClientConnected(ulong clientId)
+    {
+        // When any client connects, register them if it's the local player
+        if (NetworkManager.Singleton != null && clientId == NetworkManager.Singleton.LocalClientId)
+        {
+            RegisterLocalPlayer();
+        }
+
+        OnPlayerSelectionsChanged?.Invoke();
+    }
+
+    private void RegisterLocalPlayer()
+    {
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening) return;
+
+        ulong localId = NetworkManager.Singleton.LocalClientId;
+        string localName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Player");
+
+        if (!persistedNames.ContainsKey(localId))
+        {
+            persistedNames[localId] = localName;
+            persistedSelections[localId] = -1; // Not selected yet
+            Debug.Log($"[CharacterSelectManager] Registered local player: {localName} (ID: {localId})");
+        }
+
+        OnPlayerSelectionsChanged?.Invoke();
     }
 
     private void OnDestroy()
     {
         if (Instance == this)
             Instance = null;
+
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+        }
     }
 
     /// <summary>
@@ -71,6 +97,15 @@ public class CharacterSelectManager : MonoBehaviour
         }
         Debug.Log($"[CharacterSelectManager] GetPersistedCharacterIndex: Client {clientId} not found, returning 0");
         return 0;
+    }
+
+    /// <summary>
+    /// Called by NetworkServer when a client connects - stores their selection on the server
+    /// </summary>
+    public static void SetServerCharacterSelection(ulong clientId, int characterIndex)
+    {
+        persistedSelections[clientId] = characterIndex;
+        Debug.Log($"[CharacterSelectManager] SetServerCharacterSelection: Client {clientId} = {characterIndex}");
     }
 
     /// <summary>

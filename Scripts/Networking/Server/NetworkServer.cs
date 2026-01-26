@@ -21,13 +21,17 @@ public class NetworkServer : IDisposable
         networkManager.OnServerStarted += OnNetworkReady;
     }
 
-    // ADD THIS METHOD - Manually register the host's data
+    // Manually register the host's data
     public void AddHostData(UserData userData)
     {
         // Host is always clientId 0
         clientIdToAuth[0] = userData.userAuthId;
         authIdToUserData[userData.userAuthId] = userData;
-        Debug.Log($"[NetworkServer] Added host data: {userData.userName} (AuthId: {userData.userAuthId})");
+
+        // Store host's character selection
+        CharacterSelectManager.SetServerCharacterSelection(0, userData.characterId);
+
+        Debug.Log($"[NetworkServer] Added host data: {userData.userName} (AuthId: {userData.userAuthId}, Character: {userData.characterId})");
     }
 
     private void ApprovalCheck(
@@ -40,10 +44,13 @@ public class NetworkServer : IDisposable
         clientIdToAuth[request.ClientNetworkId] = userData.userAuthId;
         authIdToUserData[userData.userAuthId] = userData;
 
-        Debug.Log($"[NetworkServer] ApprovalCheck - ClientId: {request.ClientNetworkId}, Name: {userData.userName}");
+        // Store character selection for spawning
+        CharacterSelectManager.SetServerCharacterSelection(request.ClientNetworkId, userData.characterId);
+
+        Debug.Log($"[NetworkServer] ApprovalCheck - ClientId: {request.ClientNetworkId}, Name: {userData.userName}, Character: {userData.characterId}");
 
         response.Approved = true;
-        response.CreatePlayerObject = true;
+        response.CreatePlayerObject = false; // We handle spawning manually via CharacterSpawnHandler
     }
 
     private void OnNetworkReady()

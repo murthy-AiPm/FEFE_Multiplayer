@@ -129,10 +129,16 @@ public class CharacterSelectUI : MonoBehaviour
         if (selectedCharacterIndex >= 0 && selectedCharacterIndex < characterButtons.Count)
             characterButtons[selectedCharacterIndex].SetSelected(true);
 
-        // Store the selection
+        // Store the selection locally
         if (selectManager != null)
         {
             selectManager.SelectCharacter(index);
+        }
+
+        // Sync to server (for clients)
+        if (CharacterSelectionSync.Instance != null)
+        {
+            CharacterSelectionSync.Instance.SyncSelection(index);
         }
 
         UpdateReadyButton();
@@ -172,6 +178,11 @@ public class CharacterSelectUI : MonoBehaviour
             Debug.Log("Please select a character first!");
             return;
         }
+
+        // Make sure host's selection is stored on server side
+        ulong hostId = NetworkManager.Singleton.LocalClientId;
+        CharacterSelectManager.SetServerCharacterSelection(hostId, selectedCharacterIndex);
+        Debug.Log($"[CharacterSelectUI] Host starting game with character {selectedCharacterIndex}");
 
         // Host starts the game - load Game scene
         NetworkManager.Singleton.SceneManager.LoadScene(
