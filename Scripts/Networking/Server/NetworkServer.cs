@@ -43,8 +43,6 @@ public class NetworkServer : IDisposable
         Debug.Log($"[NetworkServer] ApprovalCheck - ClientId: {request.ClientNetworkId}, Name: {userData.userName}");
 
         response.Approved = true;
-        response.Position = new Vector3(0, 0, 0);
-        response.Rotation = Quaternion.identity;
         response.CreatePlayerObject = true;
     }
 
