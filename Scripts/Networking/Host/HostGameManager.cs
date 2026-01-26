@@ -94,6 +94,8 @@ public class HostGameManager : IDisposable
 
         NetworkManager.Singleton.StartHost();
 
+        networkServer.OnClientLeft += HandleClientLeft;
+
         NetworkManager.Singleton.SceneManager.LoadScene(GameSceneName, LoadSceneMode.Single);
     }
 
@@ -107,7 +109,7 @@ public class HostGameManager : IDisposable
         }
     }
 
-    public async void Dispose()
+    public async void ShutDown()
     {
         HostSingleton.Instance.StopCoroutine(nameof(HearbeatLobby));
 
@@ -124,7 +126,25 @@ public class HostGameManager : IDisposable
 
             lobbyId = string.Empty;
         }
+       
+        networkServer.OnClientLeft -= HandleClientLeft;
 
         networkServer?.Dispose();
+    }
+
+    private async void HandleClientLeft(string authId)
+    {
+        try
+        {
+            await LobbyService.Instance.RemovePlayerAsync(lobbyId, authId);
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.Log(e);
+        }
+    }
+    public  void Dispose()
+    {
+        ShutDown();
     }
 }
