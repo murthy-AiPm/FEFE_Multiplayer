@@ -21,6 +21,15 @@ public class NetworkServer : IDisposable
         networkManager.OnServerStarted += OnNetworkReady;
     }
 
+    // ADD THIS METHOD - Manually register the host's data
+    public void AddHostData(UserData userData)
+    {
+        // Host is always clientId 0
+        clientIdToAuth[0] = userData.userAuthId;
+        authIdToUserData[userData.userAuthId] = userData;
+        Debug.Log($"[NetworkServer] Added host data: {userData.userName} (AuthId: {userData.userAuthId})");
+    }
+
     private void ApprovalCheck(
         NetworkManager.ConnectionApprovalRequest request,
         NetworkManager.ConnectionApprovalResponse response)
@@ -30,6 +39,8 @@ public class NetworkServer : IDisposable
 
         clientIdToAuth[request.ClientNetworkId] = userData.userAuthId;
         authIdToUserData[userData.userAuthId] = userData;
+
+        Debug.Log($"[NetworkServer] ApprovalCheck - ClientId: {request.ClientNetworkId}, Name: {userData.userName}");
 
         response.Approved = true;
         response.CreatePlayerObject = true;
@@ -48,6 +59,21 @@ public class NetworkServer : IDisposable
             authIdToUserData.Remove(authId);
             OnClientLeft?.Invoke(authId);
         }
+    }
+
+    public UserData GetUserDataByClientID(ulong clientId)
+    {
+        Debug.Log($"[NetworkServer] GetUserDataByClientID called for clientId: {clientId}");
+        Debug.Log($"[NetworkServer] clientIdToAuth contains: {string.Join(", ", clientIdToAuth.Keys)}");
+
+        if (clientIdToAuth.TryGetValue(clientId, out string authID))
+        {
+            if (authIdToUserData.TryGetValue(authID, out UserData data))
+            {
+                return data;
+            }
+        }
+        return null;
     }
 
     public void Dispose()

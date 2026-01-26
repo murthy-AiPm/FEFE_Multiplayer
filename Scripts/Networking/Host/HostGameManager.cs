@@ -20,7 +20,7 @@ public class HostGameManager : IDisposable
     private string joinCode;
     private string lobbyId;
 
-    private NetworkServer networkServer;
+    public NetworkServer networkServer { get; private set; }
 
     private const int MaxConnections = 20;
     private const string GameSceneName = "Game";
@@ -58,14 +58,14 @@ public class HostGameManager : IDisposable
             CreateLobbyOptions lobbyOptions = new CreateLobbyOptions();
             lobbyOptions.IsPrivate = false;
             lobbyOptions.Data = new Dictionary<string, DataObject>()
+        {
             {
-                {
-                    "JoinCode", new DataObject(
-                        visibility: DataObject.VisibilityOptions.Member,
-                        value: joinCode
-                    )
-                }
-            };
+                "JoinCode", new DataObject(
+                    visibility: DataObject.VisibilityOptions.Public,
+                    value: joinCode
+                )
+            }
+        };
             string playerName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Unknown");
             Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(
                 $"{playerName}'s Lobby", MaxConnections, lobbyOptions);
@@ -80,8 +80,12 @@ public class HostGameManager : IDisposable
             return;
         }
 
+        // ========== FIXED ORDER ==========
+
+        // 1. Create NetworkServer FIRST (so approval callback is registered)
         networkServer = new NetworkServer(NetworkManager.Singleton);
 
+        // 2. Set up connection data
         UserData userData = new UserData
         {
             userName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Missing Name"),
@@ -89,12 +93,14 @@ public class HostGameManager : IDisposable
         };
         string payload = JsonUtility.ToJson(userData);
         byte[] payloadBytes = Encoding.UTF8.GetBytes(payload);
-
         NetworkManager.Singleton.NetworkConfig.ConnectionData = payloadBytes;
 
-        NetworkManager.Singleton.StartHost();
+        // 3. MANUALLY add the host's user data to the server dictionary
+        //    (because the host doesn't go through the normal approval flow)
+        networkServer.AddHostData(userData);
 
-        networkServer.OnClientLeft += HandleClientLeft;
+        // 4. NOW start the host
+        NetworkManager.Singleton.StartHost();
 
         NetworkManager.Singleton.SceneManager.LoadScene(GameSceneName, LoadSceneMode.Single);
     }
@@ -143,6 +149,8 @@ public class HostGameManager : IDisposable
             Debug.Log(e);
         }
     }
+
+
     public void Dispose()
     {
         ShutDown();
