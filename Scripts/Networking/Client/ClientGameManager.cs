@@ -62,7 +62,8 @@ public class ClientGameManager : IDisposable
         UserData userData = new UserData
         {
             userName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Missing Name"),
-            userAuthId = AuthenticationService.Instance.PlayerId
+            userAuthId = AuthenticationService.Instance.PlayerId,
+            characterId = 0 // Will be updated during character selection
         };
         string payload = JsonUtility.ToJson(userData);
         byte[] payloadBytes = Encoding.UTF8.GetBytes(payload);
@@ -70,15 +71,18 @@ public class ClientGameManager : IDisposable
         NetworkManager.Singleton.NetworkConfig.ConnectionData = payloadBytes;
 
         NetworkManager.Singleton.StartClient();
+        
+        // Note: Client will automatically be taken to CharacterSelect scene
+        // because host loads it via NetworkSceneManager
     }
+
     public void Disconnect()
     {
         networkClient.Disconnect();
     }
+
     public void Dispose()
     {
         networkClient?.Dispose();
     }
-
-
 }

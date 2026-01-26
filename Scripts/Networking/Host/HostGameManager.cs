@@ -21,8 +21,10 @@ public class HostGameManager : IDisposable
     private string lobbyId;
 
     public NetworkServer networkServer { get; private set; }
+    public string JoinCode => joinCode; // Expose for UI
 
     private const int MaxConnections = 20;
+    private const string CharacterSelectSceneName = "CharacterSelect";
     private const string GameSceneName = "Game";
 
     public async Task StartHostAsync()
@@ -40,7 +42,7 @@ public class HostGameManager : IDisposable
         try
         {
             joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
-            Debug.Log(joinCode);
+            Debug.Log($"Join Code: {joinCode}");
         }
         catch (Exception e)
         {
@@ -58,14 +60,14 @@ public class HostGameManager : IDisposable
             CreateLobbyOptions lobbyOptions = new CreateLobbyOptions();
             lobbyOptions.IsPrivate = false;
             lobbyOptions.Data = new Dictionary<string, DataObject>()
-        {
             {
-                "JoinCode", new DataObject(
-                    visibility: DataObject.VisibilityOptions.Public,
-                    value: joinCode
-                )
-            }
-        };
+                {
+                    "JoinCode", new DataObject(
+                        visibility: DataObject.VisibilityOptions.Public,
+                        value: joinCode
+                    )
+                }
+            };
             string playerName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Unknown");
             Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(
                 $"{playerName}'s Lobby", MaxConnections, lobbyOptions);
@@ -80,8 +82,6 @@ public class HostGameManager : IDisposable
             return;
         }
 
-        // ========== FIXED ORDER ==========
-
         // 1. Create NetworkServer FIRST (so approval callback is registered)
         networkServer = new NetworkServer(NetworkManager.Singleton);
 
@@ -89,19 +89,30 @@ public class HostGameManager : IDisposable
         UserData userData = new UserData
         {
             userName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Missing Name"),
-            userAuthId = AuthenticationService.Instance.PlayerId
+            userAuthId = AuthenticationService.Instance.PlayerId,
+            characterId = 0 // Will be updated during character selection
         };
         string payload = JsonUtility.ToJson(userData);
         byte[] payloadBytes = Encoding.UTF8.GetBytes(payload);
         NetworkManager.Singleton.NetworkConfig.ConnectionData = payloadBytes;
 
         // 3. MANUALLY add the host's user data to the server dictionary
-        //    (because the host doesn't go through the normal approval flow)
         networkServer.AddHostData(userData);
 
         // 4. NOW start the host
         NetworkManager.Singleton.StartHost();
 
+        // 5. Load Character Select scene instead of Game
+        NetworkManager.Singleton.SceneManager.LoadScene(CharacterSelectSceneName, LoadSceneMode.Single);
+    }
+
+    /// <summary>
+    /// Call this from CharacterSelectUI when host clicks Start Game
+    /// </summary>
+    public void StartGame()
+    {
+        if (!NetworkManager.Singleton.IsHost) return;
+        
         NetworkManager.Singleton.SceneManager.LoadScene(GameSceneName, LoadSceneMode.Single);
     }
 
@@ -149,7 +160,6 @@ public class HostGameManager : IDisposable
             Debug.Log(e);
         }
     }
-
 
     public void Dispose()
     {
