@@ -1,5 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
+using System.Collections.Generic;
 
 /// <summary>
 /// Handles spawning the correct character prefab based on player's selection.
@@ -47,6 +48,88 @@ public class CharacterSpawnHandler : NetworkBehaviour
     {
         TrySpawnPlayerCharacter(clientId);
     }
+
+    #region Taken Characters
+
+    /// <summary>
+    /// Get list of character indices that are already taken
+    /// </summary>
+    private List<int> GetTakenCharacters()
+    {
+        var taken = new List<int>();
+
+        // Check all connected clients for their character selections
+        foreach (var kvp in NetworkManager.Singleton.ConnectedClients)
+        {
+            if (kvp.Value.PlayerObject != null)
+            {
+                // Player is spawned - get their character index
+                int charIndex = CharacterSelectManager.GetPersistedCharacterIndex(kvp.Key);
+                if (charIndex >= 0 && !taken.Contains(charIndex))
+                {
+                    taken.Add(charIndex);
+                }
+            }
+        }
+
+        return taken;
+    }
+
+    /// <summary>
+    /// Check if a character is already taken
+    /// </summary>
+    private bool IsCharacterTaken(int characterIndex)
+    {
+        foreach (var kvp in NetworkManager.Singleton.ConnectedClients)
+        {
+            if (kvp.Value.PlayerObject != null)
+            {
+                int charIndex = CharacterSelectManager.GetPersistedCharacterIndex(kvp.Key);
+                if (charIndex == characterIndex)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Called by LateJoinCharacterSelectUI to get taken characters
+    /// </summary>
+    public void RequestTakenCharacters()
+    {
+        RequestTakenCharactersServerRpc();
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void RequestTakenCharactersServerRpc(ServerRpcParams rpcParams = default)
+    {
+        ulong clientId = rpcParams.Receive.SenderClientId;
+        var taken = GetTakenCharacters();
+
+        Debug.Log($"[CharacterSpawnHandler] Sending taken characters to client {clientId}: {string.Join(", ", taken)}");
+
+        SendTakenCharactersClientRpc(taken.ToArray(), new ClientRpcParams
+        {
+            Send = new ClientRpcSendParams
+            {
+                TargetClientIds = new[] { clientId }
+            }
+        });
+    }
+
+    [ClientRpc]
+    private void SendTakenCharactersClientRpc(int[] takenCharacters, ClientRpcParams rpcParams = default)
+    {
+        var lateJoinUI = FindObjectOfType<LateJoinCharacterSelectUI>();
+        if (lateJoinUI != null)
+        {
+            lateJoinUI.SetTakenCharacters(takenCharacters);
+        }
+    }
+
+    #endregion
 
     /// <summary>
     /// Try to spawn a player - only succeeds if they have a valid character selection
@@ -134,6 +217,21 @@ public class CharacterSpawnHandler : NetworkBehaviour
         if (characterIndex < 0 || characterIndex >= characterDatabase.CharacterCount)
         {
             Debug.LogError($"[CharacterSpawnHandler] Invalid character index {characterIndex}");
+            NotifySpawnFailedClientRpc("Invalid character selection", new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
+            });
+            return;
+        }
+
+        // Check if character is taken
+        if (IsCharacterTaken(characterIndex))
+        {
+            Debug.Log($"[CharacterSpawnHandler] Character {characterIndex} is already taken!");
+            NotifySpawnFailedClientRpc("That character is already taken! Select another.", new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
+            });
             return;
         }
 
@@ -164,6 +262,18 @@ public class CharacterSpawnHandler : NetworkBehaviour
         if (lateJoinUI != null)
         {
             lateJoinUI.OnSpawnSuccess();
+        }
+    }
+
+    [ClientRpc]
+    private void NotifySpawnFailedClientRpc(string reason, ClientRpcParams rpcParams = default)
+    {
+        Debug.Log($"[CharacterSpawnHandler] Spawn failed: {reason}");
+
+        var lateJoinUI = FindObjectOfType<LateJoinCharacterSelectUI>();
+        if (lateJoinUI != null)
+        {
+            lateJoinUI.OnSpawnFailed(reason);
         }
     }
 

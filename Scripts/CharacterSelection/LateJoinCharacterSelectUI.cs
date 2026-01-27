@@ -25,8 +25,14 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
     [SerializeField] private Button joinButton;
     [SerializeField] private TMP_Text statusText;
 
+    [Header("Colors")]
+    [SerializeField] private Color availableColor = Color.white;
+    [SerializeField] private Color selectedColor = Color.yellow;
+    [SerializeField] private Color takenColor = Color.gray;
+
     private List<Button> characterButtons = new List<Button>();
     private List<Image> buttonImages = new List<Image>();
+    private List<int> takenCharacters = new List<int>();
     private int selectedCharacterIndex = -1;
 
     private void Start()
@@ -58,7 +64,7 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
 
         // Check if local client has a player object
         ulong localClientId = NetworkManager.Singleton.LocalClientId;
-        
+
         if (NetworkManager.Singleton.ConnectedClients.TryGetValue(localClientId, out var client))
         {
             if (client.PlayerObject != null)
@@ -68,8 +74,17 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
             }
         }
 
-        // No player object - show character selection
-        Debug.Log("[LateJoinCharacterSelectUI] Client needs to select character - showing UI");
+        // No player object - request taken characters from server then show UI
+        Debug.Log("[LateJoinCharacterSelectUI] Client needs to select character - requesting taken list");
+
+        if (CharacterSpawnHandler.Instance != null)
+        {
+            CharacterSpawnHandler.Instance.RequestTakenCharacters();
+        }
+
+        // Wait a moment for response
+        yield return new WaitForSeconds(0.3f);
+
         ShowSelectionUI();
     }
 
@@ -93,9 +108,22 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
             selectionPanel.SetActive(true);
     }
 
+    /// <summary>
+    /// Called by CharacterSpawnHandler when server sends taken character list
+    /// </summary>
+    public void SetTakenCharacters(int[] taken)
+    {
+        takenCharacters.Clear();
+        takenCharacters.AddRange(taken);
+        Debug.Log($"[LateJoinCharacterSelectUI] Received taken characters: {string.Join(", ", taken)}");
+
+        // Update button states if UI is already showing
+        UpdateButtonStates();
+    }
+
     private void CreateCharacterButtons()
     {
-        if (characterDatabase == null || characterButtonPrefab == null || characterButtonContainer == null) 
+        if (characterDatabase == null || characterButtonPrefab == null || characterButtonContainer == null)
         {
             Debug.LogError("[LateJoinCharacterSelectUI] Missing references!");
             return;
@@ -114,16 +142,13 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
         {
             var data = characterDatabase.GetCharacter(i);
             var buttonObj = Instantiate(characterButtonPrefab, characterButtonContainer);
-            
+
             var button = buttonObj.GetComponent<Button>();
             var image = buttonObj.GetComponent<Image>();
             var text = buttonObj.GetComponentInChildren<TMP_Text>();
 
             if (text != null && data != null)
                 text.text = data.characterName;
-
-            if (image != null && data != null)
-                image.color = data.characterColor;
 
             int index = i; // Capture for closure
             if (button != null)
@@ -134,27 +159,48 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
 
             if (image != null)
                 buttonImages.Add(image);
+            else
+                buttonImages.Add(null);
+        }
+
+        UpdateButtonStates();
+    }
+
+    private void UpdateButtonStates()
+    {
+        for (int i = 0; i < characterButtons.Count; i++)
+        {
+            bool isTaken = takenCharacters.Contains(i);
+            bool isSelected = (i == selectedCharacterIndex);
+
+            // Update button interactability
+            if (characterButtons[i] != null)
+                characterButtons[i].interactable = !isTaken;
+
+            // Update button color
+            if (buttonImages[i] != null)
+            {
+                if (isSelected)
+                    buttonImages[i].color = selectedColor;
+                else if (isTaken)
+                    buttonImages[i].color = takenColor;
+                else
+                    buttonImages[i].color = availableColor;
+            }
         }
     }
 
     private void SelectCharacter(int index)
     {
-        // Reset all buttons
-        for (int i = 0; i < buttonImages.Count; i++)
+        // Don't allow selecting taken characters
+        if (takenCharacters.Contains(index))
         {
-            var data = characterDatabase.GetCharacter(i);
-            if (buttonImages[i] != null && data != null)
-            {
-                buttonImages[i].color = data.characterColor;
-            }
+            Debug.Log($"[LateJoinCharacterSelectUI] Character {index} is taken!");
+            return;
         }
 
-        // Highlight selected
         selectedCharacterIndex = index;
-        if (index >= 0 && index < buttonImages.Count && buttonImages[index] != null)
-        {
-            buttonImages[index].color = Color.yellow;
-        }
+        UpdateButtonStates();
 
         if (joinButton != null)
             joinButton.interactable = true;
@@ -169,6 +215,16 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
     private void OnJoinClicked()
     {
         if (selectedCharacterIndex < 0) return;
+
+        // Double-check it's not taken
+        if (takenCharacters.Contains(selectedCharacterIndex))
+        {
+            if (statusText != null)
+                statusText.text = "That character was just taken! Select another.";
+            selectedCharacterIndex = -1;
+            UpdateButtonStates();
+            return;
+        }
 
         if (joinButton != null)
             joinButton.interactable = false;
@@ -201,6 +257,26 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+    }
+
+    /// <summary>
+    /// Called when spawn fails (e.g., character was taken)
+    /// </summary>
+    public void OnSpawnFailed(string reason)
+    {
+        if (statusText != null)
+            statusText.text = reason;
+
+        if (joinButton != null)
+            joinButton.interactable = false;
+
+        selectedCharacterIndex = -1;
+
+        // Refresh taken list
+        if (CharacterSpawnHandler.Instance != null)
+        {
+            CharacterSpawnHandler.Instance.RequestTakenCharacters();
+        }
     }
 
     private void OnDestroy()
