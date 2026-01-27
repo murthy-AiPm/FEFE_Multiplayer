@@ -144,7 +144,28 @@ public class HostGameManager : IDisposable
     {
         if (!NetworkManager.Singleton.IsHost) return;
 
+        // Lock the lobby so no new players can join mid-game
+        LockLobby();
+
         NetworkManager.Singleton.SceneManager.LoadScene(GameSceneName, LoadSceneMode.Single);
+    }
+
+    private async void LockLobby()
+    {
+        if (string.IsNullOrEmpty(lobbyId)) return;
+
+        try
+        {
+            await LobbyService.Instance.UpdateLobbyAsync(lobbyId, new UpdateLobbyOptions
+            {
+                IsLocked = true
+            });
+            Debug.Log("[HostGameManager] Lobby locked - no new players can join");
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogWarning($"[HostGameManager] Failed to lock lobby: {e}");
+        }
     }
 
     private IEnumerator HearbeatLobby(float waitTimeSeconds)
@@ -159,7 +180,11 @@ public class HostGameManager : IDisposable
 
     public async void ShutDown()
     {
-        HostSingleton.Instance.StopCoroutine(nameof(HearbeatLobby));
+        // Safely stop the heartbeat coroutine
+        if (HostSingleton.Instance != null)
+        {
+            HostSingleton.Instance.StopCoroutine(nameof(HearbeatLobby));
+        }
 
         if (!string.IsNullOrEmpty(lobbyId))
         {
@@ -175,9 +200,12 @@ public class HostGameManager : IDisposable
             lobbyId = string.Empty;
         }
 
-        networkServer.OnClientLeft -= HandleClientLeft;
-
-        networkServer?.Dispose();
+        if (networkServer != null)
+        {
+            networkServer.OnClientLeft -= HandleClientLeft;
+            networkServer.Dispose();
+            networkServer = null;
+        }
     }
 
     private async void HandleClientLeft(string authId)
