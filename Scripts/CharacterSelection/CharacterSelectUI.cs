@@ -41,21 +41,31 @@ public class CharacterSelectUI : MonoBehaviour
 
         // Find the manager (spawned NetworkObject)
         StartCoroutine(WaitForManager());
-
-        Debug.Log($"[CharacterSelectUI] Start - NetworkManager exists: {NetworkManager.Singleton != null}");
-        Debug.Log($"[CharacterSelectUI] Start - IsHost: {NetworkManager.Singleton?.IsHost}");
-        Debug.Log($"[CharacterSelectUI] Start - CharacterSelectManager.Instance: {CharacterSelectManager.Instance != null}");
     }
 
     private System.Collections.IEnumerator WaitForManager()
     {
-        while (CharacterSelectManager.Instance == null)
+        Debug.Log("[CharacterSelectUI] Waiting for CharacterSelectManager...");
+
+        float timeout = 10f;
+        float elapsed = 0f;
+
+        while (CharacterSelectManager.Instance == null && elapsed < timeout)
         {
+            elapsed += Time.deltaTime;
             yield return null;
+        }
+
+        if (CharacterSelectManager.Instance == null)
+        {
+            Debug.LogError("[CharacterSelectUI] CharacterSelectManager not found after timeout! Make sure it has NetworkObject and is in NetworkPrefabsList.");
+            yield break;
         }
 
         selectManager = CharacterSelectManager.Instance;
         selectManager.OnSelectionsChanged += RefreshUI;
+
+        Debug.Log("[CharacterSelectUI] CharacterSelectManager found! Refreshing UI...");
         RefreshUI();
     }
 
@@ -164,6 +174,13 @@ public class CharacterSelectUI : MonoBehaviour
 
         isReady = !isReady;
         selectManager.SetReady(isReady);
+
+        // If becoming ready, notify server (for late-joining clients)
+        if (isReady)
+        {
+            selectManager.NotifyReadyToSpawn();
+        }
+
         UpdateButtons();
     }
 

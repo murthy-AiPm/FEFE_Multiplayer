@@ -243,6 +243,14 @@ public class CharacterSelectManager : NetworkBehaviour
         SetReadyServerRpc(ready);
     }
 
+    /// <summary>
+    /// Called when a late-joining client is ready to spawn into the game
+    /// </summary>
+    public void NotifyReadyToSpawn()
+    {
+        NotifyReadyToSpawnServerRpc();
+    }
+
     [ServerRpc(RequireOwnership = false)]
     private void SetReadyServerRpc(bool ready, ServerRpcParams rpcParams = default)
     {
@@ -267,6 +275,43 @@ public class CharacterSelectManager : NetworkBehaviour
                 break;
             }
         }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void NotifyReadyToSpawnServerRpc(ServerRpcParams rpcParams = default)
+    {
+        ulong clientId = rpcParams.Receive.SenderClientId;
+
+        // Check if they have a valid selection
+        if (!serverSelections.TryGetValue(clientId, out int charIndex) || charIndex < 0)
+        {
+            Debug.Log($"[CharacterSelectManager] Client {clientId} tried to spawn without valid selection");
+            return;
+        }
+
+        Debug.Log($"[CharacterSelectManager] Client {clientId} ready to spawn with character {charIndex}");
+
+        // Tell CharacterSpawnHandler to spawn this player
+        if (CharacterSpawnHandler.Instance != null)
+        {
+            CharacterSpawnHandler.Instance.TrySpawnPlayerCharacter(clientId);
+
+            // Send them to the Game scene
+            SendToGameSceneClientRpc(new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams
+                {
+                    TargetClientIds = new[] { clientId }
+                }
+            });
+        }
+    }
+
+    [ClientRpc]
+    private void SendToGameSceneClientRpc(ClientRpcParams rpcParams = default)
+    {
+        Debug.Log("[CharacterSelectManager] Loading Game scene...");
+        UnityEngine.SceneManagement.SceneManager.LoadScene("Game");
     }
 
     #endregion
@@ -308,16 +353,17 @@ public class CharacterSelectManager : NetworkBehaviour
 
     /// <summary>
     /// Static method for spawning - gets selection from server storage
+    /// Returns -1 if player hasn't selected yet
     /// </summary>
     public static int GetPersistedCharacterIndex(ulong clientId)
     {
         if (serverSelections.TryGetValue(clientId, out int index))
         {
             Debug.Log($"[CharacterSelectManager] GetPersistedCharacterIndex: Client {clientId} = {index}");
-            return Mathf.Max(0, index);
+            return index; // Can be -1 if not selected
         }
-        Debug.Log($"[CharacterSelectManager] GetPersistedCharacterIndex: Client {clientId} not found, returning 0");
-        return 0;
+        Debug.Log($"[CharacterSelectManager] GetPersistedCharacterIndex: Client {clientId} not found, returning -1");
+        return -1; // Not found = not selected
     }
 
     /// <summary>
