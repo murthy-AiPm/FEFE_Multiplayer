@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1404139889911888573}
   - component: {fileID: 8415400618529599336}
-  - component: {fileID: 7605066507807814316}
+  - component: {fileID: 4692153974959239676}
   m_Layer: 0
   m_Name: CharacterSelectManager
   m_TagString: Untagged
@@ -45,7 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 581790507
+  GlobalObjectIdHash: 1731957014
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -58,7 +58,7 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &7605066507807814316
+--- !u!114 &4692153974959239676
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

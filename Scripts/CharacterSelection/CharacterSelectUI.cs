@@ -8,7 +8,6 @@ public class CharacterSelectUI : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private CharacterDatabase characterDatabase;
-    [SerializeField] private CharacterSelectManager selectManager;
 
     [Header("Character Buttons")]
     [SerializeField] private Transform characterButtonContainer;
@@ -21,7 +20,7 @@ public class CharacterSelectUI : MonoBehaviour
     [Header("UI Elements")]
     [SerializeField] private Button readyButton;
     [SerializeField] private TMP_Text readyButtonText;
-    [SerializeField] private Button startGameButton; // Host only
+    [SerializeField] private Button startGameButton;
     [SerializeField] private TMP_Text joinCodeText;
 
     private List<CharacterSelectButton> characterButtons = new List<CharacterSelectButton>();
@@ -29,42 +28,58 @@ public class CharacterSelectUI : MonoBehaviour
     private int selectedCharacterIndex = -1;
     private bool isReady = false;
 
+    private CharacterSelectManager selectManager;
+
     private void Start()
     {
-        // Ensure cursor is visible
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
         CreateCharacterButtons();
         SetupButtons();
         DisplayJoinCode();
-        RefreshPlayerList();
+
+        // Find the manager (spawned NetworkObject)
+        StartCoroutine(WaitForManager());
+
+        Debug.Log($"[CharacterSelectUI] Start - NetworkManager exists: {NetworkManager.Singleton != null}");
+        Debug.Log($"[CharacterSelectUI] Start - IsHost: {NetworkManager.Singleton?.IsHost}");
+        Debug.Log($"[CharacterSelectUI] Start - CharacterSelectManager.Instance: {CharacterSelectManager.Instance != null}");
     }
 
-    private void OnEnable()
+    private System.Collections.IEnumerator WaitForManager()
     {
-        if (selectManager != null)
-            selectManager.OnPlayerSelectionsChanged += RefreshPlayerList;
+        while (CharacterSelectManager.Instance == null)
+        {
+            yield return null;
+        }
+
+        selectManager = CharacterSelectManager.Instance;
+        selectManager.OnSelectionsChanged += RefreshUI;
+        RefreshUI();
     }
 
-    private void OnDisable()
+    private void OnDestroy()
     {
         if (selectManager != null)
-            selectManager.OnPlayerSelectionsChanged -= RefreshPlayerList;
+            selectManager.OnSelectionsChanged -= RefreshUI;
+
+        if (readyButton != null)
+            readyButton.onClick.RemoveListener(OnReadyClicked);
+        if (startGameButton != null)
+            startGameButton.onClick.RemoveListener(OnStartGameClicked);
     }
 
     private void CreateCharacterButtons()
     {
         if (characterDatabase == null || characterButtonPrefab == null) return;
 
-        // Clear existing
         foreach (Transform child in characterButtonContainer)
         {
             Destroy(child.gameObject);
         }
         characterButtons.Clear();
 
-        // Create button for each character
         for (int i = 0; i < characterDatabase.CharacterCount; i++)
         {
             var data = characterDatabase.GetCharacter(i);
@@ -82,12 +97,11 @@ public class CharacterSelectUI : MonoBehaviour
         if (startGameButton != null)
         {
             startGameButton.onClick.AddListener(OnStartGameClicked);
-            // Only host can start game
             bool isHost = NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost;
             startGameButton.gameObject.SetActive(isHost);
         }
 
-        UpdateReadyButton();
+        UpdateButtons();
     }
 
     private void DisplayJoinCode()
@@ -120,100 +134,104 @@ public class CharacterSelectUI : MonoBehaviour
 
     public void SelectCharacter(int index)
     {
-        // Update local visual
-        if (selectedCharacterIndex >= 0 && selectedCharacterIndex < characterButtons.Count)
-            characterButtons[selectedCharacterIndex].SetSelected(false);
+        if (selectManager == null) return;
 
+        // Check if character is available
+        ulong localId = NetworkManager.Singleton.LocalClientId;
+        if (selectManager.IsCharacterTaken(index, localId))
+        {
+            Debug.Log($"Character {index} is already taken!");
+            return;
+        }
+
+        // Send selection to server
+        selectManager.TrySelectCharacter(index);
         selectedCharacterIndex = index;
 
-        if (selectedCharacterIndex >= 0 && selectedCharacterIndex < characterButtons.Count)
-            characterButtons[selectedCharacterIndex].SetSelected(true);
-
-        // Store the selection locally
-        if (selectManager != null)
-        {
-            selectManager.SelectCharacter(index);
-        }
-
-        // Sync to server (for clients)
-        if (CharacterSelectionSync.Instance != null)
-        {
-            CharacterSelectionSync.Instance.SyncSelection(index);
-        }
-
-        UpdateReadyButton();
+        UpdateButtons();
     }
 
     private void OnReadyClicked()
     {
-        if (selectedCharacterIndex < 0)
+        if (selectManager == null) return;
+
+        var localSel = selectManager.GetLocalSelection();
+        if (localSel == null || localSel.Value.CharacterIndex < 0)
         {
             Debug.Log("Please select a character first!");
             return;
         }
 
         isReady = !isReady;
-
-        if (selectManager != null)
-            selectManager.SetReady(isReady);
-
-        UpdateReadyButton();
-    }
-
-    private void UpdateReadyButton()
-    {
-        if (readyButton != null)
-            readyButton.interactable = selectedCharacterIndex >= 0;
-
-        if (readyButtonText != null)
-            readyButtonText.text = isReady ? "Cancel Ready" : "Ready";
+        selectManager.SetReady(isReady);
+        UpdateButtons();
     }
 
     private void OnStartGameClicked()
     {
         if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsHost) return;
 
-        if (selectedCharacterIndex < 0)
+        var localSel = selectManager?.GetLocalSelection();
+        if (localSel == null || localSel.Value.CharacterIndex < 0)
         {
             Debug.Log("Please select a character first!");
             return;
         }
 
-        // Make sure host's selection is stored on server side
-        ulong hostId = NetworkManager.Singleton.LocalClientId;
-        CharacterSelectManager.SetServerCharacterSelection(hostId, selectedCharacterIndex);
-        Debug.Log($"[CharacterSelectUI] Host starting game with character {selectedCharacterIndex}");
-
-        // Host starts the game - load Game scene
-        NetworkManager.Singleton.SceneManager.LoadScene(
-            "Game",
-            UnityEngine.SceneManagement.LoadSceneMode.Single);
+        Debug.Log("[CharacterSelectUI] Host starting game...");
+        NetworkManager.Singleton.SceneManager.LoadScene("Game", UnityEngine.SceneManagement.LoadSceneMode.Single);
     }
 
-    private void RefreshPlayerList()
+    private void RefreshUI()
+    {
+        if (selectManager == null) return;
+
+        RefreshCharacterButtons();
+        RefreshPlayerCards();
+        UpdateButtons();
+    }
+
+    private void RefreshCharacterButtons()
+    {
+        if (selectManager == null) return;
+
+        ulong localId = NetworkManager.Singleton.LocalClientId;
+        var localSel = selectManager.GetLocalSelection();
+        int localCharIndex = localSel?.CharacterIndex ?? -1;
+
+        for (int i = 0; i < characterButtons.Count; i++)
+        {
+            bool isTaken = selectManager.IsCharacterTaken(i, localId);
+            bool isSelected = (i == localCharIndex);
+
+            characterButtons[i].SetState(isSelected, isTaken);
+        }
+
+        selectedCharacterIndex = localCharIndex;
+    }
+
+    private void RefreshPlayerCards()
     {
         if (selectManager == null || playerCardPrefab == null || playerCardContainer == null) return;
 
-        var selections = selectManager.GetAllSelections();
+        var allSelections = selectManager.GetAllSelections();
         var activeIds = new HashSet<ulong>();
 
-        foreach (var selection in selections)
+        foreach (var sel in allSelections)
         {
-            activeIds.Add(selection.ClientId);
+            activeIds.Add(sel.ClientId);
 
-            if (!playerCards.TryGetValue(selection.ClientId, out var card))
+            if (!playerCards.TryGetValue(sel.ClientId, out var card))
             {
                 card = Instantiate(playerCardPrefab, playerCardContainer);
-                bool isLocal = NetworkManager.Singleton != null &&
-                               NetworkManager.Singleton.LocalClientId == selection.ClientId;
-                card.Initialize(selection.PlayerName, isLocal);
-                playerCards[selection.ClientId] = card;
+                bool isLocal = NetworkManager.Singleton.LocalClientId == sel.ClientId;
+                card.Initialize(sel.PlayerName.ToString(), isLocal);
+                playerCards[sel.ClientId] = card;
             }
 
-            // Update card
-            if (selection.CharacterIndex >= 0 && characterDatabase != null)
+            if (sel.CharacterIndex >= 0 && characterDatabase != null)
             {
-                var charData = characterDatabase.GetCharacter(selection.CharacterIndex);
+                var charData = characterDatabase.GetCharacter(sel.CharacterIndex);
                 card.SetCharacter(charData);
             }
             else
@@ -221,10 +239,10 @@ public class CharacterSelectUI : MonoBehaviour
                 card.SetCharacter(null);
             }
 
-            card.SetReady(selection.IsReady);
+            card.SetReady(sel.IsReady);
         }
 
-        // Remove cards for disconnected players
+        // Remove disconnected players
         var toRemove = new List<ulong>();
         foreach (var kvp in playerCards)
         {
@@ -240,11 +258,26 @@ public class CharacterSelectUI : MonoBehaviour
         }
     }
 
-    private void OnDestroy()
+    private void UpdateButtons()
     {
+        bool hasSelection = selectedCharacterIndex >= 0;
+        bool isHost = NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost;
+
+        // Ready button - only for clients
         if (readyButton != null)
-            readyButton.onClick.RemoveListener(OnReadyClicked);
+        {
+            readyButton.gameObject.SetActive(!isHost);
+            readyButton.interactable = hasSelection;
+        }
+
+        if (readyButtonText != null)
+            readyButtonText.text = isReady ? "Cancel Ready" : "Ready";
+
+        // Start button - only for host
         if (startGameButton != null)
-            startGameButton.onClick.RemoveListener(OnStartGameClicked);
+        {
+            startGameButton.gameObject.SetActive(isHost);
+            startGameButton.interactable = hasSelection;
+        }
     }
 }

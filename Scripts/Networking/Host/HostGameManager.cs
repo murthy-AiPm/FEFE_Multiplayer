@@ -27,6 +27,9 @@ public class HostGameManager : IDisposable
     private const string CharacterSelectSceneName = "CharacterSelect";
     private const string GameSceneName = "Game";
 
+    [System.NonSerialized]
+    public GameObject characterSelectManagerPrefab; // Assign via code or make this a field on HostSingleton
+
     public async Task StartHostAsync()
     {
         try
@@ -102,8 +105,36 @@ public class HostGameManager : IDisposable
         // 4. NOW start the host
         NetworkManager.Singleton.StartHost();
 
-        // 5. Load Character Select scene instead of Game
+        // 5. Load Character Select scene
         NetworkManager.Singleton.SceneManager.LoadScene(CharacterSelectSceneName, LoadSceneMode.Single);
+
+        // 6. Spawn CharacterSelectManager after scene loads
+        NetworkManager.Singleton.SceneManager.OnLoadComplete += OnCharacterSelectSceneLoaded;
+    }
+
+    private void OnCharacterSelectSceneLoaded(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
+    {
+        if (sceneName == CharacterSelectSceneName && NetworkManager.Singleton.IsServer)
+        {
+            // Unsubscribe to avoid multiple calls
+            NetworkManager.Singleton.SceneManager.OnLoadComplete -= OnCharacterSelectSceneLoaded;
+
+            // Find and spawn the CharacterSelectManager if it exists in scene
+            var manager = GameObject.FindObjectOfType<CharacterSelectManager>();
+            if (manager != null)
+            {
+                var networkObject = manager.GetComponent<NetworkObject>();
+                if (networkObject != null && !networkObject.IsSpawned)
+                {
+                    networkObject.Spawn();
+                    Debug.Log("[HostGameManager] Spawned CharacterSelectManager");
+                }
+            }
+            else
+            {
+                Debug.LogError("[HostGameManager] CharacterSelectManager not found in scene!");
+            }
+        }
     }
 
     /// <summary>
@@ -112,7 +143,7 @@ public class HostGameManager : IDisposable
     public void StartGame()
     {
         if (!NetworkManager.Singleton.IsHost) return;
-        
+
         NetworkManager.Singleton.SceneManager.LoadScene(GameSceneName, LoadSceneMode.Single);
     }
 

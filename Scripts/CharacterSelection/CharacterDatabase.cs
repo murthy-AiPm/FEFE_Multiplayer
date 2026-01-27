@@ -19,7 +19,7 @@ public class CharacterDatabase : ScriptableObject
     public int GetCharacterIndex(CharacterData data)
     {
         if (characters == null || data == null) return -1;
-        
+
         for (int i = 0; i < characters.Length; i++)
         {
             if (characters[i] == data) return i;
