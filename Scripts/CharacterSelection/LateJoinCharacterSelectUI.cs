@@ -146,9 +146,24 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
             var button = buttonObj.GetComponent<Button>();
             var image = buttonObj.GetComponent<Image>();
             var text = buttonObj.GetComponentInChildren<TMP_Text>();
-
+            var iconImage = buttonObj.transform.Find("IconImage")?.GetComponent<Image>();
             if (text != null && data != null)
                 text.text = data.characterName;
+          
+
+            if (iconImage != null && data != null)
+            {
+                if (data.icon != null)
+                {
+                    iconImage.sprite = data.icon;
+                    iconImage.color = Color.white;
+                }
+                else
+                {
+                    iconImage.sprite = null;
+                    iconImage.color = data.characterColor;
+                }
+            }
 
             int index = i; // Capture for closure
             if (button != null)
