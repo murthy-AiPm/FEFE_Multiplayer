@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: Artificer
   m_EditorClassIdentifier: Assembly-CSharp::CharacterData
   characterName: Artificer
-  icon: {fileID: 21300128, guid: 5b54aaa7498024e438d906b1a29048ee, type: 3}
+  icon: {fileID: 21300000, guid: 9552d6fb7762a4dc2841ca8fdd3b3ddd, type: 3}
   characterColor: {r: 0.9839549, g: 0, b: 1, a: 1}
   prefab: {fileID: 5393498967000253258, guid: ee013448adf424847a0c7f8d806faf90, type: 3}
