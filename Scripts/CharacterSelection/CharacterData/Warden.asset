@@ -15,4 +15,4 @@ MonoBehaviour:
   characterName: Warden
   icon: {fileID: 21300000, guid: ca503b295709c4c23a90e8fdbd515735, type: 3}
   characterColor: {r: 0.9839549, g: 0, b: 1, a: 1}
-  prefab: {fileID: 5393498967000253258, guid: ee013448adf424847a0c7f8d806faf90, type: 3}
+  prefab: {fileID: 5393498967000253258, guid: 9f22b7fe86ab9894a9ab71382eb0080c, type: 3}

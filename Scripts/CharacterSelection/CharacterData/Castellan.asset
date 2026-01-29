@@ -15,4 +15,4 @@ MonoBehaviour:
   characterName: Castellan
   icon: {fileID: 21300000, guid: a78170c5ec8074756801245da7154b55, type: 3}
   characterColor: {r: 0.9839549, g: 0, b: 1, a: 1}
-  prefab: {fileID: 5393498967000253258, guid: ee013448adf424847a0c7f8d806faf90, type: 3}
+  prefab: {fileID: 5393498967000253258, guid: 819bb7a441409de43987660729de6d6f, type: 3}
