@@ -5491,9 +5491,15 @@ MonoBehaviour:
   ruleSet: {fileID: 11400000, guid: 27215f61ca8e2ee41879bcd2bdf56a2a, type: 2}
   tps: {fileID: 4386495661157894936}
   input: {fileID: 7917548007009137436}
+  networkSync: {fileID: 7660184262089134886}
   baseFade: 0.12
   actionFade: 0.08
   attackFade: 0.05
+  cancelFade: 0.06
+  doubleClickWindow: 0.25
+  comboHoldThreshold: 0.12
+  defaultWeaponName: Sword
+  weapons: []
 --- !u!114 &8481982897994769634
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5716,7 +5722,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24856da573ed9fd4ba38a01b876856dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ShowTopMostFoldoutHeaderGroup: 1
   vCam: {fileID: 1193484295935413192, guid: fdd653c42a61852429e157968a9cb924, type: 3}
   vCO: {fileID: 11400000, guid: 1ccf68c29059fba4385a72caa24473d6, type: 2}
   vZO: {fileID: 11400000, guid: 526773907b0b53a44979fef10a078928, type: 2}

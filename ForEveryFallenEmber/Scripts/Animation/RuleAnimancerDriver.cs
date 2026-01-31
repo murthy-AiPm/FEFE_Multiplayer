@@ -14,6 +14,7 @@ public class RuleAnimancerDriver : MonoBehaviour
     [Header("Wiring (optional if auto-found)")]
     [SerializeField] private ThirdPersonController tps;
     [SerializeField] private InputController input;
+    [SerializeField] private ClientAuthoritativeAnimancerSync networkSync; // NEW: for attack syncing
 
     [Header("Fades")]
     [SerializeField] private float baseFade = 0.12f;
@@ -36,7 +37,7 @@ public class RuleAnimancerDriver : MonoBehaviour
 
     private AnimancerComponent _animancer;
 
-    // Layer locks (don’t let locomotion override action/attack).
+    // Layer locks (don't let locomotion override action/attack).
     private readonly Dictionary<AnimLayer, AnimancerState> _lockedState = new Dictionary<AnimLayer, AnimancerState>();
     private readonly Dictionary<AnimLayer, bool> _isLocked = new Dictionary<AnimLayer, bool>();
 
@@ -47,11 +48,33 @@ public class RuleAnimancerDriver : MonoBehaviour
     // Attack runtime
     private AttackRuntime _attack = new AttackRuntime();
 
+    // NEW: Flag to prevent remotes from running Witcher input logic
+    private bool _isRemoteClient = false;
+
+    public AnimancerComponent Animancer => _animancer;
+    public bool IsLocked => IsLayerLocked(AnimLayer.Attack) || IsLayerLocked(AnimLayer.Action);
+
+    // Make AttackMode public so sync script can use it
+    public enum AttackMode
+    {
+        None = 0,
+        Single = 1,
+        Combo = 2
+    }
+
     private void Awake()
     {
         _animancer = GetComponent<AnimancerComponent>();
         if (tps == null) tps = GetComponentInParent<ThirdPersonController>();
         if (input == null) input = GetComponentInParent<InputController>();
+        if (networkSync == null) networkSync = GetComponentInParent<ClientAuthoritativeAnimancerSync>();
+
+        // Check if we're a remote client
+        var netObj = GetComponentInParent<Unity.Netcode.NetworkBehaviour>();
+        if (netObj != null)
+        {
+            _isRemoteClient = netObj.IsSpawned && !netObj.IsOwner;
+        }
     }
 
     /// <summary>
@@ -103,7 +126,8 @@ public class RuleAnimancerDriver : MonoBehaviour
             return;
 
         // 3) Witcher-style attack input handler (random single OR doubleclick+hold combo).
-        if (HandleWitcherAttacks(ctx))
+        // ONLY RUN ON OWNER - remotes will receive attacks via PlayNetworkedAttack()
+        if (!_isRemoteClient && HandleWitcherAttacks(ctx))
             return;
 
         // 4) Otherwise run your normal rules: Attack > Action > Base
@@ -130,13 +154,6 @@ public class RuleAnimancerDriver : MonoBehaviour
         [Header("Combo Sequences (double click + hold triggers)")]
         public List<string> lightComboKeys = new List<string>();
         public List<string> heavyComboKeys = new List<string>(); // Shift-modified
-    }
-
-    private enum AttackMode
-    {
-        None,
-        Single,
-        Combo
     }
 
     private class AttackRuntime
@@ -286,7 +303,7 @@ public class RuleAnimancerDriver : MonoBehaviour
         int r = UnityEngine.Random.Range(0, profile.singleAttackKeys.Count);
         string key = profile.singleAttackKeys[r];
 
-        if (!TryPlayAttackKey(key, AttackMode.Single))
+        if (!TryPlayAttackKey(key, AttackMode.Single, false, 0))
             return false;
 
         return true;
@@ -332,7 +349,7 @@ public class RuleAnimancerDriver : MonoBehaviour
         _attack.comboIndex = index;
         string key = _attack.comboKeys[index];
 
-        if (!TryPlayAttackKey(key, AttackMode.Combo))
+        if (!TryPlayAttackKey(key, AttackMode.Combo, _attack.comboIsHeavy, index))
         {
             _attack.ResetAll();
             return false;
@@ -341,7 +358,7 @@ public class RuleAnimancerDriver : MonoBehaviour
         return true;
     }
 
-    private bool TryPlayAttackKey(string key, AttackMode mode)
+    private bool TryPlayAttackKey(string key, AttackMode mode, bool isHeavy, int comboIndex)
     {
         if (string.IsNullOrWhiteSpace(key))
             return false;
@@ -360,7 +377,78 @@ public class RuleAnimancerDriver : MonoBehaviour
         // Lock attack layer until end.
         LockAttackUntilEnd(state);
 
+        // NEW: Notify network sync (owner only)
+        if (networkSync != null && !_isRemoteClient)
+        {
+            networkSync.OwnerStartAttack(key, mode, isHeavy, comboIndex);
+        }
+
         return true;
+    }
+
+    /// <summary>
+    /// NEW: Called by ClientAuthoritativeAnimancerSync on remote clients to play the attack.
+    /// This bypasses all the Witcher input logic and directly plays the attack.
+    /// </summary>
+    public void PlayNetworkedAttack(string attackKey, AttackMode mode, bool isHeavy, int comboIndex)
+    {
+        if (string.IsNullOrWhiteSpace(attackKey))
+            return;
+
+        if (!animationSet.TryGet(attackKey, out var transition) || transition == null || transition.Clip == null)
+        {
+            Debug.LogError($"[PlayNetworkedAttack] Missing key in AnimationSet: '{attackKey}'");
+            return;
+        }
+
+        // Set up the attack runtime state so combo advancement works correctly
+        if (mode == AttackMode.Combo)
+        {
+            // Find the weapon profile that contains this attack key
+            WeaponAttackProfile profile = null;
+            bool foundInHeavy = false;
+
+            foreach (var weapon in weapons)
+            {
+                if (weapon.lightComboKeys != null && weapon.lightComboKeys.Contains(attackKey))
+                {
+                    profile = weapon;
+                    foundInHeavy = false;
+                    break;
+                }
+                if (weapon.heavyComboKeys != null && weapon.heavyComboKeys.Contains(attackKey))
+                {
+                    profile = weapon;
+                    foundInHeavy = true;
+                    break;
+                }
+            }
+
+            if (profile != null)
+            {
+                _attack.mode = AttackMode.Combo;
+                _attack.comboIsHeavy = foundInHeavy;
+                _attack.weaponName = profile.weaponName;
+                _attack.comboKeys = foundInHeavy ? profile.heavyComboKeys : profile.lightComboKeys;
+                _attack.comboIndex = comboIndex;
+            }
+            else
+            {
+                Debug.LogWarning($"[PlayNetworkedAttack] Could not find weapon profile for combo attack '{attackKey}'");
+                _attack.mode = AttackMode.Single; // Fallback to single
+            }
+        }
+        else
+        {
+            _attack.mode = mode;
+        }
+
+        // Play the animation
+        var state = _animancer.Play(transition, attackFade);
+        state.Time = 0;
+
+        // Lock attack layer until end
+        LockAttackUntilEnd(state);
     }
 
     private void LockAttackUntilEnd(AnimancerState state)
