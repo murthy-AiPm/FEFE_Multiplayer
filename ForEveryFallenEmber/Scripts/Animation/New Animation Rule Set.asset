@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9af09a7ea1542fb49a4c8b001c207fad, type: 3}
+  m_Name: New Animation Rule Set
+  m_EditorClassIdentifier: 
+  rules:
+  - name: Idle
+    layer: 0
+    priority: 0
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    animationKey: Locomotion/Idle
+    all:
+    - useBool: 0
+      boolParam: 0
+      boolValue: 0
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Walk
+    layer: 0
+    priority: 1
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    animationKey: Locomotion/Walk
+    all:
+    - useBool: 1
+      boolParam: 0
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Run
+    layer: 0
+    priority: 2
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    animationKey: Locomotion/Run
+    all:
+    - useBool: 1
+      boolParam: 0
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 2
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  combos: []

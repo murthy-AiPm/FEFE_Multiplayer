@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c0c402db6425e749a2d4cb460ad95df, type: 3}
+  m_Name: DragonDownWard 1
+  m_EditorClassIdentifier: 
+  Name: TopForward
+  verticalHeigth: 1.7
+  horizontalHeigth: -2.74
+  transverseHeigth: 0
+  length: 10
+  raycastName: 
+  hitTag:
+  - House
+  - Obstacle
+  - Terrain
+  RayDirection: 3
+  IsTrigger: 0

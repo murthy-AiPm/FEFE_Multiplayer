@@ -21,14 +21,8 @@ GameObject:
   - component: {fileID: 3059807433227402174}
   - component: {fileID: 2318097377176621397}
   - component: {fileID: 9186692815070914475}
-  - component: {fileID: -1905153288431114067}
-  - component: {fileID: 2771030576321302974}
-  - component: {fileID: -2645813650107519133}
-  - component: {fileID: -6241308572826392170}
-  - component: {fileID: -8642587809906318913}
-  - component: {fileID: 5099549701840047104}
   m_Layer: 9
-  m_Name: Humanoid_Fighter_Network
+  m_Name: Humanoid_Fighter
   m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -42,8 +36,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 134043905374528843}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 32.42, y: 4.51, z: 40.66}
+  m_LocalRotation: {x: 0.0034167569, y: 0.9983106, z: -0.051801864, w: 0.026093528}
+  m_LocalPosition: {x: 149.714, y: 309.422, z: 154.088}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -126,25 +120,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c79067a8d98ea7743be746497de00fdd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animationSet: {fileID: 11400000, guid: ffafb136e5921c3499cb268eacfef62a, type: 2}
-  ruleSet: {fileID: 11400000, guid: a1efdbf0560df4a44905da6dc7d94267, type: 2}
+  animationSet: {fileID: 11400000, guid: 447bf4e046b04724db3cf5f62dba942e, type: 2}
+  ruleSet: {fileID: 11400000, guid: 27215f61ca8e2ee41879bcd2bdf56a2a, type: 2}
   tps: {fileID: 2613098171129311318}
   input: {fileID: 6350221479210210835}
   baseFade: 0.12
   actionFade: 0.08
   attackFade: 0.05
-  cancelFade: 0.06
-  doubleClickWindow: 0.25
-  comboHoldThreshold: 0.12
-  defaultWeaponName: Sword
-  weapons:
-  - weaponName: Sword
-    singleAttackKeys:
-    - Attack/Sword/Light1
-    - Attack/Sword/Light2
-    - Attack/Sword/Light3
-    lightComboKeys: []
-    heavyComboKeys: []
 --- !u!114 &6524559495757998548
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -329,7 +311,7 @@ MonoBehaviour:
   multiTapWindow: 0.25
   tapLatch: 0.25
   clicks: 
-  singleHandSword: {fileID: 6023413539938163968, guid: 00ee45bea7a072b458d9558cd05e9f2c, type: 3}
+  singleHandSword: {fileID: 0}
 --- !u!114 &9186692815070914475
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -348,176 +330,6 @@ MonoBehaviour:
   LookAt: {fileID: 9005423199851967869}
   Follow: {fileID: 9005423199851967869}
   ZoomLook: {fileID: 9005423199851967869}
---- !u!114 &-1905153288431114067
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 134043905374528843}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 480099889
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  DeferredDespawnTick: 0
-  Ownership: 1
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 0
---- !u!114 &2771030576321302974
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 134043905374528843}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b364b68b6097e874c9674877fbf54f3f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ClientNetworkTransform
-  ShowTopMostFoldoutHeaderGroup: 1
-  NetworkTransformExpanded: 0
-  AutoOwnerAuthorityTickOffset: 1
-  PositionInterpolationType: 0
-  RotationInterpolationType: 0
-  ScaleInterpolationType: 0
-  PositionLerpSmoothing: 1
-  PositionMaxInterpolationTime: 0.1
-  RotationLerpSmoothing: 1
-  RotationMaxInterpolationTime: 0.1
-  ScaleLerpSmoothing: 1
-  ScaleMaxInterpolationTime: 0.1
-  AuthorityMode: 0
-  TickSyncChildren: 0
-  UseUnreliableDeltas: 0
-  SyncPositionX: 1
-  SyncPositionY: 1
-  SyncPositionZ: 1
-  SyncRotAngleX: 1
-  SyncRotAngleY: 1
-  SyncRotAngleZ: 1
-  SyncScaleX: 0
-  SyncScaleY: 0
-  SyncScaleZ: 0
-  PositionThreshold: 0.001
-  RotAngleThreshold: 0.01
-  ScaleThreshold: 0.01
-  UseQuaternionSynchronization: 0
-  UseQuaternionCompression: 0
-  UseHalfFloatPrecision: 0
-  InLocalSpace: 0
-  SwitchTransformSpaceWhenParented: 0
-  Interpolate: 1
-  SlerpPosition: 0
---- !u!114 &-2645813650107519133
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 134043905374528843}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fa925cb4d21f0044ea534c61b5382e1f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ClientAuthoritativeAnimancerSync
-  ShowTopMostFoldoutHeaderGroup: 1
-  input: {fileID: 6350221479210210835}
-  tps: {fileID: 2613098171129311318}
-  animDriver: {fileID: 1633156696383947771}
---- !u!114 &-6241308572826392170
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 134043905374528843}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1caf2af13966857469bcad96c898d8fd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ClientAuthoritativePlayerDriver
-  ShowTopMostFoldoutHeaderGroup: 1
-  playerController: {fileID: 3745241009434165893}
-  inputController: {fileID: 6350221479210210835}
-  movementScriptsToToggle:
-  - {fileID: 2613098171129311318}
-  characterController: {fileID: 123231446064690230}
-  ownerOnlyObjects: []
---- !u!114 &-8642587809906318913
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 134043905374528843}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e043cf97a259854408122dd0f83c5e9b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HumanoidPlayer
-  ShowTopMostFoldoutHeaderGroup: 1
-  PlayerName:
-    m_InternalValue:
-      utf8LengthInBytes: 0
-      bytes:
-        offset0000:
-          byte0000: 0
-          byte0001: 0
-          byte0002: 0
-          byte0003: 0
-          byte0004: 0
-          byte0005: 0
-          byte0006: 0
-          byte0007: 0
-          byte0008: 0
-          byte0009: 0
-          byte0010: 0
-          byte0011: 0
-          byte0012: 0
-          byte0013: 0
-          byte0014: 0
-          byte0015: 0
-        byte0016: 0
-        byte0017: 0
-        byte0018: 0
-        byte0019: 0
-        byte0020: 0
-        byte0021: 0
-        byte0022: 0
-        byte0023: 0
-        byte0024: 0
-        byte0025: 0
-        byte0026: 0
-        byte0027: 0
-        byte0028: 0
-        byte0029: 0
---- !u!114 &5099549701840047104
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 134043905374528843}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c651081927e1522449d3af7dec581823, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::OwnerOnlyFreeLook
-  ShowTopMostFoldoutHeaderGroup: 1
-  freeLook: {fileID: 0}
-  ownerPriority: 20
-  nonOwnerPriority: 0
 --- !u!1 &1008603233948878082
 GameObject:
   m_ObjectHideFlags: 0
