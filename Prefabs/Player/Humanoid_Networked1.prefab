@@ -5494,6 +5494,11 @@ MonoBehaviour:
   baseFade: 0.12
   actionFade: 0.08
   attackFade: 0.05
+  cancelFade: 0.06
+  doubleClickWindow: 0.25
+  comboHoldThreshold: 0.12
+  defaultWeaponName: Sword
+  weapons: []
 --- !u!114 &8481982897994769634
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5716,7 +5721,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24856da573ed9fd4ba38a01b876856dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ShowTopMostFoldoutHeaderGroup: 1
   vCam: {fileID: 1193484295935413192, guid: fdd653c42a61852429e157968a9cb924, type: 3}
   vCO: {fileID: 11400000, guid: 1ccf68c29059fba4385a72caa24473d6, type: 2}
   vZO: {fileID: 11400000, guid: 526773907b0b53a44979fef10a078928, type: 2}
@@ -5817,7 +5821,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OwnerOnlyCameraRig
   ShowTopMostFoldoutHeaderGroup: 1
-  freeLook: {fileID: 0}
+  freeLook: {fileID: 5324565167517982231}
   ownerPriority: 20
   nonOwnerPriority: 0
 --- !u!114 &6186455806061971731
@@ -9186,12 +9190,44 @@ PrefabInstance:
       value: 45
       objectReference: {fileID: 0}
     - target: {fileID: -6768391324516302008, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: Priority.Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -6768391324516302008, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: Priority.m_Value
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: -6768391324516302008, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: m_LegacyPriority
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -6768391324516302008, guid: fdd653c42a61852429e157968a9cb924, type: 3}
       propertyPath: m_Lens.FieldOfView
       value: 45
+      objectReference: {fileID: 0}
+    - target: {fileID: -6768391324516302008, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: m_StreamingVersion
+      value: 20241001
+      objectReference: {fileID: 0}
+    - target: {fileID: -5552401522037076435, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: Priority.Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5552401522037076435, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: Priority.m_Value
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: -5552401522037076435, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: m_LegacyPriority
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -5552401522037076435, guid: fdd653c42a61852429e157968a9cb924, type: 3}
       propertyPath: m_Lens.FieldOfView
       value: 45
+      objectReference: {fileID: 0}
+    - target: {fileID: -5552401522037076435, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: m_StreamingVersion
+      value: 20241001
       objectReference: {fileID: 0}
     - target: {fileID: -4831131860037875512, guid: fdd653c42a61852429e157968a9cb924, type: 3}
       propertyPath: m_BindingMode
@@ -9210,8 +9246,24 @@ PrefabInstance:
       value: 45
       objectReference: {fileID: 0}
     - target: {fileID: 213050768139231618, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: Priority.Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 213050768139231618, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: Priority.m_Value
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 213050768139231618, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: m_LegacyPriority
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 213050768139231618, guid: fdd653c42a61852429e157968a9cb924, type: 3}
       propertyPath: m_Lens.FieldOfView
       value: 45
+      objectReference: {fileID: 0}
+    - target: {fileID: 213050768139231618, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: m_StreamingVersion
+      value: 20241001
       objectReference: {fileID: 0}
     - target: {fileID: 1193484295559626393, guid: fdd653c42a61852429e157968a9cb924, type: 3}
       propertyPath: m_LocalPosition.x
@@ -9252,6 +9304,22 @@ PrefabInstance:
     - target: {fileID: 1193484295935413192, guid: fdd653c42a61852429e157968a9cb924, type: 3}
       propertyPath: m_Priority
       value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 1193484295935413192, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: Priority.Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1193484295935413192, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: Priority.m_Value
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 1193484295935413192, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: m_LegacyPriority
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1193484295935413192, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: m_StreamingVersion
+      value: 20241001
       objectReference: {fileID: 0}
     - target: {fileID: 1193484295935413193, guid: fdd653c42a61852429e157968a9cb924, type: 3}
       propertyPath: m_LocalPosition.x
@@ -9435,3 +9503,14 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1193484295935413193, guid: fdd653c42a61852429e157968a9cb924, type: 3}
   m_PrefabInstance: {fileID: 6445984138472134111}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &5324565167517982231 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1193484295935413192, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+  m_PrefabInstance: {fileID: 6445984138472134111}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 319d2fe34a804e245819465c9505ea59, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

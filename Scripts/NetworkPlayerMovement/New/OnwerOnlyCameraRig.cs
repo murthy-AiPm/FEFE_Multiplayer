@@ -1,6 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
-using Cinemachine;
+using Unity.Cinemachine;
 
 [DefaultExecutionOrder(-50)]
 public class OwnerOnlyFreeLook : NetworkBehaviour

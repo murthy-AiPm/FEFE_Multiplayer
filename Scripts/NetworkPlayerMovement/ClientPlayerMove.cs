@@ -3,7 +3,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using StarterAssets;
-using Cinemachine;
+using Unity.Cinemachine;
 
 public class ClientPlayerMove : NetworkBehaviour
 {
