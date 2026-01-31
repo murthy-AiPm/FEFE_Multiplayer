@@ -71,11 +71,16 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
     private readonly NetworkVariable<int> nvAttackSeq =
         new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
+    // NEW: Jump edge detection (same pattern as attack/action)
+    private readonly NetworkVariable<int> nvJumpSeq =
+        new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
     // Reflection to set InputController.Snapshot (private setter).
     private FieldInfo _snapshotBackingField;
 
     private int _lastSeenActionSeq;
     private int _lastSeenAttackSeq;
+    private int _lastSeenJumpSeq;
 
     private void Awake()
     {
@@ -116,6 +121,7 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
             // Track action edge.
             _lastSeenActionSeq = nvActionSeq.Value;
             _lastSeenAttackSeq = nvAttackSeq.Value;
+            _lastSeenJumpSeq = nvJumpSeq.Value;
         }
     }
 
@@ -134,6 +140,7 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
             ApplyToRemoteHolders();
             ApplyRemoteActionEdge();
             ApplyRemoteAttackEdge();
+            ApplyRemoteJumpEdge();
         }
     }
 
@@ -162,6 +169,12 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
 
         nvJumpDown.Value = s.jumpDown;
         nvJumpHeld.Value = s.jumpHeld;
+
+        // Increment jump sequence on the down edge to ensure remotes catch it
+        if (s.jumpDown)
+        {
+            nvJumpSeq.Value++;
+        }
 
         nvActionHeld.Value = s.actionHeld;
     }
@@ -238,6 +251,29 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
             attackState.isHeavy,
             attackState.comboIndex
         );
+    }
+
+    private void ApplyRemoteJumpEdge()
+    {
+        if (input == null || _snapshotBackingField == null) return;
+
+        // If the owner bumped the jump sequence, inject a one-frame jumpDown edge.
+        int seq = nvJumpSeq.Value;
+        if (seq == _lastSeenJumpSeq) return;
+        _lastSeenJumpSeq = seq;
+
+        // Force jumpDown to true for this frame
+        var snap = new InputSnapshot
+        {
+            primaryDown = nvPrimaryDown.Value,
+            primaryHeld = nvPrimaryHeld.Value,
+            primaryUp = nvPrimaryUp.Value,
+            jumpDown = true,  // Force this to true when sequence changes
+            jumpHeld = nvJumpHeld.Value,
+            actionHeld = nvActionHeld.Value,
+        };
+
+        _snapshotBackingField.SetValue(input, snap);
     }
 
     /// <summary>
