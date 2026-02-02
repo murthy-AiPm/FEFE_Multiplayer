@@ -2008,7 +2008,6 @@ GameObject:
   - component: {fileID: 3086120407189549482}
   - component: {fileID: 3730155243723547828}
   - component: {fileID: 6466238469953756060}
-  - component: {fileID: 2774967148381334448}
   m_Layer: 3
   m_Name: Dragon
   m_TagString: Player
@@ -2067,6 +2066,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3df36790e26d1d49ba3f2e0a1dbe385, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DragonAnimatorController
+  ShowTopMostFoldoutHeaderGroup: 1
   flightController: {fileID: 358013097769894201}
   animator: {fileID: 3730155243723547828}
   isHoveringParam: IsHovering
@@ -2077,21 +2077,6 @@ MonoBehaviour:
   verticalSpeedParam: VerticalSpeed
   forwardSpeedParam: ForwardSpeed
   isDivingParam: IsDiving
---- !u!114 &2774967148381334448
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4753490263456383483}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c69ba3886e6a57f44a0a29f961f3bc00, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ClientNetworkAnimator
-  ShowTopMostFoldoutHeaderGroup: 1
-  TransitionStateInfoList: []
-  m_Animator: {fileID: 3730155243723547828}
 --- !u!1 &4835914202048136776
 GameObject:
   m_ObjectHideFlags: 0
@@ -4454,7 +4439,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1353946614
+  GlobalObjectIdHash: 48177541
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -4589,7 +4574,7 @@ MonoBehaviour:
   RotationMaxInterpolationTime: 0.1
   ScaleLerpSmoothing: 1
   ScaleMaxInterpolationTime: 0.1
-  AuthorityMode: 0
+  AuthorityMode: 1
   TickSyncChildren: 0
   UseUnreliableDeltas: 0
   SyncPositionX: 1
