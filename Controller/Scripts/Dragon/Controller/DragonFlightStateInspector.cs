@@ -33,7 +33,7 @@ public class DragonFlightStateInspector : MonoBehaviour
         isGrounded = flight.IsGrounded;
 
         airSpeed = flight.AirSpeed;
-        groundDistance = flight.GroundDistance;
+        //groundDistance = flight.GroundDistance;
         rollAngle = flight.RollAngle;
         velocity = flight.Velocity;
     }

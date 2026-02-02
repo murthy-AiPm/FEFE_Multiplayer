@@ -2008,6 +2008,8 @@ GameObject:
   - component: {fileID: 3086120407189549482}
   - component: {fileID: 3730155243723547828}
   - component: {fileID: 6466238469953756060}
+  - component: {fileID: 1599023488488210836}
+  - component: {fileID: 1944946093761040287}
   m_Layer: 3
   m_Name: Dragon
   m_TagString: Player
@@ -2068,15 +2070,55 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DragonAnimatorController
   ShowTopMostFoldoutHeaderGroup: 1
   flightController: {fileID: 358013097769894201}
+  groundController: {fileID: 1599023488488210836}
+  groundingSystem: {fileID: 1944946093761040287}
   animator: {fileID: 3730155243723547828}
-  isHoveringParam: IsHovering
-  isFlyingParam: IsFlying
-  isGlidingParam: IsGliding
-  isGroundedParam: IsGrounded
-  airSpeedParam: AirSpeed
-  verticalSpeedParam: VerticalSpeed
-  forwardSpeedParam: ForwardSpeed
-  isDivingParam: IsDiving
+--- !u!114 &1599023488488210836
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4753490263456383483}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4ac5e9a22702ea47af9ade535b55fd8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DragonGroundController
+  ShowTopMostFoldoutHeaderGroup: 1
+  groundingSystem: {fileID: 1944946093761040287}
+  flightController: {fileID: 358013097769894201}
+  animator: {fileID: 3730155243723547828}
+  forwardAxis: Vertical
+  turnAxis: Horizontal
+  jumpKey: 32
+  sprintKey: 304
+  takeoffHoldTime: 0.4
+  jumpUpDuration: 1.11
+  jumpForwardDuration: 1.18
+  landingDuration: 1.07
+--- !u!114 &1944946093761040287
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4753490263456383483}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b280c23c83c99594d817837f13d67820, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DragonGroundingSystem
+  leftHand: {fileID: 8698988640449351899}
+  rightHand: {fileID: 4256486713556236103}
+  leftFoot: {fileID: 5672313500500504538}
+  rightFoot: {fileID: 3611726667701680735}
+  raycastDistance: 1.5
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  groundedConfirmTime: 0.08
+  cliffThreshold: 3
 --- !u!1 &4835914202048136776
 GameObject:
   m_ObjectHideFlags: 0
@@ -4400,6 +4442,7 @@ GameObject:
   - component: {fileID: 6911377320127465881}
   - component: {fileID: 8585177505333529245}
   - component: {fileID: 4450041388960547239}
+  - component: {fileID: -4791921943511514907}
   m_Layer: 3
   m_Name: DragonPlayer_Network
   m_TagString: Untagged
@@ -4468,6 +4511,7 @@ MonoBehaviour:
   cameraTransform: {fileID: 0}
   rb: {fileID: 0}
   useRigidbodyMovement: 0
+  groundingSystem: {fileID: 0}
   horizontalAxis: Horizontal
   verticalAxis: Vertical
   hoverAxis: Hover
@@ -4506,12 +4550,6 @@ MonoBehaviour:
   divePitchRate: 45
   rollAngle: 45
   rollSmoothTime: 0.2
-  groundCheck: {fileID: 0}
-  groundCheckDistance: 2.5
-  groundMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  groundedConfirmTime: 0.08
   flightStats: {fileID: 0}
 --- !u!114 &6911377320127465881
 MonoBehaviour:
@@ -4596,3 +4634,27 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
+--- !u!114 &-4791921943511514907
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4ac5e9a22702ea47af9ade535b55fd8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DragonGroundController
+  ShowTopMostFoldoutHeaderGroup: 1
+  groundingSystem: {fileID: 0}
+  flightController: {fileID: 358013097769894201}
+  animator: {fileID: 0}
+  forwardAxis: Vertical
+  turnAxis: Horizontal
+  jumpKey: 32
+  sprintKey: 304
+  takeoffHoldTime: 0.4
+  jumpUpDuration: 1.11
+  jumpForwardDuration: 1.18
+  landingDuration: 1.07

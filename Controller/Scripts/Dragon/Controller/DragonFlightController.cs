@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using Unity.Netcode;
 
 /// <summary>
@@ -6,6 +6,10 @@ using Unity.Netcode;
 /// - Hover (Space toggles): holds altitude unless Hover axis input is provided.
 /// - Glide (hover OFF): auto-forward movement and builds speed while descending.
 /// - Dive (hold V): fast dive with limited pitch/yaw rates; can drive a dive camera via IsDiving.
+/// 
+/// Grounding is now handled by DragonGroundingSystem.
+/// Ground movement is handled by DragonGroundController.
+/// This script only runs when airborne.
 /// 
 /// Uses Legacy Input Manager axes:
 /// - Horizontal: A/D
@@ -20,6 +24,9 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private Transform cameraTransform;
     [SerializeField] private Rigidbody rb;
     [SerializeField] private bool useRigidbodyMovement = true;
+
+    [Header("References")]
+    [SerializeField] private DragonGroundingSystem groundingSystem;
 
     [Header("Input (Legacy Input Manager axes)")]
     [SerializeField] private string horizontalAxis = "Horizontal"; // A/D (yaw assist)
@@ -86,12 +93,6 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private float rollAngle = 45f;
     [SerializeField] private float rollSmoothTime = 0.15f;
 
-    [Header("Grounding")]
-    [SerializeField] private Transform groundCheck;
-    [SerializeField] private float groundCheckDistance = 2.5f;
-    [SerializeField] private LayerMask groundMask = ~0;
-    [SerializeField] private float groundedConfirmTime = 0.08f;
-
     [Header("UI/Stats")]
     [SerializeField] private FlightStats flightStats;
 
@@ -100,18 +101,17 @@ public class DragonFlightController : NetworkBehaviour
     public bool IsFlying => isFlying;
     public bool IsGliding => isGliding;
     public bool IsDiving => isDiving;
-    public bool IsGrounded => isGrounded;
+    public bool IsGrounded => groundingSystem != null && groundingSystem.IsGrounded;
     public float AirSpeed => airSpeed;
     public float RollAngle => currentRollAngle;
-    public float GroundDistance => groundDistance;
     public Vector3 Velocity => currentVelocity;
 
     // State
+    private bool isActive;              // Flight controller is active (airborne)
     private bool hoverRequested;
     private bool isHoverMode;
     private bool isFlying;
     private bool isGliding;
-    private bool isGrounded;
     private bool isSpeedModified;
     private bool isDiving;
 
@@ -130,21 +130,20 @@ public class DragonFlightController : NetworkBehaviour
     private float currentRollAngle;
     private float rollVel;
 
-    // Grounding debounce
-    private float groundedTimer;
-    private float groundDistance;
-
     private Vector3 currentVelocity;
     private Vector3 lastPosition;
 
     private void Awake()
     {
-        isHoverMode = startInHoverMode;
-        hoverRequested = startInHoverMode;
+        if (groundingSystem == null)
+            groundingSystem = GetComponent<DragonGroundingSystem>();
 
         if (rb == null) rb = GetComponent<Rigidbody>();
 
-        isHoverMode = startInHoverMode;
+        // Start inactive - GroundController owns initial state
+        isActive = false;
+        isHoverMode = false;
+        hoverRequested = false;
 
         Vector3 e = transform.eulerAngles;
         yaw = smoothedYaw = e.y;
@@ -152,15 +151,31 @@ public class DragonFlightController : NetworkBehaviour
 
         lastPosition = transform.position;
 
-        // We control vertical motion ourselves (hover/glide/dive).
         if (rb != null) rb.useGravity = false;
     }
 
     private void Update()
     {
+        // Activate when airborne, deactivate when grounded
+        //if (!groundingSystem.IsGrounded && !isActive)
+        //{
+        //    // Became airborne - but only if we were explicitly activated
+        //    // (via RequestHover/RequestGlide from GroundController)
+        //}
+
+        if (groundingSystem.IsGrounded && isActive)
+        {
+            // Landed - deactivate flight
+            isActive = false;
+            isHoverMode = false;
+            hoverRequested = false;
+            isFlying = false;
+            isGliding = false;
+        }
+
+        if (!isActive) return;
         if (!IsOwner) return;
         ReadInput();
-        UpdateGrounding();
         UpdateRotation(Time.deltaTime);
         UpdateMovement(Time.deltaTime);
         UpdateUI();
@@ -169,14 +184,48 @@ public class DragonFlightController : NetworkBehaviour
         lastPosition = transform.position;
     }
 
+    // ─── Public API for GroundController Handoff ─────────
+
+    /// <summary>
+    /// Called by DragonGroundController on takeoff (hold Space).
+    /// Activates flight in hover mode.
+    /// </summary>
+    public void RequestHover()
+    {
+        isActive = true;
+        isHoverMode = true;
+        hoverRequested = true;
+        airSpeed = 0f;
+        airSpeedVelocity = 0f;
+
+        // Sync yaw to current rotation so flight doesn't snap
+        yaw = smoothedYaw = transform.eulerAngles.y;
+        pitch = smoothedPitch = 0f;
+    }
+
+    /// <summary>
+    /// Called by DragonGroundController when holding Space during a cliff fall.
+    /// Activates flight in glide mode.
+    /// </summary>
+    public void RequestGlide()
+    {
+        isActive = true;
+        isHoverMode = false;
+        hoverRequested = false;
+        // Keep current airSpeed so glide feels continuous
+
+        yaw = smoothedYaw = transform.eulerAngles.y;
+        pitch = smoothedPitch = NormalizePitch(transform.eulerAngles.x);
+    }
+
+    // ─── Input ───────────────────────────────────────────
+
     private void ReadInput()
     {
         if (Input.GetKeyDown(toggleHoverKey))
         {
             hoverRequested = !hoverRequested;
 
-            // When turning hover ON, kill vertical velocity immediately
-            // Horizontal momentum will decay naturally via airspeed system
             if (hoverRequested && rb != null)
             {
                 Vector3 v = rb.linearVelocity;
@@ -189,33 +238,7 @@ public class DragonFlightController : NetworkBehaviour
         isDiving = Input.GetKey(diveKey);
     }
 
-    private void UpdateGrounding()
-    {
-        Vector3 origin = groundCheck != null ? groundCheck.position : transform.position;
-
-        bool hit = Physics.Raycast(origin, Vector3.down, out RaycastHit rh,
-            groundCheckDistance, groundMask, QueryTriggerInteraction.Ignore);
-
-        // Ignore self-hit (dragon collider).
-        if (hit && rh.transform != null && rh.transform.root == transform.root)
-            hit = false;
-
-        if (hit)
-        {
-            groundedTimer += Time.deltaTime;
-            if (groundedTimer >= groundedConfirmTime)
-            {
-                isGrounded = true;
-                groundDistance = rh.distance;
-            }
-        }
-        else
-        {
-            groundedTimer = 0f;
-            isGrounded = false;
-            groundDistance = groundCheckDistance;
-        }
-    }
+    // ─── Rotation ────────────────────────────────────────
 
     private void UpdateRotation(float dt)
     {
@@ -224,8 +247,7 @@ public class DragonFlightController : NetworkBehaviour
         float ySign = invertY ? 1f : -1f;
         float ad = Input.GetAxisRaw(horizontalAxis);
 
-        // --- DIVE (Option B): steerable but limited yaw/pitch rates + pitch clamp ---
-        if (isDiving && !isGrounded)
+        if (isDiving)
         {
             float desiredYawDelta = (mx * flightMouseSensitivityX + ad * flightKeyYawSpeed) * dt;
             float desiredPitchDelta = (my * flightMouseSensitivityY * ySign) * dt;
@@ -243,7 +265,7 @@ public class DragonFlightController : NetworkBehaviour
         }
         else
         {
-            bool hoverLook = isHoverMode && !isGrounded;
+            bool hoverLook = isHoverMode;
 
             float sensX = hoverLook ? hoverMouseSensitivityX : flightMouseSensitivityX;
             float sensY = hoverLook ? hoverMouseSensitivityY : flightMouseSensitivityY;
@@ -256,7 +278,6 @@ public class DragonFlightController : NetworkBehaviour
             pitch += my * sensY * dt * ySign;
             pitch = Mathf.Clamp(pitch, -clamp, clamp);
 
-            // Hover Option B: hard cap rotation rates (deg/sec)
             if (hoverLook)
             {
                 float yawDelta = Mathf.DeltaAngle(smoothedYaw, yaw);
@@ -284,6 +305,8 @@ public class DragonFlightController : NetworkBehaviour
         ApplyRotation(Quaternion.Euler(smoothedPitch, smoothedYaw, currentRollAngle));
     }
 
+    // ─── Movement ────────────────────────────────────────
+
     private void UpdateMovement(float dt)
     {
         float forwardInput = Input.GetAxisRaw(verticalAxis);
@@ -291,37 +314,27 @@ public class DragonFlightController : NetworkBehaviour
 
         bool wantsForward = forwardInput > 0.05f;
         bool wantsBrake = forwardInput < -0.05f;
-        bool airborne = !isGrounded;
 
-        // Determine hover mode state based on conditions
-        // Hover is OFF if: diving OR wanting to fly forward
-        // Otherwise: use the player's hover request
         if (isDiving || wantsForward)
         {
             isHoverMode = false;
-            hoverRequested = false; // Auto-disable hover request when flying/diving starts
+            hoverRequested = false;
         }
         else
         {
-            // If player requested hover and not diving and not pushing W, we hover
             isHoverMode = hoverRequested;
         }
 
         UpdateAirspeed(wantsForward, wantsBrake, dt);
 
-        // isFlying: airborne and either actively accelerating OR has speed
-        isFlying = airborne && !isHoverMode && (wantsForward || airSpeed >= minAirSpeed);
-
-        // isGliding: airborne, not hovering, not actively pressing W, but still has speed
-        isGliding = airborne && !isHoverMode && !wantsForward && airSpeed >= minAirSpeed;
+        isFlying = !isHoverMode && (wantsForward || airSpeed >= minAirSpeed);
+        isGliding = !isHoverMode && !wantsForward && airSpeed >= minAirSpeed;
 
         // Forward movement
-        if (airborne && airSpeed > 0.01f)
+        if (airSpeed > 0.01f)
             ApplyMovement(transform.forward * airSpeed * dt);
 
-        if (!airborne) return;
-
-        // Vertical behavior priority: Dive > Hover (perfect) > Glide
+        // Vertical behavior priority: Dive > Hover > Glide
         if (isDiving)
         {
             airSpeed = Mathf.MoveTowards(airSpeed, diveTargetSpeed, diveAccel * dt);
@@ -331,7 +344,6 @@ public class DragonFlightController : NetworkBehaviour
 
         if (isHoverMode)
         {
-            // Perfect hover: maintain altitude, kill Y velocity every frame
             if (rb != null)
             {
                 Vector3 v = rb.linearVelocity;
@@ -339,18 +351,14 @@ public class DragonFlightController : NetworkBehaviour
                 rb.linearVelocity = v;
             }
 
-            // Allow manual vertical movement with E/Q
             if (Mathf.Abs(hoverInput) > 0.01f)
             {
                 ApplyMovement(Vector3.up * hoverInput * hoverVerticalSpeed * dt);
             }
-
-            // Optional near-ground assist to maintain hoverHeight
-            UpdateHoverHeight(dt);
         }
         else
         {
-            // Glide: auto-accelerate while descending
+            // Glide
             airSpeed = Mathf.MoveTowards(airSpeed, Mathf.Min(glideMaxSpeed, diveTargetSpeed), glideAutoAccel * dt);
             ApplyMovement(Vector3.down * glideDownSpeed * dt);
         }
@@ -358,16 +366,6 @@ public class DragonFlightController : NetworkBehaviour
 
     private void UpdateAirspeed(bool wantsForward, bool wantsBrake, float dt)
     {
-        float forwardInput = Input.GetAxisRaw(verticalAxis);
-
-        if (isGrounded)
-        {
-            airSpeed = 0f;
-            airSpeedVelocity = 0f;
-            return;
-        }
-
-        // Dive: speed is handled in movement (allow brake)
         if (isDiving)
         {
             if (wantsBrake)
@@ -377,13 +375,10 @@ public class DragonFlightController : NetworkBehaviour
             return;
         }
 
-        // Hover mode: let momentum decay naturally
         if (isHoverMode)
         {
-            // Decay airspeed naturally due to momentum
             airSpeed = Mathf.SmoothDamp(airSpeed, 0f, ref airSpeedVelocity, Mathf.Max(0.01f, momentum));
 
-            // Shift key acts as air brake to slow down faster
             if (isSpeedModified)
                 airSpeed = Mathf.SmoothDamp(airSpeed, 0f, ref airSpeedVelocity, Mathf.Max(0.01f, glideSpeedDecay));
 
@@ -391,7 +386,7 @@ public class DragonFlightController : NetworkBehaviour
             return;
         }
 
-        // Glide (hover OFF): allow W to help, brake to slow, shift to airbrake
+        // Glide
         if (wantsForward)
         {
             airSpeed = Mathf.SmoothDamp(airSpeed, glideMaxSpeed, ref airSpeedVelocity, Mathf.Max(0.01f, acceleration));
@@ -407,26 +402,21 @@ public class DragonFlightController : NetworkBehaviour
         airSpeed = Mathf.Clamp(airSpeed, 0f, Mathf.Max(maxAirSpeed, glideMaxSpeed));
     }
 
-    private void UpdateHoverHeight(float dt)
-    {
-        if (!isHoverMode || !isGrounded) return;
-
-        float heightDelta = hoverHeight - groundDistance;
-        if (Mathf.Abs(heightDelta) > 0.02f)
-        {
-            ApplyMovement(Vector3.up * heightDelta * dt);
-        }
-    }
+    // ─── Helpers ─────────────────────────────────────────
 
     private void ApplyMovement(Vector3 displacement)
     {
-
+        if (useRigidbodyMovement && rb != null)
+            rb.MovePosition(rb.position + displacement);
+        else
             transform.position += displacement;
     }
 
     private void ApplyRotation(Quaternion targetRotation)
     {
- 
+        if (useRigidbodyMovement && rb != null)
+            rb.MoveRotation(targetRotation);
+        else
             transform.rotation = targetRotation;
     }
 
@@ -435,7 +425,7 @@ public class DragonFlightController : NetworkBehaviour
         if (flightStats == null) return;
 
         flightStats.CurrentSpeed(airSpeed);
-        flightStats.CurrentStamina(0f); // wire stamina back later if needed
+        flightStats.CurrentStamina(0f);
         flightStats.SetMaxAirSpeed(maxAirSpeed);
         flightStats.SetMinAirSpeed(minAirSpeed);
         flightStats.SetMaxStamina(100);
