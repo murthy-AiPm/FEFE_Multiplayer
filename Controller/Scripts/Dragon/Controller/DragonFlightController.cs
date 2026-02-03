@@ -136,7 +136,7 @@ public class DragonFlightController : NetworkBehaviour
     private void Awake()
     {
         if (groundingSystem == null)
-            groundingSystem = GetComponent<DragonGroundingSystem>();
+            groundingSystem = GetComponentInChildren<DragonGroundingSystem>(); ;
 
         if (rb == null) rb = GetComponent<Rigidbody>();
 
