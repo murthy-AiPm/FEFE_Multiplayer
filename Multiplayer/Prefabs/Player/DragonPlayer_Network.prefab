@@ -2104,9 +2104,9 @@ MonoBehaviour:
   jumpForwardDuration: 1.18
   landingDuration: 1.07
   freeFallThreshold: -10
-  walkSpeed: 5
+  walkSpeed: 2
   runSpeed: 10
-  turnSmoothTime: 0.1
+  turnSmoothTime: 0.3
   slopeAlignmentSpeed: 5
   slopeRaycastDistance: 3
 --- !u!114 &1944946093761040287
