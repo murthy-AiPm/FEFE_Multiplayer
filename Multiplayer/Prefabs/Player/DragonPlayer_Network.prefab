@@ -4132,8 +4132,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8637463985270368911}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.05686469, y: 0.4509459, z: 0.028803442, w: 0.8902722}
-  m_LocalPosition: {x: -7.9965363, y: -1.2722778, z: -5.868286}
+  m_LocalRotation: {x: -0.012915708, y: 0.66449094, z: 0.011487635, w: 0.7470965}
+  m_LocalPosition: {x: -9.925812, y: -0.3456421, z: -1.1656952}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4216,7 +4216,7 @@ MonoBehaviour:
     SplineCurvature: 0.5
   RecenteringTarget: 2
   HorizontalAxis:
-    Value: 53.29891
+    Value: 83.3018
     Center: 0
     Range: {x: -180, y: 180}
     Wrap: 1
@@ -4226,7 +4226,7 @@ MonoBehaviour:
       Time: 2
     Restrictions: 0
   VerticalAxis:
-    Value: -7.2122784
+    Value: -1.9808278
     Center: 17.5
     Range: {x: -10, y: 45}
     Wrap: 0
@@ -4684,7 +4684,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 48177541
+  GlobalObjectIdHash: 1353946614
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -4889,10 +4889,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b280c23c83c99594d817837f13d67820, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DragonGroundingSystem
-  leftHand: {fileID: 8698988640449351899}
-  rightHand: {fileID: 4256486713556236103}
-  leftFoot: {fileID: 5672313500500504538}
-  rightFoot: {fileID: 3611726667701680735}
+  leftHand: {fileID: 972056705430346640}
+  rightHand: {fileID: 2479650730422058102}
+  leftFoot: {fileID: 8397884499185837249}
+  rightFoot: {fileID: 259160370819776981}
   raycastDistance: 2
   groundMask:
     serializedVersion: 2
@@ -4942,6 +4942,6 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 0
   m_IsKinematic: 0
-  m_Interpolate: 2
+  m_Interpolate: 1
   m_Constraints: 112
   m_CollisionDetection: 0

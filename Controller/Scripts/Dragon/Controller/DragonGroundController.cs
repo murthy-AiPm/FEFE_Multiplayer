@@ -142,7 +142,7 @@ public class DragonGroundController : NetworkBehaviour
 
         // Normal ground movement
         HandleGroundMovement();
-        AlignToSlope();
+        //AlignToSlope();
         ApplyGravity();
     }
 
