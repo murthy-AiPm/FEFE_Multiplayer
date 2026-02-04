@@ -2011,6 +2011,7 @@ GameObject:
   - component: {fileID: 1599023488488210836}
   - component: {fileID: 1944946093761040287}
   - component: {fileID: 5945564468976298463}
+  - component: {fileID: 4265234461354795625}
   m_Layer: 0
   m_Name: Dragon
   m_TagString: Player
@@ -2124,7 +2125,7 @@ MonoBehaviour:
   rightHand: {fileID: 4256486713556236103}
   leftFoot: {fileID: 5672313500500504538}
   rightFoot: {fileID: 3611726667701680735}
-  raycastDistance: 1.5
+  raycastDistance: 3
   groundMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -2154,7 +2155,26 @@ CharacterController:
   m_StepOffset: 0.3
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: 1.5, z: 0.5}
+  m_Center: {x: 0, y: 1, z: 0}
+--- !u!114 &4265234461354795625
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4753490263456383483}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3156cdcf500e343439d2dd2fa8d90b70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DragonGroundAlignment
+  ShowTopMostFoldoutHeaderGroup: 1
+  groundingSystem: {fileID: 1944946093761040287}
+  dragonRoot: {fileID: 3086120407189549482}
+  alignmentSpeed: 8
+  maxSlopeAngle: 70
+  minSlopeThreshold: 2
+  showDebugNormals: 0
 --- !u!1 &4835914202048136776
 GameObject:
   m_ObjectHideFlags: 0
@@ -4216,8 +4236,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8637463985270368911}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.07698781, y: 0.46695527, z: 0.040853262, w: 0.8799754}
-  m_LocalPosition: {x: -8.155289, y: -1.7364807, z: -5.520508}
+  m_LocalRotation: {x: -0.08564799, y: 0.05570007, z: 0.0047957497, w: 0.99475574}
+  m_LocalPosition: {x: -1.0999451, y: -1.7093201, z: -9.7912445}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4300,7 +4320,7 @@ MonoBehaviour:
     SplineCurvature: 0.5
   RecenteringTarget: 2
   HorizontalAxis:
-    Value: 55.904964
+    Value: 6.4097333
     Center: 0
     Range: {x: -180, y: 180}
     Wrap: 1
@@ -4310,7 +4330,7 @@ MonoBehaviour:
       Time: 2
     Restrictions: 0
   VerticalAxis:
-    Value: -10
+    Value: -9.841956
     Center: 17.5
     Range: {x: -10, y: 45}
     Wrap: 0
@@ -4764,7 +4784,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1353946614
+  GlobalObjectIdHash: 48177541
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1

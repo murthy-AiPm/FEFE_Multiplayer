@@ -8,6 +8,17 @@ using UnityEngine;
 /// </summary>
 public class DragonGroundingSystem : MonoBehaviour
 {
+    /// <summary>
+    /// Contains all 4 paw raycast hits. Used by DragonGroundAlignment for slope calculation.
+    /// </summary>
+    public struct PawHitInfo
+    {
+        public RaycastHit leftHandHit;
+        public RaycastHit rightHandHit;
+        public RaycastHit leftFootHit;
+        public RaycastHit rightFootHit;
+    }
+
     [Header("Paw Transforms")]
     [SerializeField] private Transform leftHand;
     [SerializeField] private Transform rightHand;
@@ -28,6 +39,12 @@ public class DragonGroundingSystem : MonoBehaviour
     private bool leftFootGrounded;
     private bool rightFootGrounded;
 
+    // Cached raycast hits (for ground alignment)
+    private RaycastHit leftHandHit;
+    private RaycastHit rightHandHit;
+    private RaycastHit leftFootHit;
+    private RaycastHit rightFootHit;
+
     // Debounce timers
     private float groundedTimer;
     private float fallingTimer;
@@ -45,31 +62,33 @@ public class DragonGroundingSystem : MonoBehaviour
 
     private void Update()
     {
-        RaycastPaw(leftHand, ref leftHandGrounded);
-        RaycastPaw(rightHand, ref rightHandGrounded);
-        RaycastPaw(leftFoot, ref leftFootGrounded);
-        RaycastPaw(rightFoot, ref rightFootGrounded);
+        RaycastPaw(leftHand, ref leftHandGrounded, ref leftHandHit);
+        RaycastPaw(rightHand, ref rightHandGrounded, ref rightHandHit);
+        RaycastPaw(leftFoot, ref leftFootGrounded, ref leftFootHit);
+        RaycastPaw(rightFoot, ref rightFootGrounded, ref rightFootHit);
 
         UpdateGroundedState();
         UpdateFallingState();
     }
 
-    private void RaycastPaw(Transform paw, ref bool isHit)
+    private void RaycastPaw(Transform paw, ref bool isHit, ref RaycastHit hit)
     {
         if (paw == null)
         {
             isHit = false;
+            hit = default;
             return;
         }
 
-        bool hit = Physics.Raycast(paw.position, Vector3.down, out RaycastHit rh,
+        bool didHit = Physics.Raycast(paw.position, Vector3.down, out RaycastHit rh,
             raycastDistance, groundMask, QueryTriggerInteraction.Ignore);
 
         // Ignore self-hit (dragon's own colliders)
-        if (hit && rh.transform != null && rh.transform.root == transform.root)
-            hit = false;
+        if (didHit && rh.transform != null && rh.transform.root == transform.root)
+            didHit = false;
 
-        isHit = hit;
+        isHit = didHit;
+        hit = didHit ? rh : default;
     }
 
     private void UpdateGroundedState()
@@ -120,6 +139,20 @@ public class DragonGroundingSystem : MonoBehaviour
     {
         _isFalling = false;
         _isOnCliff = false;
+    }
+
+    /// <summary>
+    /// Returns all 4 paw raycast hits for ground alignment calculations.
+    /// </summary>
+    public PawHitInfo GetPawHits()
+    {
+        return new PawHitInfo
+        {
+            leftHandHit = leftHandHit,
+            rightHandHit = rightHandHit,
+            leftFootHit = leftFootHit,
+            rightFootHit = rightFootHit
+        };
     }
 
     // Debug visualization

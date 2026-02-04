@@ -119,7 +119,7 @@ public class DragonGroundController : NetworkBehaviour
         if (IsOwner)
         {
             HandleGroundMovement();
-            AlignToSlope();
+           // AlignToSlope();
             ApplyGravity();
         }
     }
@@ -210,7 +210,7 @@ public class DragonGroundController : NetworkBehaviour
             Vector3 projectedForward = Vector3.ProjectOnPlane(forward, groundNormal).normalized;
 
             // Calculate pitch angle (rotation around right axis)
-            float targetPitch = Vector3.SignedAngle(forward, projectedForward, transform.parent.right);
+            float targetPitch = -Vector3.SignedAngle(forward, projectedForward, transform.parent.right);
 
             // Get current rotation
             Vector3 currentEuler = transform.parent.eulerAngles;
@@ -218,10 +218,10 @@ public class DragonGroundController : NetworkBehaviour
             float currentPitch = currentEuler.x;
 
             // Normalize pitch to -180 to 180
-            if (currentPitch > 180f) currentPitch -= 360f;
+           // if (currentPitch > 180f) currentPitch -= 360f;
 
             // Smooth lerp pitch
-            float newPitch = Mathf.LerpAngle(currentPitch, targetPitch, Time.deltaTime * slopeAlignmentSpeed);
+            float newPitch = Mathf.Lerp(currentPitch, targetPitch, Time.deltaTime * slopeAlignmentSpeed);
 
             // Apply rotation (preserve yaw, update pitch, zero roll)
             transform.parent.rotation = Quaternion.Euler(newPitch, currentYaw, 0f);
