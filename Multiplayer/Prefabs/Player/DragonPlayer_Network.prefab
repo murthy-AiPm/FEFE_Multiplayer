@@ -4869,13 +4869,13 @@ MonoBehaviour:
   sprintKey: 304
   takeoffHoldTime: 0.4
   jumpForce: 8
-  gravityValue: -20
+  gravityValue: -9.81
   jumpUpDuration: 1.11
   jumpForwardDuration: 1.18
   landingDuration: 1.07
   walkSpeed: 5
   runSpeed: 10
-  turnSmoothTime: 0.1
+  turnSmoothTime: 0.5
 --- !u!114 &1496499137168891431
 MonoBehaviour:
   m_ObjectHideFlags: 0
