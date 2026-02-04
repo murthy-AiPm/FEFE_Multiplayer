@@ -40,7 +40,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 114944311331313315}
-  m_Material: {fileID: 13400000, guid: 54174b87a6301064ea8788686f85bda8, type: 2}
+  m_Material: {fileID: 13400000, guid: ae84aa014bbbca9409030d83cb7b19db, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -127,7 +127,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 164359523954823443}
-  m_Material: {fileID: 13400000, guid: 54174b87a6301064ea8788686f85bda8, type: 2}
+  m_Material: {fileID: 13400000, guid: ae84aa014bbbca9409030d83cb7b19db, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1085,7 +1085,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2712177563776144295}
-  m_Material: {fileID: 13400000, guid: 54174b87a6301064ea8788686f85bda8, type: 2}
+  m_Material: {fileID: 13400000, guid: ae84aa014bbbca9409030d83cb7b19db, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -2010,7 +2010,6 @@ GameObject:
   - component: {fileID: 6466238469953756060}
   - component: {fileID: 1599023488488210836}
   - component: {fileID: 1944946093761040287}
-  - component: {fileID: 5945564468976298463}
   - component: {fileID: 4265234461354795625}
   m_Layer: 0
   m_Name: Dragon
@@ -2091,23 +2090,21 @@ MonoBehaviour:
   groundingSystem: {fileID: 1944946093761040287}
   flightController: {fileID: 358013097769894201}
   animator: {fileID: 3730155243723547828}
-  controller: {fileID: 0}
+  rb: {fileID: -9219193068000708128}
   cam: {fileID: 0}
   forwardAxis: Vertical
   strafeAxis: Horizontal
   jumpKey: 32
   sprintKey: 304
   takeoffHoldTime: 0.4
-  jumpHeight: 3
+  jumpForce: 8
   gravityValue: -9.81
   jumpUpDuration: 1.11
   jumpForwardDuration: 1.18
   landingDuration: 1.07
-  freeFallThreshold: -10
   walkSpeed: 2
   runSpeed: 10
   turnSmoothTime: 1
-  turnAngleSpeed: 18
   slopeAlignmentSpeed: 5
   slopeRaycastDistance: 3
 --- !u!114 &1944946093761040287
@@ -2132,31 +2129,6 @@ MonoBehaviour:
     m_Bits: 4294967295
   groundedConfirmTime: 0.08
   cliffThreshold: 3
---- !u!143 &5945564468976298463
-CharacterController:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4753490263456383483}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Height: 2.96
-  m_Radius: 0.5
-  m_SlopeLimit: 70
-  m_StepOffset: 0.3
-  m_SkinWidth: 0.08
-  m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: 1, z: 0}
 --- !u!114 &4265234461354795625
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2173,7 +2145,7 @@ MonoBehaviour:
   groundingSystem: {fileID: 1944946093761040287}
   dragonRoot: {fileID: 3086120407189549482}
   alignmentSpeed: 8
-  maxSlopeAngle: 70
+  maxSlopeAngle: 45
   minSlopeThreshold: 2
   showDebugNormals: 0
 --- !u!1 &4835914202048136776
@@ -2344,7 +2316,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5109257289621005781}
-  m_Material: {fileID: 13400000, guid: 54174b87a6301064ea8788686f85bda8, type: 2}
+  m_Material: {fileID: 13400000, guid: ae84aa014bbbca9409030d83cb7b19db, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -4237,8 +4209,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8637463985270368911}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.08564799, y: 0.05570007, z: 0.0047957497, w: 0.99475574}
-  m_LocalPosition: {x: -1.0999451, y: -1.7093201, z: -9.7912445}
+  m_LocalRotation: {x: 0.046556048, y: 0.93788254, z: -0.3145456, w: 0.13881646}
+  m_LocalPosition: {x: -2.3109894, y: 6.0293884, z: 7.6358185}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4321,7 +4293,7 @@ MonoBehaviour:
     SplineCurvature: 0.5
   RecenteringTarget: 2
   HorizontalAxis:
-    Value: 6.4097333
+    Value: 163.16156
     Center: 0
     Range: {x: -180, y: 180}
     Wrap: 1
@@ -4331,7 +4303,7 @@ MonoBehaviour:
       Time: 2
     Restrictions: 0
   VerticalAxis:
-    Value: -9.841956
+    Value: 37.080677
     Center: 17.5
     Range: {x: -10, y: 45}
     Wrap: 0
@@ -4745,6 +4717,7 @@ GameObject:
   - component: {fileID: 6911377320127465881}
   - component: {fileID: 8585177505333529245}
   - component: {fileID: 4450041388960547239}
+  - component: {fileID: -9219193068000708128}
   m_Layer: 0
   m_Name: DragonPlayer_Network
   m_TagString: Untagged
@@ -4889,9 +4862,9 @@ MonoBehaviour:
   isGliding: 0
   isDiving: 0
   groundingSystem: {fileID: 1944946093761040287}
-  isGroundedDebug: 0
+  isGroundedDebug: 1
   isFallingDebug: 0
-  frontPawsGroundedDebug: 0
+  frontPawsGroundedDebug: 1
   groundController: {fileID: 1599023488488210836}
   isWalkingDebug: 0
   isRunningDebug: 0
@@ -4945,3 +4918,30 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
+--- !u!54 &-9219193068000708128
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  serializedVersion: 5
+  m_Mass: 100
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 112
+  m_CollisionDetection: 0
