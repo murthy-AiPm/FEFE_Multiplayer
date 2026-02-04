@@ -2106,7 +2106,8 @@ MonoBehaviour:
   freeFallThreshold: -10
   walkSpeed: 2
   runSpeed: 10
-  turnSmoothTime: 0.3
+  turnSmoothTime: 1
+  turnAngleSpeed: 18
   slopeAlignmentSpeed: 5
   slopeRaycastDistance: 3
 --- !u!114 &1944946093761040287
@@ -4423,8 +4424,8 @@ MonoBehaviour:
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
-        AccelTime: 0.2
-        DecelTime: 0.2
+        AccelTime: 1
+        DecelTime: 1
     - Name: Look Orbit Y
       Owner: {fileID: 5589252058074786683}
       Enabled: 1
@@ -4436,8 +4437,8 @@ MonoBehaviour:
         CancelDeltaTime: 0
       InputValue: -0
       Driver:
-        AccelTime: 0.2
-        DecelTime: 0.2
+        AccelTime: 1
+        DecelTime: 1
     - Name: Orbit Scale
       Owner: {fileID: 5589252058074786683}
       Enabled: 1

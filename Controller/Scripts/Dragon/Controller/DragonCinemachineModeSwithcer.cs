@@ -21,6 +21,7 @@ public class DragonCinemachineModeSwitcher : MonoBehaviour
 
         bool isGrounded = grounding.IsGrounded;
         bool isDiving = flight.IsDiving && !isGrounded;
+        bool isFlying = flight.IsFlying;
         Debug.Log($"Ground:{groundCam.Priority} Flight:{flightCam.Priority} Dive:{diveCam.Priority} | Grounded:{isGrounded} Diving:{isDiving}");
         // Priority: Dive > Flight > Ground
         if (isDiving)
@@ -29,7 +30,7 @@ public class DragonCinemachineModeSwitcher : MonoBehaviour
             flightCam.Priority = 20;
             groundCam.Priority = 10;
         }
-        else if (!isGrounded)
+        else if (!isGrounded && !isFlying)
         {
             diveCam.Priority = 10;
             flightCam.Priority = 30;

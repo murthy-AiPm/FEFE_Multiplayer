@@ -33,6 +33,7 @@ public class DragonGroundController : NetworkBehaviour
     [SerializeField] private float walkSpeed = 5f;
     [SerializeField] private float runSpeed = 10f;
     [SerializeField] private float turnSmoothTime = 0.1f;
+    [SerializeField] private float turnAngleSpeed = 5f;
 
     [Header("Slope Alignment")]
     [SerializeField] private float slopeAlignmentSpeed = 5f;
@@ -157,8 +158,8 @@ public class DragonGroundController : NetworkBehaviour
 
             // Turn detection
             float angleDelta = Mathf.DeltaAngle(transform.parent.eulerAngles.y, targetAngle);
-            IsTurningLeft = angleDelta < -5f;
-            IsTurningRight = angleDelta > 5f;
+            IsTurningLeft = angleDelta < -turnAngleSpeed;
+            IsTurningRight = angleDelta > turnAngleSpeed;
             TurnSpeed = Mathf.Abs(angleDelta) / 180f;
         }
         else
