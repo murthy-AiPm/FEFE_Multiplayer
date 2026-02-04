@@ -172,11 +172,11 @@ public class DragonGroundController : NetworkBehaviour
             if (groundAlignment != null)
                 groundAlignment.UpdateTargetYaw(targetAngle);
             // Rotation
-            Quaternion targetRotation = Quaternion.Euler(0f, targetAngle, 0f);
+            //Quaternion targetRotation = Quaternion.Euler(0f, targetAngle, 0f);
 
-            Quaternion newRotation = Quaternion.Slerp(rb.rotation, targetRotation, Time.fixedDeltaTime / turnSmoothTime);
-            rb.MoveRotation(newRotation);
-            //rb.MoveRotation(Quaternion.Euler(0f, angle, 0f));
+            //Quaternion newRotation = Quaternion.Slerp(rb.rotation, targetRotation, Time.fixedDeltaTime / turnSmoothTime);
+            //rb.MoveRotation(newRotation);
+            ////rb.MoveRotation(Quaternion.Euler(0f, angle, 0f));
 
             // Movement
             Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;

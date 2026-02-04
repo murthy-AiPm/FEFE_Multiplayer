@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// Single source of truth for dragon grounding state.
@@ -11,6 +11,14 @@ public class DragonGroundingSystem : MonoBehaviour
     /// <summary>
     /// Contains all 4 paw raycast hits. Used by DragonGroundAlignment for slope calculation.
     /// </summary>
+    /// 
+    [Header("Raycast Robustness")]
+    [SerializeField] private float pawCastStartUpOffset = 0.35f;  // start cast above paw
+    [SerializeField] private float pawSphereRadius = 0.12f;       // thickness of cast
+    [Header("Debug (Scene View Only)")]
+    [SerializeField] private bool showPawCasts = true;
+
+
     public struct PawHitInfo
     {
         public RaycastHit leftHandHit;
@@ -80,16 +88,31 @@ public class DragonGroundingSystem : MonoBehaviour
             return;
         }
 
-        bool didHit = Physics.Raycast(paw.position, Vector3.down, out RaycastHit rh,
-            raycastDistance, groundMask, QueryTriggerInteraction.Ignore);
+        Vector3 origin = paw.position + Vector3.up * pawCastStartUpOffset;
 
-        // Ignore self-hit (dragon's own colliders)
-        if (didHit && rh.transform != null && rh.transform.root == transform.root)
+        bool didHit = Physics.SphereCast(
+            origin,
+            pawSphereRadius,
+            Vector3.down,
+            out RaycastHit rh,
+            raycastDistance + pawCastStartUpOffset,
+            groundMask,
+            QueryTriggerInteraction.Ignore
+        );
+
+        // 🔴 THIS IS THE IMPORTANT ADDITION
+        // Ignore hits on our own dragon colliders
+        if (didHit && rh.collider != null &&
+            rh.collider.transform.root == transform.root)
+        {
             didHit = false;
+            rh = default;
+        }
 
         isHit = didHit;
         hit = didHit ? rh : default;
     }
+
 
     private void UpdateGroundedState()
     {
@@ -171,4 +194,36 @@ public class DragonGroundingSystem : MonoBehaviour
         Gizmos.DrawLine(paw.position, paw.position + Vector3.down * raycastDistance);
         Gizmos.DrawSphere(paw.position, 0.1f);
     }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (!showPawCasts) return;
+
+        DrawPawGizmo(leftHand);
+        DrawPawGizmo(rightHand);
+        DrawPawGizmo(leftFoot);
+        DrawPawGizmo(rightFoot);
+    }
+
+    private void DrawPawGizmo(Transform paw)
+    {
+        if (paw == null) return;
+
+        Vector3 origin = paw.position + Vector3.up * pawCastStartUpOffset;
+        Vector3 end = origin + Vector3.down * (raycastDistance + pawCastStartUpOffset);
+
+        // Cast path
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawLine(origin, end);
+
+        // Sphere at origin
+        Gizmos.color = new Color(1f, 1f, 0f, 0.35f);
+        Gizmos.DrawWireSphere(origin, pawSphereRadius);
+
+        // Sphere at end
+        Gizmos.color = new Color(1f, 0f, 0f, 0.35f);
+        Gizmos.DrawWireSphere(end, pawSphereRadius);
+    }
+
+
 }
