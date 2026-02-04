@@ -5,7 +5,6 @@ public class DragonGroundController : NetworkBehaviour
 {
     [Header("References")]
     [SerializeField] private DragonGroundingSystem groundingSystem;
-    [SerializeField] private DragonGroundAlignment groundAlignment;
     [SerializeField] private DragonFlightController flightController;
     [SerializeField] private Animator animator;
     [SerializeField] private Rigidbody rb;
@@ -37,6 +36,7 @@ public class DragonGroundController : NetworkBehaviour
     [Header("Slope Alignment")]
     [SerializeField] private float slopeAlignmentSpeed = 5f;
     [SerializeField] private float slopeRaycastDistance = 3f;
+    [SerializeField] private float bodyHeightOffset = 0.2f;  // Extra height above paws
 
     // Animator hashes
     private int jumpUpHash;
@@ -143,7 +143,8 @@ public class DragonGroundController : NetworkBehaviour
 
         // Normal ground movement
         HandleGroundMovement();
-        //AlignToSlope();
+        AdjustBodyHeight();
+        AlignToSlope();
         ApplyGravity();
     }
 
@@ -168,15 +169,10 @@ public class DragonGroundController : NetworkBehaviour
         {
             Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
             float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + cam.eulerAngles.y;
-            // float angle = Mathf.SmoothDampAngle(rb.rotation.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
-            if (groundAlignment != null)
-                groundAlignment.UpdateTargetYaw(targetAngle);
-            // Rotation
-            //Quaternion targetRotation = Quaternion.Euler(0f, targetAngle, 0f);
+            float angle = Mathf.SmoothDampAngle(rb.rotation.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
 
-            //Quaternion newRotation = Quaternion.Slerp(rb.rotation, targetRotation, Time.fixedDeltaTime / turnSmoothTime);
-            //rb.MoveRotation(newRotation);
-            ////rb.MoveRotation(Quaternion.Euler(0f, angle, 0f));
+            // Rotation
+            rb.MoveRotation(Quaternion.Euler(0f, angle, 0f));
 
             // Movement
             Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
@@ -222,41 +218,178 @@ public class DragonGroundController : NetworkBehaviour
         }
     }
 
+    private void AdjustBodyHeight()
+    {
+        if (rb == null || !groundingSystem.IsGrounded) return;
+
+        // Get 4 paw hit data from GroundingSystem
+        var pawHits = groundingSystem.GetPawHits();
+
+        // Calculate average ground height from valid paw hits
+        float totalHeight = 0f;
+        int validHits = 0;
+
+        if (pawHits.leftHandHit.collider != null)
+        {
+            totalHeight += pawHits.leftHandHit.point.y;
+            validHits++;
+        }
+        if (pawHits.rightHandHit.collider != null)
+        {
+            totalHeight += pawHits.rightHandHit.point.y;
+            validHits++;
+        }
+        if (pawHits.leftFootHit.collider != null)
+        {
+            totalHeight += pawHits.leftFootHit.point.y;
+            validHits++;
+        }
+        if (pawHits.rightFootHit.collider != null)
+        {
+            totalHeight += pawHits.rightFootHit.point.y;
+            validHits++;
+        }
+
+        if (validHits >= 3)  // Need at least 3 paws hitting ground
+        {
+            float averageGroundHeight = totalHeight / validHits;
+            float targetY = averageGroundHeight + bodyHeightOffset;
+
+            // Smoothly adjust body height
+            Vector3 pos = rb.position;
+            pos.y = Mathf.Lerp(pos.y, targetY, Time.fixedDeltaTime * slopeAlignmentSpeed);
+            rb.MovePosition(pos);
+        }
+    }
+
     private void AlignToSlope()
     {
         if (rb == null || !groundingSystem.IsGrounded) return;
 
-        // Raycast down from center to get ground normal
-        Vector3 rayOrigin = rb.position + Vector3.up * 0.5f;
-        if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, slopeRaycastDistance))
+        // Get 4 paw hit data from GroundingSystem
+        var pawHits = groundingSystem.GetPawHits();
+
+        // Calculate ground normal from 4 paw positions
+        Vector3 groundNormal = CalculateGroundNormal(pawHits);
+
+        if (groundNormal == Vector3.zero)
         {
-            // Calculate pitch from ground normal
-            Vector3 groundNormal = hit.normal;
-            Vector3 forward = rb.transform.forward;
-
-            // Get angle between forward and slope
-            float slopeAngle = Vector3.Angle(Vector3.up, groundNormal);
-
-            // Calculate target pitch (positive = uphill, negative = downhill)
-            Vector3 slopeDirection = Vector3.Cross(groundNormal, rb.transform.right);
-            float targetPitch = Vector3.Angle(forward, slopeDirection) - 90f;
-
-            // Determine sign (uphill vs downhill)
-            if (Vector3.Dot(forward, groundNormal) < 0)
-                targetPitch = -targetPitch;
-
-            // Get current rotation
-            Vector3 currentEuler = rb.rotation.eulerAngles;
-            float currentYaw = currentEuler.y;
-            float currentPitch = currentEuler.x;
-            if (currentPitch > 180f) currentPitch -= 360f;
-
-            // Smooth lerp pitch
-            float newPitch = Mathf.Lerp(currentPitch, targetPitch, Time.fixedDeltaTime * slopeAlignmentSpeed);
-
-            // Apply rotation (preserve yaw, update pitch, zero roll)
-            rb.MoveRotation(Quaternion.Euler(newPitch, currentYaw, 0f));
+            // No valid ground plane, keep current rotation
+            return;
         }
+
+        // Calculate target rotation to align with ground normal
+        Vector3 currentForward = rb.transform.forward;
+        Vector3 currentRight = rb.transform.right;
+
+        // Project forward onto ground plane
+        Vector3 projectedForward = Vector3.ProjectOnPlane(currentForward, groundNormal).normalized;
+        Vector3 projectedRight = Vector3.ProjectOnPlane(currentRight, groundNormal).normalized;
+
+        // Build target rotation from projected vectors
+        Quaternion targetRotation = Quaternion.LookRotation(projectedForward, groundNormal);
+
+        // Get current yaw (preserve it from movement)
+        float currentYaw = rb.rotation.eulerAngles.y;
+
+        // Extract pitch and roll from target rotation
+        Vector3 targetEuler = targetRotation.eulerAngles;
+        float targetPitch = targetEuler.x;
+        float targetRoll = targetEuler.z;
+
+        // Normalize angles
+        if (targetPitch > 180f) targetPitch -= 360f;
+        if (targetRoll > 180f) targetRoll -= 360f;
+
+        // Get current pitch and roll
+        Vector3 currentEuler = rb.rotation.eulerAngles;
+        float currentPitch = currentEuler.x;
+        float currentRoll = currentEuler.z;
+        if (currentPitch > 180f) currentPitch -= 360f;
+        if (currentRoll > 180f) currentRoll -= 360f;
+
+        // Smooth lerp pitch and roll while preserving yaw
+        float newPitch = Mathf.Lerp(currentPitch, targetPitch, Time.fixedDeltaTime * slopeAlignmentSpeed);
+        float newRoll = Mathf.Lerp(currentRoll, targetRoll, Time.fixedDeltaTime * slopeAlignmentSpeed);
+
+        // Apply rotation (preserve yaw from movement, update pitch/roll from slope)
+        rb.MoveRotation(Quaternion.Euler(newPitch, currentYaw, newRoll));
+    }
+
+    private Vector3 CalculateGroundNormal(DragonGroundingSystem.PawHitInfo pawHits)
+    {
+        // Count valid hits
+        int validHits = 0;
+        Vector3 leftHandPos = Vector3.zero;
+        Vector3 rightHandPos = Vector3.zero;
+        Vector3 leftFootPos = Vector3.zero;
+        Vector3 rightFootPos = Vector3.zero;
+
+        if (pawHits.leftHandHit.collider != null)
+        {
+            leftHandPos = pawHits.leftHandHit.point;
+            validHits++;
+        }
+        if (pawHits.rightHandHit.collider != null)
+        {
+            rightHandPos = pawHits.rightHandHit.point;
+            validHits++;
+        }
+        if (pawHits.leftFootHit.collider != null)
+        {
+            leftFootPos = pawHits.leftFootHit.point;
+            validHits++;
+        }
+        if (pawHits.rightFootHit.collider != null)
+        {
+            rightFootPos = pawHits.rightFootHit.point;
+            validHits++;
+        }
+
+        // Need at least 3 points to calculate a plane
+        if (validHits < 3)
+            return Vector3.zero;
+
+        // Method 1: Use front paws and one back paw (most stable)
+        if (pawHits.leftHandHit.collider != null && pawHits.rightHandHit.collider != null)
+        {
+            // Front vector: left hand to right hand
+            Vector3 frontVector = rightHandPos - leftHandPos;
+
+            // Side vector: use whichever back paw is available
+            Vector3 sideVector;
+            if (pawHits.leftFootHit.collider != null)
+            {
+                sideVector = leftFootPos - leftHandPos;
+            }
+            else if (pawHits.rightFootHit.collider != null)
+            {
+                sideVector = rightFootPos - rightHandPos;
+            }
+            else
+            {
+                // Only have front paws, use average normal from both
+                return ((pawHits.leftHandHit.normal + pawHits.rightHandHit.normal) * 0.5f).normalized;
+            }
+
+            // Cross product gives perpendicular (up) vector
+            Vector3 normal = Vector3.Cross(frontVector, sideVector).normalized;
+
+            // Ensure normal points upward
+            if (normal.y < 0)
+                normal = -normal;
+
+            return normal;
+        }
+
+        // Method 2: Fallback - average all hit normals
+        Vector3 averageNormal = Vector3.zero;
+        if (pawHits.leftHandHit.collider != null) averageNormal += pawHits.leftHandHit.normal;
+        if (pawHits.rightHandHit.collider != null) averageNormal += pawHits.rightHandHit.normal;
+        if (pawHits.leftFootHit.collider != null) averageNormal += pawHits.leftFootHit.normal;
+        if (pawHits.rightFootHit.collider != null) averageNormal += pawHits.rightFootHit.normal;
+
+        return (averageNormal / validHits).normalized;
     }
 
     private void ApplyGravity()
