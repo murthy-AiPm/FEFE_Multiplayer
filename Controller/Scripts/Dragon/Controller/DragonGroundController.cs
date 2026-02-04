@@ -167,10 +167,13 @@ public class DragonGroundController : NetworkBehaviour
         {
             Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
             float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + cam.eulerAngles.y;
-            float angle = Mathf.SmoothDampAngle(rb.rotation.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
+            // float angle = Mathf.SmoothDampAngle(rb.rotation.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
 
             // Rotation
-            rb.MoveRotation(Quaternion.Euler(0f, angle, 0f));
+            Quaternion targetRotation = Quaternion.Euler(0f, targetAngle, 0f);
+            Quaternion newRotation = Quaternion.Slerp(rb.rotation, targetRotation, Time.fixedDeltaTime / turnSmoothTime);
+            rb.MoveRotation(newRotation);
+            //rb.MoveRotation(Quaternion.Euler(0f, angle, 0f));
 
             // Movement
             Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
