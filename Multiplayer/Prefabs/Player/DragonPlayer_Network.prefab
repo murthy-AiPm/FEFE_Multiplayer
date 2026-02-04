@@ -4916,8 +4916,9 @@ MonoBehaviour:
   groundingSystem: {fileID: 1496499137168891431}
   dragonRoot: {fileID: 8226214588110307267}
   alignmentSpeed: 8
-  maxSlopeAngle: 45
+  maxSlopeAngle: 60
   minSlopeThreshold: 2
+  normalLerpSpeed: 12
   showDebugNormals: 0
 --- !u!54 &4213641409919773835
 Rigidbody:

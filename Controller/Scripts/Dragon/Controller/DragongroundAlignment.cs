@@ -1,36 +1,37 @@
 using UnityEngine;
 using Unity.Netcode;
 
-/// <summary>
-/// Aligns the dragon's body to ground slopes using the 4-paw raycast system.
-/// Calculates ground normal from paw hit points and smoothly rotates the dragon
-/// to match terrain angle while preserving player's yaw (turning) input.
-/// Only active when grounded. Owner-authoritative (NetworkTransform syncs rotation).
-/// </summary>
+[RequireComponent(typeof(Rigidbody))]
 public class DragonGroundAlignment : NetworkBehaviour
 {
     [Header("References")]
     [SerializeField] private DragonGroundingSystem groundingSystem;
-    [SerializeField] private Transform dragonRoot;
+    [SerializeField] private Transform dragonRoot; // visual root you rotate (often same as rb transform)
 
     [Header("Alignment Settings")]
-    [Tooltip("How fast dragon aligns to ground slope (higher = faster snap)")]
     [SerializeField] private float alignmentSpeed = 8f;
-    
-    [Tooltip("Maximum slope angle dragon will align to (degrees)")]
     [SerializeField] private float maxSlopeAngle = 45f;
-    
-    [Tooltip("Minimum slope to trigger alignment (avoids jitter on flat ground)")]
     [SerializeField] private float minSlopeThreshold = 2f;
+
+    [Header("Smoothing")]
+    [Tooltip("Higher = less smoothing. 0 = no smoothing.")]
+    [SerializeField] private float normalLerpSpeed = 12f;
 
     [Header("Debug")]
     [SerializeField] private bool showDebugNormals = false;
 
-    // Cached player yaw (preserved during alignment)
+    private Rigidbody rb;
+
+    // This should be driven by your input/controller (yaw on the ground).
     private float targetYaw;
+
+    // Smoothed normal to reduce jitter
+    private Vector3 smoothedUp = Vector3.up;
 
     private void Awake()
     {
+        rb = GetComponent<Rigidbody>();
+
         if (groundingSystem == null)
             groundingSystem = GetComponent<DragonGroundingSystem>();
 
@@ -38,168 +39,98 @@ public class DragonGroundAlignment : NetworkBehaviour
             dragonRoot = transform;
 
         targetYaw = dragonRoot.eulerAngles.y;
+
+        // Strongly recommended for visuals
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
     }
 
-    private void LateUpdate()
+    private void FixedUpdate()
     {
-        // Only owner calculates alignment (NetworkTransform syncs rotation)
         if (!IsOwner) return;
-
         if (groundingSystem == null || dragonRoot == null) return;
 
-        // Only align when properly grounded
-        if (!groundingSystem.IsGrounded)
+        Vector3 up = Vector3.up;
+
+        if (groundingSystem.IsGrounded)
         {
-            // When airborne, gradually return to flat orientation
-            AlignToUpVector(Vector3.up);
-            return;
+            Vector3 groundNormal = CalculateGroundNormal();
+            if (groundNormal != Vector3.zero)
+            {
+                float slopeAngle = Vector3.Angle(Vector3.up, groundNormal);
+
+                if (slopeAngle >= minSlopeThreshold)
+                {
+                    if (slopeAngle > maxSlopeAngle)
+                        groundNormal = Vector3.Slerp(Vector3.up, groundNormal, maxSlopeAngle / slopeAngle);
+
+                    up = groundNormal;
+                }
+            }
         }
 
-        // Calculate ground normal from 4-paw hits
-        Vector3 groundNormal = CalculateGroundNormal();
+        // Smooth the up vector to avoid jitter
+        if (normalLerpSpeed > 0f)
+            smoothedUp = Vector3.Slerp(smoothedUp, up, normalLerpSpeed * Time.fixedDeltaTime);
+        else
+            smoothedUp = up;
 
-        if (groundNormal == Vector3.zero)
-        {
-            // No valid hits, align to world up
-            AlignToUpVector(Vector3.up);
-            return;
-        }
+        // Build a rotation that:
+        // - uses targetYaw for the "intended heading"
+        // - tilts onto the slope using smoothedUp
+        Quaternion targetRotation = BuildSlopeRotation(smoothedUp, targetYaw);
 
-        // Check if slope is significant enough to align
-        float slopeAngle = Vector3.Angle(Vector3.up, groundNormal);
-        if (slopeAngle < minSlopeThreshold)
-        {
-            // Flat ground, align to world up
-            AlignToUpVector(Vector3.up);
-            return;
-        }
+        Quaternion newRot = Quaternion.Slerp(rb.rotation, targetRotation, alignmentSpeed * Time.fixedDeltaTime);
 
-        // Clamp extreme slopes
-        if (slopeAngle > maxSlopeAngle)
-        {
-            groundNormal = Vector3.Slerp(Vector3.up, groundNormal, maxSlopeAngle / slopeAngle);
-        }
-
-        // Align to calculated ground normal
-        AlignToUpVector(groundNormal);
+        rb.MoveRotation(newRot);
 
         if (showDebugNormals)
         {
-            Debug.DrawRay(dragonRoot.position, groundNormal * 3f, Color.green);
-            Debug.DrawRay(dragonRoot.position, dragonRoot.up * 3f, Color.blue);
+            Debug.DrawRay(dragonRoot.position, smoothedUp * 3f, Color.green);
+            Debug.DrawRay(dragonRoot.position, (newRot * Vector3.up) * 3f, Color.blue);
         }
     }
 
-    /// <summary>
-    /// Calculates ground normal from the 4 paw hit points.
-    /// Uses cross product of vectors formed by paw positions.
-    /// </summary>
+    private Quaternion BuildSlopeRotation(Vector3 up, float yawDegrees)
+    {
+        // Yaw forward in world space
+        Vector3 yawForward = Quaternion.Euler(0f, yawDegrees, 0f) * Vector3.forward;
+
+        // Project onto slope plane so forward is tangent to the ground
+        Vector3 forwardOnPlane = Vector3.ProjectOnPlane(yawForward, up);
+        if (forwardOnPlane.sqrMagnitude < 0.0001f)
+        {
+            // Fallback if we're on a near-vertical normal (rare)
+            forwardOnPlane = Vector3.ProjectOnPlane(dragonRoot.forward, up);
+        }
+
+        forwardOnPlane.Normalize();
+
+        return Quaternion.LookRotation(forwardOnPlane, up);
+    }
+
     private Vector3 CalculateGroundNormal()
     {
-        // Get raycast hit info from grounding system
-        var hits = groundingSystem.GetPawHits(); // Need to expose this
+        var hits = groundingSystem.GetPawHits();
 
-        // Count valid hits
         int validHits = 0;
-        Vector3 leftHandPos = Vector3.zero;
-        Vector3 rightHandPos = Vector3.zero;
-        Vector3 leftFootPos = Vector3.zero;
-        Vector3 rightFootPos = Vector3.zero;
+        Vector3 sum = Vector3.zero;
 
-        if (hits.leftHandHit.collider != null)
-        {
-            leftHandPos = hits.leftHandHit.point;
-            validHits++;
-        }
-        if (hits.rightHandHit.collider != null)
-        {
-            rightHandPos = hits.rightHandHit.point;
-            validHits++;
-        }
-        if (hits.leftFootHit.collider != null)
-        {
-            leftFootPos = hits.leftFootHit.point;
-            validHits++;
-        }
-        if (hits.rightFootHit.collider != null)
-        {
-            rightFootPos = hits.rightFootHit.point;
-            validHits++;
-        }
+        if (hits.leftHandHit.collider != null) { sum += hits.leftHandHit.normal; validHits++; }
+        if (hits.rightHandHit.collider != null) { sum += hits.rightHandHit.normal; validHits++; }
+        if (hits.leftFootHit.collider != null) { sum += hits.leftFootHit.normal; validHits++; }
+        if (hits.rightFootHit.collider != null) { sum += hits.rightFootHit.normal; validHits++; }
 
-        // Need at least 3 points to calculate a plane
-        if (validHits < 3)
-            return Vector3.zero;
+        if (validHits < 2) return Vector3.zero; // 2+ is usually enough for an averaged normal
 
-        // Method 1: Use front paws and one back paw (most stable)
-        if (hits.leftHandHit.collider != null && hits.rightHandHit.collider != null)
-        {
-            // Front vector: left hand to right hand
-            Vector3 frontVector = rightHandPos - leftHandPos;
+        Vector3 avg = (sum / validHits).normalized;
+        if (avg.y < 0f) avg = -avg;
 
-            // Side vector: use whichever back paw is available
-            Vector3 sideVector;
-            if (hits.leftFootHit.collider != null)
-            {
-                sideVector = leftFootPos - leftHandPos;
-            }
-            else if (hits.rightFootHit.collider != null)
-            {
-                sideVector = rightFootPos - rightHandPos;
-            }
-            else
-            {
-                // Only have front paws, use average normal from both
-                return ((hits.leftHandHit.normal + hits.rightHandHit.normal) * 0.5f).normalized;
-            }
-
-            // Cross product gives perpendicular (up) vector
-            Vector3 normal = Vector3.Cross(frontVector, sideVector).normalized;
-
-            // Ensure normal points upward (not downward)
-            if (normal.y < 0)
-                normal = -normal;
-
-            return normal;
-        }
-
-        // Method 2: Fallback - average all hit normals
-        Vector3 averageNormal = Vector3.zero;
-        if (hits.leftHandHit.collider != null) averageNormal += hits.leftHandHit.normal;
-        if (hits.rightHandHit.collider != null) averageNormal += hits.rightHandHit.normal;
-        if (hits.leftFootHit.collider != null) averageNormal += hits.leftFootHit.normal;
-        if (hits.rightFootHit.collider != null) averageNormal += hits.rightFootHit.normal;
-
-        return (averageNormal / validHits).normalized;
+        return avg;
     }
 
     /// <summary>
-    /// Smoothly aligns dragon's up vector to target up vector while preserving yaw.
-    /// </summary>
-    private void AlignToUpVector(Vector3 targetUp)
-    {
-        // Store current yaw before alignment
-        targetYaw = dragonRoot.eulerAngles.y;
-
-        // Calculate rotation that aligns current up to target up
-        Quaternion targetRotation = Quaternion.FromToRotation(dragonRoot.up, targetUp) * dragonRoot.rotation;
-
-        // Preserve yaw by extracting it from target rotation and replacing with player's yaw
-        Vector3 targetEuler = targetRotation.eulerAngles;
-        targetEuler.y = targetYaw;
-        targetRotation = Quaternion.Euler(targetEuler);
-
-        // Smoothly interpolate to target rotation
-        dragonRoot.rotation = Quaternion.Slerp(
-            dragonRoot.rotation,
-            targetRotation,
-            alignmentSpeed * Time.deltaTime
-        );
-    }
-
-    /// <summary>
-    /// Called by DragonGroundController when player turns.
-    /// Updates target yaw so alignment doesn't fight player input.
+    /// Call this from your ground controller when yaw changes due to input.
+    /// IMPORTANT: Do NOT overwrite targetYaw every frame from transform rotation.
     /// </summary>
     public void UpdateTargetYaw(float newYaw)
     {
