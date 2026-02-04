@@ -4132,8 +4132,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8637463985270368911}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.012915708, y: 0.66449094, z: 0.011487635, w: 0.7470965}
-  m_LocalPosition: {x: -9.925812, y: -0.3456421, z: -1.1656952}
+  m_LocalRotation: {x: 0.3740723, y: 0.19488981, z: -0.080726065, w: 0.9030898}
+  m_LocalPosition: {x: -2.9161224, y: 7.0710754, z: -6.441757}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4216,7 +4216,7 @@ MonoBehaviour:
     SplineCurvature: 0.5
   RecenteringTarget: 2
   HorizontalAxis:
-    Value: 83.3018
+    Value: 24.289118
     Center: 0
     Range: {x: -180, y: 180}
     Wrap: 1
@@ -4226,7 +4226,7 @@ MonoBehaviour:
       Time: 2
     Restrictions: 0
   VerticalAxis:
-    Value: -1.9808278
+    Value: 45
     Center: 17.5
     Range: {x: -10, y: 45}
     Wrap: 0
@@ -4858,6 +4858,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DragonGroundController
   ShowTopMostFoldoutHeaderGroup: 1
   groundingSystem: {fileID: 1496499137168891431}
+  groundAlignment: {fileID: 7382788177299959524}
   flightController: {fileID: 358013097769894201}
   animator: {fileID: 3730155243723547828}
   rb: {fileID: 4213641409919773835}
@@ -4906,7 +4907,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9190477138144183562}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3156cdcf500e343439d2dd2fa8d90b70, type: 3}
   m_Name: 
@@ -4942,6 +4943,6 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 0
   m_IsKinematic: 0
-  m_Interpolate: 1
+  m_Interpolate: 0
   m_Constraints: 112
   m_CollisionDetection: 0

@@ -16,10 +16,10 @@ public class DragonGroundAlignment : NetworkBehaviour
     [Header("Alignment Settings")]
     [Tooltip("How fast dragon aligns to ground slope (higher = faster snap)")]
     [SerializeField] private float alignmentSpeed = 8f;
-
+    
     [Tooltip("Maximum slope angle dragon will align to (degrees)")]
     [SerializeField] private float maxSlopeAngle = 45f;
-
+    
     [Tooltip("Minimum slope to trigger alignment (avoids jitter on flat ground)")]
     [SerializeField] private float minSlopeThreshold = 2f;
 
