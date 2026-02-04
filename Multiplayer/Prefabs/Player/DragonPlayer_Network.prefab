@@ -4684,7 +4684,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1353946614
+  GlobalObjectIdHash: 48177541
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -4876,8 +4876,6 @@ MonoBehaviour:
   walkSpeed: 5
   runSpeed: 10
   turnSmoothTime: 0.1
-  slopeAlignmentSpeed: 5
-  slopeRaycastDistance: 3
 --- !u!114 &1496499137168891431
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4894,10 +4892,10 @@ MonoBehaviour:
   rightHand: {fileID: 7464351476158240357}
   leftFoot: {fileID: 7262133624121052353}
   rightFoot: {fileID: 4349441873428885122}
-  raycastDistance: 2
+  raycastDistance: 1.5
   groundMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 55
   groundedConfirmTime: 0.08
   cliffThreshold: 3
 --- !u!114 &7382788177299959524
@@ -4918,8 +4916,14 @@ MonoBehaviour:
   alignmentSpeed: 8
   maxSlopeAngle: 60
   minSlopeThreshold: 2
+  targetBodyHeight: 0.3
+  heightAdjustSpeed: 10
+  maxHeightAdjustPerFrame: 0.15
+  onlyAdjustWhenGrounded: 1
   normalLerpSpeed: 12
+  yawSmoothSpeed: 10
   showDebugNormals: 0
+  showDebugHeight: 0
 --- !u!54 &4213641409919773835
 Rigidbody:
   m_ObjectHideFlags: 0
