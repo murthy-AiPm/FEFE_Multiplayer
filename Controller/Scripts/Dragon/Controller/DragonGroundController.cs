@@ -80,8 +80,9 @@ public class DragonGroundController : NetworkBehaviour
         jumpForwardHash = Animator.StringToHash("JumpForward");
     }
 
-    private void FixedUpdate()
+    private void Update()
     {
+        // State management only - no physics
         if (groundingSystem.IsGrounded && !isFalling && !isJumping && !isLanding)
         {
             if (!isActive) OnBecameGrounded();
@@ -95,30 +96,54 @@ public class DragonGroundController : NetworkBehaviour
 
         if (!isActive && !isFalling && !isLanding) return;
 
+        // State priority check
         if (isLanding)
         {
-            HandleLanding();
+            HandleLandingState();
             return;
         }
 
         if (isFalling)
         {
-            HandleFall();
+            HandleFallState();
             return;
         }
 
         if (isJumping)
         {
-            HandleJump();
+            HandleJumpState();
+            return;
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        // All physics operations happen here
+        if (!IsOwner) return;
+        if (!isActive && !isFalling && !isLanding) return;
+
+        if (isLanding)
+        {
+            ApplyGravity();
             return;
         }
 
-        if (IsOwner)
+        if (isFalling)
         {
-            HandleGroundMovement();
-            AlignToSlope();
             ApplyGravity();
+            return;
         }
+
+        if (isJumping)
+        {
+            ApplyGravity();
+            return;
+        }
+
+        // Normal ground movement
+        HandleGroundMovement();
+        AlignToSlope();
+        ApplyGravity();
     }
 
     private void HandleGroundMovement()
@@ -144,15 +169,13 @@ public class DragonGroundController : NetworkBehaviour
             float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + cam.eulerAngles.y;
             float angle = Mathf.SmoothDampAngle(rb.rotation.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
 
-            // Rotation (preserve pitch from slope alignment)
-            Vector3 currentEuler = rb.rotation.eulerAngles;
-            float currentPitch = currentEuler.x;
-            rb.MoveRotation(Quaternion.Euler(currentPitch, angle, 0f));
+            // Rotation
+            rb.MoveRotation(Quaternion.Euler(0f, angle, 0f));
 
             // Movement
             Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
             float speed = sprint ? runSpeed : walkSpeed;
-            rb.MovePosition(rb.position + moveDir.normalized * speed * Time.deltaTime);
+            rb.MovePosition(rb.position + moveDir.normalized * speed * Time.fixedDeltaTime);
 
             // Turn detection
             float angleDelta = Mathf.DeltaAngle(rb.rotation.eulerAngles.y, targetAngle);
@@ -173,7 +196,7 @@ public class DragonGroundController : NetworkBehaviour
 
         if (spaceDown)
         {
-            spaceHoldTimer += Time.deltaTime;
+            spaceHoldTimer += Time.fixedDeltaTime;
             if (spaceHoldTimer >= takeoffHoldTime)
             {
                 TriggerTakeoff();
@@ -223,7 +246,7 @@ public class DragonGroundController : NetworkBehaviour
             if (currentPitch > 180f) currentPitch -= 360f;
 
             // Smooth lerp pitch
-            float newPitch = Mathf.Lerp(currentPitch, targetPitch, Time.deltaTime * slopeAlignmentSpeed);
+            float newPitch = Mathf.Lerp(currentPitch, targetPitch, Time.fixedDeltaTime * slopeAlignmentSpeed);
 
             // Apply rotation (preserve yaw, update pitch, zero roll)
             rb.MoveRotation(Quaternion.Euler(newPitch, currentYaw, 0f));
@@ -238,7 +261,7 @@ public class DragonGroundController : NetworkBehaviour
         if (!groundingSystem.IsGrounded)
         {
             Vector3 velocity = rb.linearVelocity;
-            velocity.y += gravityValue * Time.deltaTime;
+            velocity.y += gravityValue * Time.fixedDeltaTime;
             rb.linearVelocity = velocity;
         }
         else
@@ -305,7 +328,7 @@ public class DragonGroundController : NetworkBehaviour
         animator.SetTrigger(jumpForwardHash);
     }
 
-    private void HandleJump()
+    private void HandleJumpState()
     {
         jumpTimer += Time.deltaTime;
         float duration = lastJumpWasForward ? jumpForwardDuration : jumpUpDuration;
@@ -323,10 +346,6 @@ public class DragonGroundController : NetworkBehaviour
         {
             EndJump();
         }
-
-        // Continue applying gravity during jump
-        if (IsOwner)
-            ApplyGravity();
     }
 
     private void EndJump()
@@ -354,7 +373,7 @@ public class DragonGroundController : NetworkBehaviour
         IsFalling = true;
     }
 
-    private void HandleFall()
+    private void HandleFallState()
     {
         // Allow glide during fall
         if (IsOwner && Input.GetKey(jumpKey))
@@ -371,10 +390,6 @@ public class DragonGroundController : NetworkBehaviour
             EndFall();
             StartLanding();
         }
-
-        // Continue applying gravity during fall
-        if (IsOwner)
-            ApplyGravity();
     }
 
     private void EndFall()
@@ -391,7 +406,7 @@ public class DragonGroundController : NetworkBehaviour
         jumpTimer = 0f;
     }
 
-    private void HandleLanding()
+    private void HandleLandingState()
     {
         jumpTimer += Time.deltaTime;
 
@@ -402,10 +417,6 @@ public class DragonGroundController : NetworkBehaviour
             jumpTimer = 0f;
             isActive = true;
         }
-
-        // Apply gravity during landing animation
-        if (IsOwner)
-            ApplyGravity();
     }
 
     private void OnBecameGrounded()
