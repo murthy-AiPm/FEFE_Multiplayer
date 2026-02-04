@@ -1,45 +1,44 @@
 using UnityEngine;
 using Unity.Netcode;
 
-/// <summary>
-/// Camera-relative ground movement for dragon.
-/// W/A/S/D move relative to camera forward direction.
-/// Dragon body smoothly rotates to face movement direction.
-/// Only owner reads input. Exposes public state for DragonAnimatorController to sync.
-/// </summary>
 public class DragonGroundController : NetworkBehaviour
 {
     [Header("References")]
     [SerializeField] private DragonGroundingSystem groundingSystem;
     [SerializeField] private DragonFlightController flightController;
     [SerializeField] private Animator animator;
-    [SerializeField] private Rigidbody rb;
-    [SerializeField] private Transform cameraTransform;  // Main camera or camera follow target
+    [SerializeField] private CharacterController controller;
+    [SerializeField] private Transform cam;
 
     [Header("Input")]
-    [SerializeField] private string forwardAxis = "Vertical";      // W/S
-    [SerializeField] private string strafeAxis = "Horizontal";     // A/D
+    [SerializeField] private string forwardAxis = "Vertical";
+    [SerializeField] private string strafeAxis = "Horizontal";
     [SerializeField] private KeyCode jumpKey = KeyCode.Space;
     [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift;
 
     [Header("Takeoff")]
     [SerializeField] private float takeoffHoldTime = 0.4f;
-    [SerializeField] private float jumpUpDuration = 1.11f;
-    [SerializeField] private float jumpForwardDuration = 1.18f;
+
+    [Header("Jump/Gravity")]
+    [SerializeField] private float jumpHeight = 3f;
+    [SerializeField] private float gravityValue = -9.81f;
 
     [Header("Fall")]
+    [SerializeField] private float jumpUpDuration = 1.11f;
+    [SerializeField] private float jumpForwardDuration = 1.18f;
     [SerializeField] private float landingDuration = 1.07f;
+    [SerializeField] private float freeFallThreshold = -10f;
 
     [Header("Movement")]
     [SerializeField] private float walkSpeed = 5f;
     [SerializeField] private float runSpeed = 10f;
+    [SerializeField] private float turnSmoothTime = 0.1f;
 
-    [Header("Rotation")]
-    [SerializeField] private float turnSpeed = 360f;               // Max degrees per second for body rotation
-    [SerializeField] private float turnSmoothTime = 0.1f;          // Smoothing for turn-while-moving
-    [SerializeField] private float snapThreshold = 150f;           // Angles > this use snap turn (180° backward)
+    [Header("Slope Alignment")]
+    [SerializeField] private float slopeAlignmentSpeed = 5f;
+    [SerializeField] private float slopeRaycastDistance = 3f;
 
-    // Animator trigger hashes
+    // Animator hashes
     private int jumpUpHash;
     private int jumpForwardHash;
 
@@ -47,16 +46,17 @@ public class DragonGroundController : NetworkBehaviour
     private bool isActive;
     private bool isJumping;
     private bool isFalling;
+    private bool isFreeFalling;
     private bool isLanding;
     private float jumpTimer;
     private float spaceHoldTimer;
     private bool lastJumpWasForward;
 
-    // Rotation smoothing
-    private float currentTurnVelocity;
-    private float targetYaw;
+    // Physics
+    private Vector3 playerVelocity;
+    private float turnSmoothVelocity;
 
-    // Public state - read by DragonAnimatorController for network sync
+    // Public state
     public bool IsWalking { get; private set; }
     public bool IsRunning { get; private set; }
     public bool IsFalling { get; private set; }
@@ -74,10 +74,10 @@ public class DragonGroundController : NetworkBehaviour
             flightController = GetComponentInParent<DragonFlightController>();
         if (animator == null)
             animator = GetComponent<Animator>();
-        if (rb == null)
-            rb = GetComponentInParent<Rigidbody>();
-        if (cameraTransform == null)
-            cameraTransform = Camera.main?.transform;
+        if (controller == null)
+            controller = GetComponentInParent<CharacterController>();
+        if (cam == null)
+            cam = Camera.main?.transform;
 
         jumpUpHash = Animator.StringToHash("JumpUp");
         jumpForwardHash = Animator.StringToHash("JumpForward");
@@ -117,14 +117,17 @@ public class DragonGroundController : NetworkBehaviour
         }
 
         if (IsOwner)
+        {
             HandleGroundMovement();
+            AlignToSlope();
+            ApplyGravity();
+        }
     }
 
     private void HandleGroundMovement()
     {
-
-        float vertical = Input.GetAxisRaw(forwardAxis);    // W/S
-        float horizontal = Input.GetAxisRaw(strafeAxis);   // A/D
+        float vertical = Input.GetAxisRaw(forwardAxis);
+        float horizontal = Input.GetAxisRaw(strafeAxis);
         bool sprint = Input.GetKey(sprintKey);
         bool spaceDown = Input.GetKey(jumpKey);
         bool spacePressed = Input.GetKeyDown(jumpKey);
@@ -132,88 +135,46 @@ public class DragonGroundController : NetworkBehaviour
         Vector2 input = new Vector2(horizontal, vertical);
         bool isMoving = input.magnitude > 0.1f;
 
-        // ─── Calculate Camera-Relative Movement Direction ───
-        Vector3 moveDirection = Vector3.zero;
-        if (isMoving && cameraTransform != null)
-        {
-            // Camera forward/right projected on horizontal plane
-            Vector3 camForward = cameraTransform.forward;
-            Vector3 camRight = cameraTransform.right;
-
-            camForward.y = 0f;
-            camRight.y = 0f;
-            camForward.Normalize();
-            camRight.Normalize();
-
-            // Combine input with camera axes
-            moveDirection = (camForward * vertical + camRight * horizontal).normalized;
-        }
-
-        // ─── State Updates (for animator sync) ───
+        // State
         IsWalking = isMoving && !sprint;
         IsRunning = isMoving && sprint;
-        ForwardSpeed = vertical;  // Note: This is input, not actual movement direction
+        ForwardSpeed = vertical;
 
-        // ─── Rotation: Body follows movement direction ───
-        // In HandleGroundMovement, replace the rotation section:
-        if (isMoving && moveDirection != Vector3.zero)
+        // Camera-relative movement
+        if (isMoving && cam != null && controller != null)
         {
-            float targetAngle = Mathf.Atan2(moveDirection.x, moveDirection.z) * Mathf.Rad2Deg;
+            Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
+            float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + cam.eulerAngles.y;
+            float angle = Mathf.SmoothDampAngle(transform.parent.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
 
-            Transform root = rb != null ? rb.transform : transform.parent;
-            float currentAngle = root.rotation.eulerAngles.y;
-            float angleDelta = Mathf.DeltaAngle(currentAngle, targetAngle);
+            // Rotation
+            transform.parent.rotation = Quaternion.Euler(0f, angle, 0f);
 
+            // Movement
+            Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
+            float speed = sprint ? runSpeed : walkSpeed;
+            controller.Move(moveDir.normalized * speed * Time.deltaTime);
+
+            // Turn detection
+            float angleDelta = Mathf.DeltaAngle(transform.parent.eulerAngles.y, targetAngle);
             IsTurningLeft = angleDelta < -5f;
             IsTurningRight = angleDelta > 5f;
             TurnSpeed = Mathf.Abs(angleDelta) / 180f;
-
-            float newAngle;
-            if (Mathf.Abs(angleDelta) > snapThreshold)
-                newAngle = targetAngle;
-            else
-                newAngle = Mathf.SmoothDampAngle(currentAngle, targetAngle, ref currentTurnVelocity, turnSmoothTime);
-
-            Quaternion targetRotation = Quaternion.Euler(0f, newAngle, 0f);
-
-            if (rb != null)
-                rb.MoveRotation(targetRotation);
-            else
-                root.rotation = targetRotation;
         }
         else
         {
-            // Not moving - clear turn state
             IsTurningLeft = false;
             IsTurningRight = false;
             TurnSpeed = 0f;
-            currentTurnVelocity = 0f;
         }
 
-        // ─── Translation: Move in calculated direction ───
-        // ─── Translation: Move in calculated direction ───
-        if (isMoving)
-        {
-            float speed = sprint ? runSpeed : walkSpeed;
-            Vector3 movement = moveDirection * speed * Time.deltaTime;
-
-            if (rb != null)
-                rb.MovePosition(rb.position + movement);
-            else
-            {
-                Transform root = transform.parent;
-                root.position += movement;
-            }
-        }
-
-        // ─── Jump / Takeoff ───
+        // Jump/Takeoff
         if (spacePressed)
             spaceHoldTimer = 0f;
 
         if (spaceDown)
         {
             spaceHoldTimer += Time.deltaTime;
-
             if (spaceHoldTimer >= takeoffHoldTime)
             {
                 TriggerTakeoff();
@@ -223,21 +184,78 @@ public class DragonGroundController : NetworkBehaviour
 
         if (Input.GetKeyUp(jumpKey) && spaceHoldTimer < takeoffHoldTime)
         {
-            if (isMoving)
-                TriggerJumpForward();
-            else
-                TriggerJumpUp();
+            if (groundingSystem.IsGrounded)
+            {
+                if (isMoving)
+                    TriggerJumpForward();
+                else
+                    TriggerJumpUp();
+            }
         }
-        Debug.Log($"V:{vertical} H:{horizontal} CamNull:{cameraTransform == null} MoveDir:{moveDirection}");
     }
 
-    // ─── Jump ────────────────────────────────────────────
+    private void AlignToSlope()
+    {
+        if (controller == null || !groundingSystem.IsGrounded) return;
+
+        // Raycast down from center to get ground normal
+        Vector3 rayOrigin = transform.parent.position + Vector3.up * 0.5f;
+        if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, slopeRaycastDistance))
+        {
+            // Calculate pitch from ground normal
+            Vector3 groundNormal = hit.normal;
+            Vector3 forward = transform.parent.forward;
+
+            // Project forward onto ground plane
+            Vector3 projectedForward = Vector3.ProjectOnPlane(forward, groundNormal).normalized;
+
+            // Calculate pitch angle (rotation around right axis)
+            float targetPitch = Vector3.SignedAngle(forward, projectedForward, transform.parent.right);
+
+            // Get current rotation
+            Vector3 currentEuler = transform.parent.eulerAngles;
+            float currentYaw = currentEuler.y;
+            float currentPitch = currentEuler.x;
+
+            // Normalize pitch to -180 to 180
+            if (currentPitch > 180f) currentPitch -= 360f;
+
+            // Smooth lerp pitch
+            float newPitch = Mathf.LerpAngle(currentPitch, targetPitch, Time.deltaTime * slopeAlignmentSpeed);
+
+            // Apply rotation (preserve yaw, update pitch, zero roll)
+            transform.parent.rotation = Quaternion.Euler(newPitch, currentYaw, 0f);
+        }
+    }
+
+    private void ApplyGravity()
+    {
+        if (controller == null) return;
+
+        // Free fall detection
+        if (playerVelocity.y < freeFallThreshold && !groundingSystem.IsGrounded)
+        {
+            isFreeFalling = true;
+        }
+
+        // Reset velocity when grounded
+        if (groundingSystem.IsGrounded && playerVelocity.y < 0)
+        {
+            playerVelocity.y = -2f; // Small downward force to keep grounded
+            isFreeFalling = false;
+        }
+
+        // Apply gravity
+        playerVelocity.y += gravityValue * Time.deltaTime;
+        controller.Move(playerVelocity * Time.deltaTime);
+    }
 
     private void TriggerJumpUp()
     {
         isJumping = true;
         lastJumpWasForward = false;
         jumpTimer = 0f;
+        playerVelocity.y = Mathf.Sqrt(jumpHeight * -2f * gravityValue);
         ClearState();
         JumpUpServerRpc();
     }
@@ -247,6 +265,7 @@ public class DragonGroundController : NetworkBehaviour
         isJumping = true;
         lastJumpWasForward = true;
         jumpTimer = 0f;
+        playerVelocity.y = Mathf.Sqrt(jumpHeight * -2f * gravityValue);
         ClearState();
         JumpForwardServerRpc();
     }
@@ -280,6 +299,7 @@ public class DragonGroundController : NetworkBehaviour
         jumpTimer += Time.deltaTime;
         float duration = lastJumpWasForward ? jumpForwardDuration : jumpUpDuration;
 
+        // Allow takeoff during jump
         if (IsOwner && Input.GetKey(jumpKey))
         {
             EndJump();
@@ -287,8 +307,15 @@ public class DragonGroundController : NetworkBehaviour
             return;
         }
 
-        if (jumpTimer >= duration)
+        // End jump when grounded or duration exceeded
+        if (groundingSystem.IsGrounded || jumpTimer >= duration)
+        {
             EndJump();
+        }
+
+        // Continue applying gravity during jump
+        if (IsOwner)
+            ApplyGravity();
     }
 
     private void EndJump()
@@ -298,8 +325,6 @@ public class DragonGroundController : NetworkBehaviour
         ClearState();
     }
 
-    // ─── Takeoff ─────────────────────────────────────────
-
     private void TriggerTakeoff()
     {
         isActive = false;
@@ -308,8 +333,6 @@ public class DragonGroundController : NetworkBehaviour
         groundingSystem.ResetFallingState();
         flightController.RequestHover();
     }
-
-    // ─── Fall ────────────────────────────────────────────
 
     private void StartFall()
     {
@@ -322,6 +345,7 @@ public class DragonGroundController : NetworkBehaviour
 
     private void HandleFall()
     {
+        // Allow glide during fall
         if (IsOwner && Input.GetKey(jumpKey))
         {
             EndFall();
@@ -330,11 +354,16 @@ public class DragonGroundController : NetworkBehaviour
             return;
         }
 
+        // Landing
         if (groundingSystem.IsGrounded)
         {
             EndFall();
             StartLanding();
         }
+
+        // Continue applying gravity during fall
+        if (IsOwner)
+            ApplyGravity();
     }
 
     private void EndFall()
@@ -343,8 +372,6 @@ public class DragonGroundController : NetworkBehaviour
         IsFalling = false;
         jumpTimer = 0f;
     }
-
-    // ─── Landing ─────────────────────────────────────────
 
     private void StartLanding()
     {
@@ -364,9 +391,11 @@ public class DragonGroundController : NetworkBehaviour
             jumpTimer = 0f;
             isActive = true;
         }
-    }
 
-    // ─── Helpers ─────────────────────────────────────────
+        // Apply gravity during landing animation
+        if (IsOwner)
+            ApplyGravity();
+    }
 
     private void OnBecameGrounded()
     {
@@ -384,6 +413,5 @@ public class DragonGroundController : NetworkBehaviour
         IsTurningRight = false;
         ForwardSpeed = 0f;
         TurnSpeed = 0f;
-        currentTurnVelocity = 0f;
     }
 }
