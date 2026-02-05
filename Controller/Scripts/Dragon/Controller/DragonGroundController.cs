@@ -200,8 +200,8 @@ public class DragonGroundController : NetworkBehaviour
             // Turn detection (for animation)
             float currentYaw = rb.rotation.eulerAngles.y;
             float angleDelta = Mathf.DeltaAngle(currentYaw, targetAngle);
-            IsTurningLeft = angleDelta < -5f;
-            IsTurningRight = angleDelta > 5f;
+            IsTurningLeft = angleDelta < -18f;
+            IsTurningRight = angleDelta > 18f;
             TurnSpeed = Mathf.Abs(angleDelta) / 180f;
         }
         else

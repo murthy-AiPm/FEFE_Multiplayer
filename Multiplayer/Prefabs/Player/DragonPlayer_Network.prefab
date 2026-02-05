@@ -4645,7 +4645,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1353946614
+  GlobalObjectIdHash: 48177541
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -4821,7 +4821,7 @@ MonoBehaviour:
   groundingSystem: {fileID: 1496499137168891431}
   groundAlignment: {fileID: 7382788177299959524}
   flightController: {fileID: 358013097769894201}
-  animator: {fileID: 0}
+  animator: {fileID: 8804854363994131359}
   rb: {fileID: 4213641409919773835}
   cam: {fileID: 0}
   forwardAxis: Vertical
@@ -4879,8 +4879,8 @@ MonoBehaviour:
   heightAdjustSpeed: 10
   maxHeightAdjustPerFrame: 0.15
   onlyAdjustWhenGrounded: 1
-  normalLerpSpeed: 12
-  yawSmoothSpeed: 10
+  normalLerpSpeed: 1
+  yawSmoothSpeed: 2
   showDebugNormals: 0
   showDebugHeight: 0
 --- !u!54 &4213641409919773835
