@@ -215,7 +215,7 @@ public class DragonGroundController : NetworkBehaviour
         }
 
         // Jump animation (Space) - just plays animation, stays grounded
-        if (Input.GetKeyDown(jumpKey) && groundingSystem.IsGrounded && !isPlayingJump)
+        if (Input.GetKey(jumpKey) && groundingSystem.IsGrounded /*&& !isPlayingJump*/)
         {
             TriggerJumpAnimation();
         }
@@ -249,11 +249,9 @@ public class DragonGroundController : NetworkBehaviour
 
     private void TriggerJumpAnimation()
     {
-        Debug.Log("TriggerJumpAnimation called!");
-
         isPlayingJump = true;
-       // IsPlayingJump = true;
-        stateTimer = 0f;
+        IsPlayingJump = true;
+        //stateTimer = 0f;
         JumpForwardServerRpc();
     }
 
