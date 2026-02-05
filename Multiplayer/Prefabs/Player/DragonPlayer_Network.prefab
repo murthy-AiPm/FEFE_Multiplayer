@@ -2006,8 +2006,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3086120407189549482}
-  - component: {fileID: 3730155243723547828}
-  - component: {fileID: 6466238469953756060}
   m_Layer: 3
   m_Name: Dragon
   m_TagString: Player
@@ -2032,45 +2030,6 @@ Transform:
   - {fileID: 3423531768416006098}
   m_Father: {fileID: 8226214588110307267}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!95 &3730155243723547828
-Animator:
-  serializedVersion: 7
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4753490263456383483}
-  m_Enabled: 1
-  m_Avatar: {fileID: 9000000, guid: e127a9a1479186149aa6f16e8745b8de, type: 3}
-  m_Controller: {fileID: 9100000, guid: 74d0c3d93ea746e45a91189d00afe876, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
---- !u!114 &6466238469953756060
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4753490263456383483}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c3df36790e26d1d49ba3f2e0a1dbe385, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DragonAnimatorController
-  ShowTopMostFoldoutHeaderGroup: 1
-  flightController: {fileID: 358013097769894201}
-  groundController: {fileID: 6586780387147943017}
-  groundingSystem: {fileID: 1496499137168891431}
-  animator: {fileID: 3730155243723547828}
 --- !u!1 &4835914202048136776
 GameObject:
   m_ObjectHideFlags: 0
@@ -4644,6 +4603,8 @@ GameObject:
   - component: {fileID: 1496499137168891431}
   - component: {fileID: 7382788177299959524}
   - component: {fileID: 4213641409919773835}
+  - component: {fileID: 8804854363994131359}
+  - component: {fileID: 4572458104217194858}
   m_Layer: 3
   m_Name: DragonPlayer_Network
   m_TagString: Untagged
@@ -4860,21 +4821,19 @@ MonoBehaviour:
   groundingSystem: {fileID: 1496499137168891431}
   groundAlignment: {fileID: 7382788177299959524}
   flightController: {fileID: 358013097769894201}
-  animator: {fileID: 3730155243723547828}
+  animator: {fileID: 0}
   rb: {fileID: 4213641409919773835}
   cam: {fileID: 0}
   forwardAxis: Vertical
   strafeAxis: Horizontal
   jumpKey: 32
+  takeoffKey: 99
   sprintKey: 304
-  takeoffHoldTime: 0.4
-  jumpForce: 8
-  gravityValue: -9.81
-  jumpUpDuration: 1.11
-  jumpForwardDuration: 1.18
-  landingDuration: 1.07
-  walkSpeed: 5
-  runSpeed: 10
+  takeoffLiftSpeed: 8
+  jumpUpAnimationDuration: 2
+  jumpAnimationDuration: 2
+  walkSpeed: 2
+  runSpeed: 6
   turnSmoothTime: 0.5
 --- !u!114 &1496499137168891431
 MonoBehaviour:
@@ -4951,3 +4910,42 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 112
   m_CollisionDetection: 0
+--- !u!95 &8804854363994131359
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  m_Enabled: 1
+  m_Avatar: {fileID: 9000000, guid: e127a9a1479186149aa6f16e8745b8de, type: 3}
+  m_Controller: {fileID: 9100000, guid: 74d0c3d93ea746e45a91189d00afe876, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &4572458104217194858
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3df36790e26d1d49ba3f2e0a1dbe385, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DragonAnimatorController
+  ShowTopMostFoldoutHeaderGroup: 1
+  flightController: {fileID: 358013097769894201}
+  groundController: {fileID: 6586780387147943017}
+  groundingSystem: {fileID: 1496499137168891431}
+  animator: {fileID: 0}

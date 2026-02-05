@@ -5,7 +5,7 @@ using Unity.Netcode;
 /// Single script that drives ALL dragon animator parameters and syncs them over the network.
 /// Owner writes state from FlightController + GroundController into NetworkVariables.
 /// All clients (including owner) read NetworkVariables and apply to local Animator.
-/// Triggers (JumpUp/JumpForward) are handled separately via ServerRpc in DragonGroundController.
+/// Triggers (JumpForward) are handled separately via ServerRpc in DragonGroundController.
 /// </summary>
 [RequireComponent(typeof(Animator))]
 public class DragonAnimatorController : NetworkBehaviour
@@ -33,8 +33,8 @@ public class DragonAnimatorController : NetworkBehaviour
     // Ground
     private int isWalkingHash;
     private int isRunningHash;
-    private int isFallingHash;
-    private int isLandingHash;
+    private int isPlayingJumpHash;
+    private int isTakingOffHash;
     private int isTurningLeftHash;
     private int isTurningRightHash;
     private int turnSpeedHash;
@@ -66,9 +66,9 @@ public class DragonAnimatorController : NetworkBehaviour
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<bool> netIsRunning = new NetworkVariable<bool>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<bool> netIsFalling = new NetworkVariable<bool>(
+    private NetworkVariable<bool> netIsPlayingJump = new NetworkVariable<bool>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<bool> netIsLanding = new NetworkVariable<bool>(
+    private NetworkVariable<bool> netIsTakingOff = new NetworkVariable<bool>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<bool> netIsTurningLeft = new NetworkVariable<bool>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -103,8 +103,8 @@ public class DragonAnimatorController : NetworkBehaviour
         // Cache hashes - Ground
         isWalkingHash = Animator.StringToHash("IsWalking");
         isRunningHash = Animator.StringToHash("IsRunning");
-        isFallingHash = Animator.StringToHash("IsFalling");
-        isLandingHash = Animator.StringToHash("IsLanding");
+        isPlayingJumpHash = Animator.StringToHash("IsPlayingJump");
+        isTakingOffHash = Animator.StringToHash("IsTakingOff");
         isTurningLeftHash = Animator.StringToHash("IsTurningLeft");
         isTurningRightHash = Animator.StringToHash("IsTurningRight");
         turnSpeedHash = Animator.StringToHash("TurnSpeed");
@@ -131,7 +131,7 @@ public class DragonAnimatorController : NetworkBehaviour
                 netAirSpeed.Value = flightController.AirSpeed;
                 netVerticalSpeed.Value = flightController.Velocity.y;
 
-                // ForwardSpeed: use flight velocity when airborne, ground state when grounded
+                // ForwardSpeed: use flight velocity when airborne
                 if (!groundingSystem.IsGrounded)
                     netForwardSpeed.Value = Vector3.Dot(flightController.Velocity, transform.forward);
             }
@@ -141,8 +141,8 @@ public class DragonAnimatorController : NetworkBehaviour
             {
                 netIsWalking.Value = groundController.IsWalking;
                 netIsRunning.Value = groundController.IsRunning;
-                netIsFalling.Value = groundController.IsFalling;
-                netIsLanding.Value = groundController.IsLanding;
+                netIsPlayingJump.Value = groundController.IsPlayingJump;
+                netIsTakingOff.Value = groundController.IsTakingOff;
                 netIsTurningLeft.Value = groundController.IsTurningLeft;
                 netIsTurningRight.Value = groundController.IsTurningRight;
                 netTurnSpeed.Value = groundController.TurnSpeed;
@@ -170,8 +170,8 @@ public class DragonAnimatorController : NetworkBehaviour
         // Ground
         animator.SetBool(isWalkingHash, netIsWalking.Value);
         animator.SetBool(isRunningHash, netIsRunning.Value);
-        animator.SetBool(isFallingHash, netIsFalling.Value);
-        animator.SetBool(isLandingHash, netIsLanding.Value);
+        animator.SetBool(isPlayingJumpHash, netIsPlayingJump.Value);
+        animator.SetBool(isTakingOffHash, netIsTakingOff.Value);
         animator.SetBool(isTurningLeftHash, netIsTurningLeft.Value);
         animator.SetBool(isTurningRightHash, netIsTurningRight.Value);
         animator.SetFloat(turnSpeedHash, netTurnSpeed.Value);

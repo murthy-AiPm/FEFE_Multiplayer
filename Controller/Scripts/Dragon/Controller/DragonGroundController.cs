@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using Unity.Netcode;
 
 /// <summary>
@@ -23,19 +23,15 @@ public class DragonGroundController : NetworkBehaviour
     [SerializeField] private string forwardAxis = "Vertical";
     [SerializeField] private string strafeAxis = "Horizontal";
     [SerializeField] private KeyCode jumpKey = KeyCode.Space;
+    [SerializeField] private KeyCode takeoffKey = KeyCode.C;
     [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift;
 
     [Header("Takeoff")]
-    [SerializeField] private float takeoffHoldTime = 0.4f;
+    [SerializeField] private float takeoffLiftSpeed = 8f;
+    [SerializeField] private float jumpUpAnimationDuration = 0.8f;  // Time before transitioning to hover
 
-    [Header("Jump/Gravity")]
-    [SerializeField] private float jumpForce = 8f;
-    [SerializeField] private float gravityValue = -20f;
-
-    [Header("Fall")]
-    [SerializeField] private float jumpUpDuration = 1.11f;
-    [SerializeField] private float jumpForwardDuration = 1.18f;
-    [SerializeField] private float landingDuration = 1.07f;
+    [Header("Jump Animation")]
+    [SerializeField] private float jumpAnimationDuration = 1.18f;
 
     [Header("Movement")]
     [SerializeField] private float walkSpeed = 5f;
@@ -43,17 +39,14 @@ public class DragonGroundController : NetworkBehaviour
     [SerializeField] private float turnSmoothTime = 0.1f;
 
     // Animator hashes
-    private int jumpUpHash;
     private int jumpForwardHash;
+    private int jumpUpHash;
 
     // State
     private bool isActive;
-    private bool isJumping;
-    private bool isFalling;
-    private bool isLanding;
-    private float jumpTimer;
-    private float spaceHoldTimer;
-    private bool lastJumpWasForward;
+    private bool isPlayingJump;  // Jump animation playing (still grounded)
+    private bool isTakingOff;    // Lifting up to hover
+    private float stateTimer;
 
     // Cached ground normal for slope movement
     private Vector3 currentGroundNormal = Vector3.up;
@@ -61,8 +54,8 @@ public class DragonGroundController : NetworkBehaviour
     // Public state
     public bool IsWalking { get; private set; }
     public bool IsRunning { get; private set; }
-    public bool IsFalling { get; private set; }
-    public bool IsLanding { get; private set; }
+    public bool IsPlayingJump { get; private set; }
+    public bool IsTakingOff { get; private set; }
     public bool IsTurningLeft { get; private set; }
     public bool IsTurningRight { get; private set; }
     public float ForwardSpeed { get; private set; }
@@ -83,75 +76,68 @@ public class DragonGroundController : NetworkBehaviour
         if (cam == null)
             cam = Camera.main?.transform;
 
-        jumpUpHash = Animator.StringToHash("JumpUp");
         jumpForwardHash = Animator.StringToHash("JumpForward");
+        jumpUpHash = Animator.StringToHash("JumpUp");
+
+        // Enable root motion - we'll disable it when flying
+        if (animator != null)
+            animator.applyRootMotion = true;
     }
 
     private void Update()
     {
-        // State management only - no physics
-        if (groundingSystem.IsGrounded && !isFalling && !isJumping && !isLanding)
+        if (Input.GetKeyDown(jumpKey))
+        {
+            Debug.Log($"Jump pressed - IsGrounded: {groundingSystem.IsGrounded}, isPlayingJump: {isPlayingJump}, stateTimer: {stateTimer}");
+        }
+        // Takeoff in progress - handled separately
+        if (isTakingOff)
+        {
+            HandleTakeoffState();
+            return;
+        }
+
+        // Jump animation playing (still grounded, just animating)
+        if (isPlayingJump)
+        {
+            HandleJumpAnimation();
+            return;
+        }
+
+        // Normal grounded state
+        if (groundingSystem.IsGrounded)
         {
             if (!isActive) OnBecameGrounded();
             isActive = true;
         }
-
-        if (IsOwner && isActive && groundingSystem.IsFalling && !isFalling && !isJumping)
+        else
         {
-            StartFall();
-        }
-
-        if (!isActive && !isFalling && !isLanding) return;
-
-        // State priority check
-        if (isLanding)
-        {
-            HandleLandingState();
-            return;
-        }
-
-        if (isFalling)
-        {
-            HandleFallState();
-            return;
-        }
-
-        if (isJumping)
-        {
-            HandleJumpState();
-            return;
+            isActive = false;
         }
     }
 
     private void FixedUpdate()
     {
         if (!IsOwner) return;
-        if (!isActive && !isFalling && !isLanding) return;
+
+        // Takeoff - lift dragon up
+        if (isTakingOff)
+        {
+            ApplyTakeoffLift();
+            return;
+        }
+
+        // Jump animation playing - root motion handles movement
+        if (isPlayingJump) return;
+
+        // Not active - do nothing
+        if (!isActive) return;
 
         // Update cached ground normal
         UpdateGroundNormal();
 
-        if (isLanding)
-        {
-            ApplyGravity();
-            return;
-        }
-
-        if (isFalling)
-        {
-            ApplyGravity();
-            return;
-        }
-
-        if (isJumping)
-        {
-            ApplyGravity();
-            return;
-        }
-
         // Normal ground movement
         HandleGroundMovement();
-        ApplyGravity();
     }
 
     private void UpdateGroundNormal()
@@ -189,9 +175,6 @@ public class DragonGroundController : NetworkBehaviour
         float vertical = Input.GetAxisRaw(forwardAxis);
         float horizontal = Input.GetAxisRaw(strafeAxis);
         bool sprint = Input.GetKey(sprintKey);
-        bool spaceDown = Input.GetKey(jumpKey);
-        bool spacePressed = Input.GetKeyDown(jumpKey);
-
         Vector2 input = new Vector2(horizontal, vertical);
         bool isMoving = input.magnitude > 0.1f;
 
@@ -231,29 +214,16 @@ public class DragonGroundController : NetworkBehaviour
             TurnSpeed = 0f;
         }
 
-        // Jump/Takeoff
-        if (spacePressed)
-            spaceHoldTimer = 0f;
-
-        if (spaceDown)
+        // Jump animation (Space) - just plays animation, stays grounded
+        if (Input.GetKeyDown(jumpKey) && groundingSystem.IsGrounded && !isPlayingJump)
         {
-            spaceHoldTimer += Time.fixedDeltaTime;
-            if (spaceHoldTimer >= takeoffHoldTime)
-            {
-                TriggerTakeoff();
-                return;
-            }
+            TriggerJumpAnimation();
         }
 
-        if (Input.GetKeyUp(jumpKey) && spaceHoldTimer < takeoffHoldTime)
+        // Takeoff (C) - lifts dragon up to hover
+        if (Input.GetKeyDown(takeoffKey) && groundingSystem.IsGrounded)
         {
-            if (groundingSystem.IsGrounded)
-            {
-                if (isMoving)
-                    TriggerJumpForward();
-                else
-                    TriggerJumpUp();
-            }
+            TriggerTakeoff();
         }
     }
 
@@ -273,64 +243,18 @@ public class DragonGroundController : NetworkBehaviour
         return projected;
     }
 
-    private void ApplyGravity()
+    // ═══════════════════════════════════════════════════════════════
+    // JUMP ANIMATION (Space) - stays grounded, just plays animation
+    // ═══════════════════════════════════════════════════════════════
+
+    private void TriggerJumpAnimation()
     {
-        if (rb == null) return;
+        Debug.Log("TriggerJumpAnimation called!");
 
-        if (!groundingSystem.IsGrounded)
-        {
-            Vector3 velocity = rb.linearVelocity;
-            velocity.y += gravityValue * Time.fixedDeltaTime;
-            rb.linearVelocity = velocity;
-        }
-        else
-        {
-            // When grounded, kill downward velocity
-            Vector3 velocity = rb.linearVelocity;
-            if (velocity.y < 0)
-                velocity.y = 0f;
-            rb.linearVelocity = velocity;
-        }
-    }
-
-    private void TriggerJumpUp()
-    {
-        isJumping = true;
-        lastJumpWasForward = false;
-        jumpTimer = 0f;
-
-        Vector3 velocity = rb.linearVelocity;
-        velocity.y = jumpForce;
-        rb.linearVelocity = velocity;
-
-        ClearState();
-        JumpUpServerRpc();
-    }
-
-    private void TriggerJumpForward()
-    {
-        isJumping = true;
-        lastJumpWasForward = true;
-        jumpTimer = 0f;
-
-        Vector3 velocity = rb.linearVelocity;
-        velocity.y = jumpForce;
-        rb.linearVelocity = velocity;
-
-        ClearState();
+        isPlayingJump = true;
+       // IsPlayingJump = true;
+        stateTimer = 0f;
         JumpForwardServerRpc();
-    }
-
-    [ServerRpc]
-    private void JumpUpServerRpc()
-    {
-        JumpUpClientRpc();
-    }
-
-    [ClientRpc]
-    private void JumpUpClientRpc()
-    {
-        animator.SetTrigger(jumpUpHash);
     }
 
     [ServerRpc]
@@ -345,105 +269,116 @@ public class DragonGroundController : NetworkBehaviour
         animator.SetTrigger(jumpForwardHash);
     }
 
-    private void HandleJumpState()
+    private void HandleJumpAnimation()
     {
-        jumpTimer += Time.deltaTime;
-        float duration = lastJumpWasForward ? jumpForwardDuration : jumpUpDuration;
+        stateTimer += Time.deltaTime;
 
-        if (IsOwner && Input.GetKey(jumpKey))
+        if (stateTimer >= jumpAnimationDuration)
         {
-            EndJump();
-            TriggerTakeoff();
-            return;
-        }
-
-        if (groundingSystem.IsGrounded || jumpTimer >= duration)
-        {
-            EndJump();
+            isPlayingJump = false;
+            IsPlayingJump = false;
+            stateTimer = 0f;
         }
     }
 
-    private void EndJump()
-    {
-        isJumping = false;
-        jumpTimer = 0f;
-        ClearState();
-    }
+    // ═══════════════════════════════════════════════════════════════
+    // TAKEOFF (C) - lifts dragon up until raycasts miss, then hover
+    // ═══════════════════════════════════════════════════════════════
 
     private void TriggerTakeoff()
     {
+        isTakingOff = true;
+        IsTakingOff = true;
         isActive = false;
-        isJumping = false;
+        isPlayingJump = false;
+        IsPlayingJump = false;
+        stateTimer = 0f;
         ClearState();
-        groundingSystem.ResetFallingState();
-        flightController.RequestHover();
+
+        // Play JumpUp animation
+        JumpUpServerRpc();
     }
 
-    private void StartFall()
+    [ServerRpc]
+    private void JumpUpServerRpc()
     {
-        isFalling = true;
-        isActive = false;
-        jumpTimer = 0f;
-        ClearState();
-        IsFalling = true;
+        JumpUpClientRpc();
     }
 
-    private void HandleFallState()
+    [ClientRpc]
+    private void JumpUpClientRpc()
     {
-        if (IsOwner && Input.GetKey(jumpKey))
+        animator.SetTrigger(jumpUpHash);
+    }
+
+    private void ApplyTakeoffLift()
+    {
+        // Lift dragon up (in addition to any root motion from animation)
+        Vector3 newPos = rb.position;
+        newPos.y += takeoffLiftSpeed * Time.fixedDeltaTime;
+        rb.MovePosition(newPos);
+    }
+
+    private void HandleTakeoffState()
+    {
+        stateTimer += Time.deltaTime;
+
+        // After JumpUp animation duration, transition to hover
+        if (stateTimer >= jumpUpAnimationDuration)
         {
-            EndFall();
+            isTakingOff = false;
+            IsTakingOff = false;
+            stateTimer = 0f;
+
+            // Disable root motion for flight
+            if (animator != null)
+                animator.applyRootMotion = false;
+
             groundingSystem.ResetFallingState();
-            flightController.RequestGlide();
-            return;
-        }
-
-        if (groundingSystem.IsGrounded)
-        {
-            EndFall();
-            StartLanding();
+            flightController.RequestHover();
         }
     }
 
-    private void EndFall()
-    {
-        isFalling = false;
-        IsFalling = false;
-        jumpTimer = 0f;
-    }
-
-    private void StartLanding()
-    {
-        isLanding = true;
-        IsLanding = true;
-        jumpTimer = 0f;
-    }
-
-    private void HandleLandingState()
-    {
-        jumpTimer += Time.deltaTime;
-
-        if (jumpTimer >= landingDuration)
-        {
-            isLanding = false;
-            IsLanding = false;
-            jumpTimer = 0f;
-            isActive = true;
-        }
-    }
+    // ═══════════════════════════════════════════════════════════════
+    // STATE MANAGEMENT
+    // ═══════════════════════════════════════════════════════════════
 
     private void OnBecameGrounded()
     {
         isActive = true;
         ClearState();
+
+        // Re-enable root motion for ground movement
+        if (animator != null)
+            animator.applyRootMotion = true;
+    }
+
+    /// <summary>
+    /// Captures animation root motion and applies it to the rigidbody.
+    /// This makes the camera follow the dragon during jump animations.
+    /// Requires "Apply Root Motion" checked on the Animator.
+    /// </summary>
+    private void OnAnimatorMove()
+    {
+        if (animator == null || rb == null) return;
+        if (!IsOwner) return;
+
+        // During jump or takeoff, apply animation root motion to rigidbody
+        if (isPlayingJump || isTakingOff)
+        {
+            // Apply position delta from animation
+            Vector3 deltaPos = animator.deltaPosition;
+            rb.MovePosition(rb.position + deltaPos);
+
+            // Apply rotation delta from animation (optional - comment out if you don't want it)
+            // rb.MoveRotation(rb.rotation * animator.deltaRotation);
+        }
     }
 
     private void ClearState()
     {
         IsWalking = false;
         IsRunning = false;
-        IsFalling = false;
-        IsLanding = false;
         IsTurningLeft = false;
         IsTurningRight = false;
         ForwardSpeed = 0f;
