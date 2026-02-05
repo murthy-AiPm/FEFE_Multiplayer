@@ -908,7 +908,7 @@ Transform:
   m_GameObject: {fileID: 2560130988734915919}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 3.9899902, z: -12.930008}
+  m_LocalPosition: {x: 0, y: 3, z: -2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -934,7 +934,7 @@ MonoBehaviour:
   m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
-    TrackingTarget: {fileID: 6054378023783407502}
+    TrackingTarget: {fileID: 3086120407189549482}
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
@@ -4091,8 +4091,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8637463985270368911}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.3740723, y: 0.19488981, z: -0.080726065, w: 0.9030898}
-  m_LocalPosition: {x: -2.9161224, y: 7.0710754, z: -6.441757}
+  m_LocalRotation: {x: 0.37411937, y: 0.1943644, z: -0.08050848, w: 0.90320295}
+  m_LocalPosition: {x: -2.908615, y: 7.0710754, z: -6.4451447}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4645,7 +4645,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 48177541
+  GlobalObjectIdHash: 1353946614
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1

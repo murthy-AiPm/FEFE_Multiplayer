@@ -36,6 +36,12 @@ public class DragonCinemachineModeSwitcher : MonoBehaviour
             flightCam.Priority = 30;
             groundCam.Priority = 20;
         }
+        else if (isFlying)
+        {
+            diveCam.Priority = 10;
+            flightCam.Priority = 20;
+            groundCam.Priority = 30;
+        }
         else
         {
             diveCam.Priority = 10;

@@ -86,10 +86,7 @@ public class DragonGroundController : NetworkBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(jumpKey))
-        {
-            Debug.Log($"Jump pressed - IsGrounded: {groundingSystem.IsGrounded}, isPlayingJump: {isPlayingJump}, stateTimer: {stateTimer}");
-        }
+
         // Takeoff in progress - handled separately
         if (isTakingOff)
         {
@@ -221,7 +218,7 @@ public class DragonGroundController : NetworkBehaviour
         }
 
         // Takeoff (C) - lifts dragon up to hover
-        if (Input.GetKeyDown(takeoffKey) && groundingSystem.IsGrounded)
+        if (Input.GetKey(takeoffKey) && groundingSystem.IsGrounded)
         {
             TriggerTakeoff();
         }
@@ -362,7 +359,7 @@ public class DragonGroundController : NetworkBehaviour
         if (!IsOwner) return;
 
         // During jump or takeoff, apply animation root motion to rigidbody
-        if (isPlayingJump || isTakingOff)
+        if (isPlayingJump /*|| isTakingOff*/)
         {
             // Apply position delta from animation
             Vector3 deltaPos = animator.deltaPosition;
