@@ -59,7 +59,7 @@ public class DragonGroundAlignment : NetworkBehaviour
         targetYaw = dragonRoot.eulerAngles.y;
         currentYaw = targetYaw;
 
-        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        //rb.interpolation = RigidbodyInterpolation.Interpolate;
     }
 
     private void FixedUpdate()

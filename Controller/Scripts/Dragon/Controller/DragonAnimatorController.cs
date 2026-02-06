@@ -170,9 +170,9 @@ public class DragonAnimatorController : NetworkBehaviour
         // Ground
         animator.SetBool(isWalkingHash, netIsWalking.Value);
         animator.SetBool(isRunningHash, netIsRunning.Value);
-        animator.SetBool(isPlayingJumpHash, netIsPlayingJump.Value);
-        animator.SetBool(isTakingOffHash, netIsTakingOff.Value);
-        animator.SetBool(isTurningLeftHash, netIsTurningLeft.Value);
+        //animator.SetBool(isPlayingJumpHash, netIsPlayingJump.Value);
+        //animator.SetBool(isTakingOffHash, netIsTakingOff.Value);
+       animator.SetBool(isTurningLeftHash, netIsTurningLeft.Value);
         animator.SetBool(isTurningRightHash, netIsTurningRight.Value);
         animator.SetFloat(turnSpeedHash, netTurnSpeed.Value);
     }
