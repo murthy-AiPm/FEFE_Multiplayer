@@ -9060,6 +9060,34 @@ PrefabInstance:
       propertyPath: m_StreamingVersion
       value: 20241001
       objectReference: {fileID: 0}
+    - target: {fileID: -6768391324516302008, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: m_ExcludedPropertiesInInspector.Array.size
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: -6768391324516302008, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: 'm_ExcludedPropertiesInInspector.Array.data[3]'
+      value: Priority
+      objectReference: {fileID: 0}
+    - target: {fileID: -6768391324516302008, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: 'm_ExcludedPropertiesInInspector.Array.data[4]'
+      value: OutputChannel
+      objectReference: {fileID: 0}
+    - target: {fileID: -6768391324516302008, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: 'm_ExcludedPropertiesInInspector.Array.data[5]'
+      value: m_Transitions
+      objectReference: {fileID: 0}
+    - target: {fileID: -6768391324516302008, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: 'm_ExcludedPropertiesInInspector.Array.data[6]'
+      value: m_Follow
+      objectReference: {fileID: 0}
+    - target: {fileID: -6768391324516302008, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: 'm_ExcludedPropertiesInInspector.Array.data[7]'
+      value: m_StandbyUpdate
+      objectReference: {fileID: 0}
+    - target: {fileID: -6768391324516302008, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: 'm_ExcludedPropertiesInInspector.Array.data[8]'
+      value: m_Lens
+      objectReference: {fileID: 0}
     - target: {fileID: -5552401522037076435, guid: fdd653c42a61852429e157968a9cb924, type: 3}
       propertyPath: Priority.Enabled
       value: 1
@@ -9079,6 +9107,34 @@ PrefabInstance:
     - target: {fileID: -5552401522037076435, guid: fdd653c42a61852429e157968a9cb924, type: 3}
       propertyPath: m_StreamingVersion
       value: 20241001
+      objectReference: {fileID: 0}
+    - target: {fileID: -5552401522037076435, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: m_ExcludedPropertiesInInspector.Array.size
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: -5552401522037076435, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: 'm_ExcludedPropertiesInInspector.Array.data[3]'
+      value: Priority
+      objectReference: {fileID: 0}
+    - target: {fileID: -5552401522037076435, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: 'm_ExcludedPropertiesInInspector.Array.data[4]'
+      value: OutputChannel
+      objectReference: {fileID: 0}
+    - target: {fileID: -5552401522037076435, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: 'm_ExcludedPropertiesInInspector.Array.data[5]'
+      value: m_Transitions
+      objectReference: {fileID: 0}
+    - target: {fileID: -5552401522037076435, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: 'm_ExcludedPropertiesInInspector.Array.data[6]'
+      value: m_Follow
+      objectReference: {fileID: 0}
+    - target: {fileID: -5552401522037076435, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: 'm_ExcludedPropertiesInInspector.Array.data[7]'
+      value: m_StandbyUpdate
+      objectReference: {fileID: 0}
+    - target: {fileID: -5552401522037076435, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: 'm_ExcludedPropertiesInInspector.Array.data[8]'
+      value: m_Lens
       objectReference: {fileID: 0}
     - target: {fileID: -4831131860037875512, guid: fdd653c42a61852429e157968a9cb924, type: 3}
       propertyPath: m_BindingMode
@@ -9115,6 +9171,34 @@ PrefabInstance:
     - target: {fileID: 213050768139231618, guid: fdd653c42a61852429e157968a9cb924, type: 3}
       propertyPath: m_StreamingVersion
       value: 20241001
+      objectReference: {fileID: 0}
+    - target: {fileID: 213050768139231618, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: m_ExcludedPropertiesInInspector.Array.size
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 213050768139231618, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: 'm_ExcludedPropertiesInInspector.Array.data[3]'
+      value: Priority
+      objectReference: {fileID: 0}
+    - target: {fileID: 213050768139231618, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: 'm_ExcludedPropertiesInInspector.Array.data[4]'
+      value: OutputChannel
+      objectReference: {fileID: 0}
+    - target: {fileID: 213050768139231618, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: 'm_ExcludedPropertiesInInspector.Array.data[5]'
+      value: m_Transitions
+      objectReference: {fileID: 0}
+    - target: {fileID: 213050768139231618, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: 'm_ExcludedPropertiesInInspector.Array.data[6]'
+      value: m_Follow
+      objectReference: {fileID: 0}
+    - target: {fileID: 213050768139231618, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: 'm_ExcludedPropertiesInInspector.Array.data[7]'
+      value: m_StandbyUpdate
+      objectReference: {fileID: 0}
+    - target: {fileID: 213050768139231618, guid: fdd653c42a61852429e157968a9cb924, type: 3}
+      propertyPath: 'm_ExcludedPropertiesInInspector.Array.data[8]'
+      value: m_Lens
       objectReference: {fileID: 0}
     - target: {fileID: 1193484295559626393, guid: fdd653c42a61852429e157968a9cb924, type: 3}
       propertyPath: m_LocalPosition.x
@@ -9162,7 +9246,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1193484295935413192, guid: fdd653c42a61852429e157968a9cb924, type: 3}
       propertyPath: Priority.m_Value
-      value: 20
+      value: 500
       objectReference: {fileID: 0}
     - target: {fileID: 1193484295935413192, guid: fdd653c42a61852429e157968a9cb924, type: 3}
       propertyPath: m_LegacyPriority

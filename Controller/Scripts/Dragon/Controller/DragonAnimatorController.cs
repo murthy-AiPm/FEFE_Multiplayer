@@ -6,6 +6,11 @@ using Unity.Netcode;
 /// Owner writes state from FlightController + GroundController into NetworkVariables.
 /// All clients (including owner) read NetworkVariables and apply to local Animator.
 /// Triggers (JumpForward) are handled separately via ServerRpc in DragonGroundController.
+/// 
+/// OPTIMIZATIONS:
+/// - Throttled updates: 20Hz instead of 60Hz (reduces network traffic by 66%)
+/// - Change detection: Only sends NetworkVariable updates when values actually change
+/// - Float epsilon: Only updates floats if change > 0.01 (prevents micro-changes)
 /// </summary>
 [RequireComponent(typeof(Animator))]
 public class DragonAnimatorController : NetworkBehaviour
@@ -77,6 +82,11 @@ public class DragonAnimatorController : NetworkBehaviour
     private NetworkVariable<float> netTurnSpeed = new NetworkVariable<float>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
+    // ─── Throttling ──────────────────────────────────────
+    private const float NETWORK_UPDATE_INTERVAL = 0.05f; // 20 updates/sec instead of 60
+    private float nextNetworkUpdateTime;
+    private const float FLOAT_EPSILON = 0.01f; // Only update floats if change > this
+
     private void Awake()
     {
         if (animator == null)
@@ -114,42 +124,14 @@ public class DragonAnimatorController : NetworkBehaviour
     {
         if (animator == null) return;
 
-        // ─── Owner writes to NetworkVariables ────────────
+        // ─── Owner writes to NetworkVariables (THROTTLED) ────
         if (IsOwner)
         {
-            // Shared
-            if (groundingSystem != null)
-                netIsGrounded.Value = groundingSystem.IsGrounded;
-
-            // Flight
-            if (flightController != null)
+            // Only update network state at fixed intervals (20Hz instead of 60Hz)
+            if (Time.time >= nextNetworkUpdateTime)
             {
-                netIsHovering.Value = flightController.IsHoverMode;
-                netIsFlying.Value = flightController.IsFlying;
-                netIsGliding.Value = flightController.IsGliding;
-                netIsDiving.Value = flightController.IsDiving;
-                netAirSpeed.Value = flightController.AirSpeed;
-                netVerticalSpeed.Value = flightController.Velocity.y;
-
-                // ForwardSpeed: use flight velocity when airborne
-                if (!groundingSystem.IsGrounded)
-                    netForwardSpeed.Value = Vector3.Dot(flightController.Velocity, transform.forward);
-            }
-
-            // Ground
-            if (groundController != null)
-            {
-                netIsWalking.Value = groundController.IsWalking;
-                netIsRunning.Value = groundController.IsRunning;
-                netIsPlayingJump.Value = groundController.IsPlayingJump;
-                netIsTakingOff.Value = groundController.IsTakingOff;
-                netIsTurningLeft.Value = groundController.IsTurningLeft;
-                netIsTurningRight.Value = groundController.IsTurningRight;
-                netTurnSpeed.Value = groundController.TurnSpeed;
-
-                // ForwardSpeed: use ground state when grounded
-                if (groundingSystem.IsGrounded)
-                    netForwardSpeed.Value = groundController.ForwardSpeed;
+                nextNetworkUpdateTime = Time.time + NETWORK_UPDATE_INTERVAL;
+                UpdateNetworkVariables();
             }
         }
 
@@ -171,9 +153,91 @@ public class DragonAnimatorController : NetworkBehaviour
         animator.SetBool(isWalkingHash, netIsWalking.Value);
         animator.SetBool(isRunningHash, netIsRunning.Value);
         //animator.SetBool(isPlayingJumpHash, netIsPlayingJump.Value);
-        //animator.SetBool(isTakingOffHash, netIsTakingOff.Value);
-       animator.SetBool(isTurningLeftHash, netIsTurningLeft.Value);
+       // animator.SetBool(isTakingOffHash, netIsTakingOff.Value);
+        animator.SetBool(isTurningLeftHash, netIsTurningLeft.Value);
         animator.SetBool(isTurningRightHash, netIsTurningRight.Value);
         animator.SetFloat(turnSpeedHash, netTurnSpeed.Value);
+    }
+
+    /// <summary>
+    /// Only update NetworkVariables when values actually change.
+    /// This prevents flooding the network with redundant updates.
+    /// </summary>
+    private void UpdateNetworkVariables()
+    {
+        // Shared
+        if (groundingSystem != null)
+        {
+            bool isGrounded = groundingSystem.IsGrounded;
+            if (netIsGrounded.Value != isGrounded)
+                netIsGrounded.Value = isGrounded;
+        }
+
+        // Flight
+        if (flightController != null)
+        {
+            if (netIsHovering.Value != flightController.IsHoverMode)
+                netIsHovering.Value = flightController.IsHoverMode;
+
+            if (netIsFlying.Value != flightController.IsFlying)
+                netIsFlying.Value = flightController.IsFlying;
+
+            if (netIsGliding.Value != flightController.IsGliding)
+                netIsGliding.Value = flightController.IsGliding;
+
+            if (netIsDiving.Value != flightController.IsDiving)
+                netIsDiving.Value = flightController.IsDiving;
+
+            // Only update floats if change is significant
+            float airSpeed = flightController.AirSpeed;
+            if (Mathf.Abs(netAirSpeed.Value - airSpeed) > FLOAT_EPSILON)
+                netAirSpeed.Value = airSpeed;
+
+            float vertSpeed = flightController.Velocity.y;
+            if (Mathf.Abs(netVerticalSpeed.Value - vertSpeed) > FLOAT_EPSILON)
+                netVerticalSpeed.Value = vertSpeed;
+
+            // ForwardSpeed: use flight velocity when airborne
+            if (groundingSystem != null && !groundingSystem.IsGrounded)
+            {
+                float fwdSpeed = Vector3.Dot(flightController.Velocity, transform.forward);
+                if (Mathf.Abs(netForwardSpeed.Value - fwdSpeed) > FLOAT_EPSILON)
+                    netForwardSpeed.Value = fwdSpeed;
+            }
+        }
+
+        // Ground
+        if (groundController != null)
+        {
+            if (netIsWalking.Value != groundController.IsWalking)
+                netIsWalking.Value = groundController.IsWalking;
+
+            if (netIsRunning.Value != groundController.IsRunning)
+                netIsRunning.Value = groundController.IsRunning;
+
+            if (netIsPlayingJump.Value != groundController.IsPlayingJump)
+                netIsPlayingJump.Value = groundController.IsPlayingJump;
+
+            if (netIsTakingOff.Value != groundController.IsTakingOff)
+                netIsTakingOff.Value = groundController.IsTakingOff;
+
+            if (netIsTurningLeft.Value != groundController.IsTurningLeft)
+                netIsTurningLeft.Value = groundController.IsTurningLeft;
+
+            if (netIsTurningRight.Value != groundController.IsTurningRight)
+                netIsTurningRight.Value = groundController.IsTurningRight;
+
+            float turnSpeed = groundController.TurnSpeed;
+            if (Mathf.Abs(netTurnSpeed.Value - turnSpeed) > FLOAT_EPSILON)
+                netTurnSpeed.Value = turnSpeed;
+
+            // ForwardSpeed: use ground state when grounded
+            if (groundingSystem != null && groundingSystem.IsGrounded)
+            {
+                float fwdSpeed = groundController.ForwardSpeed;
+                if (Mathf.Abs(netForwardSpeed.Value - fwdSpeed) > FLOAT_EPSILON)
+                    netForwardSpeed.Value = fwdSpeed;
+            }
+        }
     }
 }
