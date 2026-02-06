@@ -27,27 +27,27 @@ public class DragonCinemachineModeSwitcher : MonoBehaviour
         // Priority: Dive > Flight > Ground
         if (isDiving)
         {
-            diveCam.Priority = 30;
-            flightCam.Priority = 20;
-            groundCam.Priority = 10;
+            diveCam.Priority = 15;
+            flightCam.Priority = 10;
+            groundCam.Priority = 5;
         }
         else if (isHover)
         {
-            diveCam.Priority = 10;
-            flightCam.Priority = 30;
-            groundCam.Priority = 20;
+            diveCam.Priority = 5;
+            flightCam.Priority = 15;
+            groundCam.Priority = 10;
         }
         else if (isFlying)
         {
-            diveCam.Priority = 10;
-            flightCam.Priority = 30;
-            groundCam.Priority = 20;
+            diveCam.Priority = 5;
+            flightCam.Priority = 15;
+            groundCam.Priority = 10;
         }
         else if (isGrounded)
         {
-            diveCam.Priority = 10;
-            flightCam.Priority = 20;
-            groundCam.Priority = 30;
+            diveCam.Priority = 5;
+            flightCam.Priority = 10;
+            groundCam.Priority = 15;
         }
     }
 }
