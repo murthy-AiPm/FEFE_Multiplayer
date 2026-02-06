@@ -6,9 +6,9 @@ using Unity.Cinemachine;
 
 public class PlayerScript : MonoBehaviour
 {
-    [SerializeField] internal PlayerController playerContoller;
+    //[SerializeField] internal PlayerController playerContoller;
    // [SerializeField] internal PlayerAnimator playerAnimator;
-    [SerializeField] internal ColliderManager colliderManager;
+   // [SerializeField] internal ColliderManager colliderManager;
 
     // collision script
     // stats

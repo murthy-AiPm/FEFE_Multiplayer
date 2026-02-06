@@ -4,19 +4,16 @@ using UnityEngine;
 
 public class HumanoidController : ThirdPersonController
 {
-    [SerializeField] internal HumanoidColliderManger humanoidCollider;
+    //[SerializeField] internal HumanoidColliderManger humanoidCollider;
     [SerializeField] internal float jumpnum;
     [SerializeField] internal float crouchSpeed;
-    [SerializeField] internal float walkSpeed,combatSpeed, climbSpeed;
+    [SerializeField] internal float walkSpeed,combatSpeed;
     [SerializeField] internal float stamina, staminaModifier, maxStamina,minStamina;
-    [SerializeField] internal GameObject target;
     internal bool isSecondaryAttack;
     public HumanStats humanStats;
     float oldAngle;
-    float currentAngle;
     int layerMask = 1 << 9;
-    bool isClimbing;
-
+    
     private void OnEnable()
     {
         playerController.inputController.isCombatMode = false;
@@ -33,8 +30,7 @@ public class HumanoidController : ThirdPersonController
         //Jump();
         Stamina();
         isSecondaryAttack = playerController.inputController.isSecondaryAttack;
-        isobstacle = humanoidCollider.humanoidRay.isObstacle;
-        isClimbing = humanoidCollider.isClimbing;
+        
       
  
     }
@@ -124,7 +120,7 @@ public class HumanoidController : ThirdPersonController
     {
         CameraCalculations(out float targetAngle, out float angle);
         Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward * speed;
-        if (GetComponent<InputController>().isCombatMode && !isClimbing)
+        if (GetComponent<InputController>().isCombatMode)
         {          
             if (isSecondaryAttack)
             {
@@ -142,7 +138,7 @@ public class HumanoidController : ThirdPersonController
                     }
                 }
             }
-            else if(isMoving && !isClimbing)
+            else if(isMoving)
             {
                 transform.rotation = Quaternion.Euler(transform.rotation.x, angle, transform.rotation.z);
                 if (GetComponent<InputController>().isPrimaryAttack)
@@ -155,7 +151,7 @@ public class HumanoidController : ThirdPersonController
                 }
             }
         }
-        else if (isMoving && !isClimbing)
+        else if (isMoving)
         {
             transform.rotation = Quaternion.Euler(0f, angle, 0f);
             oldAngle = angle;
@@ -166,25 +162,6 @@ public class HumanoidController : ThirdPersonController
             else if (isobstacle)
             {
                 controller.Move(moveDir.normalized * 0 * speedModifier * Time.deltaTime);
-            }
-        }
-        if (isClimbing)
-        {
-            gravityValue = 0;
-            playerVelocity.y = 0;
-            //isgrounded = false;
-            GetComponent<InputController>().isCombatMode = false;
-            transform.rotation = Quaternion.Euler(0,0,0);
-            transform.position = new Vector3(humanoidCollider.ladderTransform.x, transform.position.y, humanoidCollider.ladderTransform.z -0.73f);
-            if (Input.GetKey(KeyCode.W) && isMoving)
-            {
-                controller.Move(Vector3.up * climbSpeed * Time.deltaTime); // ClimbSpeed set to 2 always
-               
-            }
-            if (Input.GetKey(KeyCode.S))
-            {
-                controller.Move(-Vector3.up * climbSpeed * Time.deltaTime);
-                
             }
         }
         else /*if(!isClimbing)*/

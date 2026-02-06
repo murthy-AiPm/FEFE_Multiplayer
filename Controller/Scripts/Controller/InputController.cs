@@ -66,8 +66,7 @@ public class InputController : MonoBehaviour
     public InputSnapshot Snapshot { get; private set; }
 
     // Cached refs
-    private DragonController _dragon;
-    private HumanoidColliderManger _humanoidCollider;
+       private HumanoidColliderManger _humanoidCollider;
 
     // Jump continuity (your old logic preserved)
     [SerializeField] bool previousjump;
@@ -75,12 +74,9 @@ public class InputController : MonoBehaviour
 
     void Awake()
     {
-        _dragon = GetComponent<DragonController>();
+       
         _humanoidCollider = GetComponent<HumanoidColliderManger>(); // may be null (dragon)
-        //if (MS == null)
-        //{
-        //    return;
-        //}
+
     }
 
     void Update()
@@ -100,8 +96,6 @@ public class InputController : MonoBehaviour
         }
         _wasGrounded = onGround;
 
-        if (_humanoidCollider != null)
-            isClimbing = _humanoidCollider.isClimbing;
 
         // 1) Read input ONCE
         Snapshot = ReadSnapshot();
@@ -110,7 +104,7 @@ public class InputController : MonoBehaviour
         ApplySnapshotToLegacyFlags(Snapshot);
 
         // 3) Any “derived” state that depends on other components (compat)
-        ApplyDerivedStates();
+
     }
 
     private InputSnapshot ReadSnapshot()
@@ -298,32 +292,7 @@ public class InputController : MonoBehaviour
         }
     }
 
-    private void ApplyDerivedStates()
-    {
-        // Derived states that depend on DragonController
-        if (_dragon != null)
-        {
-            if (_dragon.isFlying)
-            {
-                isFlying = true;
-                isFalling = false;
-            }
-            else
-            {
-                isFlying = false;
-            }
 
-            if (_dragon.isGliding && _dragon.airSpeed > _dragon.minairSpeed && isModified)
-                isAirBrake = true;
-            else
-                isAirBrake = false;
-        }
-        else
-        {
-            isFlying = false;
-            isAirBrake = false;
-        }
-    }
 
     private static string GetDirectionString(Vector2 move)
     {

@@ -6,10 +6,7 @@ using Unity.Cinemachine;
 public class ThirdPersonController : MonoBehaviour
 {
     [SerializeField] internal PlayerController playerController;
-    [SerializeField] PlayerScript playerScript;
-    [SerializeField] internal CharacterController controller;
-    //[SerializeField] internal ColliderManager colliderManager;
-    //[SerializeField] internal RayCasts rayCasts;
+      [SerializeField] internal CharacterController controller;
     [SerializeField] internal Transform cam;
     [SerializeField] internal float jumpHeight;
     [SerializeField] internal float DistToGround;
@@ -19,16 +16,13 @@ public class ThirdPersonController : MonoBehaviour
     [SerializeField] internal float speedModifier, maxSpeedModifier, minSpeedModifer;
     [SerializeField] internal GameObject leftFeet, rightFeet, obstacleRayCast;
 
-    public CinemachineFreeLook vcam;
+    //public CinemachineFreeLook vcam;
     public Vector3 playerVelocity;
     public bool isgrounded;
     public bool isfreeFall;
    [SerializeField] internal bool isobstacle;
     public float floatfreefall;
     public float num;  // raycast vertical movement
-    public float num2; // front raycast
-    public float num3; // back raycast
-    public float num4; // raycast horizontal movement
     public int key;
 
     internal float turnSmoothVelocity;
@@ -70,8 +64,8 @@ public class ThirdPersonController : MonoBehaviour
     {
         cam = Camera.main.transform;
         // Cache CharacterController once
-        if (controller == null && playerScript != null)
-            controller = playerScript.GetComponentInChildren<CharacterController>();
+        if (controller == null )
+            controller = GetComponentInChildren<CharacterController>();
 
         if (controller == null)
             controller = GetComponentInChildren<CharacterController>();
