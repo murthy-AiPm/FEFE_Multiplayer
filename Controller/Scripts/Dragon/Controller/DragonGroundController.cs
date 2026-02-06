@@ -343,6 +343,13 @@ public class DragonGroundController : NetworkBehaviour
         isActive = true;
         ClearState();
 
+        // Sync yaw to current rotation so dragon doesn't snap
+        if (groundAlignment != null)
+        {
+            float currentYaw = rb.rotation.eulerAngles.y;
+            groundAlignment.SetYawImmediate(currentYaw);
+        }
+
         // Re-enable root motion for ground movement
         if (animator != null)
             animator.applyRootMotion = true;
