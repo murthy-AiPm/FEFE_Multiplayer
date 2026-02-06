@@ -907,7 +907,7 @@ Transform:
   m_GameObject: {fileID: 2560130988734915919}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4615,7 +4615,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 48177541
+  GlobalObjectIdHash: 1353946614
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -4641,7 +4641,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DragonFlightController
   ShowTopMostFoldoutHeaderGroup: 1
-  cameraTransform: {fileID: 0}
   rb: {fileID: 0}
   useRigidbodyMovement: 0
   groundingSystem: {fileID: 0}
@@ -4649,8 +4648,6 @@ MonoBehaviour:
   verticalAxis: Vertical
   hoverAxis: Hover
   toggleHoverKey: 304
-  speedModifierKey: 306
-  startInHoverMode: 1
   diveKey: 118
   invertY: 0
   rotationSmoothTime: 0.25
@@ -4662,19 +4659,22 @@ MonoBehaviour:
   hoverMouseSensitivityY: 80
   hoverPitchClamp: 20
   hoverKeyYawSpeed: 70
-  hoverHeight: 2
   hoverVerticalSpeed: 3
   hoverYawRate: 80
   hoverPitchRate: 0
-  minAirSpeed: 4
-  maxAirSpeed: 100
-  acceleration: 2
-  deceleration: 0.8
-  momentum: 2.5
-  glideSpeedDecay: 1.2
-  glideDownSpeed: 2.5
-  glideAutoAccel: 6
-  glideMaxSpeed: 32
+  maxStamina: 100
+  staminaDrainRate: 10
+  staminaRegenRate: 15
+  staminaResumeThreshold: 50
+  flapBaseAirSpeed: 15
+  flapMaxAirSpeed: 25
+  flapAcceleration: 5
+  glideMinAirSpeed: 5
+  glideAirSpeedLossRate: 2
+  glideDescentSpeed: 1.5
+  pitchStaminaDrainMultiplier: 1.5
+  pitchAirSpeedBoost: 3
+  pitchMaxAngle: 45
   diveTargetSpeed: 55
   diveAccel: 18
   divePitchMin: 85

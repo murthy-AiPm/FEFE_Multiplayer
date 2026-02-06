@@ -39,12 +39,12 @@ public class FlightStats : MonoBehaviour
     //    // fill.color = gradient.Evaluate(speedSlider.normalizedValue);
     //}
 
-    public void SetMaxAirSpeed(int maxairSpeed)
+    public void SetMaxAirSpeed(float maxairSpeed)
     {
         speedSlider.maxValue = maxairSpeed;
 
     }
-    public void SetMinAirSpeed(int minairSpeed)
+    public void SetMinAirSpeed(float minairSpeed)
     {
         speedSlider.minValue = minairSpeed;
 
@@ -56,7 +56,7 @@ public class FlightStats : MonoBehaviour
 
     }
 
-    public void SetMaxStamina(int maxStamina)
+    public void SetMaxStamina(float maxStamina)
     {
         staminaSlider.maxValue = maxStamina;
 
