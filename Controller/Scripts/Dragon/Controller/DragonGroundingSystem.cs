@@ -1,10 +1,12 @@
 using UnityEngine;
 
 /// <summary>
-/// Single source of truth for dragon grounding state.
+/// Single source of truth for dragon/mount grounding state.
 /// Uses 4 paw raycasts (Left Hand, Right Hand, Left Foot, Right Foot).
 /// Grounded = 3/4 paws hit OR both front paws (hands) hit.
 /// IsFalling = both front paws off ground while not in flight.
+/// 
+/// IMPROVED: Added raycastOriginOffset to start raycasts higher (better for horses)
 /// </summary>
 public class DragonGroundingSystem : MonoBehaviour
 {
@@ -27,6 +29,8 @@ public class DragonGroundingSystem : MonoBehaviour
 
     [Header("Raycast Settings")]
     [SerializeField] private float raycastDistance = 1.5f;
+    [Tooltip("Start raycast this high above paw transform (prevents hitting own collider)")]
+    [SerializeField] private float raycastOriginOffset = 0.2f;
     [SerializeField] private LayerMask groundMask = ~0;
     [SerializeField] private float groundedConfirmTime = 0.08f;
 
@@ -80,10 +84,14 @@ public class DragonGroundingSystem : MonoBehaviour
             return;
         }
 
-        bool didHit = Physics.Raycast(paw.position, Vector3.down, out RaycastHit rh,
-            raycastDistance, groundMask, QueryTriggerInteraction.Ignore);
+        // Start raycast slightly above paw transform to avoid hitting own collider
+        Vector3 rayStart = paw.position + Vector3.up * raycastOriginOffset;
+        float totalDistance = raycastDistance + raycastOriginOffset;
 
-        // Ignore self-hit (dragon's own colliders)
+        bool didHit = Physics.Raycast(rayStart, Vector3.down, out RaycastHit rh,
+            totalDistance, groundMask, QueryTriggerInteraction.Ignore);
+
+        // Ignore self-hit (dragon's/horse's own colliders)
         if (didHit && rh.transform != null && rh.transform.root == transform.root)
             didHit = false;
 
@@ -167,8 +175,12 @@ public class DragonGroundingSystem : MonoBehaviour
     private void DrawPawRay(Transform paw, bool isHit)
     {
         if (paw == null) return;
+
+        Vector3 rayStart = paw.position + Vector3.up * raycastOriginOffset;
+        float totalDistance = raycastDistance + raycastOriginOffset;
+
         Gizmos.color = isHit ? Color.green : Color.red;
-        Gizmos.DrawLine(paw.position, paw.position + Vector3.down * raycastDistance);
-        Gizmos.DrawSphere(paw.position, 0.1f);
+        Gizmos.DrawLine(rayStart, rayStart + Vector3.down * totalDistance);
+        Gizmos.DrawSphere(rayStart, 0.1f);
     }
 }

@@ -188,3 +188,53 @@ MonoBehaviour:
       _Clip: {fileID: 7400004, guid: a9e228972999b0d46a21e30edf97d812, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN
+  - key: Mount/Start
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400000, guid: 9c4a604921a1b7842aa5fcdcee052074, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+  - key: Mount/Dismount
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400000, guid: 9c4a604921a1b7842aa5fcdcee052074, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+  - key: Riding/Idle
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400000, guid: 0fee6e105aee5d34d89fbd109ad0e3d3, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+  - key: Riding/Walk
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400000, guid: 4ebf3618ed88d084b98fa26913bdd4c1, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+  - key: Riding/Gallop
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400000, guid: 9a6f63f8143d0884db4a2df7013fe8b3, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN

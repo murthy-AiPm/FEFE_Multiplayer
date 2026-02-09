@@ -5,8 +5,10 @@ public struct AnimationContext
     public ThirdPersonController tps;
     public InputController input;
     public InputSnapshot snapshot;
+    public MountController mountController; // NEW: for mounted state
 
-    public bool Moving => input != null && input.isMoving;
+    // Humanoid states
+    public bool Moving => GetMoving();
     public bool CombatMode => input != null && input.isCombatMode;
     public bool Modified => input != null && input.isModified;
     public bool SecondaryHeld => input != null && input.isSecondaryAttack;
@@ -15,11 +17,29 @@ public struct AnimationContext
     public bool FreeFall => tps != null && tps.isfreeFall;
     public bool Sheathing => input != null && input.isSheating;
 
+    // Mounting states (NEW)
+    public bool IsMounted => mountController != null && mountController.IsMounted;
+    public bool IsTransitioning => mountController != null && mountController.IsTransitioning;
+
     public string DirString => input != null ? input.directions : "None";
- public bool IsMounted => mountController != null && mountController.IsMounted;
- public MountController mountController; 
 
     // Action system hook (set by your interaction code)
     public int ActionId;      // 0 = none. 1 = chest, 2 = ballista, etc.
     public bool ActionStart;  // edge trigger for starting the action (optional)
+
+    /// <summary>
+    /// Returns true if humanoid is moving OR if mounted and horse is moving.
+    /// This allows existing "Moving" rules to work for both grounded and mounted states.
+    /// </summary>
+    private bool GetMoving()
+    {
+        // If mounted, check if the mount is moving
+        if (IsMounted && mountController.CurrentMount != null)
+        {
+            return mountController.CurrentMount.IsMoving;
+        }
+
+        // Normal humanoid movement
+        return input != null && input.isMoving;
+    }
 }

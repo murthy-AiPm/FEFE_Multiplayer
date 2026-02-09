@@ -15,6 +15,7 @@ public class RuleAnimancerDriver : MonoBehaviour
     [SerializeField] private ThirdPersonController tps;
     [SerializeField] private InputController input;
     [SerializeField] private ClientAuthoritativeAnimancerSync networkSync; // NEW: for attack syncing
+    [SerializeField] private MountController mountController;
 
     [Header("Fades")]
     [SerializeField] private float baseFade = 0.12f;
@@ -68,7 +69,7 @@ public class RuleAnimancerDriver : MonoBehaviour
         if (tps == null) tps = GetComponentInParent<ThirdPersonController>();
         if (input == null) input = GetComponentInParent<InputController>();
         if (networkSync == null) networkSync = GetComponentInParent<ClientAuthoritativeAnimancerSync>();
-
+        if (mountController == null) mountController = GetComponentInParent<MountController>();
         // Check if we're a remote client
         var netObj = GetComponentInParent<Unity.Netcode.NetworkBehaviour>();
         if (netObj != null)
@@ -98,6 +99,7 @@ public class RuleAnimancerDriver : MonoBehaviour
             tps = tps,
             input = input,
             snapshot = input.Snapshot,
+            mountController = mountController,
             ActionId = _actionId,
             ActionStart = _actionStartEdge,
         };
@@ -574,6 +576,8 @@ public class RuleAnimancerDriver : MonoBehaviour
                 BoolParam.Grounded => ctx.Grounded,
                 BoolParam.FreeFall => ctx.FreeFall,
                 BoolParam.Sheathing => ctx.Sheathing,
+                BoolParam.IsMounted => ctx.IsMounted,
+                BoolParam.IsTransitioning => ctx.IsTransitioning,
                 _ => false
             };
 

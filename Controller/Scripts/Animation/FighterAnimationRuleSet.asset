@@ -418,4 +418,159 @@ MonoBehaviour:
       direction: 0
       useActionId: 0
       actionIdEquals: 0
+  - name: Mount/Start
+    layer: 1
+    priority: 200
+    lockUntilEnd: 1
+    allowInterruptSameLayer: 0
+    animationKey: Mount/Start
+    all:
+    - useBool: 1
+      boolParam: 9
+      boolValue: 1
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Mount/Dismount
+    layer: 1
+    priority: 200
+    lockUntilEnd: 1
+    allowInterruptSameLayer: 0
+    animationKey: Mount/Dismount
+    all:
+    - useBool: 1
+      boolParam: 9
+      boolValue: 1
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 8
+      boolValue: 0
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Riding/Gallop
+    layer: 0
+    priority: 100
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    animationKey: Riding/Gallop
+    all:
+    - useBool: 1
+      boolParam: 8
+      boolValue: 1
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 1
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 2
+      boolValue: 1
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Riding/Walk
+    layer: 0
+    priority: 100
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    animationKey: Riding/Walk
+    all:
+    - useBool: 1
+      boolParam: 8
+      boolValue: 1
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 1
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 2
+      boolValue: 0
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Riding/Idle
+    layer: 0
+    priority: 100
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    animationKey: Riding/Idle
+    all:
+    - useBool: 1
+      boolParam: 8
+      boolValue: 1
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 0
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 2
+      boolValue: 0
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
   combos: []

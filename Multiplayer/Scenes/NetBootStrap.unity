@@ -427,7 +427,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0df72ff56b73164fbe412caac22f1e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ApplicationController
-  enableMultiplayer: 0
+  enableMultiplayer: 1
   clientPrefab: {fileID: 7034641404458194442, guid: 25cfe8afd0b553b4ebe1427aa4bd28c8, type: 3}
   hostPrefab: {fileID: 7457161090045411162, guid: 84190a648b25312438c561733a4ca652, type: 3}
 --- !u!1 &1561024706

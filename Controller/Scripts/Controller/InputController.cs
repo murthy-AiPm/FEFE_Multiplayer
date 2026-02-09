@@ -105,6 +105,13 @@ public class InputController : MonoBehaviour
 
         // 3) Any “derived” state that depends on other components (compat)
 
+
+
+        if (Input.GetButton("Action"))
+        {
+            Debug.Log("action");
+        }
+
     }
 
     private InputSnapshot ReadSnapshot()
@@ -139,6 +146,7 @@ public class InputController : MonoBehaviour
             primaryUp = Input.GetButtonUp("PrimaryAttack"),
 
         };
+
     }
 
     private void ApplySnapshotToLegacyFlags(InputSnapshot s)
