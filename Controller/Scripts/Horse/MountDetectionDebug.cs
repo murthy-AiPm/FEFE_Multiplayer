@@ -17,11 +17,11 @@ public class MountDetectionDebug : MonoBehaviour
         // Check what's nearby
         Collider[] hits = Physics.OverlapSphere(transform.position, checkRadius, checkLayer);
         
-        Debug.Log($"=== MOUNT DETECTION DEBUG ===");
-        Debug.Log($"Position: {transform.position}");
-        Debug.Log($"Radius: {checkRadius}");
-        Debug.Log($"Layer Mask: {checkLayer.value}");
-        Debug.Log($"Found {hits.Length} colliders");
+        //Debug.Log($"=== MOUNT DETECTION DEBUG ===");
+        //Debug.Log($"Position: {transform.position}");
+        //Debug.Log($"Radius: {checkRadius}");
+        //Debug.Log($"Layer Mask: {checkLayer.value}");
+        //Debug.Log($"Found {hits.Length} colliders");
 
         foreach (var hit in hits)
         {

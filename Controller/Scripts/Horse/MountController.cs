@@ -87,8 +87,11 @@ public class MountController : NetworkBehaviour
 
     private void LateUpdate()
     {
+        // Only owner manually positions at saddle point
+        // Remotes receive position via NetworkTransform parenting
+        if (!IsOwner) return;
+
         // Keep humanoid positioned at saddle point while mounted
-        // Use the public property so it works for both owner and remotes
         if (IsMounted && !IsTransitioning && currentMount != null && currentMount.SaddlePoint != null)
         {
             transform.position = currentMount.SaddlePoint.position;
@@ -272,33 +275,38 @@ public class MountController : NetworkBehaviour
         isMounted = true;
         isTransitioning = false;
 
-        // Sync to network
+        // Sync to network (owner only)
         SyncNetworkState();
 
-        // IMPORTANT: NetworkObjects can only be parented under other NetworkObjects
-        Transform horseRoot = currentMount.transform;
-        transform.SetParent(horseRoot);
-
-        // Position at saddle point
-        if (currentMount.SaddlePoint != null)
+        // Only owner performs reparenting and position changes
+        // Remotes will receive position updates via NetworkTransform
+        if (IsOwner)
         {
-            transform.position = currentMount.SaddlePoint.position;
-            transform.rotation = currentMount.SaddlePoint.rotation;
+            // IMPORTANT: NetworkObjects can only be parented under other NetworkObjects
+            Transform horseRoot = currentMount.transform;
+            transform.SetParent(horseRoot);
+
+            // Position at saddle point
+            if (currentMount.SaddlePoint != null)
+            {
+                transform.position = currentMount.SaddlePoint.position;
+                transform.rotation = currentMount.SaddlePoint.rotation;
+            }
+            else
+            {
+                transform.localPosition = Vector3.up * 1.5f;
+                transform.localRotation = Quaternion.identity;
+            }
+
+            // Disable humanoid movement
+            if (thirdPersonController != null)
+                thirdPersonController.enabled = false;
+
+            if (characterController != null)
+                characterController.enabled = false;
         }
-        else
-        {
-            transform.localPosition = Vector3.up * 1.5f;
-            transform.localRotation = Quaternion.identity;
-        }
 
-        // Disable humanoid movement
-        if (thirdPersonController != null)
-            thirdPersonController.enabled = false;
-
-        if (characterController != null)
-            characterController.enabled = false;
-
-        Debug.Log("[MountController] Mount complete");
+        Debug.Log($"[MountController] Mount complete (IsOwner: {IsOwner})");
     }
 
     /// <summary>
@@ -325,25 +333,29 @@ public class MountController : NetworkBehaviour
         isMounted = false;
         isTransitioning = false;
 
-        // Sync to network
+        // Sync to network (owner only)
         SyncNetworkState();
 
-        // Unparent from horse
-        transform.SetParent(null);
+        // Only owner performs unparenting and position changes
+        if (IsOwner)
+        {
+            // Unparent from horse
+            transform.SetParent(null);
 
-        // Position at dismount location
-        transform.position = position;
+            // Position at dismount location
+            transform.position = position;
 
-        // Re-enable humanoid movement
-        if (thirdPersonController != null)
-            thirdPersonController.enabled = true;
+            // Re-enable humanoid movement
+            if (thirdPersonController != null)
+                thirdPersonController.enabled = true;
 
-        if (characterController != null)
-            characterController.enabled = true;
+            if (characterController != null)
+                characterController.enabled = true;
 
-        currentMount = null;
+            currentMount = null;
+        }
 
-        Debug.Log("[MountController] Dismount complete");
+        Debug.Log($"[MountController] Dismount complete (IsOwner: {IsOwner})");
     }
 
     /// <summary>

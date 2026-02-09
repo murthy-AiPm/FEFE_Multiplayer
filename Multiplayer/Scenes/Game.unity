@@ -2133,7 +2133,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 711040484119619372, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1950860035}
   m_SourcePrefab: {fileID: 100100000, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
 --- !u!1 &1343891899
 GameObject:
@@ -2328,7 +2331,6 @@ MonoBehaviour:
   spawnPoints:
   - {fileID: 923606959}
   - {fileID: 1972067762}
-  - {fileID: 0}
 --- !u!4 &1509017768
 Transform:
   m_ObjectHideFlags: 0
@@ -2803,6 +2805,57 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!1 &1950860021 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 711040484119619372, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
+  m_PrefabInstance: {fileID: 1241314364}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1950860035
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1950860021}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b364b68b6097e874c9674877fbf54f3f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ClientNetworkTransform
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
+  AuthorityMode: 0
+  TickSyncChildren: 0
+  UseUnreliableDeltas: 0
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 1
+  SyncScaleY: 1
+  SyncScaleZ: 1
+  PositionThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
+  InLocalSpace: 0
+  SwitchTransformSpaceWhenParented: 0
+  Interpolate: 1
+  SlerpPosition: 0
 --- !u!1 &1972067760
 GameObject:
   m_ObjectHideFlags: 0
@@ -2840,8 +2893,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1972067760}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.073319085, y: 0.48118916, z: -0.040398534, w: 0.8726106}
-  m_LocalPosition: {x: 514.84, y: 113.62, z: 395.31}
+  m_LocalRotation: {x: -0.031090906, y: 0.8807443, z: -0.059079416, w: -0.46886298}
+  m_LocalPosition: {x: 70.51, y: 3.87, z: 46.06}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
