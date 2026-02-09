@@ -5,6 +5,8 @@ using System.Collections;
 /// <summary>
 /// Attach to humanoid player. Handles mounting/dismounting horses and state management.
 /// Integrates with RuleAnimancerDriver for animation control.
+/// 
+/// NETWORK SYNC: isMounted and isTransitioning are synced via NetworkVariables
 /// </summary>
 public class MountController : NetworkBehaviour
 {
@@ -39,16 +41,25 @@ public class MountController : NetworkBehaviour
     [SerializeField] private CharacterController characterController;
     [SerializeField] private Animator animator;
 
-    // State
+    // Network state (synced across all clients)
+    private NetworkVariable<bool> netIsMounted = new NetworkVariable<bool>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    private NetworkVariable<bool> netIsTransitioning = new NetworkVariable<bool>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    // Local state (owner only)
     private MountableEntity currentMount;
     private bool isMounted;
-    private bool isTransitioning; // During mount/dismount animation
+    private bool isTransitioning;
     private float holdTimer;
-    private MountableEntity nearbyMount; // Mount player is close to
+    private MountableEntity nearbyMount;
 
     // Public read-only properties for AnimationContext
-    public bool IsMounted => isMounted;
-    public bool IsTransitioning => isTransitioning;
+    // Online mode: read from NetworkVariables (synced)
+    // Offline mode: read from local state
+    public bool IsMounted => IsSpawned ? netIsMounted.Value : isMounted;
+    public bool IsTransitioning => IsSpawned ? netIsTransitioning.Value : isTransitioning;
     public MountableEntity CurrentMount => currentMount;
 
     private void Awake()
@@ -77,7 +88,8 @@ public class MountController : NetworkBehaviour
     private void LateUpdate()
     {
         // Keep humanoid positioned at saddle point while mounted
-        if (isMounted && !isTransitioning && currentMount != null && currentMount.SaddlePoint != null)
+        // Use the public property so it works for both owner and remotes
+        if (IsMounted && !IsTransitioning && currentMount != null && currentMount.SaddlePoint != null)
         {
             transform.position = currentMount.SaddlePoint.position;
             transform.rotation = currentMount.SaddlePoint.rotation;
@@ -133,8 +145,6 @@ public class MountController : NetworkBehaviour
             {
                 holdTimer += Time.deltaTime;
 
-                // TODO: Show UI fill progress here (holdTimer / holdDuration)
-
                 if (holdTimer >= holdDuration)
                 {
                     holdTimer = 0f;
@@ -156,8 +166,12 @@ public class MountController : NetworkBehaviour
     {
         if (mount == null || mount.IsMounted) return;
 
+        // Update local state
         isTransitioning = true;
         currentMount = mount;
+
+        // IMMEDIATELY sync NetworkVariable so remotes see transitioning state
+        SyncNetworkState();
 
         // Check if we're in online or offline mode
         bool isOnline = NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
@@ -172,7 +186,6 @@ public class MountController : NetworkBehaviour
             // Offline mode: Mount directly
             Debug.Log("[MountController] Offline mode - mounting locally");
             mount.MountLocal(gameObject, 0);
-            // Immediately start transition since there's no network delay
             StartCoroutine(PlayMountTransition());
         }
     }
@@ -181,7 +194,11 @@ public class MountController : NetworkBehaviour
     {
         if (currentMount == null) return;
 
+        // Update local state
         isTransitioning = true;
+
+        // IMMEDIATELY sync NetworkVariable
+        SyncNetworkState();
 
         // Check if we're in online or offline mode
         bool isOnline = NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
@@ -190,7 +207,6 @@ public class MountController : NetworkBehaviour
         {
             // Online mode: Request dismount from server
             currentMount.RequestDismountServerRpc();
-            // Server will call CompleteDismountClientRpc when ready
         }
         else
         {
@@ -200,6 +216,18 @@ public class MountController : NetworkBehaviour
             currentMount.DismountLocal();
             StartCoroutine(PlayDismountTransition(dismountPos));
         }
+    }
+
+    /// <summary>
+    /// Syncs local state to NetworkVariables (owner only).
+    /// Call this EVERY time isMounted or isTransitioning changes.
+    /// </summary>
+    private void SyncNetworkState()
+    {
+        if (!IsOwner || !IsSpawned) return;
+
+        netIsMounted.Value = isMounted;
+        netIsTransitioning.Value = isTransitioning;
     }
 
     /// <summary>
@@ -213,6 +241,7 @@ public class MountController : NetworkBehaviour
         {
             Debug.LogError($"[MountController] Could not find mount NetworkObject {mountNetworkObjectId}");
             isTransitioning = false;
+            SyncNetworkState();
             return;
         }
 
@@ -221,6 +250,7 @@ public class MountController : NetworkBehaviour
         {
             Debug.LogError("[MountController] Mount NetworkObject has no MountableEntity");
             isTransitioning = false;
+            SyncNetworkState();
             return;
         }
 
@@ -230,8 +260,6 @@ public class MountController : NetworkBehaviour
     private IEnumerator PlayMountTransition()
     {
         // Play mounting animation (handled by RuleAnimancerDriver via IsTransitioning)
-        // The animation system will play the correct clip based on rules
-
         yield return new WaitForSeconds(mountAnimationDuration);
 
         // Complete mount
@@ -240,15 +268,18 @@ public class MountController : NetworkBehaviour
 
     private void FinishMount()
     {
+        // Update local state
         isMounted = true;
         isTransitioning = false;
 
+        // Sync to network
+        SyncNetworkState();
+
         // IMPORTANT: NetworkObjects can only be parented under other NetworkObjects
-        // Parent to horse's root NetworkObject, not the saddle point directly
         Transform horseRoot = currentMount.transform;
         transform.SetParent(horseRoot);
 
-        // Then manually position at saddle point
+        // Position at saddle point
         if (currentMount.SaddlePoint != null)
         {
             transform.position = currentMount.SaddlePoint.position;
@@ -256,16 +287,14 @@ public class MountController : NetworkBehaviour
         }
         else
         {
-            // Fallback if no saddle point defined
-            transform.localPosition = Vector3.up * 1.5f; // Offset upward
+            transform.localPosition = Vector3.up * 1.5f;
             transform.localRotation = Quaternion.identity;
         }
 
-        // Disable humanoid movement controllers
+        // Disable humanoid movement
         if (thirdPersonController != null)
             thirdPersonController.enabled = false;
 
-        // Disable CharacterController so it doesn't interfere with horse physics
         if (characterController != null)
             characterController.enabled = false;
 
@@ -292,8 +321,12 @@ public class MountController : NetworkBehaviour
 
     private void FinishDismount(Vector3 position)
     {
+        // Update local state
         isMounted = false;
         isTransitioning = false;
+
+        // Sync to network
+        SyncNetworkState();
 
         // Unparent from horse
         transform.SetParent(null);
@@ -305,7 +338,6 @@ public class MountController : NetworkBehaviour
         if (thirdPersonController != null)
             thirdPersonController.enabled = true;
 
-        // Re-enable CharacterController
         if (characterController != null)
             characterController.enabled = true;
 

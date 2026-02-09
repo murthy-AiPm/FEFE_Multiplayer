@@ -587,13 +587,13 @@ MonoBehaviour:
   dismountAnimationDuration: 1
   holdDuration: 1
   mountKey: 101
-  detectionRadius: 3
+  detectionRadius: 2
   mountLayer:
     serializedVersion: 2
     m_Bits: 1048576
   thirdPersonController: {fileID: 2613098171129311318}
   inputController: {fileID: 6350221479210210835}
-  rb: {fileID: 0}
+  characterController: {fileID: 123231446064690230}
   animator: {fileID: 4218290551666935567}
 --- !u!114 &-9174836915869727148
 MonoBehaviour:
@@ -607,8 +607,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2e3648116f9c41340918f23054e3def4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MountDetectionDebug
-  mountController: {fileID: 0}
-  checkRadius: 5
+  mountController: {fileID: -2571843341000407878}
+  checkRadius: 2
   checkLayer:
     serializedVersion: 2
     m_Bits: 1048576
