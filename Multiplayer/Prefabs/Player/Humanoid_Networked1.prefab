@@ -5259,9 +5259,6 @@ GameObject:
   - component: {fileID: 3906136840010667629}
   - component: {fileID: 7917548007009137436}
   - component: {fileID: 4386495661157894936}
-  - component: {fileID: 5165459563423089824}
-  - component: {fileID: 2905459654016571696}
-  - component: {fileID: 7367954687794228460}
   - component: {fileID: -8082429053560432229}
   - component: {fileID: 7309157671197206313}
   - component: {fileID: -4153668730730091732}
@@ -5396,8 +5393,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e0ab2e4ba1889f4aabfee601c56eb71, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerContoller: {fileID: 3906136840010667629}
-  colliderManager: {fileID: 5165459563423089824}
 --- !u!114 &3906136840010667629
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5410,10 +5405,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7fe8caadb52d90479543985dff649fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerScript: {fileID: 8481982897994769634}
   TPS: {fileID: 4386495661157894936}
   inputController: {fileID: 7917548007009137436}
-  combatController: {fileID: 7367954687794228460}
 --- !u!114 &7917548007009137436
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5468,7 +5461,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerController: {fileID: 3906136840010667629}
-  playerScript: {fileID: 8481982897994769634}
   controller: {fileID: 5674062409325213186}
   cam: {fileID: 0}
   jumpHeight: 2
@@ -5482,93 +5474,23 @@ MonoBehaviour:
   leftFeet: {fileID: 8117396371809684975}
   rightFeet: {fileID: 8201188772393626358}
   obstacleRayCast: {fileID: 877061221952065495}
-  vcam: {fileID: 1193484295935413192, guid: fdd653c42a61852429e157968a9cb924, type: 3}
   playerVelocity: {x: 0, y: 0, z: 0}
   isgrounded: 0
   isfreeFall: 0
   isobstacle: 0
   floatfreefall: 2.5
   num: 0
-  num2: 0
-  num3: 0
-  num4: 0.9
   key: 0
   jumpGraceTime: 0.12
-  humanoidCollider: {fileID: 5165459563423089824}
   jumpnum: 0.5
   crouchSpeed: 0.5
   walkSpeed: 2
   combatSpeed: 1
-  climbSpeed: 1
   stamina: 50
   staminaModifier: 0.1
   maxStamina: 50
   minStamina: 0
-  target: {fileID: 0}
   humanStats: {fileID: 0}
---- !u!114 &5165459563423089824
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5393498967000253258}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3e1eda7e92925ef479b5e24e69a112a0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  rayCasts: {fileID: 2905459654016571696}
-  playerScript: {fileID: 8481982897994769634}
-  forceApplied: 50
-  health: 100
-  humanoidRay: {fileID: 2905459654016571696}
-  text: {fileID: 0}
-  isClimbing: 0
-  isClimbingExit: 0
-  y: 5
-  ladderTransform: {x: 0, y: 0, z: 0}
---- !u!114 &2905459654016571696
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5393498967000253258}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc68c5145459e2144a5ab5570d01651c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  rayCasts:
-  - {fileID: 11400000, guid: b6b45fbe8fb61964aab42bd6d2b1d05c, type: 2}
-  - {fileID: 11400000, guid: e6baf051ffbfac34398670115f519b8d, type: 2}
-  - {fileID: 11400000, guid: c05840b7e795549428c5fd85733f6b64, type: 2}
-  - {fileID: 11400000, guid: ed8e7ac9fd5bd514cb72e24c61a306c6, type: 2}
-  - {fileID: 11400000, guid: 6fef4f15726dd40478f857c25ddd586a, type: 2}
-  - {fileID: 11400000, guid: 6f4d702549293c14cab6348eb6724174, type: 2}
-  colliderManager: {fileID: 5165459563423089824}
-  rayCastOrigin: {fileID: 8969867895089203265}
-  isObstacle: 0
---- !u!114 &7367954687794228460
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5393498967000253258}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 807d6e07556bb264eb7bd35562182b50, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerController: {fileID: 3906136840010667629}
-  weaponType: 
-  controller: {fileID: 3906136840010667629}
-  multiTapWindow: 0.25
-  tapLatch: 0.25
-  clicks: 
-  singleHandSword: {fileID: 7189104955549023661}
 --- !u!114 &-8082429053560432229
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5625,7 +5547,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ClientNetworkTransform
   ShowTopMostFoldoutHeaderGroup: 1
-  NetworkTransformExpanded: 0
+  NetworkTransformExpanded: 1
   AutoOwnerAuthorityTickOffset: 1
   PositionInterpolationType: 0
   RotationInterpolationType: 0
@@ -5648,12 +5570,12 @@ MonoBehaviour:
   SyncScaleX: 0
   SyncScaleY: 0
   SyncScaleZ: 0
-  PositionThreshold: 0.001
-  RotAngleThreshold: 0.01
+  PositionThreshold: 0.01
+  RotAngleThreshold: 1
   ScaleThreshold: 0.01
   UseQuaternionSynchronization: 0
   UseQuaternionCompression: 0
-  UseHalfFloatPrecision: 0
+  UseHalfFloatPrecision: 1
   InLocalSpace: 0
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1

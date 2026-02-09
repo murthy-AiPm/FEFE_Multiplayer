@@ -27,6 +27,10 @@ public class DragonFlightStateInspector : MonoBehaviour
     [SerializeField] private float rollAngle;
     [SerializeField] private Vector3 velocity;
 
+    [Header("DRAGON STATS")]
+    [SerializeField] private float stamina;
+
+
     private void Awake()
     {
         if (!flight)
@@ -47,6 +51,7 @@ public class DragonFlightStateInspector : MonoBehaviour
         //groundDistance = flight.GroundDistance;
         rollAngle = flight.RollAngle;
         velocity = flight.Velocity;
+        stamina = flight.Stamina;
         if (groundController != null)
         {
             isWalkingDebug = groundController.IsWalking;

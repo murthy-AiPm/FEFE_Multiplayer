@@ -5,13 +5,23 @@ using UnityEngine;
 
 public class ApplicationController : MonoBehaviour
 {
+    [Header("Multiplayer Toggle")]
+    [SerializeField] private bool enableMultiplayer = true;
+
     [SerializeField] private ClientSingleton clientPrefab;
     [SerializeField] private HostSingleton hostPrefab;
+
     private async void Start()
     {
         DontDestroyOnLoad(gameObject);
 
-       await LaunchInMode(SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null);
+        if (!enableMultiplayer)
+        {
+            Debug.Log("[ApplicationController] Multiplayer DISABLED - Skipping network initialization");
+            return;
+        }
+
+        await LaunchInMode(SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null);
     }
 
     private async Task LaunchInMode(bool isDedicatedServer)
@@ -26,7 +36,7 @@ public class ApplicationController : MonoBehaviour
             HostSingleton hostSingleton = Instantiate(hostPrefab);
             hostSingleton.CreateHost();
 
-            ClientSingleton clientSingleton =  Instantiate(clientPrefab);
+            ClientSingleton clientSingleton = Instantiate(clientPrefab);
             bool authenticated = await clientSingleton.CreateClient();
 
 

@@ -16,6 +16,8 @@ using Unity.Netcode;
 /// </summary>
 public class DragonFlightController : NetworkBehaviour
 {
+
+ 
     [Header("Setup")]
     [SerializeField] private Rigidbody rb;
     [SerializeField] private bool useRigidbodyMovement = true;
@@ -151,6 +153,7 @@ public class DragonFlightController : NetworkBehaviour
 
     private void Update()
     {
+
         if (groundingSystem.IsGrounded && isActive)
         {
             isActive = false;

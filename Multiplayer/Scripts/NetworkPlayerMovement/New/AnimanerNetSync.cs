@@ -81,6 +81,10 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
     private int _lastSeenActionSeq;
     private int _lastSeenAttackSeq;
     private int _lastSeenJumpSeq;
+    // Throttling
+    private const float NETWORK_UPDATE_INTERVAL = 0.05f; // 20 Hz
+    private float nextNetworkUpdateTime;
+    private const float EPSILON = 0.01f;
 
     private void Awake()
     {
@@ -131,8 +135,12 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
 
         if (IsOwner)
         {
-            // Owner writes. Keep this in Update so it matches your input snapshot timing.
-            WriteFromOwner();
+            // Throttle: only write every 0.05s instead of every frame
+            if (Time.time >= nextNetworkUpdateTime)
+            {
+                nextNetworkUpdateTime = Time.time + NETWORK_UPDATE_INTERVAL;
+                WriteFromOwner();
+            }
         }
         else
         {
@@ -148,35 +156,29 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
     {
         if (input == null || tps == null) return;
 
-        // These drive BoolParam checks in your rules.
-        nvMoving.Value = input.isMoving;
-        nvCombatMode.Value = input.isCombatMode;
-        nvModified.Value = input.isModified;
-        nvSecondaryHeld.Value = input.isSecondaryAttack;
-        nvHoverMode.Value = input.isHoverMode;
-        nvSheathing.Value = input.isSheating;
+        // Only update if changed
+        if (nvMoving.Value != input.isMoving) nvMoving.Value = input.isMoving;
+        if (nvCombatMode.Value != input.isCombatMode) nvCombatMode.Value = input.isCombatMode;
+        if (nvModified.Value != input.isModified) nvModified.Value = input.isModified;
+        if (nvSecondaryHeld.Value != input.isSecondaryAttack) nvSecondaryHeld.Value = input.isSecondaryAttack;
+        if (nvHoverMode.Value != input.isHoverMode) nvHoverMode.Value = input.isHoverMode;
+        if (nvSheathing.Value != input.isSheating) nvSheathing.Value = input.isSheating;
 
-        nvGrounded.Value = tps.isgrounded;
-        nvFreeFall.Value = tps.isfreeFall;
+        if (nvGrounded.Value != tps.isgrounded) nvGrounded.Value = tps.isgrounded;
+        if (nvFreeFall.Value != tps.isfreeFall) nvFreeFall.Value = tps.isfreeFall;
 
-        nvDirections.Value = new FixedString32Bytes(string.IsNullOrEmpty(input.directions) ? "None" : input.directions);
+        var dirStr = new FixedString32Bytes(string.IsNullOrEmpty(input.directions) ? "None" : input.directions);
+        if (!nvDirections.Value.Equals(dirStr)) nvDirections.Value = dirStr;
 
-        // These drive InputEdge checks + combo buffering in your RuleAnimancerDriver.
         var s = input.Snapshot;
-        nvPrimaryDown.Value = s.primaryDown;
-        nvPrimaryHeld.Value = s.primaryHeld;
-        nvPrimaryUp.Value = s.primaryUp;
+        if (nvPrimaryDown.Value != s.primaryDown) nvPrimaryDown.Value = s.primaryDown;
+        if (nvPrimaryHeld.Value != s.primaryHeld) nvPrimaryHeld.Value = s.primaryHeld;
+        if (nvPrimaryUp.Value != s.primaryUp) nvPrimaryUp.Value = s.primaryUp;
+        if (nvJumpDown.Value != s.jumpDown) nvJumpDown.Value = s.jumpDown;
+        if (nvJumpHeld.Value != s.jumpHeld) nvJumpHeld.Value = s.jumpHeld;
+        if (nvActionHeld.Value != s.actionHeld) nvActionHeld.Value = s.actionHeld;
 
-        nvJumpDown.Value = s.jumpDown;
-        nvJumpHeld.Value = s.jumpHeld;
-
-        // Increment jump sequence on the down edge to ensure remotes catch it
-        if (s.jumpDown)
-        {
-            nvJumpSeq.Value++;
-        }
-
-        nvActionHeld.Value = s.actionHeld;
+        if (s.jumpDown) nvJumpSeq.Value++;
     }
 
     private void ApplyToRemoteHolders()

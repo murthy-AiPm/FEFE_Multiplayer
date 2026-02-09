@@ -27,6 +27,8 @@ public enum BoolParam
     Grounded,
     FreeFall,
     Sheathing,
+    IsMounted,        // NEW
+    IsMountTransitioning,  // NEW (for mount/dismount animations)
 }
 
 public enum InputEdge

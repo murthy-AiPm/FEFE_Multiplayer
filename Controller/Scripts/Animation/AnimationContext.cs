@@ -16,6 +16,8 @@ public struct AnimationContext
     public bool Sheathing => input != null && input.isSheating;
 
     public string DirString => input != null ? input.directions : "None";
+ public bool IsMounted => mountController != null && mountController.IsMounted;
+ public MountController mountController; 
 
     // Action system hook (set by your interaction code)
     public int ActionId;      // 0 = none. 1 = chest, 2 = ballista, etc.

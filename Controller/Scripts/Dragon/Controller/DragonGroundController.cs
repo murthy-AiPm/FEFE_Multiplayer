@@ -11,6 +11,9 @@ using Unity.Netcode;
 /// </summary>
 public class DragonGroundController : NetworkBehaviour
 {
+    [Header("Testing")]
+    [SerializeField] private bool ignoreOwnershipForTesting = false;
+
     [Header("References")]
     [SerializeField] private DragonGroundingSystem groundingSystem;
     [SerializeField] private DragonGroundAlignment groundAlignment;
@@ -115,7 +118,7 @@ public class DragonGroundController : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        if (!IsOwner) return;
+        if (!ignoreOwnershipForTesting && !IsOwner) return;
 
         // Takeoff - lift dragon up
         if (isTakingOff)
