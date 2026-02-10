@@ -304,6 +304,7 @@ GameObject:
   - component: {fileID: 694475302577268265}
   - component: {fileID: 6985057114362056872}
   - component: {fileID: 2991571744342027716}
+  - component: {fileID: 5538343029870464451}
   m_Layer: 20
   m_Name: HorseFEFE
   m_TagString: Animal
@@ -365,8 +366,8 @@ Rigidbody:
   m_GameObject: {fileID: 711040484119619372}
   serializedVersion: 5
   m_Mass: 400
-  m_LinearDamping: 2
-  m_AngularDamping: 0.05
+  m_LinearDamping: 0
+  m_AngularDamping: 0
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -395,7 +396,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1503646221
+  GlobalObjectIdHash: 2941436085
   InScenePlacedSourceGlobalObjectIdHash: 1503646221
   DeferredDespawnTick: 0
   Ownership: 1
@@ -455,8 +456,8 @@ MonoBehaviour:
   rightHand: {fileID: 4376441648706682908}
   leftFoot: {fileID: 4369190220620971560}
   rightFoot: {fileID: 4369583985020536638}
-  raycastDistance: 0.2
-  raycastOriginOffset: 0.2
+  raycastDistance: 1
+  raycastOriginOffset: 0.08
   groundMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -553,7 +554,7 @@ MonoBehaviour:
   - {fileID: 2061282839849869820}
   - {fileID: 1238184130924440048}
   - {fileID: 840261004817155330}
-  interactionRadius: 2.5
+  interactionRadius: 1
   riderLayer:
     serializedVersion: 2
     m_Bits: 64
@@ -594,8 +595,8 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 2.5
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Radius: 0.8
+  m_Center: {x: 0, y: 1.09, z: 0.5}
 --- !u!114 &2991571744342027716
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -613,6 +614,52 @@ MonoBehaviour:
   groundController: {fileID: 2598117054184361289}
   groundingSystem: {fileID: 8455803096756853017}
   animator: {fileID: 615835660554086812}
+--- !u!114 &5538343029870464451
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 711040484119619372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b364b68b6097e874c9674877fbf54f3f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ClientNetworkTransform
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
+  AuthorityMode: 0
+  TickSyncChildren: 0
+  UseUnreliableDeltas: 0
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 1
+  SyncScaleY: 1
+  SyncScaleZ: 1
+  PositionThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
+  InLocalSpace: 0
+  SwitchTransformSpaceWhenParented: 0
+  Interpolate: 1
+  SlerpPosition: 0
 --- !u!1 &940438874208436165
 GameObject:
   m_ObjectHideFlags: 0
@@ -34837,7 +34884,7 @@ Transform:
   m_GameObject: {fileID: 5657858025084760583}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 1, z: 0.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -40362,7 +40409,7 @@ Transform:
   m_GameObject: {fileID: 7712092870774057284}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -0.00045013428, y: 0.28585196, z: 0.15134048}
+  m_LocalPosition: {x: -0.00045013428, y: 1.624, z: 0.473}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
