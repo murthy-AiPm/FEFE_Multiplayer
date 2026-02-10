@@ -590,7 +590,7 @@ MonoBehaviour:
   detectionRadius: 2
   mountLayer:
     serializedVersion: 2
-    m_Bits: 1048576
+    m_Bits: 128
   thirdPersonController: {fileID: 2613098171129311318}
   inputController: {fileID: 6350221479210210835}
   characterController: {fileID: 123231446064690230}
