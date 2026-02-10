@@ -375,7 +375,7 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 1
+  m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 112
@@ -483,7 +483,7 @@ MonoBehaviour:
   maxHeightAdjustPerFrame: 0.15
   onlyAdjustWhenGrounded: 1
   heightDeadZone: 0.02
-  normalLerpSpeed: 12
+  normalLerpSpeed: 10
   yawSmoothSpeed: 10
   showDebugNormals: 0
   showDebugHeight: 0
