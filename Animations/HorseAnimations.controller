@@ -204,9 +204,6 @@ AnimatorStateTransition:
   - m_ConditionMode: 1
     m_ConditionEvent: IsGrounded
     m_EventTreshold: 0
-  - m_ConditionMode: 1
-    m_ConditionEvent: IsRunning
-    m_EventTreshold: 0
   - m_ConditionMode: 2
     m_ConditionEvent: IsTurningLeft
     m_EventTreshold: 0
@@ -636,9 +633,6 @@ AnimatorStateTransition:
   - m_ConditionMode: 1
     m_ConditionEvent: IsGrounded
     m_EventTreshold: 0
-  - m_ConditionMode: 1
-    m_ConditionEvent: IsRunning
-    m_EventTreshold: 0
   - m_ConditionMode: 2
     m_ConditionEvent: IsTurningRight
     m_EventTreshold: 0
@@ -916,7 +910,7 @@ AnimatorStateMachine:
     m_Position: {x: 1210, y: 170, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 3633931185450770315}
-    m_Position: {x: 1840, y: -130, z: 0}
+    m_Position: {x: 1280, y: 10, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -3762277590855645397}
     m_Position: {x: 1840, y: -40, z: 0}
