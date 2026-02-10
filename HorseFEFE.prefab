@@ -341,7 +341,7 @@ Animator:
   m_GameObject: {fileID: 711040484119619372}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: a05d6a3b33caf354b8868fd4f04362ee, type: 3}
-  m_Controller: {fileID: 9100000, guid: dd9ca5f0c4967c749a7828dc5010498c, type: 2}
+  m_Controller: {fileID: 9100000, guid: 29ddc397f8393eb42bb5529b2169a3f7, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 1
@@ -375,7 +375,7 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 0
+  m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 112
@@ -477,10 +477,12 @@ MonoBehaviour:
   alignmentSpeed: 8
   maxSlopeAngle: 70
   minSlopeThreshold: 2
+  enableHeightAdjustment: 0
   targetBodyHeight: 0.3
   heightAdjustSpeed: 10
   maxHeightAdjustPerFrame: 0.15
   onlyAdjustWhenGrounded: 1
+  heightDeadZone: 0.02
   normalLerpSpeed: 12
   yawSmoothSpeed: 10
   showDebugNormals: 0
@@ -523,7 +525,7 @@ MonoBehaviour:
   isGroundedDebug: 0
   isFallingDebug: 0
   frontPawsGroundedDebug: 0
-  groundController: {fileID: 0}
+  groundController: {fileID: 2598117054184361289}
   isWalkingDebug: 0
   isRunningDebug: 0
   airSpeed: 0
@@ -9231,7 +9233,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4376861480341825374}
-  m_Layer: 7
+  - component: {fileID: 2885322215400451880}
+  m_Layer: 8
   m_Name: R Foot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9254,6 +9257,27 @@ Transform:
   - {fileID: 4369583985020536638}
   m_Father: {fileID: 4369281345157235344}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &2885322215400451880
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4370849277759601514}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.13
+  m_Center: {x: 0, y: 0.14, z: 0}
 --- !u!1 &4370943035594816344
 GameObject:
   m_ObjectHideFlags: 0
@@ -9389,7 +9413,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4376671995807711940}
-  m_Layer: 7
+  m_Layer: 8
   m_Name: L Finger0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9452,7 +9476,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4376441648706682908}
-  m_Layer: 7
+  m_Layer: 8
   m_Name: R Finger0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9515,7 +9539,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4376457694001007042}
-  m_Layer: 7
+  - component: {fileID: 1876458886762959615}
+  m_Layer: 8
   m_Name: L Hand
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9538,6 +9563,27 @@ Transform:
   - {fileID: 4376671995807711940}
   m_Father: {fileID: 4376593620846600116}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &1876458886762959615
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4371115937919561322}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.13
+  m_Center: {x: -0.12, y: -0, z: 0}
 --- !u!1 &4371135360147733774
 GameObject:
   m_ObjectHideFlags: 0
@@ -9547,7 +9593,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4376405266173883122}
-  m_Layer: 7
+  - component: {fileID: 1612412318578172052}
+  m_Layer: 8
   m_Name: L Foot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9570,6 +9617,27 @@ Transform:
   - {fileID: 4369190220620971560}
   m_Father: {fileID: 4369579537489825000}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &1612412318578172052
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4371135360147733774}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.13
+  m_Center: {x: 0, y: 0.14, z: 0}
 --- !u!1 &4371138394421721392
 GameObject:
   m_ObjectHideFlags: 0
@@ -10146,7 +10214,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4369616411071302638}
-  m_Layer: 7
+  - component: {fileID: 1773511733545217618}
+  m_Layer: 8
   m_Name: R Hand
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10169,6 +10238,27 @@ Transform:
   - {fileID: 4376441648706682908}
   m_Father: {fileID: 4369537923753527812}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &1773511733545217618
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4371629048111620846}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.13
+  m_Center: {x: -0.12, y: -0, z: 0}
 --- !u!1 &4371659858023898910
 GameObject:
   m_ObjectHideFlags: 0
@@ -10275,7 +10365,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4369583985020536638}
-  m_Layer: 7
+  m_Layer: 8
   m_Name: R Toe0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10337,7 +10427,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4369190220620971560}
-  m_Layer: 7
+  m_Layer: 8
   m_Name: L Toe0
   m_TagString: Untagged
   m_Icon: {fileID: 0}

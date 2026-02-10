@@ -160,7 +160,6 @@ GameObject:
   - component: {fileID: -2645813650107519133}
   - component: {fileID: -6241308572826392170}
   - component: {fileID: -2571843341000407878}
-  - component: {fileID: -9174836915869727148}
   m_Layer: 6
   m_Name: Humanoid_Fighter_Network
   m_TagString: Player
@@ -595,23 +594,6 @@ MonoBehaviour:
   inputController: {fileID: 6350221479210210835}
   characterController: {fileID: 123231446064690230}
   animator: {fileID: 4218290551666935567}
---- !u!114 &-9174836915869727148
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 134043905374528843}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2e3648116f9c41340918f23054e3def4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MountDetectionDebug
-  mountController: {fileID: -2571843341000407878}
-  checkRadius: 2
-  checkLayer:
-    serializedVersion: 2
-    m_Bits: 1048576
 --- !u!1 &1008603233948878082
 GameObject:
   m_ObjectHideFlags: 0

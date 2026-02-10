@@ -5069,8 +5069,8 @@ MonoBehaviour:
   SyncScaleX: 0
   SyncScaleY: 0
   SyncScaleZ: 0
-  PositionThreshold: 0.001
-  RotAngleThreshold: 0.01
+  PositionThreshold: 0.01
+  RotAngleThreshold: 0.1
   ScaleThreshold: 0.01
   UseQuaternionSynchronization: 0
   UseQuaternionCompression: 0
@@ -5127,6 +5127,7 @@ MonoBehaviour:
   leftFoot: {fileID: 7262133624121052353}
   rightFoot: {fileID: 4349441873428885122}
   raycastDistance: 1.5
+  raycastOriginOffset: 0.2
   groundMask:
     serializedVersion: 2
     m_Bits: 1073741879
@@ -5154,6 +5155,7 @@ MonoBehaviour:
   heightAdjustSpeed: 10
   maxHeightAdjustPerFrame: 0.15
   onlyAdjustWhenGrounded: 1
+  heightDeadZone: 0.02
   normalLerpSpeed: 1
   yawSmoothSpeed: 2
   showDebugNormals: 0

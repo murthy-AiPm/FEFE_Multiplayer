@@ -4,10 +4,7 @@ using Unity.Netcode;
 /// <summary>
 /// Dragon ground alignment - SINGLE AUTHORITY for rotation when grounded.
 /// 
-/// KEY CHANGES:
-/// - Now the ONLY script that calls rb.MoveRotation() when grounded
-/// - Added height adjustment (ground snapping) to prevent paw sinking
-/// - Smoother slope transitions
+/// NETWORK FIX: Reduced height adjustment aggressiveness to prevent jitter with NetworkTransform
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class DragonGroundAlignment : NetworkBehaviour
@@ -22,14 +19,18 @@ public class DragonGroundAlignment : NetworkBehaviour
     [SerializeField] private float minSlopeThreshold = 2f;
 
     [Header("Height Adjustment (Ground Snapping)")]
+    [Tooltip("Enable/disable height adjustment entirely (disable for networked horses to reduce jitter)")]
+    [SerializeField] private bool enableHeightAdjustment = true;
     [Tooltip("Target height of the body above average paw ground points")]
     [SerializeField] private float targetBodyHeight = 1.2f;
-    [Tooltip("How fast to adjust height")]
-    [SerializeField] private float heightAdjustSpeed = 10f;
-    [Tooltip("Max height adjustment per frame (prevents teleporting)")]
-    [SerializeField] private float maxHeightAdjustPerFrame = 0.15f;
+    [Tooltip("How fast to adjust height (reduced for network stability)")]
+    [SerializeField] private float heightAdjustSpeed = 3f; // Reduced from 10f to prevent jitter
+    [Tooltip("Max height adjustment per frame (reduced for network stability)")]
+    [SerializeField] private float maxHeightAdjustPerFrame = 0.05f; // Reduced from 0.15f
     [Tooltip("Only adjust height when grounded")]
     [SerializeField] private bool onlyAdjustWhenGrounded = true;
+    [Tooltip("Dead zone - don't adjust if within this distance of target")]
+    [SerializeField] private float heightDeadZone = 0.02f; // NEW: prevents micro-adjustments
 
     [Header("Smoothing")]
     [Tooltip("Higher = less smoothing. 0 = no smoothing.")]
@@ -58,8 +59,6 @@ public class DragonGroundAlignment : NetworkBehaviour
 
         targetYaw = dragonRoot.eulerAngles.y;
         currentYaw = targetYaw;
-
-        //rb.interpolation = RigidbodyInterpolation.Interpolate;
     }
 
     private void FixedUpdate()
@@ -72,7 +71,7 @@ public class DragonGroundAlignment : NetworkBehaviour
         // ═══════════════════════════════════════════════════════════════
         // HEIGHT ADJUSTMENT (Ground Snapping)
         // ═══════════════════════════════════════════════════════════════
-        if (isGrounded || !onlyAdjustWhenGrounded)
+        if (enableHeightAdjustment && (isGrounded || !onlyAdjustWhenGrounded))
         {
             AdjustHeight();
         }
@@ -159,6 +158,10 @@ public class DragonGroundAlignment : NetworkBehaviour
         float targetY = avgGroundPoint.y + targetBodyHeight;
         float currentY = rb.position.y;
         float heightDiff = targetY - currentY;
+
+        // NEW: Dead zone - don't adjust if within threshold (prevents micro-jitter)
+        if (Mathf.Abs(heightDiff) < heightDeadZone)
+            return;
 
         // Clamp adjustment to prevent teleporting
         float adjustment = Mathf.Clamp(heightDiff, -maxHeightAdjustPerFrame, maxHeightAdjustPerFrame);

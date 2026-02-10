@@ -9,7 +9,6 @@ public class DragonFlightStateInspector : MonoBehaviour
     [SerializeField] private bool isFlying;
     [SerializeField] private bool isGliding;
     [SerializeField] private bool isDiving;
-    // [SerializeField] private bool isGrounded;
 
     [Header("GROUNDING DEBUG")]
     [SerializeField] private DragonGroundingSystem groundingSystem;
@@ -30,33 +29,40 @@ public class DragonFlightStateInspector : MonoBehaviour
     [Header("DRAGON STATS")]
     [SerializeField] private float stamina;
 
-
     private void Awake()
     {
-        if (!flight)
+        // Auto-wire all components if not set
+        if (flight == null)
             flight = GetComponent<DragonFlightController>();
+        if (groundingSystem == null)
+            groundingSystem = GetComponent<DragonGroundingSystem>();
+        if (groundController == null)
+            groundController = GetComponent<DragonGroundController>();
     }
 
     private void Update()
     {
-        if (!flight) return;
+        // Flight state
+        if (flight != null)
+        {
+            isHoverMode = flight.IsHoverMode;
+            isFlying = flight.IsFlying;
+            isGliding = flight.IsGliding;
+            isDiving = flight.IsDiving;
+            airSpeed = flight.AirSpeed;
+            rollAngle = flight.RollAngle;
+            velocity = flight.Velocity;
+            stamina = flight.Stamina;
+        }
 
-        isHoverMode = flight.IsHoverMode;
-        isFlying = flight.IsFlying;
-        isGliding = flight.IsGliding;
-        isDiving = flight.IsDiving;
-        //isGrounded = flight.IsGrounded;
-
-        airSpeed = flight.AirSpeed;
-        //groundDistance = flight.GroundDistance;
-        rollAngle = flight.RollAngle;
-        velocity = flight.Velocity;
-        stamina = flight.Stamina;
+        // Ground controller state
         if (groundController != null)
         {
             isWalkingDebug = groundController.IsWalking;
             isRunningDebug = groundController.IsRunning;
         }
+
+        // Grounding system state
         if (groundingSystem != null)
         {
             isGroundedDebug = groundingSystem.IsGrounded;

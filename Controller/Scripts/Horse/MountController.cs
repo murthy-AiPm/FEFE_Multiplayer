@@ -85,19 +85,9 @@ public class MountController : NetworkBehaviour
         HandleMountInput();
     }
 
-    private void LateUpdate()
-    {
-        // Only owner manually positions at saddle point
-        // Remotes receive position via NetworkTransform parenting
-        if (!IsOwner) return;
-
-        // Keep humanoid positioned at saddle point while mounted
-        if (IsMounted && !IsTransitioning && currentMount != null && currentMount.SaddlePoint != null)
-        {
-            transform.position = currentMount.SaddlePoint.position;
-            transform.rotation = currentMount.SaddlePoint.rotation;
-        }
-    }
+    // REMOVED: LateUpdate manual positioning
+    // Unity's parenting system automatically keeps humanoid at correct position relative to horse
+    // Manual positioning was causing NetworkTransform jitter
 
     private void DetectNearbyMount()
     {
@@ -286,14 +276,17 @@ public class MountController : NetworkBehaviour
             Transform horseRoot = currentMount.transform;
             transform.SetParent(horseRoot);
 
-            // Position at saddle point
+            // Set LOCAL position/rotation relative to horse root
+            // Unity will automatically maintain this relationship when horse moves
             if (currentMount.SaddlePoint != null)
             {
+                // Calculate local position/rotation relative to horse root
                 transform.position = currentMount.SaddlePoint.position;
                 transform.rotation = currentMount.SaddlePoint.rotation;
             }
             else
             {
+                // Fallback if no saddle point defined
                 transform.localPosition = Vector3.up * 1.5f;
                 transform.localRotation = Quaternion.identity;
             }
