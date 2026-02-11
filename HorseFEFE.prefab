@@ -433,9 +433,10 @@ MonoBehaviour:
   takeoffLiftSpeed: 8
   jumpUpAnimationDuration: 0.8
   jumpAnimationDuration: 1.18
-  walkSpeed: 5
+  walkSpeed: 2
   runSpeed: 10
   turnSmoothTime: 0.1
+  turnHeadAngle: 15
 --- !u!114 &8455803096756853017
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -452,7 +453,7 @@ MonoBehaviour:
   rightHand: {fileID: 4376441648706682908}
   leftFoot: {fileID: 4369190220620971560}
   rightFoot: {fileID: 4369583985020536638}
-  raycastDistance: 1
+  raycastDistance: 5
   raycastOriginOffset: 0
   groundMask:
     serializedVersion: 2
@@ -473,18 +474,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DragonGroundAlignment
   ShowTopMostFoldoutHeaderGroup: 1
   groundingSystem: {fileID: 8455803096756853017}
+  groundController: {fileID: 0}
   dragonRoot: {fileID: 708371055730441476}
   alignmentSpeed: 8
   maxSlopeAngle: 70
   minSlopeThreshold: 2
-  enableHeightAdjustment: 0
+  enableHeightAdjustment: 1
   targetBodyHeight: 0.3
   heightAdjustSpeed: 10
   maxHeightAdjustPerFrame: 0.15
   onlyAdjustWhenGrounded: 1
   heightDeadZone: 0.02
-  normalLerpSpeed: 10
-  yawSmoothSpeed: 10
+  normalLerpSpeed: 2
+  basenormalLerpSpeed: 2
+  yawSmoothSpeed: 2
+  baseyawSmoothSpeed: 2
+  speedturnmodifier: 5
   showDebugNormals: 0
   showDebugHeight: 0
 --- !u!114 &1178907353967992125

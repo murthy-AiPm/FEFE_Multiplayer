@@ -40,6 +40,7 @@ public class DragonGroundController : NetworkBehaviour
     [SerializeField] private float walkSpeed = 5f;
     [SerializeField] private float runSpeed = 10f;
     [SerializeField] private float turnSmoothTime = 0.1f;
+    [SerializeField] private float turnHeadAngle = 18;
 
     // Animator hashes
     private int jumpForwardHash;
@@ -203,8 +204,8 @@ public class DragonGroundController : NetworkBehaviour
             // Turn detection (for animation)
             float currentYaw = rb.rotation.eulerAngles.y;
             float angleDelta = Mathf.DeltaAngle(currentYaw, targetAngle);
-            IsTurningLeft = angleDelta < -18f;
-            IsTurningRight = angleDelta > 18f;
+            IsTurningLeft = angleDelta < -turnHeadAngle;
+            IsTurningRight = angleDelta > turnHeadAngle;
             TurnSpeed = Mathf.Abs(angleDelta) / 180f;
         }
         else

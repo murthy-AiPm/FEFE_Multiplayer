@@ -11,6 +11,7 @@ public class DragonGroundAlignment : NetworkBehaviour
 {
     [Header("References")]
     [SerializeField] private DragonGroundingSystem groundingSystem;
+    [SerializeField] private DragonGroundController groundController;
     [SerializeField] private Transform dragonRoot;
 
     [Header("Alignment Settings")]
@@ -35,8 +36,12 @@ public class DragonGroundAlignment : NetworkBehaviour
     [Header("Smoothing")]
     [Tooltip("Higher = less smoothing. 0 = no smoothing.")]
     [SerializeField] private float normalLerpSpeed = 12f;
+    [SerializeField] private float basenormalLerpSpeed =2f;
     [Tooltip("How fast yaw catches up to target")]
     [SerializeField] private float yawSmoothSpeed = 10f;
+    [SerializeField] private float baseyawSmoothSpeed = 2f;
+    [Tooltip("How speed modified the turning speed")]
+    [SerializeField] private float speedturnmodifier = 5f;
 
     [Header("Debug")]
     [SerializeField] private bool showDebugNormals = false;
@@ -53,6 +58,9 @@ public class DragonGroundAlignment : NetworkBehaviour
 
         if (groundingSystem == null)
             groundingSystem = GetComponent<DragonGroundingSystem>();
+
+        if (groundController == null)
+            groundController = GetComponent<DragonGroundController>();
 
         if (dragonRoot == null)
             dragonRoot = transform;
@@ -76,6 +84,14 @@ public class DragonGroundAlignment : NetworkBehaviour
             AdjustHeight();
         }
 
+        //if (groundingSystem.IsGrounded)
+        //{
+        //    GetComponent<Rigidbody>().useGravity = false;
+        //}
+        //else if (!groundingSystem.IsGrounded)
+        //{
+        //    GetComponent<Rigidbody>().useGravity = true;
+        //}
         // ═══════════════════════════════════════════════════════════════
         // ROTATION (Slope Alignment + Yaw)
         // ═══════════════════════════════════════════════════════════════
@@ -97,7 +113,16 @@ public class DragonGroundAlignment : NetworkBehaviour
                 }
             }
         }
-
+        if (groundController.IsRunning)
+        {
+            normalLerpSpeed = basenormalLerpSpeed*speedturnmodifier;
+            yawSmoothSpeed = baseyawSmoothSpeed * speedturnmodifier;
+        }
+        else
+        {
+            normalLerpSpeed = basenormalLerpSpeed;
+            yawSmoothSpeed = baseyawSmoothSpeed;
+        }
         // Smooth the up vector
         if (normalLerpSpeed > 0f)
             smoothedUp = Vector3.Slerp(smoothedUp, up, normalLerpSpeed * Time.fixedDeltaTime);
