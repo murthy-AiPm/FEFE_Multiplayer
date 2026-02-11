@@ -268,30 +268,25 @@ public class MountController : NetworkBehaviour
         // Sync to network (owner only)
         SyncNetworkState();
 
-        // Only owner performs reparenting and position changes
-        // Remotes will receive position updates via NetworkTransform
+        // IMPORTANT:
+        // - In ONLINE mode, the SERVER performs NetworkObject parenting (TrySetParent) in MountableEntity.
+        //   That replication is what makes EVERY client see the rider attached.
+        // - Here, the OWNER only snaps to the saddle + disables their local movement.
+        // - In OFFLINE mode (not spawned), we fall back to local Transform parenting.
         if (IsOwner)
         {
-            // IMPORTANT: NetworkObjects can only be parented under other NetworkObjects
-            Transform horseRoot = currentMount.transform;
-            transform.SetParent(horseRoot);
-
-            // Set LOCAL position/rotation relative to horse root
-            // Unity will automatically maintain this relationship when horse moves
-            if (currentMount.SaddlePoint != null)
+            if (!IsSpawned)
             {
-                // Calculate local position/rotation relative to horse root
-                transform.position = currentMount.SaddlePoint.position;
-                transform.rotation = currentMount.SaddlePoint.rotation;
-            }
-            else
-            {
-                // Fallback if no saddle point defined
-                transform.localPosition = Vector3.up * 1.5f;
-                transform.localRotation = Quaternion.identity;
+                // Offline fallback
+                Transform horseRoot = currentMount.transform;
+                transform.SetParent(horseRoot);
             }
 
-            // Disable humanoid movement
+            // Snap to saddle (owner-authority transforms need this locally).
+            if (currentMount != null && currentMount.SaddlePoint != null)
+                transform.SetPositionAndRotation(currentMount.SaddlePoint.position, currentMount.SaddlePoint.rotation);
+
+            // Disable humanoid movement (owner only)
             if (thirdPersonController != null)
                 thirdPersonController.enabled = false;
 
@@ -329,13 +324,16 @@ public class MountController : NetworkBehaviour
         // Sync to network (owner only)
         SyncNetworkState();
 
-        // Only owner performs unparenting and position changes
+        // In ONLINE mode, the SERVER removes the parent (TryRemoveParent) in MountableEntity.
+        // Owner still needs to move themselves to the dismount position if you use owner-authority transforms.
         if (IsOwner)
         {
-            // Unparent from horse
-            transform.SetParent(null);
+            if (!IsSpawned)
+            {
+                // Offline fallback
+                transform.SetParent(null);
+            }
 
-            // Position at dismount location
             transform.position = position;
 
             // Re-enable humanoid movement

@@ -120,6 +120,7 @@ public class MountableEntity : NetworkBehaviour
         }
 
         GameObject riderObject = client.PlayerObject.gameObject;
+        NetworkObject riderNetObj = client.PlayerObject;
         MountController mountController = riderObject.GetComponent<MountController>();
 
         if (mountController == null)
@@ -141,6 +142,22 @@ public class MountableEntity : NetworkBehaviour
         Debug.Log($"[MountableEntity] Transferring ownership to client {requestingClientId}");
         NetworkObject.ChangeOwnership(requestingClientId);
         Debug.Log($"[MountableEntity] Ownership transferred. NetworkObject.OwnerClientId: {NetworkObject.OwnerClientId}");
+
+        // IMPORTANT: Parenting must be network-driven (server sets it) so EVERY client sees the rider attached.
+        // Do NOT rely on local Transform.SetParent on the owner only.
+        if (riderNetObj != null)
+        {
+            // Parent the rider under this mount's NetworkObject (replicates to all clients).
+            // worldPositionStays=true so we can snap to saddle in world space next.
+            bool parented = riderNetObj.TrySetParent(NetworkObject, true);
+            Debug.Log($"[MountableEntity] Rider TrySetParent result: {parented}");
+
+            // Snap rider to saddle for everyone.
+            if (saddlePoint != null)
+            {
+                riderNetObj.transform.SetPositionAndRotation(saddlePoint.position, saddlePoint.rotation);
+            }
+        }
 
         // Notify rider to complete mount on their end
         mountController.CompleteMountClientRpc(NetworkObjectId);
@@ -202,6 +219,14 @@ public class MountableEntity : NetworkBehaviour
 
         // Clear rider
         riderId.Value = 0;
+
+        // Unparent on server so everyone sees rider detached.
+        if (mountController != null && mountController.NetworkObject != null)
+        {
+            // Parent to null (world) on server.
+            mountController.NetworkObject.TryRemoveParent(true);
+        }
+
         currentRider = null;
 
         // Return ownership to server (or keep as-is for AI control)
