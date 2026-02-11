@@ -19,6 +19,13 @@ public class MountableEntity : NetworkBehaviour
     [Header("References")]
     [SerializeField] private DragonGroundController groundController;
 
+    [Header("Motion Detection (for remote animation)")]
+    [Tooltip("If groundController isn't available or its walk/run flags aren't networked, we estimate motion from transform delta.")]
+    [SerializeField] private float movingSpeedThreshold = 0.15f;
+    [Tooltip("Smoothing for estimated speed (0 = no smoothing, 1 = very slow).")]
+    [Range(0f, 0.95f)]
+    [SerializeField] private float speedSmoothing = 0.6f;
+
     // Network state
     private NetworkVariable<ulong> riderId = new NetworkVariable<ulong>(
         0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -38,14 +45,54 @@ public class MountableEntity : NetworkBehaviour
     public Transform SaddlePoint => saddlePoint;
     public ulong RiderId => IsSpawned ? (riderId.Value > 0 ? riderId.Value - 1 : 0) : localRiderId;
 
-    // For animation system to check if mount is moving
-    public bool IsMoving => groundController != null &&
-                            (groundController.IsWalking || groundController.IsRunning);
+    // --- Estimated motion (works for remotes too, using NetworkTransform-updated positions) ---
+    private Vector3 _lastPos;
+    private float _estimatedSpeed;
+
+    // For animation system to check if mount is moving.
+    // Prefer the controller flags when available, but fall back to estimated speed so other clients
+    // can still drive rider "ride move" animations.
+    public bool IsMoving
+    {
+        get
+        {
+            // If we own/drive the mount locally, the controller flags are the source of truth.
+            // For non-owners, those flags often won't update (no input), so use estimated motion.
+            if (groundController != null)
+            {
+                bool controllerSaysMoving = (groundController.IsWalking || groundController.IsRunning);
+
+                if (!IsSpawned || IsOwner)
+                    return controllerSaysMoving;
+
+                return controllerSaysMoving || (_estimatedSpeed > movingSpeedThreshold);
+            }
+
+            return (_estimatedSpeed > movingSpeedThreshold);
+        }
+    }
 
     private void Awake()
     {
         if (groundController == null)
             groundController = GetComponent<DragonGroundController>();
+
+        _lastPos = transform.position;
+    }
+
+    private void LateUpdate()
+    {
+        // Keep a cheap motion estimate so remotes can infer mounted locomotion even if the mount
+        // controller state isn't networked.
+        float dt = Time.deltaTime;
+        if (dt <= 0f) return;
+
+        Vector3 pos = transform.position;
+        float instantSpeed = (pos - _lastPos).magnitude / dt;
+        _lastPos = pos;
+
+        // Exponential smoothing
+        _estimatedSpeed = Mathf.Lerp(instantSpeed, _estimatedSpeed, speedSmoothing);
     }
 
     public override void OnNetworkSpawn()

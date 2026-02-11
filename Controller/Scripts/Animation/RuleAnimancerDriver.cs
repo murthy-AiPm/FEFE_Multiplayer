@@ -90,7 +90,13 @@ public class RuleAnimancerDriver : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (_animancer == null || animationSet == null || ruleSet == null || tps == null || input == null)
+        // Remotes often don't have a usable InputController (or it's disabled), but they still
+        // need to evaluate rules that depend on networked state (e.g., mounted + mount moving).
+        if (_animancer == null || animationSet == null || ruleSet == null || tps == null)
+            return;
+
+        // If we have neither input nor a mount controller, we can't build a meaningful context.
+        if (input == null && mountController == null)
             return;
 
         // Build context
@@ -98,7 +104,7 @@ public class RuleAnimancerDriver : MonoBehaviour
         {
             tps = tps,
             input = input,
-            snapshot = input.Snapshot,
+            snapshot = input != null ? input.Snapshot : default,
             mountController = mountController,
             ActionId = _actionId,
             ActionStart = _actionStartEdge,
@@ -646,7 +652,8 @@ public class RuleAnimancerDriver : MonoBehaviour
 
             if (layer == AnimLayer.Action)
             {
-                input.isSheating = false;
+                if (input != null)
+                    input.isSheating = false;
             }
         };
     }
