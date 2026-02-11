@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -20,29 +20,27 @@ public class HostGameManager : IDisposable
     private string joinCode;
     private string lobbyId;
 
+    private Coroutine heartbeatCoroutine;
+
     public NetworkServer networkServer { get; private set; }
-    public string JoinCode => joinCode; // Expose for UI
+    public string JoinCode => joinCode;
 
     private const int MaxConnections = 20;
     private const string GameSceneName = "Game";
 
-    [System.NonSerialized]
-    public GameObject characterSelectManagerPrefab; // Assign via code or make this a field on HostSingleton
-
     public async Task StartHostAsync()
     {
-        try
+        // Guard: if you destroyed NetworkManager elsewhere, fail loudly instead of NRE
+        if (NetworkManager.Singleton == null)
         {
-            allocation = await RelayService.Instance.CreateAllocationAsync(MaxConnections);
-        }
-        catch (Exception e)
-        {
-            Debug.Log(e);
+            Debug.LogError("[HostGameManager] NetworkManager.Singleton is null. " +
+                           "Option A requires NetworkManager to exist (don�t destroy it on shutdown).");
             return;
         }
 
         try
         {
+            allocation = await RelayService.Instance.CreateAllocationAsync(MaxConnections);
             joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
             Debug.Log($"Join Code: {joinCode}");
         }
@@ -52,31 +50,35 @@ public class HostGameManager : IDisposable
             return;
         }
 
+        // Relay transport setup
         UnityTransport transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
-
         RelayServerData relayServerData = AllocationUtils.ToRelayServerData(allocation, "dtls");
         transport.SetRelayServerData(relayServerData);
 
+        // Create lobby
         try
         {
-            CreateLobbyOptions lobbyOptions = new CreateLobbyOptions();
-            lobbyOptions.IsPrivate = false;
-            lobbyOptions.Data = new Dictionary<string, DataObject>()
+            CreateLobbyOptions lobbyOptions = new CreateLobbyOptions
             {
+                IsPrivate = false,
+                Data = new Dictionary<string, DataObject>
                 {
-                    "JoinCode", new DataObject(
-                        visibility: DataObject.VisibilityOptions.Public,
-                        value: joinCode
-                    )
+                    {
+                        "JoinCode",
+                        new DataObject(DataObject.VisibilityOptions.Public, joinCode)
+                    }
                 }
             };
+
             string playerName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Unknown");
             Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(
                 $"{playerName}'s Lobby", MaxConnections, lobbyOptions);
 
             lobbyId = lobby.Id;
 
-            HostSingleton.Instance.StartCoroutine(HearbeatLobby(15));
+            // Start heartbeat (store handle so we can stop it on shutdown)
+            StopHeartbeat();
+            heartbeatCoroutine = HostSingleton.Instance.StartCoroutine(HeartbeatLobby(15));
         }
         catch (LobbyServiceException e)
         {
@@ -84,41 +86,43 @@ public class HostGameManager : IDisposable
             return;
         }
 
-        // 1. Create NetworkServer FIRST (so approval callback is registered)
+        // Server setup
         networkServer = new NetworkServer(NetworkManager.Singleton);
 
-        // 2. Set up connection data
+        // Connection payload
         UserData userData = new UserData
         {
             userName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Missing Name"),
             userAuthId = AuthenticationService.Instance.PlayerId,
-            characterId = 0 // Will be updated during character selection
+            characterId = 0
         };
-        string payload = JsonUtility.ToJson(userData);
-        byte[] payloadBytes = Encoding.UTF8.GetBytes(payload);
-        NetworkManager.Singleton.NetworkConfig.ConnectionData = payloadBytes;
 
-        // 3. MANUALLY add the host's user data to the server dictionary
+        string payload = JsonUtility.ToJson(userData);
+        NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.UTF8.GetBytes(payload);
+
+        // Add host data for approval dictionary
         networkServer.AddHostData(userData);
 
-        // 4. NOW start the host
+        // Start host first (this initializes SceneManager)
         NetworkManager.Singleton.StartHost();
 
-        // 5. Load Game scene (everyone will use the in-game character select overlay)
-        NetworkManager.Singleton.SceneManager.LoadScene(GameSceneName, LoadSceneMode.Single);
+        // IMPORTANT: prevent duplicate handler if hosting multiple times
+        if (NetworkManager.Singleton.SceneManager != null)
+        {
+            NetworkManager.Singleton.SceneManager.OnLoadComplete -= OnGameSceneLoaded;
+            NetworkManager.Singleton.SceneManager.OnLoadComplete += OnGameSceneLoaded;
+        }
 
-        // 6. Spawn CharacterSelectManager after scene loads
-        NetworkManager.Singleton.SceneManager.OnLoadComplete += OnGameSceneLoaded;
+        // Load scene
+        NetworkManager.Singleton.SceneManager.LoadScene(GameSceneName, LoadSceneMode.Single);
     }
 
     private void OnGameSceneLoaded(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
     {
-        if (sceneName == GameSceneName && NetworkManager.Singleton.IsServer)
+        if (sceneName == GameSceneName && NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
         {
-            // Unsubscribe to avoid multiple calls
             NetworkManager.Singleton.SceneManager.OnLoadComplete -= OnGameSceneLoaded;
 
-            // Find and spawn the CharacterSelectManager if it exists in scene
             var manager = GameObject.FindObjectOfType<CharacterSelectManager>();
             if (manager != null)
             {
@@ -136,92 +140,65 @@ public class HostGameManager : IDisposable
         }
     }
 
-    /// <summary>
-    /// Optional: call this if you still want a "Start Game" button somewhere.
-    /// If you are already in the Game scene, this just locks the lobby.
-    /// </summary>
-    public void StartGame()
-    {
-        if (!NetworkManager.Singleton.IsHost) return;
-        LockLobby();
-    }
-
-    private async void LockLobby()
-    {
-        if (string.IsNullOrEmpty(lobbyId)) return;
-
-        try
-        {
-            var options = new UpdateLobbyOptions { IsLocked = true };
-            await LobbyService.Instance.UpdateLobbyAsync(lobbyId, options);
-            Debug.Log("[HostGameManager] Lobby locked");
-        }
-        catch (Exception e)
-        {
-            Debug.LogWarning($"[HostGameManager] Failed to lock lobby: {e}");
-        }
-    }
-
-    private IEnumerator HearbeatLobby(float waitTimeSeconds)
+    private IEnumerator HeartbeatLobby(float waitTimeSeconds)
     {
         var wait = new WaitForSecondsRealtime(waitTimeSeconds);
-        while (true)
+
+        while (!string.IsNullOrEmpty(lobbyId))
         {
-            LobbyService.Instance.SendHeartbeatPingAsync(lobbyId);
+            // Fire-and-forget heartbeat; keep loop alive even if a call fails
+            try { LobbyService.Instance.SendHeartbeatPingAsync(lobbyId); }
+            catch { /* ignore */ }
+
             yield return wait;
+        }
+    }
+
+    private void StopHeartbeat()
+    {
+        if (heartbeatCoroutine != null && HostSingleton.Instance != null)
+        {
+            HostSingleton.Instance.StopCoroutine(heartbeatCoroutine);
+            heartbeatCoroutine = null;
         }
     }
 
     public void Dispose()
     {
-        // nothing special here currently
+        // Nothing special currently (shutdown is explicit)
     }
 
     public async void ShutDown()
     {
-        // 1) Dispose server FIRST (important: this should clear ConnectionApprovalCallback)
-        try
-        {
-            networkServer?.Dispose();
-        }
-        catch (Exception e)
-        {
-            Debug.LogWarning($"[HostGameManager] networkServer.Dispose failed: {e.Message}");
-        }
-        finally
-        {
-            networkServer = null;
-        }
+        // Stop heartbeat first (prevents errors / spam after leaving lobby)
+        StopHeartbeat();
 
-        // 2) Shutdown Netcode
-        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
-        {
-            NetworkManager.Singleton.Shutdown();
-        }
-
-        // 3) Extra safety: clear approval callback if anything left it set
+        // Unsubscribe scene handler (prevents stacking across sessions)
         if (NetworkManager.Singleton != null)
-        {
-            NetworkManager.Singleton.ConnectionApprovalCallback = null;
-        }
+            NetworkManager.Singleton.SceneManager.OnLoadComplete -= OnGameSceneLoaded;
 
-        // 4) Best-effort: delete lobby
+        // Dispose server
+        try { networkServer?.Dispose(); }
+        catch (Exception e) { Debug.LogWarning(e.Message); }
+        networkServer = null;
+
+        // Shutdown netcode (DO NOT destroy NetworkManager in Option A)
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            NetworkManager.Singleton.Shutdown();
+
+        // Clear approval callback safety
+        if (NetworkManager.Singleton != null)
+            NetworkManager.Singleton.ConnectionApprovalCallback = null;
+
+        // Best effort delete lobby
         if (!string.IsNullOrEmpty(lobbyId))
         {
-            try
-            {
-                await LobbyService.Instance.DeleteLobbyAsync(lobbyId);
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning($"[HostGameManager] DeleteLobby failed: {e.Message}");
-            }
+            try { await LobbyService.Instance.DeleteLobbyAsync(lobbyId); }
+            catch (Exception e) { Debug.LogWarning($"DeleteLobby failed: {e.Message}"); }
         }
 
-        // 5) Clear local state
         lobbyId = null;
         joinCode = null;
+        allocation = default;
     }
-
-
 }

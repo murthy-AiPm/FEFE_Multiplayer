@@ -45,13 +45,59 @@ public class PauseMenu : MonoBehaviour
 
     public void BackToMainMenu()
     {
-        if (NetworkManager.Singleton.IsHost)
+        Resume(); // optional: hide UI / unlock cursor states you want
+
+        StartCoroutine(LeaveSessionAndLoadMenu());
+    }
+
+
+
+    private System.Collections.IEnumerator LeaveSessionAndLoadMenu()
+    {
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost)
         {
             HostSingleton.Instance.GameManager.ShutDown();
         }
 
-        ClientSingleton.Instance.GameManager.Disconnect();
+        if (ClientSingleton.Instance != null && ClientSingleton.Instance.GameManager != null)
+        {
+            ClientSingleton.Instance.GameManager.Disconnect();
+        }
+
+        // Let NGO process shutdown/despawns
+        yield return null;
+        yield return null;
+
+        /// Cleanup leftover NetworkObjects ONLY in the active scene (don't kill DontDestroyOnLoad stuff)
+        var activeScene = SceneManager.GetActiveScene();
+
+        Unity.Netcode.NetworkObject[] netObjects =
+#if UNITY_2023_1_OR_NEWER
+    FindObjectsByType<Unity.Netcode.NetworkObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+#else
+    Resources.FindObjectsOfTypeAll<Unity.Netcode.NetworkObject>();
+#endif
+
+        foreach (var no in netObjects)
+        {
+            if (no == null) continue;
+
+            // Only destroy objects that belong to the ACTIVE scene
+            if (no.gameObject.scene != activeScene) continue;
+
+            // Extra safety: never destroy the NetworkManager object if it has NetworkObject
+            if (no.GetComponent<Unity.Netcode.NetworkManager>() != null) continue;
+
+            Destroy(no.gameObject);
+        }
+
+
+
+        yield return null;
+
+        SceneManager.LoadScene("MainMenu");
     }
+
 
     public void ExitGame()
     {
