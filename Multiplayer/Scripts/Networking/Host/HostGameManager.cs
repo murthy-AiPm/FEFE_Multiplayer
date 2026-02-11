@@ -24,7 +24,6 @@ public class HostGameManager : IDisposable
     public string JoinCode => joinCode; // Expose for UI
 
     private const int MaxConnections = 20;
-    private const string CharacterSelectSceneName = "CharacterSelect";
     private const string GameSceneName = "Game";
 
     [System.NonSerialized]
@@ -105,19 +104,19 @@ public class HostGameManager : IDisposable
         // 4. NOW start the host
         NetworkManager.Singleton.StartHost();
 
-        // 5. Load Character Select scene
-        NetworkManager.Singleton.SceneManager.LoadScene(CharacterSelectSceneName, LoadSceneMode.Single);
+        // 5. Load Game scene (everyone will use the in-game character select overlay)
+        NetworkManager.Singleton.SceneManager.LoadScene(GameSceneName, LoadSceneMode.Single);
 
         // 6. Spawn CharacterSelectManager after scene loads
-        NetworkManager.Singleton.SceneManager.OnLoadComplete += OnCharacterSelectSceneLoaded;
+        NetworkManager.Singleton.SceneManager.OnLoadComplete += OnGameSceneLoaded;
     }
 
-    private void OnCharacterSelectSceneLoaded(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
+    private void OnGameSceneLoaded(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
     {
-        if (sceneName == CharacterSelectSceneName && NetworkManager.Singleton.IsServer)
+        if (sceneName == GameSceneName && NetworkManager.Singleton.IsServer)
         {
             // Unsubscribe to avoid multiple calls
-            NetworkManager.Singleton.SceneManager.OnLoadComplete -= OnCharacterSelectSceneLoaded;
+            NetworkManager.Singleton.SceneManager.OnLoadComplete -= OnGameSceneLoaded;
 
             // Find and spawn the CharacterSelectManager if it exists in scene
             var manager = GameObject.FindObjectOfType<CharacterSelectManager>();
@@ -138,16 +137,13 @@ public class HostGameManager : IDisposable
     }
 
     /// <summary>
-    /// Call this from CharacterSelectUI when host clicks Start Game
+    /// Optional: call this if you still want a "Start Game" button somewhere.
+    /// If you are already in the Game scene, this just locks the lobby.
     /// </summary>
     public void StartGame()
     {
         if (!NetworkManager.Singleton.IsHost) return;
-
-        // Lock the lobby so no new players can join mid-game
         LockLobby();
-
-        NetworkManager.Singleton.SceneManager.LoadScene(GameSceneName, LoadSceneMode.Single);
     }
 
     private async void LockLobby()
@@ -156,13 +152,11 @@ public class HostGameManager : IDisposable
 
         try
         {
-            await LobbyService.Instance.UpdateLobbyAsync(lobbyId, new UpdateLobbyOptions
-            {
-                IsLocked = true
-            });
-            Debug.Log("[HostGameManager] Lobby locked - no new players can join");
+            var options = new UpdateLobbyOptions { IsLocked = true };
+            await LobbyService.Instance.UpdateLobbyAsync(lobbyId, options);
+            Debug.Log("[HostGameManager] Lobby locked");
         }
-        catch (LobbyServiceException e)
+        catch (Exception e)
         {
             Debug.LogWarning($"[HostGameManager] Failed to lock lobby: {e}");
         }
@@ -170,58 +164,64 @@ public class HostGameManager : IDisposable
 
     private IEnumerator HearbeatLobby(float waitTimeSeconds)
     {
-        WaitForSecondsRealtime delay = new WaitForSecondsRealtime(waitTimeSeconds);
+        var wait = new WaitForSecondsRealtime(waitTimeSeconds);
         while (true)
         {
             LobbyService.Instance.SendHeartbeatPingAsync(lobbyId);
-            yield return delay;
+            yield return wait;
         }
+    }
+
+    public void Dispose()
+    {
+        // nothing special here currently
     }
 
     public async void ShutDown()
     {
-        // Safely stop the heartbeat coroutine
-        if (HostSingleton.Instance != null)
+        // 1) Dispose server FIRST (important: this should clear ConnectionApprovalCallback)
+        try
         {
-            HostSingleton.Instance.StopCoroutine(nameof(HearbeatLobby));
+            networkServer?.Dispose();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[HostGameManager] networkServer.Dispose failed: {e.Message}");
+        }
+        finally
+        {
+            networkServer = null;
         }
 
+        // 2) Shutdown Netcode
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+        {
+            NetworkManager.Singleton.Shutdown();
+        }
+
+        // 3) Extra safety: clear approval callback if anything left it set
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.ConnectionApprovalCallback = null;
+        }
+
+        // 4) Best-effort: delete lobby
         if (!string.IsNullOrEmpty(lobbyId))
         {
             try
             {
                 await LobbyService.Instance.DeleteLobbyAsync(lobbyId);
             }
-            catch (LobbyServiceException e)
+            catch (Exception e)
             {
-                Debug.Log(e);
+                Debug.LogWarning($"[HostGameManager] DeleteLobby failed: {e.Message}");
             }
-
-            lobbyId = string.Empty;
         }
 
-        if (networkServer != null)
-        {
-            networkServer.OnClientLeft -= HandleClientLeft;
-            networkServer.Dispose();
-            networkServer = null;
-        }
+        // 5) Clear local state
+        lobbyId = null;
+        joinCode = null;
     }
 
-    private async void HandleClientLeft(string authId)
-    {
-        try
-        {
-            await LobbyService.Instance.RemovePlayerAsync(lobbyId, authId);
-        }
-        catch (LobbyServiceException e)
-        {
-            Debug.Log(e);
-        }
-    }
 
-    public void Dispose()
-    {
-        ShutDown();
-    }
 }

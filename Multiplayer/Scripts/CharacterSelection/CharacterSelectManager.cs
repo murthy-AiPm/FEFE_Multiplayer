@@ -7,7 +7,7 @@ using UnityEngine;
 /// <summary>
 /// Networked character selection manager.
 /// - Syncs selections across all clients
-/// - Prevents duplicate character selection
+/// - Optionally prevents duplicate character selection
 /// - Tracks ready state
 /// </summary>
 public class CharacterSelectManager : NetworkBehaviour
@@ -15,6 +15,12 @@ public class CharacterSelectManager : NetworkBehaviour
     public static CharacterSelectManager Instance { get; private set; }
 
     [SerializeField] private CharacterDatabase characterDatabase;
+
+    [Header("Rules")]
+    [Tooltip("If true, no two players can choose the same character.")]
+    [SerializeField] private bool enforceUniqueCharacters = true;
+
+    public bool EnforceUniqueCharacters => enforceUniqueCharacters;
 
     // Network synced list of all player selections
     private NetworkList<CharacterSelection> selections;
@@ -142,10 +148,12 @@ public class CharacterSelectManager : NetworkBehaviour
     /// </summary>
     public bool IsCharacterTaken(int characterIndex, ulong excludeClientId = ulong.MaxValue)
     {
+        // If duplicates are allowed, nothing is ever "taken"
+        if (!enforceUniqueCharacters) return false;
+
         for (int i = 0; i < selections.Count; i++)
         {
-            if (selections[i].CharacterIndex == characterIndex &&
-                selections[i].ClientId != excludeClientId)
+            if (selections[i].CharacterIndex == characterIndex && selections[i].ClientId != excludeClientId)
             {
                 return true;
             }
@@ -153,25 +161,6 @@ public class CharacterSelectManager : NetworkBehaviour
         return false;
     }
 
-    /// <summary>
-    /// Get list of available character indices
-    /// </summary>
-    public List<int> GetAvailableCharacters(ulong forClientId)
-    {
-        var available = new List<int>();
-        for (int i = 0; i < characterDatabase.CharacterCount; i++)
-        {
-            if (!IsCharacterTaken(i, forClientId))
-            {
-                available.Add(i);
-            }
-        }
-        return available;
-    }
-
-    /// <summary>
-    /// Try to select a character (called by clients)
-    /// </summary>
     public void TrySelectCharacter(int characterIndex)
     {
         if (NetworkManager.Singleton == null) return;
@@ -179,7 +168,7 @@ public class CharacterSelectManager : NetworkBehaviour
         ulong localClientId = NetworkManager.Singleton.LocalClientId;
 
         // Check locally first to give instant feedback
-        if (IsCharacterTaken(characterIndex, localClientId))
+        if (enforceUniqueCharacters && IsCharacterTaken(characterIndex, localClientId))
         {
             Debug.Log($"[CharacterSelectManager] Character {characterIndex} is already taken!");
             return;
@@ -195,10 +184,9 @@ public class CharacterSelectManager : NetworkBehaviour
         ulong clientId = rpcParams.Receive.SenderClientId;
 
         // Validate character isn't taken
-        if (IsCharacterTaken(characterIndex, clientId))
+        if (enforceUniqueCharacters && IsCharacterTaken(characterIndex, clientId))
         {
             Debug.Log($"[CharacterSelectManager] Server rejected: Character {characterIndex} already taken");
-            // Notify client of rejection
             RejectSelectionClientRpc(characterIndex, new ClientRpcParams
             {
                 Send = new ClientRpcSendParams
@@ -244,7 +232,7 @@ public class CharacterSelectManager : NetworkBehaviour
     }
 
     /// <summary>
-    /// Called when a late-joining client is ready to spawn into the game
+    /// Called when a client is ready to spawn into the game
     /// </summary>
     public void NotifyReadyToSpawn()
     {
@@ -291,27 +279,12 @@ public class CharacterSelectManager : NetworkBehaviour
 
         Debug.Log($"[CharacterSelectManager] Client {clientId} ready to spawn with character {charIndex}");
 
-        // Tell CharacterSpawnHandler to spawn this player
+        // Spawn logic happens wherever your project currently does it.
+        // You already call CharacterSpawnHandler.Instance.TrySpawnPlayerCharacter(clientId) in your current file.
         if (CharacterSpawnHandler.Instance != null)
         {
             CharacterSpawnHandler.Instance.TrySpawnPlayerCharacter(clientId);
-
-            // Send them to the Game scene
-            SendToGameSceneClientRpc(new ClientRpcParams
-            {
-                Send = new ClientRpcSendParams
-                {
-                    TargetClientIds = new[] { clientId }
-                }
-            });
         }
-    }
-
-    [ClientRpc]
-    private void SendToGameSceneClientRpc(ClientRpcParams rpcParams = default)
-    {
-        Debug.Log("[CharacterSelectManager] Loading Game scene...");
-        UnityEngine.SceneManagement.SceneManager.LoadScene("Game");
     }
 
     #endregion
@@ -331,16 +304,6 @@ public class CharacterSelectManager : NetworkBehaviour
         return null;
     }
 
-    public CharacterSelection? GetSelection(ulong clientId)
-    {
-        for (int i = 0; i < selections.Count; i++)
-        {
-            if (selections[i].ClientId == clientId)
-                return selections[i];
-        }
-        return null;
-    }
-
     public List<CharacterSelection> GetAllSelections()
     {
         var list = new List<CharacterSelection>();
@@ -351,24 +314,17 @@ public class CharacterSelectManager : NetworkBehaviour
         return list;
     }
 
-    /// <summary>
-    /// Static method for spawning - gets selection from server storage
-    /// Returns -1 if player hasn't selected yet
-    /// </summary>
     public static int GetPersistedCharacterIndex(ulong clientId)
     {
         if (serverSelections.TryGetValue(clientId, out int index))
         {
             Debug.Log($"[CharacterSelectManager] GetPersistedCharacterIndex: Client {clientId} = {index}");
-            return index; // Can be -1 if not selected
+            return index;
         }
         Debug.Log($"[CharacterSelectManager] GetPersistedCharacterIndex: Client {clientId} not found, returning -1");
-        return -1; // Not found = not selected
+        return -1;
     }
 
-    /// <summary>
-    /// Called by server to store selection for spawning
-    /// </summary>
     public static void SetServerCharacterSelection(ulong clientId, int characterIndex)
     {
         serverSelections[clientId] = characterIndex;
@@ -378,9 +334,6 @@ public class CharacterSelectManager : NetworkBehaviour
     #endregion
 }
 
-/// <summary>
-/// Network serializable struct for player selections
-/// </summary>
 public struct CharacterSelection : INetworkSerializable, IEquatable<CharacterSelection>
 {
     public ulong ClientId;

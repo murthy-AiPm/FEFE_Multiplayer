@@ -17,7 +17,8 @@ public class NetworkServer : IDisposable
     {
         this.networkManager = networkManager;
 
-        networkManager.ConnectionApprovalCallback += ApprovalCheck;
+        networkManager.ConnectionApprovalCallback = ApprovalCheck;
+
         networkManager.OnServerStarted += OnNetworkReady;
     }
 
@@ -81,7 +82,9 @@ public class NetworkServer : IDisposable
     {
         if (networkManager == null) { return; }
 
-        networkManager.ConnectionApprovalCallback -= ApprovalCheck;
+        if (networkManager.ConnectionApprovalCallback == ApprovalCheck)
+            networkManager.ConnectionApprovalCallback = null;
+
         networkManager.OnClientDisconnectCallback -= OnClientDisconnect;
         networkManager.OnServerStarted -= OnNetworkReady;
 
