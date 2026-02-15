@@ -1,10 +1,12 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class HumanoidController : ThirdPersonController
 {
     //[SerializeField] internal HumanoidColliderManger humanoidCollider;
+    [SerializeField] private CombatController combatController;
+    [SerializeField] private VitalManager vitalManager;
     [SerializeField] internal float jumpnum;
     [SerializeField] internal float crouchSpeed;
     [SerializeField] internal float walkSpeed,combatSpeed;
@@ -28,7 +30,8 @@ public class HumanoidController : ThirdPersonController
         //humanStats.SetMaxStamina(maxStamina);
         //humanStats.SetMinStamina(minStamina);
         //Jump();
-        Stamina();
+        //Stamina();
+        SprintStaminaDrain();  // ← ADD this instead
         isSecondaryAttack = playerController.inputController.isSecondaryAttack;
         
       
@@ -98,22 +101,27 @@ public class HumanoidController : ThirdPersonController
 
     protected virtual void SpeedLogic()
     {
-        if (GetComponent<InputController>().isPrimaryAttack)
+        // Combat controller takes priority
+        if (combatController != null)
         {
-            speed = 0;
+            if (combatController.IsActionLocked())
+            {
+                speed = 0;
+                return;
+            }
+            if (combatController.IsSlowMovement())
+            {
+                speed = combatSpeed * 0.5f;
+                return;
+            }
         }
-        else if (GetComponent<InputController>().isCombatMode)
-        {
+
+        if (playerController.inputController.isCombatMode)
             speed = combatSpeed;
-        }
-        else if (GetComponent<InputController>().isCrouch)
-        {
+        else if (playerController.inputController.isCrouch)
             speed = crouchSpeed;
-        }
         else
-        {
             speed = walkSpeed;
-        }
     }
 
     protected override void Walk() // includes combat walk
@@ -124,18 +132,9 @@ public class HumanoidController : ThirdPersonController
         {          
             if (isSecondaryAttack)
             {
-                transform.rotation = Quaternion.Euler(transform.rotation.x, cam.eulerAngles.y, transform.rotation.z);
-                if (isMoving)
-                {                    
-                    if (GetComponent<InputController>().isPrimaryAttack)
-                    {
-                        transform.rotation = Quaternion.Euler(transform.rotation.x, cam.eulerAngles.y, transform.rotation.z);
-                        controller.Move(moveDir.normalized * 0 * speedModifier * Time.deltaTime);
-                    }
-                    else
-                    {
-                        controller.Move(moveDir * speed * speedModifier * Time.deltaTime);
-                    }
+                if (combatController != null && combatController.ShouldFaceCamera())
+                {
+                    transform.rotation = Quaternion.Euler(transform.rotation.x, cam.eulerAngles.y, transform.rotation.z);
                 }
             }
             else if(isMoving)
@@ -171,24 +170,22 @@ public class HumanoidController : ThirdPersonController
         }
     }
 
-    private void Stamina()
+    private void SprintStaminaDrain()
     {
-        if(isMoving && isModified)
+        if (vitalManager == null) return;
+
+        if (isMoving && isModified)
         {
-            stamina = stamina - staminaModifier;
+            // Pause regen while sprinting (regen delay resets)
+            vitalManager.SetStaminaRegenPaused(true);
+
+            // Actively drain stamina while sprinting
+            vitalManager.TryConsumeStamina(staminaModifier * Time.deltaTime);
         }
         else
         {
-            stamina = stamina + staminaModifier;
-        }
-
-        if(stamina >= maxStamina)
-        {
-            stamina = maxStamina;
-        }
-        else if (stamina <=minStamina)
-        {
-            stamina = minStamina;
+            // Resume regen when not sprinting
+            vitalManager.SetStaminaRegenPaused(false);
         }
     }
 

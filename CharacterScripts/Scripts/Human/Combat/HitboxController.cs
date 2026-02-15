@@ -37,8 +37,11 @@ public class HitboxController : MonoBehaviour
 
     // Owner reference (set by WeaponManager when weapon is spawned)
     private NetworkObject _ownerNetObj;
-    private CombatController _ownerCombat;
     private WeaponData _weaponData;
+
+    // Attack context (set externally per swing)
+    private int _currentComboIndex;
+    private bool _isHeavyAttack;
 
     public bool IsActive => _active;
 
@@ -53,10 +56,9 @@ public class HitboxController : MonoBehaviour
     /// <summary>
     /// Call after weapon is instantiated and attached to a character.
     /// </summary>
-    public void Initialize(NetworkObject owner, CombatController combat, WeaponData weapon)
+    public void Initialize(NetworkObject owner, WeaponData weapon)
     {
         _ownerNetObj = owner;
-        _ownerCombat = combat;
         _weaponData = weapon;
 
         // Override shape from weapon data if available
@@ -66,6 +68,15 @@ public class HitboxController : MonoBehaviour
             radius = weapon.hitboxRadius;
             offset = weapon.hitboxOffset;
         }
+    }
+
+    /// <summary>
+    /// Set attack context before enabling hitbox (called by AnimationEventRelay or driver).
+    /// </summary>
+    public void SetAttackContext(int comboIndex, bool isHeavy)
+    {
+        _currentComboIndex = comboIndex;
+        _isHeavyAttack = isHeavy;
     }
 
     private void FixedUpdate()
@@ -128,9 +139,8 @@ public class HitboxController : MonoBehaviour
                 hitNormal = hit.normal,
                 attackerNetObj = _ownerNetObj,
                 weaponData = _weaponData,
-                comboIndex = _ownerCombat != null ? _ownerCombat.CurrentComboIndex : 0,
-                isHeavy = _ownerCombat != null &&
-                          _ownerCombat.State == CombatController.CombatState.HeavyAttacking
+                comboIndex = _currentComboIndex,
+                isHeavy = _isHeavyAttack
             };
 
             OnHitDetected?.Invoke(hitInfo);

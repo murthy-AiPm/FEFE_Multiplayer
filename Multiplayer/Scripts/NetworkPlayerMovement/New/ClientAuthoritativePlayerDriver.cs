@@ -69,6 +69,8 @@ public class ClientAuthoritativePlayerDriver : NetworkBehaviour
 
     private void ApplyOwnershipMode(bool isOwner)
     {
+        var combat = GetComponentInChildren<CombatController>(true);
+        if (combat) combat.enabled = isOwner;
         // Input only on owner
         if (inputController) inputController.enabled = isOwner; // uses InputSnapshot etc :contentReference[oaicite:2]{index=2}
 

@@ -15,22 +15,13 @@ MonoBehaviour:
   weaponName: Weapon
   weaponType: 1
   weaponPrefab: {fileID: 0}
+  weaponProfileName: Sword
   baseDamage: 10
-  attackSpeed: 1
+  heavyDamageMultiplier: 2
   attackRange: 2
   staminaCostLight: 10
   staminaCostHeavy: 25
   blockStaminaCost: 5
-  comboLength: 3
-  comboWindowDuration: 0.5
-  lightAttackClips: []
-  heavyAttackClip: {fileID: 0}
-  blockClip: {fileID: 0}
-  equipClip: {fileID: 0}
-  holsterClip: {fileID: 0}
-  drawClip: {fileID: 0}
-  aimIdleClip: {fileID: 0}
-  releaseClip: {fileID: 0}
   arrowPrefab: {fileID: 0}
   arrowSpeed: 40
   drawTime: 0.8

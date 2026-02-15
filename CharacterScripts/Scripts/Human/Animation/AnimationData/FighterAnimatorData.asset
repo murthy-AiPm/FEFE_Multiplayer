@@ -150,17 +150,6 @@ MonoBehaviour:
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 0
-  - key: Sword/Run
-    transition:
-      _FadeDuration: 0
-      _Events:
-        _NormalizedTimes: []
-        _Callbacks: []
-        _Names: []
-      _Clip: {fileID: 7400056, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
-      _Speed: NaN
-      _NormalizedStartTime: NaN
-    useRootMotion: 0
   - key: Sword/Strafe/Back
     transition:
       _FadeDuration: 0
@@ -169,6 +158,17 @@ MonoBehaviour:
         _Callbacks: []
         _Names: []
       _Clip: {fileID: 7400038, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Sword/Run
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400056, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 0
@@ -257,6 +257,138 @@ MonoBehaviour:
         _Callbacks: []
         _Names: []
       _Clip: {fileID: 7400000, guid: 9a6f63f8143d0884db4a2df7013fe8b3, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Crouch/Idle
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400120, guid: 6844dcb6a866ab34fa96c67e39eab693, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Crouch/Walk
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400124, guid: 6844dcb6a866ab34fa96c67e39eab693, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Locomotion/Dodge
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 0}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Locomotion/BlockIdle
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 0}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Locomotion/BlockIdle
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 0}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Bow/Equip
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 0}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Bow/UnEquip
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 0}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Bow/Draw
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 0}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Bow/Release
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 0}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Melee/Fist_1
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 0}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Melee/Fist_2
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 0}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Melee/Kick
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 0}
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 0

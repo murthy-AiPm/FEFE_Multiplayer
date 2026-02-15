@@ -60,26 +60,23 @@ public class AnimationEventRelay : MonoBehaviour
             activeHitbox.DisableHitbox();
     }
 
-    // ─── Combo Events ───
+    // ─── Combo / Attack Events ───
+    // These are handled by RuleAnimancerDriver's lock-until-end system.
+    // Kept as empty hooks so animation events don't throw MissingMethod errors.
 
-    public void ComboWindowOpen()
-    {
-        if (combatController != null)
-            combatController.OnAnimEvent_ComboWindowOpen();
-    }
-
-    public void AttackEnd()
-    {
-        if (combatController != null)
-            combatController.OnAnimEvent_AttackEnd();
-    }
+    public void ComboWindowOpen() { }
+    public void AttackEnd() { }
 
     // ─── Dodge Events ───
 
+    /// <summary>
+    /// Called when dodge animation finishes. Signals CombatController if needed.
+    /// Primarily a safety fallback — CombatController also uses a timer.
+    /// </summary>
     public void DodgeEnd()
     {
-        if (combatController != null)
-            combatController.OnAnimEvent_DodgeEnd();
+        // CombatController handles dodge end via its own timer.
+        // This exists so animation events don't throw errors.
     }
 
     // ─── Weapon Equip/Holster Events ───

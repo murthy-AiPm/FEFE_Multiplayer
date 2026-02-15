@@ -39,6 +39,10 @@ public class RuleAnimancerDriver : MonoBehaviour
              "will drive the CharacterController via OnAnimatorMove.")]
     [SerializeField] private bool allowRootMotion = true;
 
+    [Header("Combat Integration")]
+    [SerializeField] private CombatController combatController;
+    [SerializeField] private WeaponManager weaponManager;
+
     [Header("Witcher-Style Attack Settings")]
     [SerializeField] private float doubleClickWindow = 0.25f;
     [SerializeField] private float comboHoldThreshold = 0.12f;
@@ -105,7 +109,8 @@ public class RuleAnimancerDriver : MonoBehaviour
         if (input == null) input = GetComponentInParent<InputController>();
         if (networkSync == null) networkSync = GetComponentInParent<ClientAuthoritativeAnimancerSync>();
         if (mountController == null) mountController = GetComponentInParent<MountController>();
-
+        if (combatController == null)combatController = GetComponentInParent<CombatController>();
+        if (weaponManager == null) weaponManager = GetComponentInParent<WeaponManager>();
         var netObj = GetComponentInParent<Unity.Netcode.NetworkBehaviour>();
         if (netObj != null)
             _isRemoteClient = netObj.IsSpawned && !netObj.IsOwner;
@@ -198,6 +203,8 @@ public class RuleAnimancerDriver : MonoBehaviour
             input = input,
             snapshot = input != null ? input.Snapshot : default,
             mountController = mountController,
+            combatController = combatController,    // NEW
+            weaponManager = weaponManager,           // NEW
             ActionId = _actionId,
             ActionStart = _actionStartEdge,
         };
@@ -216,7 +223,9 @@ public class RuleAnimancerDriver : MonoBehaviour
         // 1) Attack locked → skip everything (full body, frame-critical)
         if (IsLayerLocked(AnimLayer.Attack))
             return;
-
+        bool combatBusy = combatController != null &&
+            (combatController.IsDodging || combatController.IsBlocking ||
+             combatController.IsBowDrawing || combatController.IsBowAiming);
         // 2) Witcher-style attacks (owner only)
         if (!_isRemoteClient && HandleWitcherAttacks(ctx))
             return;
@@ -351,7 +360,8 @@ public class RuleAnimancerDriver : MonoBehaviour
         bool down = ctx.snapshot.primaryDown;
         bool held = ctx.snapshot.primaryHeld;
         bool up = ctx.snapshot.primaryUp;
-
+        if (combatController != null && !combatController.CanAttack())
+            return false;
         if (!down && !held && !up)
         {
             if (_attack.pendingSingle && Time.time - _attack.pendingStartTime >= doubleClickWindow)
@@ -440,7 +450,7 @@ public class RuleAnimancerDriver : MonoBehaviour
 
         if (!TryPlayAttackKey(key, AttackMode.Single, false, 0))
             return false;
-
+        combatController?.ConsumeAttackStamina(false);
         return true;
     }
 
@@ -470,6 +480,7 @@ public class RuleAnimancerDriver : MonoBehaviour
         _attack.comboKeys = keys;
         _attack.comboIndex = 0;
 
+        combatController?.ConsumeAttackStamina(heavy);
         return PlayComboIndex(0);
     }
 
@@ -747,6 +758,14 @@ public class RuleAnimancerDriver : MonoBehaviour
                 BoolParam.Sheathing => ctx.Sheathing,
                 BoolParam.IsMounted => ctx.IsMounted,
                 BoolParam.IsTransitioning => ctx.IsTransitioning,
+                BoolParam.Crouching => ctx.Crouching,
+                BoolParam.Dodging => ctx.Dodging,
+                BoolParam.Blocking => ctx.Blocking,
+                BoolParam.BowDrawing => ctx.BowDrawing,
+                BoolParam.BowAiming => ctx.BowAiming,
+                BoolParam.WeaponSlot0 => ctx.ActiveWeaponSlot == 0,
+                BoolParam.WeaponSlot1 => ctx.ActiveWeaponSlot == 1,
+                BoolParam.WeaponSlot2 => ctx.ActiveWeaponSlot == 2,
                 _ => false
             };
 
@@ -804,5 +823,10 @@ public class RuleAnimancerDriver : MonoBehaviour
     {
         var current = layer.CurrentState;
         return current != null && current.Clip == clip;
+    }
+
+    public void SetActiveWeapon(string profileName)
+    {
+        defaultWeaponName = profileName;
     }
 }

@@ -1,4 +1,5 @@
-using UnityEngine;
+﻿using UnityEngine;
+
 [System.Serializable]
 public struct InputSnapshot
 {
@@ -26,13 +27,11 @@ public struct InputSnapshot
 
     public bool primaryDown; // edge: pressed this frame
     public bool primaryUp;   // edge: released this frame (optional)
-
 }
 
 public class InputController : MonoBehaviour
 {
     [SerializeField] PlayerController playerController;
-    //[SerializeField] MasterScript MS;
 
     // Existing public flags (kept for compatibility)
     public bool isMoving;
@@ -55,18 +54,23 @@ public class InputController : MonoBehaviour
     public string directions;
     public bool isClimbing;
 
-    // combat
+    // Combat — now driven by WeaponManager
     public bool isPrimaryAttack, isWeaponDischarge;
     public bool isSecondaryAttack;
     public bool isCombatMode = false;
     public bool isSheating;
-    public bool fistEquip, swordEquip;
+
+    // DEPRECATED — kept as fields so nothing breaks at compile time,
+    // but no longer toggled by InputController. WeaponManager owns weapon state.
+    [HideInInspector] public bool fistEquip;
+    [HideInInspector] public bool swordEquip;
 
     // NEW: snapshot output
     public InputSnapshot Snapshot { get; private set; }
 
     // Cached refs
-       private HumanoidColliderManger _humanoidCollider;
+    private HumanoidColliderManger _humanoidCollider;
+    private WeaponManager _weaponManager; // NEW: drives isCombatMode
 
     // Jump continuity (your old logic preserved)
     [SerializeField] bool previousjump;
@@ -74,13 +78,16 @@ public class InputController : MonoBehaviour
 
     void Awake()
     {
-       
         _humanoidCollider = GetComponent<HumanoidColliderManger>(); // may be null (dragon)
-
+        _weaponManager = GetComponentInParent<WeaponManager>();     // may be null until spawned
     }
 
     void Update()
     {
+        // Lazy lookup if not found at Awake (e.g. spawned dynamically)
+        if (_weaponManager == null)
+            _weaponManager = GetComponentInParent<WeaponManager>();
+
         // world state (not input)
         onGround = playerController.TPS.isgrounded;
         isFalling = playerController.TPS.isfreeFall;
@@ -92,31 +99,18 @@ public class InputController : MonoBehaviour
             isPrimaryAttack = false;
             isWeaponDischarge = false;
             isSheating = false;
-            // optionally: isAction = false;  // only if action should cancel on landing
         }
         _wasGrounded = onGround;
-
 
         // 1) Read input ONCE
         Snapshot = ReadSnapshot();
 
         // 2) Apply snapshot into existing flags (compat)
         ApplySnapshotToLegacyFlags(Snapshot);
-
-        // 3) Any �derived� state that depends on other components (compat)
-
-
-
-        if (Input.GetButton("Action"))
-        {
-            Debug.Log("action");
-        }
-
     }
 
     private InputSnapshot ReadSnapshot()
     {
-        // Using your current old Input Manager approach
         float horizontal = Input.GetAxisRaw("Horizontal");
         float vertical = Input.GetAxisRaw("Vertical");
 
@@ -144,9 +138,7 @@ public class InputController : MonoBehaviour
 
             primaryDown = Input.GetButtonDown("PrimaryAttack"),
             primaryUp = Input.GetButtonUp("PrimaryAttack"),
-
         };
-
     }
 
     private void ApplySnapshotToLegacyFlags(InputSnapshot s)
@@ -157,39 +149,20 @@ public class InputController : MonoBehaviour
         isAction = s.actionHeld;
         isSecondaryAttack = s.secondaryHeld;
 
-        // Simple �direction string� compatibility (your old logic)
+        // Direction string compatibility
         directions = GetDirectionString(s.move);
 
         // Branch per character
         ApplyHumanFromSnapshot(s);
-        //if (MS.charcterIndicator == "human" || MS.charcterIndicator == null)
-        //{
-        //    ApplyHumanFromSnapshot(s);
-        //}
-        //else if (MS.charcterIndicator == "dragon")
-        //{
-        //    ApplyDragonFromSnapshot(s);
-        //}
     }
 
     private void ApplyHumanFromSnapshot(InputSnapshot s)
     {
-        // Jump
-        //if (s.jumpDown && onGround)
-        //{
-        //    isJumpPressed = true;
-        //    isCrouch = false;
-        //}
-        //else if (!onGround)
-        //{
-        //    isJumpPressed = false;
-        //}
-        // Jump is an EDGE trigger for animations: true only on the frame you pressed jump while grounded.
+        // Jump — edge trigger only on the frame pressed while grounded
         isJumpPressed = (s.jumpDown && onGround);
 
         if (isJumpPressed)
             isCrouch = false;
-
 
         // Crouch toggle
         if (s.crouchToggleDown)
@@ -198,46 +171,30 @@ public class InputController : MonoBehaviour
         // Hover off for humans
         isHoverMode = false;
 
-        // Combat input (same behavior as your original HumanCombatInput)
+        // ─── Combat mode: driven by WeaponManager ───
+        // WeaponManager.ActiveSlot: 0 = fists/unarmed, 1 = primary, 2 = bow
+        // CombatController handles slot switching via WeaponManager.
+        // We just read the result here for backward compat with animation rules.
+        if (_weaponManager != null)
+        {
+            isCombatMode = _weaponManager.ActiveSlot != 0;
+        }
+
+        // Primary attack flag (for any systems still reading this)
         if (isCombatMode && s.primaryHeld)
             isPrimaryAttack = true;
         else
             isPrimaryAttack = false;
 
-        if (s.slot1Down)
-        {
-            fistEquip = !fistEquip;
-            isCombatMode = !isCombatMode;
-            swordEquip = false;
-            isCrouch = false;
-        }
-
-        if (fistEquip || swordEquip)
-            isCombatMode = true;
-
-        if (fistEquip && s.slot2Down)
-        {
-            fistEquip = false;
-            isSheating = true;
-            isCrouch = false;
-            isCombatMode = true;
-            swordEquip = true;
-        }
-        else if (s.slot2Down)
-        {
-            isCombatMode = !isCombatMode;
-            isSheating = !isSheating;
-            isCrouch = false;
-            swordEquip = !swordEquip;
-        }
-
+        // Combat mode disables crouch
         if (isCombatMode)
             isCrouch = false;
     }
 
-    private void ApplyDragonFromSnapshot(InputSnapshot s)
+    // ─── Dragon input (unchanged) ───
+
+    public void ApplyDragonFromSnapshot(InputSnapshot s)
     {
-        // �Moving� is already set, keep your special jump continuity logic:
         if (s.jumpDown && (onGround && isModified && isMoving))
         {
             isJumpPressed = true;
@@ -256,10 +213,8 @@ public class InputController : MonoBehaviour
             previousjump = false;
         }
 
-        // Hover toggle behavior (preserved)
         ApplyHoverFromSnapshot(s);
 
-        // Combat mode logic (same as your DragonCombatInput)
         if (s.slot1Down || s.slot2Down || s.slot3Down)
         {
             isCombatMode = true;
@@ -280,7 +235,6 @@ public class InputController : MonoBehaviour
             isWeaponDischarge = false;
         }
 
-        // You had: if moving+grounded+not flying => stop primary attack
         if (isMoving && onGround && !isFlying)
             isPrimaryAttack = false;
     }
@@ -300,11 +254,8 @@ public class InputController : MonoBehaviour
         }
     }
 
-
-
     private static string GetDirectionString(Vector2 move)
     {
-        // Keep it simple: pick dominant axis like your W/A/S/D logic
         if (move.sqrMagnitude < 0.001f) return "None";
 
         if (Mathf.Abs(move.y) >= Mathf.Abs(move.x))

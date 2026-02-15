@@ -6,7 +6,7 @@ public enum WeaponType
     OneHanded,
     TwoHanded,
     Bow,
-    Shield      // not a weapon per se, but occupies off-hand
+    Shield
 }
 
 public enum WeaponSlot
@@ -16,7 +16,10 @@ public enum WeaponSlot
 }
 
 /// <summary>
-/// Defines a weapon's stats, visuals, and animation clips.
+/// Defines a weapon's stats and visuals.
+/// Animation is handled entirely by AnimationSetBase + RuleAnimancerDriver.
+/// The weaponProfileName must match a WeaponAttackProfile.weaponName in RuleAnimancerDriver.
+/// 
 /// Create one asset per weapon (e.g. "Iron Sword", "Longbow", "Wooden Shield").
 /// </summary>
 [CreateAssetMenu(fileName = "NewWeapon", menuName = "Game/Combat/Weapon Data")]
@@ -27,54 +30,31 @@ public class WeaponData : ScriptableObject
     public WeaponType weaponType = WeaponType.OneHanded;
     public GameObject weaponPrefab;  // visual mesh to instantiate
 
+    [Header("Animation Profile Link")]
+    [Tooltip("Must match a WeaponAttackProfile.weaponName in RuleAnimancerDriver")]
+    public string weaponProfileName = "Sword";
+
     [Header("Combat Stats")]
     public float baseDamage = 10f;
-    public float attackSpeed = 1f;    // multiplier on animation speed
-    public float attackRange = 2f;    // for validation
+    public float heavyDamageMultiplier = 2f;
+    public float attackRange = 2f;
     public float staminaCostLight = 10f;
     public float staminaCostHeavy = 25f;
-    public float blockStaminaCost = 5f; // per hit blocked
-
-    [Header("Combo Chain")]
-    [Tooltip("Number of attacks in the light combo chain (1-4)")]
-    [Range(1, 4)]
-    public int comboLength = 3;
-    public float comboWindowDuration = 0.5f; // seconds to input next attack
-
-    [Header("Animation Clips (Animancer)")]
-    [Tooltip("Clips played in sequence for light combo chain")]
-    public AnimationClip[] lightAttackClips;
-    public AnimationClip heavyAttackClip;
-    public AnimationClip blockClip;       // 1H only
-    public AnimationClip equipClip;       // unholster
-    public AnimationClip holsterClip;     // holster
+    public float blockStaminaCost = 5f;
 
     [Header("Bow-Specific")]
-    public AnimationClip drawClip;
-    public AnimationClip aimIdleClip;
-    public AnimationClip releaseClip;
     public GameObject arrowPrefab;
     public float arrowSpeed = 40f;
-    public float drawTime = 0.8f;         // how long to fully draw
+    public float drawTime = 0.8f;
 
     [Header("Holster Points")]
-    [Tooltip("Name of the Transform on the character model where this weapon sits when holstered")]
+    [Tooltip("Name of the Transform on the character where this sits when holstered")]
     public string holsterBone = "Spine_Holster";
-    [Tooltip("Local offset when holstered")]
     public Vector3 holsterLocalPos;
     public Vector3 holsterLocalRot;
 
     [Header("Hitbox")]
-    public float hitboxLength = 1f;    // for melee weapons
+    public float hitboxLength = 1f;
     public float hitboxRadius = 0.15f;
-    public Vector3 hitboxOffset;       // offset from weapon root
-
-    /// <summary>
-    /// Get the animation clip for a specific combo index.
-    /// </summary>
-    public AnimationClip GetLightAttackClip(int comboIndex)
-    {
-        if (lightAttackClips == null || lightAttackClips.Length == 0) return null;
-        return lightAttackClips[Mathf.Clamp(comboIndex, 0, lightAttackClips.Length - 1)];
-    }
+    public Vector3 hitboxOffset;
 }

@@ -29,6 +29,14 @@ public enum BoolParam
     Sheathing,
     IsMounted,
     IsTransitioning,
+    Crouching,
+    Dodging,
+    Blocking,
+    BowDrawing,
+    BowAiming,
+    WeaponSlot0,   // fists
+    WeaponSlot1,   // primary melee
+    WeaponSlot2,   // bow
 }
 
 public enum InputEdge

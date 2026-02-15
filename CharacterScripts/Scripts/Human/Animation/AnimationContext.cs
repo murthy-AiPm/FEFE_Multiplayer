@@ -6,6 +6,8 @@ public struct AnimationContext
     public InputController input;
     public InputSnapshot snapshot;
     public MountController mountController; // NEW: for mounted state
+    public CombatController combatController;
+    public WeaponManager weaponManager;
 
     // Humanoid states
     public bool Moving => GetMoving();
@@ -16,6 +18,13 @@ public struct AnimationContext
     public bool Grounded => tps != null && tps.isgrounded;
     public bool FreeFall => tps != null && tps.isfreeFall;
     public bool Sheathing => input != null && input.isSheating;
+    public bool Crouching => input != null && input.isCrouch;
+
+    public bool Dodging => combatController != null && combatController.IsDodging;
+    public bool Blocking => combatController != null && combatController.IsBlocking;
+    public bool BowDrawing => combatController != null && combatController.IsBowDrawing;
+    public bool BowAiming => combatController != null && combatController.IsBowAiming;
+    public int ActiveWeaponSlot => weaponManager != null ? weaponManager.ActiveSlot : 0;
 
     // Mounting states (NEW)
     public bool IsMounted => mountController != null && mountController.IsMounted;
