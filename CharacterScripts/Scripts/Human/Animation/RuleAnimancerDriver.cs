@@ -213,21 +213,20 @@ public class RuleAnimancerDriver : MonoBehaviour
                 CancelCurrentAttack();
         }
 
-        // 1) Attack locked → skip
+        // 1) Attack locked → skip everything (full body, frame-critical)
         if (IsLayerLocked(AnimLayer.Attack))
             return;
 
-        // 2) Action locked → skip
-        if (IsLayerLocked(AnimLayer.Action))
-            return;
-
-        // 3) Witcher-style attacks (owner only)
+        // 2) Witcher-style attacks (owner only)
         if (!_isRemoteClient && HandleWitcherAttacks(ctx))
             return;
 
-        // 4) Rule evaluation: Attack > Action > Base
+        // 3) Rule evaluation: Attack > Action > Base
+        //    Action lock only prevents new Action rules, NOT Base layer updates.
+        //    This allows locomotion to keep running under a masked Action (e.g. unsheathe over combat walk).
         if (TryPlayBestRule(ctx, AnimLayer.Attack)) return;
-        if (TryPlayBestRule(ctx, AnimLayer.Action)) return;
+        if (!IsLayerLocked(AnimLayer.Action))
+            TryPlayBestRule(ctx, AnimLayer.Action);
         TryPlayBestRule(ctx, AnimLayer.Base);
 
         if (_actionId != 0 && !IsLayerLocked(AnimLayer.Action))

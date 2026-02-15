@@ -136,7 +136,7 @@ MonoBehaviour:
     priority: 121
     lockUntilEnd: 1
     allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
+    maskOverride: {fileID: 31900000, guid: c12fe2f80347e7d438209787229c4398, type: 2}
     animationKey: Sword/Equip
     all:
     - useBool: 1

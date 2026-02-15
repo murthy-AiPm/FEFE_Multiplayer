@@ -272,6 +272,10 @@ MonoBehaviour:
   actionFade: 0.08
   attackFade: 0.05
   cancelFade: 0.06
+  actionLayerMask: {fileID: 0}
+  attackLayerMask: {fileID: 0}
+  layerFadeOutDuration: 0.15
+  allowRootMotion: 1
   doubleClickWindow: 0.25
   comboHoldThreshold: 0.12
   defaultWeaponName: Sword
