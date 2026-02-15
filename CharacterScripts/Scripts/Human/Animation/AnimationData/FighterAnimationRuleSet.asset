@@ -547,44 +547,6 @@ MonoBehaviour:
       direction: 0
       useActionId: 0
       actionIdEquals: 0
-  - name: Riding/Walk
-    layer: 0
-    priority: 100
-    lockUntilEnd: 0
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: Riding/Walk
-    all:
-    - useBool: 1
-      boolParam: 8
-      boolValue: 1
-      useInput: 0
-      input: 2
-      triggerMode: 2
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 0
-      boolValue: 1
-      useInput: 0
-      input: 2
-      triggerMode: 2
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 2
-      boolValue: 0
-      useInput: 0
-      input: 2
-      triggerMode: 2
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
   - name: Riding/Idle
     layer: 0
     priority: 100
@@ -611,6 +573,120 @@ MonoBehaviour:
       triggerMode: 2
       useDirection: 0
       direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 2
+      boolValue: 0
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Riding/Walk/Front
+    layer: 0
+    priority: 100
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Riding/Walk/Front
+    all:
+    - useBool: 1
+      boolParam: 8
+      boolValue: 1
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 1
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 1
+      direction: 1
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 2
+      boolValue: 0
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Riding/Walk/Left
+    layer: 0
+    priority: 100
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Riding/Walk/Left
+    all:
+    - useBool: 1
+      boolParam: 8
+      boolValue: 1
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 1
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 1
+      direction: 2
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 2
+      boolValue: 0
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Riding/Walk/Right
+    layer: 0
+    priority: 100
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Riding/Walk/Left
+    all:
+    - useBool: 1
+      boolParam: 8
+      boolValue: 1
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 1
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 1
+      direction: 2
       useActionId: 0
       actionIdEquals: 0
     - useBool: 1

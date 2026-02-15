@@ -238,17 +238,6 @@ MonoBehaviour:
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 0
-  - key: Riding/Walk
-    transition:
-      _FadeDuration: 0
-      _Events:
-        _NormalizedTimes: []
-        _Callbacks: []
-        _Names: []
-      _Clip: {fileID: 7400000, guid: 4ebf3618ed88d084b98fa26913bdd4c1, type: 3}
-      _Speed: NaN
-      _NormalizedStartTime: NaN
-    useRootMotion: 0
   - key: Riding/Gallop
     transition:
       _FadeDuration: 0
@@ -389,6 +378,39 @@ MonoBehaviour:
         _Callbacks: []
         _Names: []
       _Clip: {fileID: 0}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Riding/Walk/Front
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400000, guid: 4ebf3618ed88d084b98fa26913bdd4c1, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Riding/Walk/Left
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400000, guid: e31466cb98be02b428e3709e07a7aa33, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Riding/Walk/Right
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400000, guid: a295f4577c8679c469368ac851edfbab, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 0
