@@ -18,6 +18,7 @@ MonoBehaviour:
     priority: 1
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Locomotion/Idle
     all: []
   - name: Walk
@@ -25,6 +26,7 @@ MonoBehaviour:
     priority: 2
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Locomotion/Walk
     all:
     - useBool: 1
@@ -42,6 +44,7 @@ MonoBehaviour:
     priority: 3
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Locomotion/Run
     all:
     - useBool: 1
@@ -69,6 +72,7 @@ MonoBehaviour:
     priority: 15
     lockUntilEnd: 1
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Air/Jump
     all:
     - useBool: 0
@@ -86,6 +90,7 @@ MonoBehaviour:
     priority: 10
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Air/Fall
     all:
     - useBool: 1
@@ -103,6 +108,7 @@ MonoBehaviour:
     priority: 50
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Sword/Idle
     all:
     - useBool: 1
@@ -130,6 +136,7 @@ MonoBehaviour:
     priority: 121
     lockUntilEnd: 1
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Sword/Equip
     all:
     - useBool: 1
@@ -167,6 +174,7 @@ MonoBehaviour:
     priority: 121
     lockUntilEnd: 1
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Sword/Unequip
     all:
     - useBool: 1
@@ -204,6 +212,7 @@ MonoBehaviour:
     priority: 51
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Sword/Walk/Fwd
     all:
     - useBool: 1
@@ -231,6 +240,7 @@ MonoBehaviour:
     priority: 55
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Sword/Walk/Fwd
     all:
     - useBool: 1
@@ -268,6 +278,7 @@ MonoBehaviour:
     priority: 55
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Sword/Strafe/Right
     all:
     - useBool: 1
@@ -305,6 +316,7 @@ MonoBehaviour:
     priority: 55
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Sword/Strafe/Left
     all:
     - useBool: 1
@@ -342,6 +354,7 @@ MonoBehaviour:
     priority: 55
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Sword/Strafe/Back
     all:
     - useBool: 1
@@ -379,6 +392,7 @@ MonoBehaviour:
     priority: 52
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Sword/Run
     all:
     - useBool: 1
@@ -416,6 +430,7 @@ MonoBehaviour:
     priority: 52
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Sword/Run
     all:
     - useBool: 1
@@ -453,6 +468,7 @@ MonoBehaviour:
     priority: 200
     lockUntilEnd: 1
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Mount/Start
     all:
     - useBool: 1
@@ -470,6 +486,7 @@ MonoBehaviour:
     priority: 200
     lockUntilEnd: 1
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Mount/Dismount
     all:
     - useBool: 1
@@ -497,6 +514,7 @@ MonoBehaviour:
     priority: 100
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Riding/Gallop
     all:
     - useBool: 1
@@ -534,6 +552,7 @@ MonoBehaviour:
     priority: 100
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Riding/Walk
     all:
     - useBool: 1
@@ -571,6 +590,7 @@ MonoBehaviour:
     priority: 100
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
     animationKey: Riding/Idle
     all:
     - useBool: 1

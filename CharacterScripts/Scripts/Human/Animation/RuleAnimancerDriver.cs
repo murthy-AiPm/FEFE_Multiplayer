@@ -9,12 +9,12 @@ public class RuleAnimancerDriver : MonoBehaviour
 {
     [Header("Assets")]
     [SerializeField] private AnimationSetBase animationSet;
-    [SerializeField] private AnimationRuleSet ruleSet; // still used for your other non-attack rules (locomotion, actions, etc.)
+    [SerializeField] private AnimationRuleSet ruleSet;
 
     [Header("Wiring (optional if auto-found)")]
     [SerializeField] private ThirdPersonController tps;
     [SerializeField] private InputController input;
-    [SerializeField] private ClientAuthoritativeAnimancerSync networkSync; // NEW: for attack syncing
+    [SerializeField] private ClientAuthoritativeAnimancerSync networkSync;
     [SerializeField] private MountController mountController;
 
     [Header("Fades")]
@@ -23,39 +23,69 @@ public class RuleAnimancerDriver : MonoBehaviour
     [SerializeField] private float attackFade = 0.05f;
     [SerializeField] private float cancelFade = 0.06f;
 
+    [Header("Layer Masks")]
+    [Tooltip("Upper body mask for Action layer (unsheathe, interactions). " +
+             "Create via Assets > Create > Avatar Mask, enable spine/arms/head only.")]
+    [SerializeField] private AvatarMask actionLayerMask;
+
+    [Tooltip("Optional mask for Attack layer. Leave null for full body attacks.")]
+    [SerializeField] private AvatarMask attackLayerMask;
+
+    [Tooltip("Fade duration when a masked layer finishes and fades out.")]
+    [SerializeField] private float layerFadeOutDuration = 0.15f;
+
+    [Header("Root Motion")]
+    [Tooltip("When enabled, root motion from the current Base rule (if flagged) " +
+             "will drive the CharacterController via OnAnimatorMove.")]
+    [SerializeField] private bool allowRootMotion = true;
+
     [Header("Witcher-Style Attack Settings")]
-    [Tooltip("Max time between clicks to consider it a double click.")]
     [SerializeField] private float doubleClickWindow = 0.25f;
-
-    [Tooltip("After the 2nd click, how long must primary be held to start a combo.")]
     [SerializeField] private float comboHoldThreshold = 0.12f;
-
-    [Tooltip("Fallback weapon name if you don't have a weapon system wired yet.")]
     [SerializeField] private string defaultWeaponName = "Sword";
 
     [Header("Weapon Attack Profiles (data)")]
     [SerializeField] private List<WeaponAttackProfile> weapons = new List<WeaponAttackProfile>();
 
+    // ───────────────────── Runtime ─────────────────────
+
     private AnimancerComponent _animancer;
+    private Animator _animator;
+    private CharacterController _charController;
 
-    // Layer locks (don't let locomotion override action/attack).
-    private readonly Dictionary<AnimLayer, AnimancerState> _lockedState = new Dictionary<AnimLayer, AnimancerState>();
-    private readonly Dictionary<AnimLayer, bool> _isLocked = new Dictionary<AnimLayer, bool>();
+    // Animancer layers (cached on Awake)
+    private AnimancerLayer _baseLayer;
+    private AnimancerLayer _actionLayer;
+    private AnimancerLayer _attackLayer;
 
-    // Action runtime (set by external interaction system)
+    // Layer locks
+    private readonly Dictionary<AnimLayer, AnimancerState> _lockedState = new();
+    private readonly Dictionary<AnimLayer, bool> _isLocked = new();
+
+    // Action runtime
     private int _actionId;
     private bool _actionStartEdge;
 
     // Attack runtime
-    private AttackRuntime _attack = new AttackRuntime();
+    private AttackRuntime _attack = new();
 
-    // NEW: Flag to prevent remotes from running Witcher input logic
+    // Root motion
+    private bool _rootMotionActive = false;
+
+    // Network
     private bool _isRemoteClient = false;
+
+    // ───────────────────── Public API ─────────────────────
 
     public AnimancerComponent Animancer => _animancer;
     public bool IsLocked => IsLayerLocked(AnimLayer.Attack) || IsLayerLocked(AnimLayer.Action);
 
-    // Make AttackMode public so sync script can use it
+    /// <summary>
+    /// True when root motion is currently driving movement.
+    /// Your ThirdPersonController should check this and skip its own movement when true.
+    /// </summary>
+    public bool RootMotionActive => _rootMotionActive;
+
     public enum AttackMode
     {
         None = 0,
@@ -63,43 +93,105 @@ public class RuleAnimancerDriver : MonoBehaviour
         Combo = 2
     }
 
+    // ───────────────────── Init ─────────────────────
+
     private void Awake()
     {
         _animancer = GetComponent<AnimancerComponent>();
+        _animator = GetComponent<Animator>();
+        _charController = GetComponentInParent<CharacterController>();
+
         if (tps == null) tps = GetComponentInParent<ThirdPersonController>();
         if (input == null) input = GetComponentInParent<InputController>();
         if (networkSync == null) networkSync = GetComponentInParent<ClientAuthoritativeAnimancerSync>();
         if (mountController == null) mountController = GetComponentInParent<MountController>();
-        // Check if we're a remote client
+
         var netObj = GetComponentInParent<Unity.Netcode.NetworkBehaviour>();
         if (netObj != null)
-        {
             _isRemoteClient = netObj.IsSpawned && !netObj.IsOwner;
-        }
+
+        SetupLayers();
     }
 
     /// <summary>
-    /// Call this from your interaction code when you start an action like chest/ballista.
-    /// Example: driver.StartAction(1) // chest
+    /// Creates Animancer layers and applies AvatarMasks.
+    /// Call once in Awake. Layers are created on first access to _animancer.Layers[n].
     /// </summary>
+    private void SetupLayers()
+    {
+        _baseLayer = _animancer.Layers[0];
+        _baseLayer.SetDebugName("Base");
+
+        _actionLayer = _animancer.Layers[1];
+        _actionLayer.SetDebugName("Action");
+        if (actionLayerMask != null)
+            _actionLayer.SetMask(actionLayerMask);
+
+        _attackLayer = _animancer.Layers[2];
+        _attackLayer.SetDebugName("Attack");
+        if (attackLayerMask != null)
+            _attackLayer.SetMask(attackLayerMask);
+    }
+
+    /// <summary>
+    /// Maps our AnimLayer enum to the corresponding Animancer layer.
+    /// </summary>
+    private AnimancerLayer GetAnimancerLayer(AnimLayer layer)
+    {
+        return layer switch
+        {
+            AnimLayer.Base => _baseLayer,
+            AnimLayer.Action => _actionLayer,
+            AnimLayer.Attack => _attackLayer,
+            _ => _baseLayer,
+        };
+    }
+
+    // ───────────────────── Root Motion (CharacterController) ─────────────────────
+
+    /// <summary>
+    /// Called by Unity every frame the Animator updates.
+    /// We intercept root motion delta and apply it to CharacterController.
+    /// </summary>
+    private void OnAnimatorMove()
+    {
+        if (!allowRootMotion || !_rootMotionActive || _animator == null)
+            return;
+
+        if (_charController != null && _charController.enabled)
+        {
+            // Apply root motion position delta
+            Vector3 delta = _animator.deltaPosition;
+
+            // Optionally add gravity if not grounded
+            if (tps != null && !tps.isgrounded)
+                delta.y += Physics.gravity.y * Time.deltaTime;
+
+            _charController.Move(delta);
+
+            // Apply root motion rotation
+            transform.rotation *= _animator.deltaRotation;
+        }
+    }
+
+    // ───────────────────── Action entry point ─────────────────────
+
     public void StartAction(int actionId)
     {
         _actionId = actionId;
-        _actionStartEdge = true; // one-frame edge
+        _actionStartEdge = true;
     }
+
+    // ───────────────────── Main Loop ─────────────────────
 
     private void LateUpdate()
     {
-        // Remotes often don't have a usable InputController (or it's disabled), but they still
-        // need to evaluate rules that depend on networked state (e.g., mounted + mount moving).
         if (_animancer == null || animationSet == null || ruleSet == null || tps == null)
             return;
 
-        // If we have neither input nor a mount controller, we can't build a meaningful context.
         if (input == null && mountController == null)
             return;
 
-        // Build context
         var ctx = new AnimationContext
         {
             tps = tps,
@@ -111,34 +203,29 @@ public class RuleAnimancerDriver : MonoBehaviour
         };
         _actionStartEdge = false;
 
-        // 0) If we're mid-combo, cancel immediately if required inputs released.
+        // 0) If mid-combo, cancel if required inputs released
         if (_attack.mode == AttackMode.Combo)
         {
             bool primaryHeld = ctx.snapshot.primaryHeld;
             bool shiftHeld = ctx.Modified;
 
             if (!primaryHeld || (_attack.comboIsHeavy && !shiftHeld))
-            {
                 CancelCurrentAttack();
-                // After cancelling, allow other rules to run this frame.
-            }
         }
 
-        // 1) If attack is locked/playing, IGNORE ALL attack inputs (no queueing, no chaining).
-        //    (Combo sequencing happens via OnEnd only.)
+        // 1) Attack locked → skip
         if (IsLayerLocked(AnimLayer.Attack))
             return;
 
-        // 2) If action is locked, do nothing else.
+        // 2) Action locked → skip
         if (IsLayerLocked(AnimLayer.Action))
             return;
 
-        // 3) Witcher-style attack input handler (random single OR doubleclick+hold combo).
-        // ONLY RUN ON OWNER - remotes will receive attacks via PlayNetworkedAttack()
+        // 3) Witcher-style attacks (owner only)
         if (!_isRemoteClient && HandleWitcherAttacks(ctx))
             return;
 
-        // 4) Otherwise run your normal rules: Attack > Action > Base
+        // 4) Rule evaluation: Attack > Action > Base
         if (TryPlayBestRule(ctx, AnimLayer.Attack)) return;
         if (TryPlayBestRule(ctx, AnimLayer.Action)) return;
         TryPlayBestRule(ctx, AnimLayer.Base);
@@ -147,9 +234,72 @@ public class RuleAnimancerDriver : MonoBehaviour
             _actionId = 0;
     }
 
-    // =========================
-    // Witcher-style attack logic
-    // =========================
+    // ═════════════════════════════════════════════════════
+    //  RULE EVALUATION (now layer-aware)
+    // ═════════════════════════════════════════════════════
+
+    private bool TryPlayBestRule(AnimationContext ctx, AnimLayer layer)
+    {
+        AnimationRule best = null;
+        int bestPriority = int.MinValue;
+
+        var rules = ruleSet.rules;
+        for (int i = 0; i < rules.Count; i++)
+        {
+            var r = rules[i];
+            if (r == null) continue;
+            if (r.layer != layer) continue;
+            if (!MatchesAll(ctx, r)) continue;
+
+            if (r.priority > bestPriority)
+            {
+                bestPriority = r.priority;
+                best = r;
+            }
+        }
+
+        if (best == null) return false;
+
+        if (!animationSet.TryGet(best.animationKey, out var transition) || transition == null || transition.Clip == null)
+            return false;
+
+        if (IsLayerLocked(layer)) return true;
+
+        // Check if this clip is already playing on the correct layer
+        var animLayer = GetAnimancerLayer(layer);
+        if (IsPlayingClipOnLayer(animLayer, transition.Clip)) return true;
+
+        // Apply per-rule mask override if specified
+        if (best.maskOverride != null)
+            animLayer.SetMask(best.maskOverride);
+
+        var fade = layer switch
+        {
+            AnimLayer.Attack => attackFade,
+            AnimLayer.Action => actionFade,
+            _ => baseFade,
+        };
+
+        // Play on the correct Animancer layer
+        var state = animLayer.Play(transition, fade);
+
+        // Handle root motion from clip-level flag
+        {
+            bool wantRoot = allowRootMotion && animationSet.IsRootMotion(best.animationKey);
+            _rootMotionActive = wantRoot;
+            if (_animator != null)
+                _animator.applyRootMotion = wantRoot;
+        }
+
+        if (best.lockUntilEnd)
+            LockLayerUntilEnd(layer, state);
+
+        return true;
+    }
+
+    // ═════════════════════════════════════════════════════
+    //  WITCHER-STYLE ATTACK LOGIC (unchanged logic, layer-aware playback)
+    // ═════════════════════════════════════════════════════
 
     [Serializable]
     private class WeaponAttackProfile
@@ -157,24 +307,22 @@ public class RuleAnimancerDriver : MonoBehaviour
         public string weaponName = "Sword";
 
         [Header("Random Singles (each click triggers one random)")]
-        public List<string> singleAttackKeys = new List<string>();
+        public List<string> singleAttackKeys = new();
 
         [Header("Combo Sequences (double click + hold triggers)")]
-        public List<string> lightComboKeys = new List<string>();
-        public List<string> heavyComboKeys = new List<string>(); // Shift-modified
+        public List<string> lightComboKeys = new();
+        public List<string> heavyComboKeys = new();
     }
 
     private class AttackRuntime
     {
         public AttackMode mode = AttackMode.None;
 
-        // Pending single-attack to allow detecting double-click+hold without firing immediately.
         public bool pendingSingle;
         public float pendingStartTime;
         public bool sawSecondClick;
         public float secondClickTime;
 
-        // Combo state
         public bool comboIsHeavy;
         public string weaponName;
         public List<string> comboKeys;
@@ -199,20 +347,14 @@ public class RuleAnimancerDriver : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Returns true if we consumed the frame by starting an attack/combo (or waiting to decide).
-    /// </summary>
     private bool HandleWitcherAttacks(AnimationContext ctx)
     {
-        // Only care about primary for this simplified model.
         bool down = ctx.snapshot.primaryDown;
         bool held = ctx.snapshot.primaryHeld;
         bool up = ctx.snapshot.primaryUp;
 
-        // No input? maybe we are waiting on a pending single to expire.
         if (!down && !held && !up)
         {
-            // If we have a pending single and the window expired => fire it now.
             if (_attack.pendingSingle && Time.time - _attack.pendingStartTime >= doubleClickWindow)
             {
                 _attack.ResetGesture();
@@ -221,69 +363,55 @@ public class RuleAnimancerDriver : MonoBehaviour
             return false;
         }
 
-        // If we started pending and player released without second click, allow window expiry to fire single.
-        // If player releases after second click but didn't hold enough, we'll fire a single on release.
         if (_attack.pendingSingle)
         {
-            // Second click?
             if (down && !_attack.sawSecondClick && Time.time - _attack.pendingStartTime <= doubleClickWindow)
             {
                 _attack.sawSecondClick = true;
                 _attack.secondClickTime = Time.time;
-                return true; // consume; now we wait for hold threshold to decide combo
+                return true;
             }
 
-            // If we saw second click, check hold threshold to start combo
             if (_attack.sawSecondClick)
             {
-                // If held long enough -> start combo
                 if (held && Time.time - _attack.secondClickTime >= comboHoldThreshold)
                 {
                     _attack.ResetGesture();
                     return StartCombo(ctx);
                 }
 
-                // If player released before hold threshold -> treat as single (no combo)
                 if (up && Time.time - _attack.secondClickTime < comboHoldThreshold)
                 {
                     _attack.ResetGesture();
                     return StartRandomSingle(ctx);
                 }
 
-                // Otherwise keep waiting
                 return true;
             }
 
-            // If window expired with no second click -> fire single immediately
             if (Time.time - _attack.pendingStartTime >= doubleClickWindow)
             {
                 _attack.ResetGesture();
                 return StartRandomSingle(ctx);
             }
 
-            // Still waiting for possible second click
             return true;
         }
 
-        // Not pending and attack not locked:
-        // On first click DOWN, start pending window so we can detect double-click+hold.
         if (down)
         {
             _attack.pendingSingle = true;
             _attack.pendingStartTime = Time.time;
             _attack.sawSecondClick = false;
             _attack.secondClickTime = 0;
-            return true; // consume this click while we decide
+            return true;
         }
 
-        // If player is holding without a prior down we care about, ignore.
         return false;
     }
 
     private string GetEquippedWeaponName(AnimationContext ctx)
     {
-        // Plug your real weapon system here later.
-        // For now, fall back to serialized default.
         return string.IsNullOrWhiteSpace(defaultWeaponName) ? "Sword" : defaultWeaponName;
     }
 
@@ -328,7 +456,7 @@ public class RuleAnimancerDriver : MonoBehaviour
             return false;
         }
 
-        bool heavy = ctx.Modified; // LeftShift modifier at combo start
+        bool heavy = ctx.Modified;
         var keys = heavy ? profile.heavyComboKeys : profile.lightComboKeys;
 
         if (keys == null || keys.Count == 0)
@@ -377,26 +505,30 @@ public class RuleAnimancerDriver : MonoBehaviour
             return false;
         }
 
-        var state = _animancer.Play(transition, attackFade);
+        // ► Play on the Attack Animancer layer
+        var state = _attackLayer.Play(transition, attackFade);
         state.Time = 0;
 
         _attack.mode = mode;
 
-        // Lock attack layer until end.
+        // Root motion from clip-level flag
+        bool wantRoot = allowRootMotion && animationSet.IsRootMotion(key);
+        _rootMotionActive = wantRoot;
+        if (_animator != null)
+            _animator.applyRootMotion = wantRoot;
+
         LockAttackUntilEnd(state);
 
-        // NEW: Notify network sync (owner only)
+        // Network sync (owner only)
         if (networkSync != null && !_isRemoteClient)
-        {
             networkSync.OwnerStartAttack(key, mode, isHeavy, comboIndex);
-        }
 
         return true;
     }
 
     /// <summary>
-    /// NEW: Called by ClientAuthoritativeAnimancerSync on remote clients to play the attack.
-    /// This bypasses all the Witcher input logic and directly plays the attack.
+    /// Called by ClientAuthoritativeAnimancerSync on remote clients.
+    /// Bypasses Witcher input logic and directly plays the attack on the Attack layer.
     /// </summary>
     public void PlayNetworkedAttack(string attackKey, AttackMode mode, bool isHeavy, int comboIndex)
     {
@@ -409,10 +541,8 @@ public class RuleAnimancerDriver : MonoBehaviour
             return;
         }
 
-        // Set up the attack runtime state so combo advancement works correctly
         if (mode == AttackMode.Combo)
         {
-            // Find the weapon profile that contains this attack key
             WeaponAttackProfile profile = null;
             bool foundInHeavy = false;
 
@@ -443,7 +573,7 @@ public class RuleAnimancerDriver : MonoBehaviour
             else
             {
                 Debug.LogWarning($"[PlayNetworkedAttack] Could not find weapon profile for combo attack '{attackKey}'");
-                _attack.mode = AttackMode.Single; // Fallback to single
+                _attack.mode = AttackMode.Single;
             }
         }
         else
@@ -451,13 +581,22 @@ public class RuleAnimancerDriver : MonoBehaviour
             _attack.mode = mode;
         }
 
-        // Play the animation
-        var state = _animancer.Play(transition, attackFade);
+        // ► Play on the Attack Animancer layer
+        var state = _attackLayer.Play(transition, attackFade);
         state.Time = 0;
 
-        // Lock attack layer until end
+        // Root motion from clip-level flag
+        bool wantRoot = allowRootMotion && animationSet.IsRootMotion(attackKey);
+        _rootMotionActive = wantRoot;
+        if (_animator != null)
+            _animator.applyRootMotion = wantRoot;
+
         LockAttackUntilEnd(state);
     }
+
+    // ═════════════════════════════════════════════════════
+    //  LAYER LOCKING
+    // ═════════════════════════════════════════════════════
 
     private void LockAttackUntilEnd(AnimancerState state)
     {
@@ -469,42 +608,44 @@ public class RuleAnimancerDriver : MonoBehaviour
             _isLocked[AnimLayer.Attack] = false;
             _lockedState[AnimLayer.Attack] = null;
 
-            // Single attacks: nothing else to do.
+            // Fade out attack layer so Base takes over those bones again
+            _attackLayer.StartFade(0, layerFadeOutDuration);
+
             if (_attack.mode == AttackMode.Single)
             {
                 _attack.mode = AttackMode.None;
+                DisableRootMotion();
                 return;
             }
 
-            // Combo attacks: advance automatically IF required inputs are still held.
             if (_attack.mode == AttackMode.Combo)
             {
-                // Primary must still be held; and for heavy combos shift must still be held.
                 bool primaryHeld = input.Snapshot.primaryHeld;
-                bool shiftHeld = input.isModified; // you already use this for ctx.Modified
+                bool shiftHeld = input.isModified;
 
                 if (!primaryHeld || (_attack.comboIsHeavy && !shiftHeld))
                 {
                     _attack.ResetAll();
+                    DisableRootMotion();
                     return;
                 }
 
                 int next = _attack.comboIndex + 1;
                 if (_attack.comboKeys != null && next < _attack.comboKeys.Count)
                 {
+                    // Next combo step will set its own root motion state
                     PlayComboIndex(next);
                     return;
                 }
 
-                // Combo finished
                 _attack.ResetAll();
+                DisableRootMotion();
             }
         };
     }
 
     private void CancelCurrentAttack()
     {
-        // Fade out current state (if any) and unlock.
         if (_lockedState.TryGetValue(AnimLayer.Attack, out var st) && st != null)
         {
             try { st.Stop(); } catch { /* ignore */ }
@@ -513,49 +654,72 @@ public class RuleAnimancerDriver : MonoBehaviour
         _isLocked[AnimLayer.Attack] = false;
         _lockedState[AnimLayer.Attack] = null;
         _attack.ResetAll();
+
+        // Fade out attack layer
+        _attackLayer.StartFade(0, cancelFade);
+
+        DisableRootMotion();
     }
 
-    // =========================
-    // Your existing rule system
-    // =========================
-
-    private bool TryPlayBestRule(AnimationContext ctx, AnimLayer layer)
+    /// <summary>
+    /// Turns off root motion. Called when attacks/actions end.
+    /// The next Base layer rule evaluation will re-enable it if needed.
+    /// </summary>
+    private void DisableRootMotion()
     {
-        AnimationRule best = null;
-        int bestPriority = int.MinValue;
+        _rootMotionActive = false;
+        if (_animator != null)
+            _animator.applyRootMotion = false;
+    }
 
-        var rules = ruleSet.rules;
-        for (int i = 0; i < rules.Count; i++)
+    private void LockLayerUntilEnd(AnimLayer layer, AnimancerState state)
+    {
+        _isLocked[layer] = true;
+        _lockedState[layer] = state;
+
+        state.Events.OnEnd = () =>
         {
-            var r = rules[i];
-            if (r == null) continue;
-            if (r.layer != layer) continue;
+            _isLocked[layer] = false;
+            _lockedState[layer] = null;
 
-            if (!MatchesAll(ctx, r)) continue;
-
-            if (r.priority > bestPriority)
+            // Fade out the masked layer when action/attack finishes
+            if (layer != AnimLayer.Base)
             {
-                bestPriority = r.priority;
-                best = r;
+                var animLayer = GetAnimancerLayer(layer);
+                animLayer.StartFade(0, layerFadeOutDuration);
             }
-        }
 
-        if (best == null) return false;
+            if (layer == AnimLayer.Action)
+            {
+                if (input != null)
+                    input.isSheating = false;
+            }
 
-        if (!animationSet.TryGet(best.animationKey, out var transition) || transition == null || transition.Clip == null)
+            // If a root-motion base rule just finished, turn off root motion
+            if (layer == AnimLayer.Base)
+                DisableRootMotion();
+        };
+    }
+
+    private bool IsLayerLocked(AnimLayer layer)
+    {
+        if (!_isLocked.TryGetValue(layer, out var locked) || !locked)
             return false;
 
-        if (IsLayerLocked(layer)) return true;
-        if (IsPlayingClip(transition.Clip)) return true;
+        if (_lockedState.TryGetValue(layer, out var state) && state != null)
+        {
+            if (state.IsPlaying)
+                return true;
+        }
 
-        var fade = layer == AnimLayer.Attack ? attackFade : layer == AnimLayer.Action ? actionFade : baseFade;
-        var state = _animancer.Play(transition, fade);
-
-        if (best.lockUntilEnd)
-            LockLayerUntilEnd(layer, state);
-
-        return true;
+        _isLocked[layer] = false;
+        _lockedState[layer] = null;
+        return false;
     }
+
+    // ═════════════════════════════════════════════════════
+    //  CONDITION MATCHING (unchanged)
+    // ═════════════════════════════════════════════════════
 
     private bool MatchesAll(AnimationContext ctx, AnimationRule rule)
     {
@@ -634,43 +798,12 @@ public class RuleAnimancerDriver : MonoBehaviour
         };
     }
 
-    private bool IsPlayingClip(AnimationClip clip)
+    /// <summary>
+    /// Checks if a specific clip is already playing on a given Animancer layer.
+    /// </summary>
+    private bool IsPlayingClipOnLayer(AnimancerLayer layer, AnimationClip clip)
     {
-        var current = _animancer.States.Current;
+        var current = layer.CurrentState;
         return current != null && current.Clip == clip;
-    }
-
-    private void LockLayerUntilEnd(AnimLayer layer, AnimancerState state)
-    {
-        _isLocked[layer] = true;
-        _lockedState[layer] = state;
-
-        state.Events.OnEnd = () =>
-        {
-            _isLocked[layer] = false;
-            _lockedState[layer] = null;
-
-            if (layer == AnimLayer.Action)
-            {
-                if (input != null)
-                    input.isSheating = false;
-            }
-        };
-    }
-
-    private bool IsLayerLocked(AnimLayer layer)
-    {
-        if (!_isLocked.TryGetValue(layer, out var locked) || !locked)
-            return false;
-
-        if (_lockedState.TryGetValue(layer, out var state) && state != null)
-        {
-            if (state.IsPlaying)
-                return true;
-        }
-
-        _isLocked[layer] = false;
-        _lockedState[layer] = null;
-        return false;
     }
 }

@@ -4,9 +4,9 @@ using UnityEngine;
 
 public enum AnimLayer
 {
-    Base = 0,     // locomotion
-    Action = 1,   // interactions: chest, ballista
-    Attack = 2,   // attacks
+    Base = 0,     // locomotion (full body, Animancer layer 0)
+    Action = 1,   // interactions: chest, ballista, sheathe (Animancer layer 1 w/ upper body mask)
+    Attack = 2,   // attacks (Animancer layer 2, optionally masked)
 }
 
 public enum TriggerMode
@@ -27,8 +27,8 @@ public enum BoolParam
     Grounded,
     FreeFall,
     Sheathing,
-    IsMounted,        // NEW: true when riding a mount
-    IsTransitioning,  // NEW: true during mount/dismount animation
+    IsMounted,
+    IsTransitioning,
 }
 
 public enum InputEdge
@@ -79,6 +79,11 @@ public class AnimationRule
     public int priority = 0;              // higher wins
     public bool lockUntilEnd = false;     // attacks/actions
     public bool allowInterruptSameLayer = true;
+
+    [Header("Layer Masking Override (optional)")]
+    [Tooltip("If set, overrides the driver's default mask for this rule's layer. " +
+             "Leave null to use the driver's per-layer default mask.")]
+    public AvatarMask maskOverride;
 
     [Header("What to play")]
     public string animationKey;           // points to AnimationSetBase key
