@@ -162,6 +162,10 @@ GameObject:
   - component: {fileID: -2571843341000407878}
   - component: {fileID: 8696267403149252337}
   - component: {fileID: -5298135234070216236}
+  - component: {fileID: -8912580098338169080}
+  - component: {fileID: 3527247635661846369}
+  - component: {fileID: -1694095259213740506}
+  - component: {fileID: 2252386377111108820}
   m_Layer: 6
   m_Name: Humanoid_Fighter_Network
   m_TagString: Player
@@ -267,7 +271,7 @@ MonoBehaviour:
   tps: {fileID: 2613098171129311318}
   input: {fileID: 6350221479210210835}
   networkSync: {fileID: -2645813650107519133}
-  mountController: {fileID: 0}
+  mountController: {fileID: -2571843341000407878}
   baseFade: 0.12
   actionFade: 0.08
   attackFade: 0.05
@@ -276,6 +280,8 @@ MonoBehaviour:
   attackLayerMask: {fileID: 0}
   layerFadeOutDuration: 0.15
   allowRootMotion: 1
+  combatController: {fileID: -8912580098338169080}
+  weaponManager: {fileID: -5298135234070216236}
   doubleClickWindow: 0.25
   comboHoldThreshold: 0.12
   defaultWeaponName: Sword
@@ -376,6 +382,8 @@ MonoBehaviour:
   num: 0
   key: 0
   jumpGraceTime: 0.12
+  combatController: {fileID: -8912580098338169080}
+  vitalManager: {fileID: 8696267403149252337}
   jumpnum: 0.5
   crouchSpeed: 0.5
   walkSpeed: 2
@@ -635,6 +643,87 @@ MonoBehaviour:
   backHolster: {fileID: 0}
   hipHolster: {fileID: 0}
   shieldBackHolster: {fileID: 0}
+--- !u!114 &-8912580098338169080
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 134043905374528843}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbfa35e25b6796a41ba4b9e42c807120, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CombatController
+  ShowTopMostFoldoutHeaderGroup: 1
+  weaponManager: {fileID: -5298135234070216236}
+  vitalManager: {fileID: 8696267403149252337}
+  humanoidController: {fileID: 2613098171129311318}
+  playerController: {fileID: 3745241009434165893}
+  animancerDriver: {fileID: 1633156696383947771}
+  dodgeSpeed: 8
+  dodgeDuration: 0.5
+  dodgeStaminaCost: 15
+  dodgeCooldown: 0.3
+  iFrameDuration: 0.25
+  blockStaminaDrain: 3
+  fistStaminaCost: 8
+--- !u!114 &3527247635661846369
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 134043905374528843}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f438eab24bfb64340981d2b63af8e7de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageReceiver
+  ShowTopMostFoldoutHeaderGroup: 1
+  vitalManager: {fileID: 8696267403149252337}
+  combatController: {fileID: -8912580098338169080}
+  weaponManager: {fileID: -5298135234070216236}
+  blockDamageReduction: 0.8
+  blockAngle: 120
+  hitStunDuration: 0.2
+--- !u!114 &-1694095259213740506
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 134043905374528843}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c56002425d6cfc948886945342ab45d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AnimationEventRelay
+  combatController: {fileID: -8912580098338169080}
+  weaponManager: {fileID: -5298135234070216236}
+  activeHitbox: {fileID: 2252386377111108820}
+--- !u!114 &2252386377111108820
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 134043905374528843}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc669fd04bbc31f4baf10a9807acdccb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HitboxController
+  length: 1
+  radius: 0.15
+  offset: {x: 0, y: 0, z: 0}
+  hitLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  maxHitsPerSwing: 5
+  drawGizmos: 1
+  activeColor: {r: 1, g: 0, b: 0, a: 1}
+  inactiveColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!1 &1008603233948878082
 GameObject:
   m_ObjectHideFlags: 0

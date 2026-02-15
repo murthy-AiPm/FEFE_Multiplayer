@@ -26,7 +26,6 @@ public enum BoolParam
     HoverMode,
     Grounded,
     FreeFall,
-    Sheathing,
     IsMounted,
     IsTransitioning,
     Crouching,
@@ -34,6 +33,8 @@ public enum BoolParam
     Blocking,
     BowDrawing,
     BowAiming,
+    Equipping,
+    Holstering,
     WeaponSlot0,   // fists
     WeaponSlot1,   // primary melee
     WeaponSlot2,   // bow

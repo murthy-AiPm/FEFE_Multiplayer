@@ -25,7 +25,10 @@ public struct AnimationContext
     public bool BowDrawing => combatController != null && combatController.IsBowDrawing;
     public bool BowAiming => combatController != null && combatController.IsBowAiming;
     public int ActiveWeaponSlot => weaponManager != null ? weaponManager.ActiveSlot : 0;
-
+    public bool Equipping => weaponManager != null &&
+    weaponManager.CurrentEquipState == WeaponManager.EquipState.Equipping;
+    public bool Holstering => weaponManager != null &&
+        weaponManager.CurrentEquipState == WeaponManager.EquipState.Holstering;
     // Mounting states (NEW)
     public bool IsMounted => mountController != null && mountController.IsMounted;
     public bool IsTransitioning => mountController != null && mountController.IsTransitioning;

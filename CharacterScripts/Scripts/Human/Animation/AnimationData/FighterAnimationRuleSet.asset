@@ -103,34 +103,6 @@ MonoBehaviour:
       direction: 0
       useActionId: 0
       actionIdEquals: 0
-  - name: Sword/Idle
-    layer: 0
-    priority: 50
-    lockUntilEnd: 0
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: Sword/Idle
-    all:
-    - useBool: 1
-      boolParam: 1
-      boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 1
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 8
-      boolValue: 0
-      useInput: 0
-      input: 0
-      triggerMode: 1
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
   - name: Sword/Equip
     layer: 1
     priority: 121
@@ -141,27 +113,27 @@ MonoBehaviour:
     all:
     - useBool: 1
       boolParam: 7
-      boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 1
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 1
-      boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 1
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 8
       boolValue: 0
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 14
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 17
+      boolValue: 1
       useInput: 0
       input: 0
       triggerMode: 1
@@ -188,8 +160,8 @@ MonoBehaviour:
       useActionId: 0
       actionIdEquals: 0
     - useBool: 1
-      boolParam: 1
-      boolValue: 0
+      boolParam: 15
+      boolValue: 1
       useInput: 0
       input: 0
       triggerMode: 1
@@ -207,6 +179,34 @@ MonoBehaviour:
       direction: 0
       useActionId: 0
       actionIdEquals: 0
+  - name: Sword/Idle
+    layer: 0
+    priority: 50
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Sword/Idle
+    all:
+    - useBool: 1
+      boolParam: 17
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 0
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
   - name: Sword/Walk
     layer: 0
     priority: 51
@@ -216,7 +216,7 @@ MonoBehaviour:
     animationKey: Sword/Walk/Fwd
     all:
     - useBool: 1
-      boolParam: 1
+      boolParam: 17
       boolValue: 1
       useInput: 0
       input: 0
@@ -235,7 +235,7 @@ MonoBehaviour:
       direction: 0
       useActionId: 0
       actionIdEquals: 0
-  - name: Sword/Walk/Lock
+  - name: Sword/Walk/Straight
     layer: 0
     priority: 55
     lockUntilEnd: 0
@@ -244,7 +244,7 @@ MonoBehaviour:
     animationKey: Sword/Walk/Fwd
     all:
     - useBool: 1
-      boolParam: 1
+      boolParam: 17
       boolValue: 1
       useInput: 0
       input: 0
@@ -282,7 +282,7 @@ MonoBehaviour:
     animationKey: Sword/Strafe/Right
     all:
     - useBool: 1
-      boolParam: 1
+      boolParam: 17
       boolValue: 1
       useInput: 0
       input: 0
@@ -320,7 +320,7 @@ MonoBehaviour:
     animationKey: Sword/Strafe/Left
     all:
     - useBool: 1
-      boolParam: 1
+      boolParam: 17
       boolValue: 1
       useInput: 0
       input: 0
@@ -358,7 +358,7 @@ MonoBehaviour:
     animationKey: Sword/Strafe/Back
     all:
     - useBool: 1
-      boolParam: 1
+      boolParam: 17
       boolValue: 1
       useInput: 0
       input: 0
@@ -472,7 +472,7 @@ MonoBehaviour:
     animationKey: Mount/Start
     all:
     - useBool: 1
-      boolParam: 9
+      boolParam: 8
       boolValue: 1
       useInput: 0
       input: 2
@@ -490,7 +490,7 @@ MonoBehaviour:
     animationKey: Mount/Dismount
     all:
     - useBool: 1
-      boolParam: 9
+      boolParam: 7
       boolValue: 1
       useInput: 0
       input: 2
@@ -667,7 +667,7 @@ MonoBehaviour:
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
-    animationKey: Riding/Walk/Left
+    animationKey: Riding/Walk/Right
     all:
     - useBool: 1
       boolParam: 8
@@ -686,7 +686,7 @@ MonoBehaviour:
       input: 2
       triggerMode: 2
       useDirection: 1
-      direction: 2
+      direction: 4
       useActionId: 0
       actionIdEquals: 0
     - useBool: 1
@@ -701,7 +701,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Crouch/Walk
     layer: 0
-    priority: 25
+    priority: 5
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -718,7 +718,7 @@ MonoBehaviour:
       useActionId: 0
       actionIdEquals: 0
     - useBool: 1
-      boolParam: 10
+      boolParam: 9
       boolValue: 1
       useInput: 0
       input: 0
@@ -729,14 +729,14 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Crouch/Idle
     layer: 0
-    priority: 20
+    priority: 4
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
     animationKey: Crouch/Idle
     all:
     - useBool: 1
-      boolParam: 10
+      boolParam: 9
       boolValue: 1
       useInput: 0
       input: 0
@@ -748,6 +748,72 @@ MonoBehaviour:
     - useBool: 1
       boolParam: 0
       boolValue: 0
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 7
+      boolValue: 0
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Bow/Equip
+    layer: 1
+    priority: 30
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Bow/Equip
+    all:
+    - useBool: 1
+      boolParam: 17
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 1
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Bow/UnEquip
+    layer: 1
+    priority: 35
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Bow/Equip
+    all:
+    - useBool: 1
+      boolParam: 7
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 17
+      boolValue: 1
       useInput: 0
       input: 0
       triggerMode: 0
