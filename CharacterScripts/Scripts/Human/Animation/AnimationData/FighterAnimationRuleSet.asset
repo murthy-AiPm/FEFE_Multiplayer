@@ -20,7 +20,17 @@ MonoBehaviour:
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
     animationKey: Locomotion/Idle
-    all: []
+    all:
+    - useBool: 1
+      boolParam: 1
+      boolValue: 0
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
   - name: Walk
     layer: 0
     priority: 2
@@ -623,6 +633,72 @@ MonoBehaviour:
       actionIdEquals: 0
     - useBool: 1
       boolParam: 17
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Fists/Idle
+    layer: 0
+    priority: 35
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Fists/Idle
+    all:
+    - useBool: 1
+      boolParam: 16
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 1
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Fists/Walk
+    layer: 0
+    priority: 35
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Fists/Walk
+    all:
+    - useBool: 1
+      boolParam: 16
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 1
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
       boolValue: 1
       useInput: 0
       input: 0

@@ -211,14 +211,14 @@ public class RuleAnimancerDriver : MonoBehaviour
         _actionStartEdge = false;
 
         // 0) If mid-combo, cancel if required inputs released
-        if (_attack.mode == AttackMode.Combo)
-        {
-            bool primaryHeld = ctx.snapshot.primaryHeld;
-            bool shiftHeld = ctx.Modified;
+        //if (_attack.mode == AttackMode.Combo)
+        //{
+        //    bool primaryHeld = ctx.snapshot.primaryHeld;
+        //    bool shiftHeld = ctx.Modified;
 
-            if (!primaryHeld || (_attack.comboIsHeavy && !shiftHeld))
-                CancelCurrentAttack();
-        }
+        //    if (!primaryHeld || (_attack.comboIsHeavy && !shiftHeld))
+        //        CancelCurrentAttack();
+        //}
 
         // 1) Attack locked → skip everything (full body, frame-critical)
         if (IsLayerLocked(AnimLayer.Attack))
