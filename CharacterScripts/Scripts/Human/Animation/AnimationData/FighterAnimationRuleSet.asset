@@ -671,7 +671,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Fists/Walk
     layer: 0
-    priority: 35
+    priority: 36
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}

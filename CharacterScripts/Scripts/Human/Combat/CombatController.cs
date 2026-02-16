@@ -457,8 +457,7 @@ public class CombatController : NetworkBehaviour
     /// </summary>
     public bool IsActionLocked()
     {
-        return State == CombatState.Dodging ||
-               (animancerDriver != null && animancerDriver.IsLocked);
+        return State == CombatState.Dodging;
     }
 
     /// <summary>
