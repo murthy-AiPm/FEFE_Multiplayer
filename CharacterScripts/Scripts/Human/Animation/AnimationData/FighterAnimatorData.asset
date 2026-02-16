@@ -348,28 +348,6 @@ MonoBehaviour:
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 0
-  - key: Melee/Fist_1
-    transition:
-      _FadeDuration: 0
-      _Events:
-        _NormalizedTimes: []
-        _Callbacks: []
-        _Names: []
-      _Clip: {fileID: 0}
-      _Speed: NaN
-      _NormalizedStartTime: NaN
-    useRootMotion: 0
-  - key: Melee/Fist_2
-    transition:
-      _FadeDuration: 0
-      _Events:
-        _NormalizedTimes: []
-        _Callbacks: []
-        _Names: []
-      _Clip: {fileID: 0}
-      _Speed: NaN
-      _NormalizedStartTime: NaN
-    useRootMotion: 0
   - key: Melee/Kick
     transition:
       _FadeDuration: 0
@@ -411,6 +389,39 @@ MonoBehaviour:
         _Callbacks: []
         _Names: []
       _Clip: {fileID: 7400000, guid: a295f4577c8679c469368ac851edfbab, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Attack/Fist/Left
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: -6161413206947201818, guid: b2a3c3d762772ce4396b9a6dfea25377, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Attack/Fist/Right
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: -2185066307609389148, guid: 8176fe6872f8e6a4ebfdacb646a6a79f, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Attack/Kick/Right
+    transition:
+      _FadeDuration: 0.35
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7831451040574936991, guid: f2dc3b420b4a77d45bea92c11dd2f9f0, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 0

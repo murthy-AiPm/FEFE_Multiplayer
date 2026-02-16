@@ -112,27 +112,7 @@ MonoBehaviour:
     animationKey: Sword/Equip
     all:
     - useBool: 1
-      boolParam: 7
-      boolValue: 0
-      useInput: 0
-      input: 0
-      triggerMode: 1
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
       boolParam: 14
-      boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 1
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 17
       boolValue: 1
       useInput: 0
       input: 0
@@ -143,22 +123,12 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Sword/Unequip
     layer: 1
-    priority: 121
+    priority: 122
     lockUntilEnd: 1
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
     animationKey: Sword/Unequip
     all:
-    - useBool: 1
-      boolParam: 7
-      boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 1
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
     - useBool: 1
       boolParam: 15
       boolValue: 1
@@ -170,8 +140,8 @@ MonoBehaviour:
       useActionId: 0
       actionIdEquals: 0
     - useBool: 1
-      boolParam: 8
-      boolValue: 0
+      boolParam: 17
+      boolValue: 1
       useInput: 0
       input: 0
       triggerMode: 1
@@ -396,7 +366,7 @@ MonoBehaviour:
     animationKey: Sword/Run
     all:
     - useBool: 1
-      boolParam: 1
+      boolParam: 17
       boolValue: 1
       useInput: 0
       input: 0
@@ -422,90 +392,6 @@ MonoBehaviour:
       input: 0
       triggerMode: 1
       useDirection: 1
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-  - name: Sword/Run
-    layer: 0
-    priority: 52
-    lockUntilEnd: 0
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: Sword/Run
-    all:
-    - useBool: 1
-      boolParam: 1
-      boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 1
-      useDirection: 1
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 0
-      boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 1
-      useDirection: 1
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 2
-      boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 1
-      useDirection: 1
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-  - name: Mount/Start
-    layer: 1
-    priority: 200
-    lockUntilEnd: 1
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: Mount/Start
-    all:
-    - useBool: 1
-      boolParam: 8
-      boolValue: 1
-      useInput: 0
-      input: 2
-      triggerMode: 2
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-  - name: Mount/Dismount
-    layer: 1
-    priority: 200
-    lockUntilEnd: 1
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: Mount/Dismount
-    all:
-    - useBool: 1
-      boolParam: 7
-      boolValue: 1
-      useInput: 0
-      input: 2
-      triggerMode: 2
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 8
-      boolValue: 0
-      useInput: 0
-      input: 2
-      triggerMode: 2
-      useDirection: 0
       direction: 0
       useActionId: 0
       actionIdEquals: 0
@@ -518,7 +404,7 @@ MonoBehaviour:
     animationKey: Riding/Gallop
     all:
     - useBool: 1
-      boolParam: 8
+      boolParam: 7
       boolValue: 1
       useInput: 0
       input: 2
@@ -556,7 +442,7 @@ MonoBehaviour:
     animationKey: Riding/Idle
     all:
     - useBool: 1
-      boolParam: 8
+      boolParam: 7
       boolValue: 1
       useInput: 0
       input: 2
@@ -594,7 +480,7 @@ MonoBehaviour:
     animationKey: Riding/Walk/Front
     all:
     - useBool: 1
-      boolParam: 8
+      boolParam: 7
       boolValue: 1
       useInput: 0
       input: 2
@@ -611,82 +497,6 @@ MonoBehaviour:
       triggerMode: 2
       useDirection: 1
       direction: 1
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 2
-      boolValue: 0
-      useInput: 0
-      input: 2
-      triggerMode: 2
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-  - name: Riding/Walk/Left
-    layer: 0
-    priority: 100
-    lockUntilEnd: 0
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: Riding/Walk/Left
-    all:
-    - useBool: 1
-      boolParam: 8
-      boolValue: 1
-      useInput: 0
-      input: 2
-      triggerMode: 2
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 0
-      boolValue: 1
-      useInput: 0
-      input: 2
-      triggerMode: 2
-      useDirection: 1
-      direction: 2
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 2
-      boolValue: 0
-      useInput: 0
-      input: 2
-      triggerMode: 2
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-  - name: Riding/Walk/Right
-    layer: 0
-    priority: 100
-    lockUntilEnd: 0
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: Riding/Walk/Right
-    all:
-    - useBool: 1
-      boolParam: 8
-      boolValue: 1
-      useInput: 0
-      input: 2
-      triggerMode: 2
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 0
-      boolValue: 1
-      useInput: 0
-      input: 2
-      triggerMode: 2
-      useDirection: 1
-      direction: 4
       useActionId: 0
       actionIdEquals: 0
     - useBool: 1

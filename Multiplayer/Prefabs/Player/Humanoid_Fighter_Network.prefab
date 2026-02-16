@@ -283,7 +283,7 @@ MonoBehaviour:
   combatController: {fileID: -8912580098338169080}
   weaponManager: {fileID: -5298135234070216236}
   doubleClickWindow: 0.25
-  comboHoldThreshold: 0.12
+  comboHoldThreshold: 0.08
   defaultWeaponName: Sword
   weapons:
   - weaponName: Sword
@@ -293,6 +293,15 @@ MonoBehaviour:
     - Attack/Sword/Light3
     lightComboKeys: []
     heavyComboKeys: []
+  - weaponName: Fist
+    singleAttackKeys:
+    - Attack/Fist/Left
+    - Attack/Fist/Right
+    lightComboKeys:
+    - Attack/Fist/Right
+    - Attack/Fist/Left
+    heavyComboKeys:
+    - Attack/Kick/Right
 --- !u!114 &3745241009434165893
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -386,7 +395,7 @@ MonoBehaviour:
   vitalManager: {fileID: 8696267403149252337}
   jumpnum: 0.5
   crouchSpeed: 0.5
-  walkSpeed: 2
+  walkSpeed: 1
   combatSpeed: 1
   stamina: 50
   staminaModifier: 0.1
@@ -596,8 +605,8 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   mountAnimationKey: Mount/Start
   dismountAnimationKey: Mount/Dismount
-  mountAnimationDuration: 1.5
-  dismountAnimationDuration: 1
+  mountAnimationDuration: 0.1
+  dismountAnimationDuration: 0.1
   holdDuration: 1
   mountKey: 101
   detectionRadius: 2
@@ -643,6 +652,8 @@ MonoBehaviour:
   backHolster: {fileID: 0}
   hipHolster: {fileID: 0}
   shieldBackHolster: {fileID: 0}
+  animancerDriver: {fileID: 0}
+  fallbackTransitionTime: 0.5
 --- !u!114 &-8912580098338169080
 MonoBehaviour:
   m_ObjectHideFlags: 0

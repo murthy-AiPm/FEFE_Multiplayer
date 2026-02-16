@@ -56,6 +56,7 @@ public class CombatController : NetworkBehaviour
     public bool IsBowDrawing => State == CombatState.BowDrawing;
     public bool IsBowAiming => State == CombatState.BowAiming;
     public bool IsDead => State == CombatState.Dead;
+    public bool IsFistCombatMode { get; private set; }
 
     // Timing
     private float _dodgeTimer;
@@ -112,12 +113,32 @@ public class CombatController : NetworkBehaviour
         // Don't swap if RuleAnimancerDriver is locked in an attack
         if (animancerDriver != null && animancerDriver.IsLocked) return;
 
+        // Don't swap if already equipping/holstering
+        if (weaponManager.CurrentEquipState != WeaponManager.EquipState.Idle) return;
+
         if (_input.slot1Down)
+        {
+            // Exit fist mode when equipping a weapon
+            IsFistCombatMode = false;
             weaponManager.RequestSlotChange(1);
+        }
         else if (_input.slot2Down)
+        {
+            IsFistCombatMode = false;
             weaponManager.RequestSlotChange(2);
+        }
         else if (_input.hoistWeaponsDown)
-            weaponManager.RequestHolster();
+        {
+            // H exits fist mode or holsters weapon
+            if (IsFistCombatMode)
+            {
+                IsFistCombatMode = false;
+            }
+            else
+            {
+                weaponManager.RequestHolster();
+            }
+        }
     }
 
     // ─── Combat State Input ───
@@ -148,16 +169,24 @@ public class CombatController : NetworkBehaviour
         }
     }
 
-    // ─── Idle → Check for dodge, block, bow ───
+    // ─── Idle → Check for dodge, block, bow, fist mode ───
 
     private void HandleIdleInput()
     {
-        // Dodge: jump while in combat mode
-        bool inCombat = weaponManager.ActiveSlot != 0;
+        // Dodge: jump while in any combat mode (weapon or fist)
+        bool inCombat = weaponManager.ActiveSlot != 0 || IsFistCombatMode;
         if (_input.jumpDown && inCombat && _dodgeCooldownTimer <= 0f)
         {
             TryDodge();
             return;
+        }
+
+        // Fist mode: first attack while unarmed activates fist combat mode
+        if (weaponManager.ActiveSlot == 0 && !IsFistCombatMode && _input.primaryDown)
+        {
+            IsFistCombatMode = true;
+            // The attack itself will still be handled by RuleAnimancerDriver
+            //return;
         }
 
         // Block: secondary held + primary melee equipped

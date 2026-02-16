@@ -111,7 +111,7 @@ public class HumanoidController : ThirdPersonController
             }
             if (combatController.IsSlowMovement())
             {
-                speed = combatSpeed * 0.5f;
+                speed = combatSpeed ;
                 return;
             }
         }
@@ -124,49 +124,33 @@ public class HumanoidController : ThirdPersonController
             speed = walkSpeed;
     }
 
-    protected override void Walk() // includes combat walk
+    protected override void Walk()
     {
         CameraCalculations(out float targetAngle, out float angle);
         Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward * speed;
-        if (GetComponent<InputController>().isCombatMode)
-        {          
-            if (isSecondaryAttack)
+
+        if (combatController != null && combatController.ShouldFaceCamera())
+        {
+            // Blocking, bow aiming — face camera direction
+            transform.rotation = Quaternion.Euler(0f, cam.eulerAngles.y, 0f);
+            if (isMoving)
+                controller.Move(moveDir * speed * speedModifier * Time.deltaTime);
+        }
+        else if (playerController.inputController.isCombatMode)
+        {
+            // Combat locomotion — face movement direction
+            if (isMoving)
             {
-                if (combatController != null && combatController.ShouldFaceCamera())
-                {
-                    transform.rotation = Quaternion.Euler(transform.rotation.x, cam.eulerAngles.y, transform.rotation.z);
-                }
-            }
-            else if(isMoving)
-            {
-                transform.rotation = Quaternion.Euler(transform.rotation.x, angle, transform.rotation.z);
-                if (GetComponent<InputController>().isPrimaryAttack)
-                {                  
-                    controller.Move(moveDir.normalized * 0 * speedModifier * Time.deltaTime);
-                }
-                else
-                {
-                    controller.Move(moveDir * speed * speedModifier * Time.deltaTime);
-                }
+                transform.rotation = Quaternion.Euler(0f, angle, 0f);
+                controller.Move(moveDir * speed * speedModifier * Time.deltaTime);
             }
         }
         else if (isMoving)
         {
+            // Normal locomotion
             transform.rotation = Quaternion.Euler(0f, angle, 0f);
-            oldAngle = angle;
             if (!isobstacle)
-            {
                 controller.Move(moveDir.normalized * speed * speedModifier * Time.deltaTime);
-            }
-            else if (isobstacle)
-            {
-                controller.Move(moveDir.normalized * 0 * speedModifier * Time.deltaTime);
-            }
-        }
-        else /*if(!isClimbing)*/
-        {
-            //isgrounded = true;
-            gravityValue = -9.81f;
         }
     }
 

@@ -70,7 +70,8 @@ public class InputController : MonoBehaviour
 
     // Cached refs
     private HumanoidColliderManger _humanoidCollider;
-    private WeaponManager _weaponManager; // NEW: drives isCombatMode
+    private WeaponManager _weaponManager;
+    private CombatController _combatController;
 
     // Jump continuity (your old logic preserved)
     [SerializeField] bool previousjump;
@@ -79,14 +80,17 @@ public class InputController : MonoBehaviour
     void Awake()
     {
         _humanoidCollider = GetComponent<HumanoidColliderManger>(); // may be null (dragon)
-        _weaponManager = GetComponentInParent<WeaponManager>();     // may be null until spawned
+        _weaponManager = GetComponentInParent<WeaponManager>();
+        _combatController = GetComponentInParent<CombatController>();
     }
 
     void Update()
     {
-        // Lazy lookup if not found at Awake (e.g. spawned dynamically)
+        // Lazy lookup if not found at Awake
         if (_weaponManager == null)
             _weaponManager = GetComponentInParent<WeaponManager>();
+        if (_combatController == null)
+            _combatController = GetComponentInParent<CombatController>();
 
         // world state (not input)
         onGround = playerController.TPS.isgrounded;
@@ -171,13 +175,13 @@ public class InputController : MonoBehaviour
         // Hover off for humans
         isHoverMode = false;
 
-        // ─── Combat mode: driven by WeaponManager ───
-        // WeaponManager.ActiveSlot: 0 = fists/unarmed, 1 = primary, 2 = bow
-        // CombatController handles slot switching via WeaponManager.
-        // We just read the result here for backward compat with animation rules.
+        // ─── Combat mode: driven by WeaponManager + CombatController ───
+        // Active when any weapon equipped OR in fist combat mode
         if (_weaponManager != null)
         {
-            isCombatMode = _weaponManager.ActiveSlot != 0;
+            bool weaponEquipped = _weaponManager.ActiveSlot != 0;
+            bool fistMode = _combatController != null && _combatController.IsFistCombatMode;
+            isCombatMode = weaponEquipped || fistMode;
         }
 
         // Primary attack flag (for any systems still reading this)

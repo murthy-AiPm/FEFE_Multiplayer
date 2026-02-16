@@ -29,6 +29,11 @@ public class WeaponManager : NetworkBehaviour
     [SerializeField] private Transform hipHolster;     // 1H holster
     [SerializeField] private Transform shieldBackHolster; // shield when using bow
 
+    [Header("Animation Integration")]
+    [SerializeField] private RuleAnimancerDriver animancerDriver;
+    [Tooltip("Fallback duration if no animation plays (seconds)")]
+    [SerializeField] private float fallbackTransitionTime = 0.5f;
+
     // ─── State ───
     public enum EquipState { Idle, Equipping, Holstering }
 
@@ -45,6 +50,8 @@ public class WeaponManager : NetworkBehaviour
 
     // Transition tracking
     private int _pendingSlot = -1; // slot we're transitioning to
+    private bool _wasDriverLocked;  // track lock state changes
+    private float _transitionTimer; // fallback timer
 
     // Events — CombatController and Animator listen to these
     public event Action<WeaponData> OnWeaponEquipped;      // new weapon fully equipped
@@ -62,6 +69,9 @@ public class WeaponManager : NetworkBehaviour
 
         _activeSlot.OnValueChanged += OnActiveSlotChanged;
 
+        if (animancerDriver == null)
+            animancerDriver = GetComponentInChildren<RuleAnimancerDriver>(true);
+
         if (loadout != null)
             SpawnWeaponVisuals();
 
@@ -73,6 +83,45 @@ public class WeaponManager : NetworkBehaviour
     {
         _activeSlot.OnValueChanged -= OnActiveSlotChanged;
         base.OnNetworkDespawn();
+    }
+
+    private void Update()
+    {
+        if (CurrentEquipState == EquipState.Idle) return;
+
+        // Auto-complete: watch RuleAnimancerDriver's Action layer lock.
+        // When the equip/holster clip finishes (lock releases), complete the transition.
+        if (animancerDriver != null)
+        {
+            bool driverLocked = animancerDriver.IsLocked;
+
+            // Detect lock release: was locked, now isn't
+            if (_wasDriverLocked && !driverLocked)
+            {
+                AutoCompleteTransition();
+            }
+            _wasDriverLocked = driverLocked;
+        }
+
+        // Fallback timer in case no animation plays at all
+        _transitionTimer -= Time.deltaTime;
+        if (_transitionTimer <= 0f)
+        {
+            Debug.Log("[WeaponManager] Fallback timer — auto-completing transition");
+            AutoCompleteTransition();
+        }
+    }
+
+    private void AutoCompleteTransition()
+    {
+        if (CurrentEquipState == EquipState.Holstering)
+        {
+            OnAnimEvent_HolsterComplete();
+        }
+        else if (CurrentEquipState == EquipState.Equipping)
+        {
+            OnAnimEvent_EquipComplete();
+        }
     }
 
     /// <summary>
@@ -129,6 +178,8 @@ public class WeaponManager : NetworkBehaviour
     private void BeginTransition(int targetSlot)
     {
         _pendingSlot = targetSlot;
+        _transitionTimer = fallbackTransitionTime;
+        _wasDriverLocked = animancerDriver != null && animancerDriver.IsLocked;
 
         if (ActiveSlot != 0)
         {

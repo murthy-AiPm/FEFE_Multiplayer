@@ -362,6 +362,13 @@ public class RuleAnimancerDriver : MonoBehaviour
         bool up = ctx.snapshot.primaryUp;
         if (combatController != null && !combatController.CanAttack())
             return false;
+
+        // Shift + click → immediate heavy combo
+        if (down && ctx.Modified && _attack.mode == AttackMode.None)
+        {
+            _attack.ResetGesture();
+            return StartCombo(ctx);
+        }
         if (!down && !held && !up)
         {
             if (_attack.pendingSingle && Time.time - _attack.pendingStartTime >= doubleClickWindow)
