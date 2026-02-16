@@ -672,6 +672,8 @@ MonoBehaviour:
   humanoidController: {fileID: 2613098171129311318}
   playerController: {fileID: 3745241009434165893}
   animancerDriver: {fileID: 1633156696383947771}
+  allowMountedCombat: 0
+  mountController: {fileID: -2571843341000407878}
   dodgeSpeed: 8
   dodgeDuration: 0.5
   dodgeStaminaCost: 15

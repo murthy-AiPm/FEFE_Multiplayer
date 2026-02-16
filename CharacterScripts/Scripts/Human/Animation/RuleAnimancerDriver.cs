@@ -23,6 +23,9 @@ public class RuleAnimancerDriver : MonoBehaviour
     [SerializeField] private float attackFade = 0.05f;
     [SerializeField] private float cancelFade = 0.06f;
 
+    [Header("Hitbox Integration")]
+    [SerializeField] private HitboxController activeHitbox;
+
     [Header("Layer Masks")]
     [Tooltip("Upper body mask for Action layer (unsheathe, interactions). " +
              "Create via Assets > Create > Avatar Mask, enable spine/arms/head only.")]
@@ -89,7 +92,10 @@ public class RuleAnimancerDriver : MonoBehaviour
     /// Your ThirdPersonController should check this and skip its own movement when true.
     /// </summary>
     public bool RootMotionActive => _rootMotionActive;
-
+    public void SetActiveHitbox(HitboxController hitbox)
+    {
+        activeHitbox = hitbox;
+    }
     public enum AttackMode
     {
         None = 0,
@@ -534,6 +540,9 @@ public class RuleAnimancerDriver : MonoBehaviour
         if (_animator != null)
             _animator.applyRootMotion = wantRoot;
 
+        if (activeHitbox != null)
+            activeHitbox.EnableHitbox();
+
         LockAttackUntilEnd(state);
 
         // Network sync (owner only)
@@ -622,6 +631,8 @@ public class RuleAnimancerDriver : MonoBehaviour
 
         state.Events.OnEnd = () =>
         {
+            if (activeHitbox != null)
+                activeHitbox.DisableHitbox();
             _isLocked[AnimLayer.Attack] = false;
             _lockedState[AnimLayer.Attack] = null;
 
@@ -663,6 +674,8 @@ public class RuleAnimancerDriver : MonoBehaviour
 
     private void CancelCurrentAttack()
     {
+        if (activeHitbox != null)
+            activeHitbox.DisableHitbox();
         if (_lockedState.TryGetValue(AnimLayer.Attack, out var st) && st != null)
         {
             try { st.Stop(); } catch { /* ignore */ }

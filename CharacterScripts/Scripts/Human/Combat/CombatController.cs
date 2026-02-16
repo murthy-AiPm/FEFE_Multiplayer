@@ -35,6 +35,10 @@ public class CombatController : NetworkBehaviour
     [SerializeField] private PlayerController playerController;
     [SerializeField] private RuleAnimancerDriver animancerDriver;
 
+    [Header("Mounted Combat")]
+    [SerializeField] private bool allowMountedCombat = false;
+    [SerializeField] private MountController mountController;
+
     [Header("Dodge")]
     [SerializeField] private float dodgeSpeed = 8f;
     [SerializeField] private float dodgeDuration = 0.5f;
@@ -94,6 +98,9 @@ public class CombatController : NetworkBehaviour
     {
         if (!IsOwner || !IsSpawned) return;
         if (State == CombatState.Dead) return;
+        // Skip combat when mounted (unless allowed)
+        bool isMounted = mountController != null && mountController.IsMounted;
+        if (isMounted && !allowMountedCombat) return;
 
         _input = playerController.inputController.Snapshot;
 

@@ -282,6 +282,12 @@ public class WeaponManager : NetworkBehaviour
         Transform hand = (weapon.weaponType == WeaponType.Bow) ? leftHandAttach : rightHandAttach;
 
         instance.transform.SetParent(hand);
+        var hitbox = instance.GetComponentInChildren<HitboxController>();
+        if (hitbox != null && animancerDriver != null)
+        {
+            hitbox.Initialize(GetComponent<NetworkObject>(), weapon);
+            animancerDriver.SetActiveHitbox(hitbox);
+        }
         instance.transform.localPosition = Vector3.zero;
         instance.transform.localRotation = Quaternion.identity;
         instance.SetActive(true);
