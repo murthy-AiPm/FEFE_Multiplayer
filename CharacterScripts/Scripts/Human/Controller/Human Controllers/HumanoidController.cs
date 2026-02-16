@@ -136,25 +136,24 @@ public class HumanoidController : ThirdPersonController
         CameraCalculations(out float targetAngle, out float angle);
         Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward * speed;
 
-        if (combatController != null && combatController.ShouldFaceCamera())
+        if (playerController.inputController.isCombatMode)
         {
-            // Blocking, bow aiming — face camera direction
-            transform.rotation = Quaternion.Euler(0f, cam.eulerAngles.y, 0f);
-            if (isMoving)
-                controller.Move(moveDir * speed * speedModifier * Time.deltaTime);
-        }
-        else if (playerController.inputController.isCombatMode)
-        {
-            // Combat locomotion — face movement direction
             if (isMoving)
             {
-                transform.rotation = Quaternion.Euler(0f, angle, 0f);
+                // Face camera direction, strafe movement
+                transform.rotation = Quaternion.Euler(0f, cam.eulerAngles.y, 0f);
                 controller.Move(moveDir * speed * speedModifier * Time.deltaTime);
             }
+            else if (combatController != null && combatController.IsBlocking)
+            {
+                // Blocking while standing — face camera to aim guard
+                transform.rotation = Quaternion.Euler(0f, cam.eulerAngles.y, 0f);
+            }
+            // Standing still, not blocking: camera free rotates
         }
         else if (isMoving)
         {
-            // Normal locomotion
+            // Normal locomotion — face movement direction
             transform.rotation = Quaternion.Euler(0f, angle, 0f);
             if (!isobstacle)
                 controller.Move(moveDir.normalized * speed * speedModifier * Time.deltaTime);

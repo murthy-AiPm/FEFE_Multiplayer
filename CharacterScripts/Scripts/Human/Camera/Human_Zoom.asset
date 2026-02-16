@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85635e141e0502e49a7418dce1d1d188, type: 3}
   m_Name: Human_Zoom
   m_EditorClassIdentifier: 
-  VerticalFOV: 30
+  VerticalFOV: 45
   TopRigHeight: 4
   TopRigRadius: 1
   MiddleRigHeight: 1.5

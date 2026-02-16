@@ -187,34 +187,6 @@ MonoBehaviour:
       direction: 0
       useActionId: 0
       actionIdEquals: 0
-  - name: Sword/Walk
-    layer: 0
-    priority: 51
-    lockUntilEnd: 0
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: Sword/Walk/Fwd
-    all:
-    - useBool: 1
-      boolParam: 17
-      boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 1
-      useDirection: 1
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 0
-      boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 1
-      useDirection: 1
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
   - name: Sword/Walk/Straight
     layer: 0
     priority: 55
@@ -243,19 +215,9 @@ MonoBehaviour:
       direction: 1
       useActionId: 0
       actionIdEquals: 0
-    - useBool: 1
-      boolParam: 3
-      boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 1
-      useDirection: 1
-      direction: 1
-      useActionId: 0
-      actionIdEquals: 0
   - name: Sword/Strafe/Right
     layer: 0
-    priority: 55
+    priority: 57
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -281,19 +243,9 @@ MonoBehaviour:
       direction: 4
       useActionId: 0
       actionIdEquals: 0
-    - useBool: 1
-      boolParam: 3
-      boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 1
-      useDirection: 1
-      direction: 4
-      useActionId: 0
-      actionIdEquals: 0
   - name: Sword/Strafe/Left
     layer: 0
-    priority: 55
+    priority: 57
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -311,16 +263,6 @@ MonoBehaviour:
       actionIdEquals: 0
     - useBool: 1
       boolParam: 0
-      boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 1
-      useDirection: 1
-      direction: 2
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 3
       boolValue: 1
       useInput: 0
       input: 0
@@ -357,19 +299,9 @@ MonoBehaviour:
       direction: 3
       useActionId: 0
       actionIdEquals: 0
-    - useBool: 1
-      boolParam: 3
-      boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 1
-      useDirection: 1
-      direction: 3
-      useActionId: 0
-      actionIdEquals: 0
   - name: Sword/Run
     layer: 0
-    priority: 52
+    priority: 58
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -402,6 +334,44 @@ MonoBehaviour:
       input: 0
       triggerMode: 1
       useDirection: 1
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Sword/Block/Idle
+    layer: 0
+    priority: 57
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Sword/Block/Idle
+    all:
+    - useBool: 1
+      boolParam: 11
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 0
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 3
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
       direction: 0
       useActionId: 0
       actionIdEquals: 0
