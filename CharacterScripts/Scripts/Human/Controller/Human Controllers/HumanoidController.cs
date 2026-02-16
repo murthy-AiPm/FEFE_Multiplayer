@@ -6,6 +6,7 @@ public class HumanoidController : ThirdPersonController
 {
     //[SerializeField] internal HumanoidColliderManger humanoidCollider;
     [SerializeField] private CombatController combatController;
+    [SerializeField] private RuleAnimancerDriver animancerDriver;
     [SerializeField] private VitalManager vitalManager;
     [SerializeField] internal float jumpnum;
     [SerializeField] internal float crouchSpeed;
@@ -101,7 +102,13 @@ public class HumanoidController : ThirdPersonController
 
     protected virtual void SpeedLogic()
     {
-        // Combat controller takes priority
+        // Root motion takes over movement — zero out speed
+        if (animancerDriver != null && animancerDriver.RootMotionActive)
+        {
+            speed = 0;
+            return;
+        }
+
         if (combatController != null)
         {
             if (combatController.IsActionLocked())
@@ -111,7 +118,7 @@ public class HumanoidController : ThirdPersonController
             }
             if (combatController.IsSlowMovement())
             {
-                speed = combatSpeed ;
+                speed = combatSpeed;
                 return;
             }
         }

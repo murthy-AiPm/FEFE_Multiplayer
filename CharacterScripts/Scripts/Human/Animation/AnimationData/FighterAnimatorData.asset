@@ -176,7 +176,8 @@ MonoBehaviour:
     transition:
       _FadeDuration: 0
       _Events:
-        _NormalizedTimes: []
+        _NormalizedTimes:
+        - 0.7
         _Callbacks: []
         _Names: []
       _Clip: {fileID: 7400000, guid: a9e228972999b0d46a21e30edf97d812, type: 3}
@@ -187,7 +188,8 @@ MonoBehaviour:
     transition:
       _FadeDuration: 0
       _Events:
-        _NormalizedTimes: []
+        _NormalizedTimes:
+        - 0.7
         _Callbacks: []
         _Names: []
       _Clip: {fileID: 7400004, guid: a9e228972999b0d46a21e30edf97d812, type: 3}
@@ -198,7 +200,8 @@ MonoBehaviour:
     transition:
       _FadeDuration: 0
       _Events:
-        _NormalizedTimes: []
+        _NormalizedTimes:
+        - 0.7
         _Callbacks: []
         _Names: []
       _Clip: {fileID: 7400004, guid: a9e228972999b0d46a21e30edf97d812, type: 3}

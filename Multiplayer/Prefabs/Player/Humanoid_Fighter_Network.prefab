@@ -376,7 +376,7 @@ MonoBehaviour:
   DistToGround: 0.5
   gravityValue: -9.81
   speed: 4
-  turnSmootheTime: 0.1
+  turnSmootheTime: 0.3
   speedModifier: 2
   maxSpeedModifier: 2
   minSpeedModifer: 1
@@ -392,6 +392,7 @@ MonoBehaviour:
   key: 0
   jumpGraceTime: 0.12
   combatController: {fileID: -8912580098338169080}
+  animancerDriver: {fileID: 1633156696383947771}
   vitalManager: {fileID: 8696267403149252337}
   jumpnum: 0.5
   crouchSpeed: 0.5
