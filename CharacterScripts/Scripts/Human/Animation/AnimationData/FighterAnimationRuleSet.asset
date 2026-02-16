@@ -113,6 +113,34 @@ MonoBehaviour:
       direction: 0
       useActionId: 0
       actionIdEquals: 0
+  - name: Sword/Idle
+    layer: 0
+    priority: 50
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Sword/Idle
+    all:
+    - useBool: 1
+      boolParam: 17
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 0
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
   - name: Sword/Equip
     layer: 1
     priority: 121
@@ -152,34 +180,6 @@ MonoBehaviour:
     - useBool: 1
       boolParam: 17
       boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 1
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-  - name: Sword/Idle
-    layer: 0
-    priority: 50
-    lockUntilEnd: 0
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: Sword/Idle
-    all:
-    - useBool: 1
-      boolParam: 17
-      boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 1
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 0
-      boolValue: 0
       useInput: 0
       input: 0
       triggerMode: 1

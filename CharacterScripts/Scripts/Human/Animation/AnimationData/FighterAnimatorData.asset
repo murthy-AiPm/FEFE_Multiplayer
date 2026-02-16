@@ -450,3 +450,15 @@ MonoBehaviour:
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 0
+  - key: Sword/Block
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes:
+        - 0.7
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400004, guid: a9e228972999b0d46a21e30edf97d812, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 1

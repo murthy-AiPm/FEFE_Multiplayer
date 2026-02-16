@@ -165,7 +165,6 @@ GameObject:
   - component: {fileID: -8912580098338169080}
   - component: {fileID: 3527247635661846369}
   - component: {fileID: -1694095259213740506}
-  - component: {fileID: 2252386377111108820}
   m_Layer: 6
   m_Name: Humanoid_Fighter_Network
   m_TagString: Player
@@ -648,10 +647,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponManager
   ShowTopMostFoldoutHeaderGroup: 1
   loadout: {fileID: 11400000, guid: 2b5d1c2772db3a949ac1046709a1880d, type: 2}
-  rightHandAttach: {fileID: 0}
+  rightHandAttach: {fileID: 7269525579238291721}
   leftHandAttach: {fileID: 0}
   backHolster: {fileID: 0}
-  hipHolster: {fileID: 0}
+  hipHolster: {fileID: 826419656681856559}
   shieldBackHolster: {fileID: 0}
   animancerDriver: {fileID: 0}
   fallbackTransitionTime: 0.5
@@ -713,29 +712,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AnimationEventRelay
   combatController: {fileID: -8912580098338169080}
   weaponManager: {fileID: -5298135234070216236}
-  activeHitbox: {fileID: 2252386377111108820}
---- !u!114 &2252386377111108820
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 134043905374528843}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dc669fd04bbc31f4baf10a9807acdccb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HitboxController
-  length: 1
-  radius: 0.15
-  offset: {x: 0, y: 0, z: 0}
-  hitLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  maxHitsPerSwing: 5
-  drawGizmos: 1
-  activeColor: {r: 1, g: 0, b: 0, a: 1}
-  inactiveColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  activeHitbox: {fileID: 0}
 --- !u!1 &1008603233948878082
 GameObject:
   m_ObjectHideFlags: 0
@@ -1199,6 +1176,37 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!1 &1357549217041599766
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7269525579238291721}
+  m_Layer: 6
+  m_Name: Weapon
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7269525579238291721
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1357549217041599766}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.52647465, y: -0.31195244, z: 0.40316764, w: 0.6804161}
+  m_LocalPosition: {x: 0.07, y: -0.044, z: -0.008}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 826759954739257843}
+  m_LocalEulerAnglesHint: {x: 75.462, y: 0, z: 61.296}
 --- !u!1 &3589450481537158726
 GameObject:
   m_ObjectHideFlags: 0
@@ -2347,7 +2355,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4169912364413648, guid: 2267c9e4b1b2f404d8fff4eb9047209f, type: 3}
+      insertIndex: 0
+      addedObject: {fileID: 7269525579238291721}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2267c9e4b1b2f404d8fff4eb9047209f, type: 3}
 --- !u!4 &821889282265127017 stripped
@@ -2363,6 +2374,16 @@ GameObject:
 --- !u!1 &824552671498854923 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1841708596736296, guid: 2267c9e4b1b2f404d8fff4eb9047209f, type: 3}
+  m_PrefabInstance: {fileID: 826389980371342115}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &826419656681856559 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4473928350551308, guid: 2267c9e4b1b2f404d8fff4eb9047209f, type: 3}
+  m_PrefabInstance: {fileID: 826389980371342115}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &826759954739257843 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4169912364413648, guid: 2267c9e4b1b2f404d8fff4eb9047209f, type: 3}
   m_PrefabInstance: {fileID: 826389980371342115}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5609405107666569317

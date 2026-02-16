@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
   weaponName: Weapon
   weaponType: 1
-  weaponPrefab: {fileID: 0}
+  weaponPrefab: {fileID: 446426267964797665, guid: 4a1ffbfaf981be84faae09c5b40097db, type: 3}
   weaponProfileName: Sword
   baseDamage: 10
   heavyDamageMultiplier: 2

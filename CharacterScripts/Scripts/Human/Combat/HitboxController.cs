@@ -16,10 +16,13 @@ using UnityEngine;
 /// </summary>
 public class HitboxController : MonoBehaviour
 {
+    public enum HitboxDirection { Up, Forward, Right }
+
     [Header("Hitbox Shape")]
     [SerializeField] private float length = 1f;
     [SerializeField] private float radius = 0.15f;
     [SerializeField] private Vector3 offset = Vector3.zero;
+    [SerializeField] private HitboxDirection castDirection = HitboxDirection.Up;
 
     [Header("Detection")]
     [SerializeField] private LayerMask hitLayers = ~0;
@@ -105,9 +108,7 @@ public class HitboxController : MonoBehaviour
     private void DetectHits()
     {
         Vector3 origin = transform.TransformPoint(offset);
-        Vector3 direction = transform.up; // weapon points along local Y typically
-        // Adjust if your weapon mesh points along Z:
-        // Vector3 direction = transform.forward;
+        Vector3 direction = GetCastDirection();
 
         int hitCount = Physics.SphereCastNonAlloc(
             origin, radius, direction, _hitBuffer, length, hitLayers, QueryTriggerInteraction.Ignore);
@@ -154,6 +155,17 @@ public class HitboxController : MonoBehaviour
         }
     }
 
+    private Vector3 GetCastDirection()
+    {
+        return castDirection switch
+        {
+            HitboxDirection.Up => transform.up,
+            HitboxDirection.Forward => transform.forward,
+            HitboxDirection.Right => transform.right,
+            _ => transform.up
+        };
+    }
+
     // ─── Gizmos ───
 
     private void OnDrawGizmosSelected()
@@ -163,7 +175,8 @@ public class HitboxController : MonoBehaviour
         Gizmos.color = _active ? activeColor : inactiveColor;
 
         Vector3 origin = transform.TransformPoint(offset);
-        Vector3 end = origin + transform.up * length;
+        Vector3 dir = GetCastDirection();
+        Vector3 end = origin + dir * length;
 
         Gizmos.DrawWireSphere(origin, radius);
         Gizmos.DrawWireSphere(end, radius);
