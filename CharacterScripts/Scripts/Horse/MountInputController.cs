@@ -63,7 +63,7 @@ public class MountInputController : NetworkBehaviour
         bool isOnline = NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
         bool shouldBeActive = isMounted && (isOnline ? IsOwner : true);
 
-        Debug.Log($"[MountInputController] IsMounted: {isMounted}, IsOwner: {IsOwner}, IsOnline: {isOnline}, RiderId: {mountableEntity.RiderId}, shouldBeActive: {shouldBeActive}");
+        //Debug.Log($"[MountInputController] IsMounted: {isMounted}, IsOwner: {IsOwner}, IsOnline: {isOnline}, RiderId: {mountableEntity.RiderId}, shouldBeActive: {shouldBeActive}");
 
         // Enable controller only if:
         // 1. Someone is mounted, AND

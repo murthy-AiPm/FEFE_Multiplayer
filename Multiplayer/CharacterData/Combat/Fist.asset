@@ -16,11 +16,11 @@ MonoBehaviour:
   weaponType: 0
   weaponPrefab: {fileID: 0}
   weaponProfileName: Fist
-  baseDamage: 10
+  baseDamage: 2
   heavyDamageMultiplier: 2
   attackRange: 2
-  staminaCostLight: 10
-  staminaCostHeavy: 25
+  staminaCostLight: 0.5
+  staminaCostHeavy: 1
   blockStaminaCost: 5
   arrowPrefab: {fileID: 0}
   arrowSpeed: 40

@@ -10,9 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8228fd885521a3f48baae950106de4ba, type: 3}
-  m_Name: Castellan
+  m_Name: Knight
   m_EditorClassIdentifier: Assembly-CSharp::CharacterData
-  characterName: Castellan
-  icon: {fileID: 21300000, guid: a78170c5ec8074756801245da7154b55, type: 3}
-  characterColor: {r: 0.9839549, g: 0, b: 1, a: 1}
-  prefab: {fileID: 5393498967000253258, guid: 819bb7a441409de43987660729de6d6f, type: 3}
+  characterName: Knight
+  icon: {fileID: 21300000, guid: c0bfb85c10fc04985bc3f39b41eeb824, type: 3}
+  characterColor: {r: 1, g: 1, b: 1, a: 1}
+  prefab: {fileID: 134043905374528843, guid: ff200ce1eb6de164b8622632cc7b4e72, type: 3}
+  combatLoadout: {fileID: 11400000, guid: 2b5d1c2772db3a949ac1046709a1880d, type: 2}
