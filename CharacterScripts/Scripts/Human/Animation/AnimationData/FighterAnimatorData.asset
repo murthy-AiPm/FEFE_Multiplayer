@@ -485,3 +485,51 @@ MonoBehaviour:
       _Speed: 2
       _NormalizedStartTime: NaN
     useRootMotion: 0
+  - key: Dodge/Front
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes:
+        - 0.8
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 5460556255701531675, guid: 9c50537832dc273439c3aa48e115761d, type: 3}
+      _Speed: 0.8
+      _NormalizedStartTime: NaN
+    useRootMotion: 1
+  - key: Dodge/Back
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes:
+        - 0.8
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: -585597420971053729, guid: 36ae0f9c2123f1140ac5868f2073234a, type: 3}
+      _Speed: 0.8
+      _NormalizedStartTime: NaN
+    useRootMotion: 1
+  - key: Dodge/Right
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes:
+        - 0.8
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 6384056011127690399, guid: e08d4906244a14448b53dbe123947f21, type: 3}
+      _Speed: 0.8
+      _NormalizedStartTime: NaN
+    useRootMotion: 1
+  - key: Dodge/Left
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes:
+        - 0.8
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 8362201640592317726, guid: c1ad983254443744a92b2a55180cb4d4, type: 3}
+      _Speed: 0.8
+      _NormalizedStartTime: NaN
+    useRootMotion: 1

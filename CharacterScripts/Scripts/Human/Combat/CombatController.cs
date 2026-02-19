@@ -249,8 +249,8 @@ public class CombatController : NetworkBehaviour
         _dodgeTimer -= Time.deltaTime;
 
         // Move during dodge
-        if (humanoidController != null && humanoidController.controller != null)
-            humanoidController.controller.Move(_dodgeDirection * dodgeSpeed * Time.deltaTime);
+        //if (humanoidController != null && humanoidController.controller != null)
+        //    humanoidController.controller.Move(_dodgeDirection * dodgeSpeed * Time.deltaTime);
 
         // I-frames
         if (_iFrameTimer > 0f)
@@ -278,6 +278,13 @@ public class CombatController : NetworkBehaviour
 
     private void UpdateBlock()
     {
+        if (_input.jumpDown && _dodgeCooldownTimer <= 0f)
+        {
+            SetState(CombatState.None);
+            OnBlockEnded?.Invoke();
+            TryDodge();
+            return;
+        }
         if (!_input.secondaryHeld)
         {
             SetState(CombatState.None);
