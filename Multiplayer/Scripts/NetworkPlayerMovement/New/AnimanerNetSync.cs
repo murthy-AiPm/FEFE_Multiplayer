@@ -78,6 +78,8 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     // ---- Combat State Syncing ----
+
+
     private readonly NetworkVariable<bool> nvEquipping =
         new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 

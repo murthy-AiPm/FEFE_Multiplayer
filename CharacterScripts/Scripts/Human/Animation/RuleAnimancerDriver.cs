@@ -197,6 +197,11 @@ public class RuleAnimancerDriver : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (_isRemoteClient)
+        {
+            Debug.Log($"[Puppet Driver] animancer={_animancer != null} animSet={animationSet != null} ruleSet={ruleSet != null} tps={tps != null} input={input != null} mount={mountController != null}");
+            return; // just check refs first
+        }
         if (_animancer == null || animationSet == null || ruleSet == null || tps == null)
             return;
 
@@ -256,7 +261,7 @@ public class RuleAnimancerDriver : MonoBehaviour
     {
         AnimationRule best = null;
         int bestPriority = int.MinValue;
-
+        
         var rules = ruleSet.rules;
         for (int i = 0; i < rules.Count; i++)
         {
