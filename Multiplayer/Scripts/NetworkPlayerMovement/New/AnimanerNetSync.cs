@@ -258,12 +258,12 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         {
             if (nvEquipping.Value)
             {
-                Debug.Log("[Puppet] Received Equipping = true");
+                
                 weaponManager.SetRemoteEquipState(WeaponManager.EquipState.Equipping);
             }
             else if (nvHolstering.Value)
             {
-                Debug.Log("[Puppet] Received Holstering = true");
+              
                 weaponManager.SetRemoteEquipState(WeaponManager.EquipState.Holstering);
             }
             else

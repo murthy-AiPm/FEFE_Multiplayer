@@ -87,6 +87,7 @@ public class WeaponManager : NetworkBehaviour
 
     private void Update()
     {
+        if (!IsOwner) return;  // ← add this
         if (CurrentEquipState == EquipState.Idle) return;
 
         // Auto-complete: watch RuleAnimancerDriver's Action layer lock.
@@ -107,7 +108,7 @@ public class WeaponManager : NetworkBehaviour
         _transitionTimer -= Time.deltaTime;
         if (_transitionTimer <= 0f)
         {
-            Debug.Log("[WeaponManager] Fallback timer — auto-completing transition");
+            
             AutoCompleteTransition();
         }
     }
