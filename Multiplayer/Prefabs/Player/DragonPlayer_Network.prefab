@@ -5110,6 +5110,10 @@ MonoBehaviour:
   walkSpeed: 2
   runSpeed: 6
   turnSmoothTime: 0.5
+  turnHeadAngle: 18
+  useFakeGravity: 0
+  fakeGravity: 20
+  maxFallSpeed: 30
 --- !u!114 &1496499137168891431
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5147,17 +5151,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DragonGroundAlignment
   ShowTopMostFoldoutHeaderGroup: 1
   groundingSystem: {fileID: 1496499137168891431}
+  groundController: {fileID: 0}
   dragonRoot: {fileID: 0}
   alignmentSpeed: 8
   maxSlopeAngle: 60
   minSlopeThreshold: 2
+  enableHeightAdjustment: 1
   targetBodyHeight: 0.3
   heightAdjustSpeed: 10
   maxHeightAdjustPerFrame: 0.15
   onlyAdjustWhenGrounded: 1
   heightDeadZone: 0.02
   normalLerpSpeed: 1
+  basenormalLerpSpeed: 2
   yawSmoothSpeed: 2
+  baseyawSmoothSpeed: 2
+  speedturnmodifier: 5
   showDebugNormals: 0
   showDebugHeight: 0
 --- !u!114 &4572458104217194858

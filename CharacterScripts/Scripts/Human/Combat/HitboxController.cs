@@ -111,7 +111,7 @@ public class HitboxController : MonoBehaviour
         Vector3 direction = GetCastDirection();
 
         int hitCount = Physics.SphereCastNonAlloc(
-            origin, radius, direction, _hitBuffer, length, hitLayers, QueryTriggerInteraction.Ignore);
+            origin, radius, direction, _hitBuffer, length, hitLayers /*QueryTriggerInteraction.Ignore*/);
 
         for (int i = 0; i < hitCount; i++)
         {

@@ -83,6 +83,8 @@ public class MountController : NetworkBehaviour
 
         // Handle mount/dismount input
         HandleMountInput();
+
+
     }
 
     // REMOVED: LateUpdate manual positioning
@@ -177,7 +179,7 @@ public class MountController : NetworkBehaviour
         else
         {
             // Offline mode: Mount directly
-            Debug.Log("[MountController] Offline mode - mounting locally");
+           
             mount.MountLocal(gameObject, 0);
             StartCoroutine(PlayMountTransition());
         }
@@ -204,7 +206,7 @@ public class MountController : NetworkBehaviour
         else
         {
             // Offline mode: Dismount directly
-            Debug.Log("[MountController] Offline mode - dismounting locally");
+
             Vector3 dismountPos = currentMount.transform.position + currentMount.transform.right * -1.5f;
             currentMount.DismountLocal();
             StartCoroutine(PlayDismountTransition(dismountPos));

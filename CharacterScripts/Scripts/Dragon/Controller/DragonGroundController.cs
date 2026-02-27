@@ -42,6 +42,11 @@ public class DragonGroundController : NetworkBehaviour
     [SerializeField] private float turnSmoothTime = 0.1f;
     [SerializeField] private float turnHeadAngle = 18;
 
+    [Header("Fake Gravity (for horse)")]
+    [SerializeField] private bool useFakeGravity = false;
+    [SerializeField] private float fakeGravity = 20f;
+    [SerializeField] private float maxFallSpeed = 30f;
+    private float _fallVelocity;
     // Animator hashes
     private int jumpForwardHash;
     private int jumpUpHash;
@@ -119,6 +124,17 @@ public class DragonGroundController : NetworkBehaviour
 
     private void FixedUpdate()
     {
+        //if (useFakeGravity)
+        //{
+        //    if (groundingSystem.IsGrounded)
+        //        _fallVelocity = 0f;
+        //    else
+        //    {
+        //        _fallVelocity += fakeGravity * Time.fixedDeltaTime;
+        //        _fallVelocity = Mathf.Min(_fallVelocity, maxFallSpeed);
+        //        rb.MovePosition(rb.position + Vector3.down * _fallVelocity * Time.fixedDeltaTime);
+        //    }
+        //}
         if (!ignoreOwnershipForTesting && !IsOwner) return;
 
         // Takeoff - lift dragon up

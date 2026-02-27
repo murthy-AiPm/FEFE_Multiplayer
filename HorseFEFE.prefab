@@ -437,6 +437,9 @@ MonoBehaviour:
   runSpeed: 10
   turnSmoothTime: 0.1
   turnHeadAngle: 15
+  useFakeGravity: 1
+  fakeGravity: -9.81
+  maxFallSpeed: -5
 --- !u!114 &8455803096756853017
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -453,7 +456,7 @@ MonoBehaviour:
   rightHand: {fileID: 4376441648706682908}
   leftFoot: {fileID: 4369190220620971560}
   rightFoot: {fileID: 4369583985020536638}
-  raycastDistance: 5
+  raycastDistance: 1
   raycastOriginOffset: 0
   groundMask:
     serializedVersion: 2
@@ -480,11 +483,11 @@ MonoBehaviour:
   maxSlopeAngle: 70
   minSlopeThreshold: 2
   enableHeightAdjustment: 1
-  targetBodyHeight: 0.3
-  heightAdjustSpeed: 10
-  maxHeightAdjustPerFrame: 0.15
+  targetBodyHeight: 0.1
+  heightAdjustSpeed: 5
+  maxHeightAdjustPerFrame: 0.08
   onlyAdjustWhenGrounded: 1
-  heightDeadZone: 0.02
+  heightDeadZone: 0.01
   normalLerpSpeed: 2
   basenormalLerpSpeed: 2
   yawSmoothSpeed: 2
@@ -562,6 +565,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   groundController: {fileID: 2598117054184361289}
+  movingSpeedThreshold: 0.15
+  speedSmoothing: 0.6
 --- !u!114 &694475302577268265
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -35180,7 +35185,7 @@ ParentConstraint:
   m_TranslationAtRest: {x: 0, y: 1.8230007, z: 1.6609997}
   m_RotationAtRest: {x: 0, y: 0, z: 0}
   m_TranslationOffsets:
-  - {x: -0.1339283, y: 0.13389015, z: 0}
+  - {x: -0.1339283, y: 0.13388824, z: 0}
   m_RotationOffsets:
   - {x: -47.28265, y: -89.99991, z: 179.99976}
   m_AffectTranslationX: 1
@@ -35532,7 +35537,7 @@ ParentConstraint:
   m_TranslationAtRest: {x: 0, y: 1.8207344, z: 1.4717761}
   m_RotationAtRest: {x: 0.00018441501, y: -89.99994, z: -132.71738}
   m_TranslationOffsets:
-  - {x: -0.0038986206, y: -0.0035972595, z: 0}
+  - {x: -0.0038986206, y: -0.0035991669, z: 0}
   m_RotationOffsets:
   - {x: 0, y: 0, z: 0}
   m_AffectTranslationX: 1
