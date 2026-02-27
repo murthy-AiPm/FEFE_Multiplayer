@@ -439,4 +439,11 @@ public class WeaponManager : NetworkBehaviour
             HandleShieldForSlot(newSlot);
         }
     }
+    public void SetRemoteEquipState(EquipState state)
+    {
+        if (IsOwner) return;
+        CurrentEquipState = state;
+    }
+
+
 }

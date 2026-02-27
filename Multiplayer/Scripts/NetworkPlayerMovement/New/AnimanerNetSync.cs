@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -9,6 +9,8 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
     [SerializeField] private InputController input;
     [SerializeField] private ThirdPersonController tps;
     [SerializeField] private RuleAnimancerDriver animDriver;
+    [SerializeField] private WeaponManager weaponManager;
+    [SerializeField] private CombatController combatController;
 
     // ---- Networked "AnimationContext" pieces ----
     private readonly NetworkVariable<bool> nvMoving =
@@ -38,7 +40,7 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
     private readonly NetworkVariable<FixedString32Bytes> nvDirections =
         new(new FixedString32Bytes("None"), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
-    // Snapshot fields used by your rules/combos (PrimaryDown, JumpDown, ActionHeld, etc.)
+    // Snapshot fields
     private readonly NetworkVariable<bool> nvPrimaryDown =
         new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
@@ -57,34 +59,56 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
     private readonly NetworkVariable<bool> nvActionHeld =
         new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
-    // ActionId (interactions like chest/ballista) + a "sequence" to create a one-shot edge on remotes.
+    // Action edge
     private readonly NetworkVariable<int> nvActionId =
         new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     private readonly NetworkVariable<int> nvActionSeq =
         new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
-    // NEW: Attack state networking
+    // Attack state networking
     private readonly NetworkVariable<NetworkedAttackState> nvAttackState =
         new(new NetworkedAttackState(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     private readonly NetworkVariable<int> nvAttackSeq =
         new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
-    // NEW: Jump edge detection (same pattern as attack/action)
+    // Jump edge
     private readonly NetworkVariable<int> nvJumpSeq =
         new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
-    // Reflection to set InputController.Snapshot (private setter).
+    // ---- Combat State Syncing ----
+    private readonly NetworkVariable<bool> nvEquipping =
+        new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    private readonly NetworkVariable<bool> nvHolstering =
+        new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    private readonly NetworkVariable<bool> nvDodging =
+        new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    private readonly NetworkVariable<bool> nvBlocking =
+        new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    private readonly NetworkVariable<bool> nvBowDrawing =
+        new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    private readonly NetworkVariable<bool> nvBowAiming =
+        new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    private readonly NetworkVariable<bool> nvFistCombatMode =
+        new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    // Reflection to set InputController.Snapshot
     private FieldInfo _snapshotBackingField;
 
     private int _lastSeenActionSeq;
     private int _lastSeenAttackSeq;
     private int _lastSeenJumpSeq;
+
     // Throttling
     private const float NETWORK_UPDATE_INTERVAL = 0.05f; // 20 Hz
     private float nextNetworkUpdateTime;
-    private const float EPSILON = 0.01f;
 
     private void Awake()
     {
@@ -97,13 +121,13 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         if (!input) input = GetComponentInChildren<InputController>(true);
         if (!tps) tps = GetComponentInChildren<ThirdPersonController>(true);
         if (!animDriver) animDriver = GetComponentInChildren<RuleAnimancerDriver>(true);
+        if (!weaponManager) weaponManager = GetComponentInChildren<WeaponManager>(true);
+        if (!combatController) combatController = GetComponentInChildren<CombatController>(true);
     }
 
     private void CacheSnapshotSetter()
     {
         if (input == null) return;
-
-        // Auto-property backing field name: "<Snapshot>k__BackingField"
         _snapshotBackingField = typeof(InputController).GetField(
             "<Snapshot>k__BackingField",
             BindingFlags.Instance | BindingFlags.NonPublic
@@ -116,13 +140,9 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         AutoWire();
         CacheSnapshotSetter();
 
-        // Non-owners should apply received values into their local "data holder" components.
         if (!IsOwner)
         {
-            // Apply once immediately.
             ApplyToRemoteHolders();
-
-            // Track action edge.
             _lastSeenActionSeq = nvActionSeq.Value;
             _lastSeenAttackSeq = nvAttackSeq.Value;
             _lastSeenJumpSeq = nvJumpSeq.Value;
@@ -135,7 +155,6 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
 
         if (IsOwner)
         {
-            // Throttle: only write every 0.05s instead of every frame
             if (Time.time >= nextNetworkUpdateTime)
             {
                 nextNetworkUpdateTime = Time.time + NETWORK_UPDATE_INTERVAL;
@@ -144,7 +163,6 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         }
         else
         {
-            // Remotes read and inject.
             ApplyToRemoteHolders();
             ApplyRemoteActionEdge();
             ApplyRemoteAttackEdge();
@@ -156,7 +174,7 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
     {
         if (input == null || tps == null) return;
 
-        // Only update if changed
+        // Input state
         if (nvMoving.Value != input.isMoving) nvMoving.Value = input.isMoving;
         if (nvCombatMode.Value != input.isCombatMode) nvCombatMode.Value = input.isCombatMode;
         if (nvModified.Value != input.isModified) nvModified.Value = input.isModified;
@@ -179,6 +197,24 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         if (nvActionHeld.Value != s.actionHeld) nvActionHeld.Value = s.actionHeld;
 
         if (s.jumpDown) nvJumpSeq.Value++;
+
+        // ─── Combat State ───
+        if (weaponManager != null)
+        {
+            bool equipping = weaponManager.CurrentEquipState == WeaponManager.EquipState.Equipping;
+            bool holstering = weaponManager.CurrentEquipState == WeaponManager.EquipState.Holstering;
+            if (nvEquipping.Value != equipping) nvEquipping.Value = equipping;
+            if (nvHolstering.Value != holstering) nvHolstering.Value = holstering;
+        }
+
+        if (combatController != null)
+        {
+            if (nvDodging.Value != combatController.IsDodging) nvDodging.Value = combatController.IsDodging;
+            if (nvBlocking.Value != combatController.IsBlocking) nvBlocking.Value = combatController.IsBlocking;
+            if (nvBowDrawing.Value != combatController.IsBowDrawing) nvBowDrawing.Value = combatController.IsBowDrawing;
+            if (nvBowAiming.Value != combatController.IsBowAiming) nvBowAiming.Value = combatController.IsBowAiming;
+            if (nvFistCombatMode.Value != combatController.IsFistCombatMode) nvFistCombatMode.Value = combatController.IsFistCombatMode;
+        }
     }
 
     private void ApplyToRemoteHolders()
@@ -194,7 +230,6 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
 
             input.directions = nvDirections.Value.ToString();
 
-            // Inject a snapshot for rules that read ctx.snapshot.*
             if (_snapshotBackingField != null)
             {
                 var snap = new InputSnapshot
@@ -206,7 +241,6 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
                     jumpHeld = nvJumpHeld.Value,
                     actionHeld = nvActionHeld.Value,
                 };
-
                 _snapshotBackingField.SetValue(input, snap);
             }
         }
@@ -217,15 +251,39 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
             tps.isfreeFall = nvFreeFall.Value;
         }
 
-        // We don't need to set anything on animDriver directly because it reads from input/tps.
-        // But we DO handle the action edge separately (below).
+        // ─── Combat State to puppets ───
+        if (weaponManager != null)
+        {
+            if (nvEquipping.Value)
+            {
+                Debug.Log("[Puppet] Received Equipping = true");
+                weaponManager.SetRemoteEquipState(WeaponManager.EquipState.Equipping);
+            }
+            else if (nvHolstering.Value)
+            {
+                Debug.Log("[Puppet] Received Holstering = true");
+                weaponManager.SetRemoteEquipState(WeaponManager.EquipState.Holstering);
+            }
+            else
+                weaponManager.SetRemoteEquipState(WeaponManager.EquipState.Idle);
+        }
+
+        if (combatController != null)
+        {
+            combatController.SetRemoteCombatState(
+                nvDodging.Value,
+                nvBlocking.Value,
+                nvBowDrawing.Value,
+                nvBowAiming.Value,
+                nvFistCombatMode.Value
+            );
+        }
     }
 
     private void ApplyRemoteActionEdge()
     {
         if (animDriver == null) return;
 
-        // If the owner bumped the sequence, we replay the StartAction edge locally.
         int seq = nvActionSeq.Value;
         if (seq == _lastSeenActionSeq) return;
         _lastSeenActionSeq = seq;
@@ -239,14 +297,12 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
     {
         if (animDriver == null) return;
 
-        // If the owner bumped the attack sequence, replay the attack on remote.
         int seq = nvAttackSeq.Value;
         if (seq == _lastSeenAttackSeq) return;
         _lastSeenAttackSeq = seq;
 
         var attackState = nvAttackState.Value;
 
-        // Tell the anim driver to play this specific attack
         animDriver.PlayNetworkedAttack(
             attackState.attackKey.ToString(),
             (RuleAnimancerDriver.AttackMode)attackState.mode,
@@ -259,55 +315,40 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
     {
         if (input == null || _snapshotBackingField == null) return;
 
-        // If the owner bumped the jump sequence, inject a one-frame jumpDown edge.
         int seq = nvJumpSeq.Value;
         if (seq == _lastSeenJumpSeq) return;
         _lastSeenJumpSeq = seq;
 
-        // Force jumpDown to true for this frame
         var snap = new InputSnapshot
         {
             primaryDown = nvPrimaryDown.Value,
             primaryHeld = nvPrimaryHeld.Value,
             primaryUp = nvPrimaryUp.Value,
-            jumpDown = true,  // Force this to true when sequence changes
+            jumpDown = true,
             jumpHeld = nvJumpHeld.Value,
             actionHeld = nvActionHeld.Value,
         };
-
         _snapshotBackingField.SetValue(input, snap);
     }
 
-    /// <summary>
-    /// Call this ON OWNER when you start an interaction (chest/ballista/etc).
-    /// This replicates ActionId and causes remotes to trigger the one-frame StartAction edge.
-    /// </summary>
+    // ─── Public API for owner ───
+
     public void OwnerStartAction(int actionId)
     {
         if (!IsOwner) return;
-
         nvActionId.Value = actionId;
-        nvActionSeq.Value++; // edge trigger for others
+        nvActionSeq.Value++;
     }
 
-    /// <summary>
-    /// Optional: owner clears the action (if your gameplay wants it).
-    /// Your RuleAnimancerDriver also clears internally after lock ends, but this can help.
-    /// </summary>
     public void OwnerClearAction()
     {
         if (!IsOwner) return;
         nvActionId.Value = 0;
     }
 
-    /// <summary>
-    /// Call this from RuleAnimancerDriver when an attack starts (owner only).
-    /// This syncs the attack to remote clients.
-    /// </summary>
     public void OwnerStartAttack(string attackKey, RuleAnimancerDriver.AttackMode mode, bool isHeavy, int comboIndex)
     {
         if (!IsOwner) return;
-
         nvAttackState.Value = new NetworkedAttackState
         {
             attackKey = new FixedString64Bytes(attackKey),
@@ -315,20 +356,19 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
             isHeavy = isHeavy,
             comboIndex = comboIndex
         };
-        nvAttackSeq.Value++; // Trigger edge for remotes
+        nvAttackSeq.Value++;
     }
 }
 
 /// <summary>
 /// Networked representation of an attack state.
-/// Must be a struct implementing INetworkSerializable.
 /// </summary>
 public struct NetworkedAttackState : INetworkSerializable
 {
-    public FixedString64Bytes attackKey;  // e.g., "Sword_Attack1"
-    public byte mode;                      // 0=None, 1=Single, 2=Combo
-    public bool isHeavy;                   // Light vs heavy combo
-    public int comboIndex;                 // Which step in the combo sequence
+    public FixedString64Bytes attackKey;
+    public byte mode;
+    public bool isHeavy;
+    public int comboIndex;
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {

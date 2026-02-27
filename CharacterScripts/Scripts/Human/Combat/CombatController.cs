@@ -493,4 +493,16 @@ public class CombatController : NetworkBehaviour
                State == CombatState.BowDrawing ||
                State == CombatState.Blocking;
     }
+    public void SetRemoteCombatState(bool dodging, bool blocking, bool bowDrawing, bool bowAiming, bool fistCombatMode)
+    {
+        if (IsOwner) return;
+
+        if (dodging) State = CombatState.Dodging;
+        else if (blocking) State = CombatState.Blocking;
+        else if (bowDrawing) State = CombatState.BowDrawing;
+        else if (bowAiming) State = CombatState.BowAiming;
+        else State = CombatState.None;
+
+        IsFistCombatMode = fistCombatMode;
+    }
 }

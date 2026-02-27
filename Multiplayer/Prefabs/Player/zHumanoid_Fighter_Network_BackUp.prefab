@@ -28,7 +28,7 @@ GameObject:
   - component: {fileID: -8642587809906318913}
   - component: {fileID: 5099549701840047104}
   m_Layer: 9
-  m_Name: Humanoid_Fighter_Network_BackUp
+  m_Name: zHumanoid_Fighter_Network_BackUp
   m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

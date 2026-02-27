@@ -275,6 +275,7 @@ MonoBehaviour:
   actionFade: 0.08
   attackFade: 0.05
   cancelFade: 0.06
+  activeHitbox: {fileID: 0}
   actionLayerMask: {fileID: 0}
   attackLayerMask: {fileID: 0}
   layerFadeOutDuration: 0.15
@@ -633,6 +634,8 @@ MonoBehaviour:
   vitalDefinitions:
   - {fileID: 11400000, guid: 0892d54e46a64254cb46d9d23dbe5f88, type: 2}
   tpsController: {fileID: 2613098171129311318}
+  debugHealth: 0
+  debugStamina: 0
 --- !u!114 &-5298135234070216236
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -715,6 +718,61 @@ MonoBehaviour:
   combatController: {fileID: -8912580098338169080}
   weaponManager: {fileID: -5298135234070216236}
   activeHitbox: {fileID: 0}
+--- !u!1 &740641328536550383
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2437666161100297152}
+  - component: {fileID: 5821372597869779170}
+  m_Layer: 6
+  m_Name: HitBox
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2437666161100297152
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 740641328536550383}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.944, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 821889282265127017}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!136 &5821372597869779170
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 740641328536550383}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1008603233948878082
 GameObject:
   m_ObjectHideFlags: 0
@@ -2358,6 +2416,9 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4506612880689994, guid: 2267c9e4b1b2f404d8fff4eb9047209f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2437666161100297152}
     - targetCorrespondingSourceObject: {fileID: 4169912364413648, guid: 2267c9e4b1b2f404d8fff4eb9047209f, type: 3}
       insertIndex: 0
       addedObject: {fileID: 7269525579238291721}

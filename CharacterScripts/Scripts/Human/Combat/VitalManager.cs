@@ -21,6 +21,10 @@ public class VitalManager : NetworkBehaviour
     [Header("Dependencies")]
     [SerializeField] private ThirdPersonController tpsController; // for grounded check
 
+    [Header("Debug (read only)")]
+    [SerializeField] private float debugHealth;
+    [SerializeField] private float debugStamina;
+
     // Runtime vitals (server + client)
     private Dictionary<string, Vital> _vitals = new Dictionary<string, Vital>();
     private List<Vital> _vitalsList = new List<Vital>(); // for iteration
@@ -42,7 +46,14 @@ public class VitalManager : NetworkBehaviour
     {
         _syncedValues = new NetworkList<float>();
     }
+    private void LateUpdate()
+    {
+        var health = GetVital("health");
+        if (health != null) debugHealth = health.Current;
 
+        var stamina = GetVital("stamina");
+        if (stamina != null) debugStamina = stamina.Current;
+    }
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
