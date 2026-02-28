@@ -105,6 +105,8 @@ public class BearAI : NetworkBehaviour
         if (agent == null) agent = GetComponent<NavMeshAgent>();
         if (animator == null) animator = GetComponentInChildren<Animator>();
         if (vitalManager == null) vitalManager = GetComponent<VitalManager>();
+        if (biteHitbox != null)
+            biteHitbox.Initialize(GetComponent<NetworkObject>(), null);
 
         // Cache hashes
         speedHash = Animator.StringToHash("Speed");

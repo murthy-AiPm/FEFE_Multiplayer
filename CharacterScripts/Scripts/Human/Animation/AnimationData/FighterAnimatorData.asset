@@ -86,7 +86,8 @@ MonoBehaviour:
     transition:
       _FadeDuration: 0
       _Events:
-        _NormalizedTimes: []
+        _NormalizedTimes:
+        - 0.5
         _Callbacks: []
         _Names: []
       _Clip: {fileID: 7400002, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
@@ -180,7 +181,7 @@ MonoBehaviour:
         - 0.7
         _Callbacks: []
         _Names: []
-      _Clip: {fileID: 7400000, guid: a9e228972999b0d46a21e30edf97d812, type: 3}
+      _Clip: {fileID: -4304836385353429653, guid: 4ce94d2e69631fa4c9e14a7f70ac5a2e, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 1
@@ -192,7 +193,7 @@ MonoBehaviour:
         - 0.7
         _Callbacks: []
         _Names: []
-      _Clip: {fileID: 7400004, guid: a9e228972999b0d46a21e30edf97d812, type: 3}
+      _Clip: {fileID: 4189676145174806922, guid: 0f13517a0d923fb488368d8e909d4ef3, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 1
@@ -204,7 +205,7 @@ MonoBehaviour:
         - 0.7
         _Callbacks: []
         _Names: []
-      _Clip: {fileID: 7400004, guid: a9e228972999b0d46a21e30edf97d812, type: 3}
+      _Clip: {fileID: -7524964340392654364, guid: c9b785ca3ebfffa4a940c0f9b927b484, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 1
