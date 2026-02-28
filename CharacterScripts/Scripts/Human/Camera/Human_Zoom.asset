@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   VerticalFOV: 45
   TopRigHeight: 4
-  TopRigRadius: 1
+  TopRigRadius: 2
   MiddleRigHeight: 1.5
-  MiddleRigRadius: 5
+  MiddleRigRadius: 8
   BottomRigHeight: -2
-  BotttomRigRadius: 1.5
+  BotttomRigRadius: 2

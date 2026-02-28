@@ -181,14 +181,18 @@ public class MountableEntity : NetworkBehaviour
         // (0 means unmounted, so host clientId 0 would not trigger change)
         Debug.Log($"[MountableEntity] Setting riderId.Value from {riderId.Value} to {requestingClientId + 1}");
         riderId.Value = requestingClientId + 1;
-        Debug.Log($"[MountableEntity] riderId.Value is now: {riderId.Value}, IsMounted: {IsMounted}");
+       // Debug.Log($"[MountableEntity] riderId.Value is now: {riderId.Value}, IsMounted: {IsMounted}");
 
         currentRider = riderObject;
 
         // Transfer ownership of mount to rider
-        Debug.Log($"[MountableEntity] Transferring ownership to client {requestingClientId}");
+       // Debug.Log($"[MountableEntity] Transferring ownership to client {requestingClientId}");
         NetworkObject.ChangeOwnership(requestingClientId);
-        Debug.Log($"[MountableEntity] Ownership transferred. NetworkObject.OwnerClientId: {NetworkObject.OwnerClientId}");
+        // Sync current yaw to new owner so they don't snap to stale rotation
+        float currentYaw = transform.eulerAngles.y;
+        SyncYawClientRpc(currentYaw);
+
+       // Debug.Log($"[MountableEntity] Ownership transferred. NetworkObject.OwnerClientId: {NetworkObject.OwnerClientId}");
 
         // IMPORTANT: Parenting must be network-driven (server sets it) so EVERY client sees the rider attached.
         // Do NOT rely on local Transform.SetParent on the owner only.
@@ -209,7 +213,7 @@ public class MountableEntity : NetworkBehaviour
         // Notify rider to complete mount on their end
         mountController.CompleteMountClientRpc(NetworkObjectId);
 
-        Debug.Log($"[MountableEntity] Client {requestingClientId} mounted successfully");
+   //     Debug.Log($"[MountableEntity] Client {requestingClientId} mounted successfully");
     }
 
     /// <summary>
@@ -219,7 +223,7 @@ public class MountableEntity : NetworkBehaviour
     {
         if (localIsMounted)
         {
-            Debug.LogWarning("[MountableEntity] Already mounted locally");
+          //  Debug.LogWarning("[MountableEntity] Already mounted locally");
             return;
         }
 
@@ -227,7 +231,7 @@ public class MountableEntity : NetworkBehaviour
         localRiderId = fakeClientId;
         currentRider = riderObject;
 
-        Debug.Log($"[MountableEntity] Local mount complete");
+      //  Debug.Log($"[MountableEntity] Local mount complete");
     }
 
     /// <summary>
@@ -275,7 +279,13 @@ public class MountableEntity : NetworkBehaviour
         }
 
         currentRider = null;
-
+        // Sync horse yaw before returning ownership
+        var alignment = GetComponent<DragonGroundAlignment>();
+        if (alignment != null)
+        {
+            float currentYaw = transform.eulerAngles.y;
+            alignment.SetYawImmediate(currentYaw);
+        }
         // Return ownership to server (or keep as-is for AI control)
         // You can change this logic if you want mounts to be persistent
         NetworkObject.ChangeOwnership(NetworkManager.ServerClientId);
@@ -364,5 +374,13 @@ public class MountableEntity : NetworkBehaviour
 
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, interactionRadius);
+    }
+
+    [ClientRpc]
+    private void SyncYawClientRpc(float yaw)
+    {
+        var alignment = GetComponent<DragonGroundAlignment>();
+        if (alignment != null)
+            alignment.SetYawImmediate(yaw);
     }
 }

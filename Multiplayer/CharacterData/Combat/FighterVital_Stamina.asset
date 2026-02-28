@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27f1d0f5e3b792d49825a5bef54d5317, type: 3}
+  m_Name: FighterVital_Stamina
+  m_EditorClassIdentifier: Assembly-CSharp::VitalDefinition
+  vitalName: Stamina
+  vitalID: stamina
+  maxValue: 100
+  startValue: 100
+  regenEnabled: 1
+  regenRate: 10
+  regenDelay: 1
+  regenOnlyWhenGrounded: 1
+  clampAtZero: 1
+  killOnDepleted: 0

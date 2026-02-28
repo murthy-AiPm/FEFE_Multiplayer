@@ -178,6 +178,7 @@ public class ThirdPersonController : MonoBehaviour
             isgrounded = false;
 
         }
+
     }
 
     protected virtual void Walk()

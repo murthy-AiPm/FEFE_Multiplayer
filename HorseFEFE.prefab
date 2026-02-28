@@ -376,7 +376,7 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 0
-  m_IsKinematic: 0
+  m_IsKinematic: 1
   m_Interpolate: 0
   m_Constraints: 112
   m_CollisionDetection: 0
@@ -35185,7 +35185,7 @@ ParentConstraint:
   m_TranslationAtRest: {x: 0, y: 1.8230007, z: 1.6609997}
   m_RotationAtRest: {x: 0, y: 0, z: 0}
   m_TranslationOffsets:
-  - {x: -0.1339283, y: 0.13388824, z: 0}
+  - {x: -0.1339283, y: 0.13389015, z: 0}
   m_RotationOffsets:
   - {x: -47.28265, y: -89.99991, z: 179.99976}
   m_AffectTranslationX: 1
@@ -35537,7 +35537,7 @@ ParentConstraint:
   m_TranslationAtRest: {x: 0, y: 1.8207344, z: 1.4717761}
   m_RotationAtRest: {x: 0.00018441501, y: -89.99994, z: -132.71738}
   m_TranslationOffsets:
-  - {x: -0.0038986206, y: -0.0035991669, z: 0}
+  - {x: -0.0038986206, y: -0.0035972595, z: 0}
   m_RotationOffsets:
   - {x: 0, y: 0, z: 0}
   m_AffectTranslationX: 1

@@ -10,6 +10,9 @@ using System.Collections;
 /// </summary>
 public class MountController : NetworkBehaviour
 {
+    [Header("Hit Detection")]
+    [SerializeField] private CapsuleCollider hitCollider;
+
     [Header("Animation Keys (configure in Inspector)")]
     [Tooltip("Animation key for mounting transition (e.g., 'Mount/Start')")]
     [SerializeField] private string mountAnimationKey = "Mount/Start";
@@ -161,6 +164,10 @@ public class MountController : NetworkBehaviour
     {
         if (mount == null || mount.IsMounted) return;
 
+        // Disable hit collider immediately
+       //gzf var hitCollider = GetComponentInChildren<CapsuleCollider>();
+        if (hitCollider != null) hitCollider.enabled = false;
+
         // Update local state
         isTransitioning = true;
         currentMount = mount;
@@ -289,11 +296,14 @@ public class MountController : NetworkBehaviour
                 transform.SetPositionAndRotation(currentMount.SaddlePoint.position, currentMount.SaddlePoint.rotation);
 
             // Disable humanoid movement (owner only)
+
+
             if (thirdPersonController != null)
                 thirdPersonController.enabled = false;
 
             if (characterController != null)
                 characterController.enabled = false;
+
         }
 
         Debug.Log($"[MountController] Mount complete (IsOwner: {IsOwner})");
@@ -341,7 +351,8 @@ public class MountController : NetworkBehaviour
             // Re-enable humanoid movement
             if (thirdPersonController != null)
                 thirdPersonController.enabled = true;
-
+           // var hitCollider = GetComponentInChildren<CapsuleCollider>();
+            if (hitCollider != null) hitCollider.isTrigger = false;
             if (characterController != null)
                 characterController.enabled = true;
 

@@ -606,6 +606,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MountController
   ShowTopMostFoldoutHeaderGroup: 1
+  hitCollider: {fileID: 9014618280598763813}
   mountAnimationKey: Mount/Start
   dismountAnimationKey: Mount/Dismount
   mountAnimationDuration: 0.1
@@ -635,6 +636,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   vitalDefinitions:
   - {fileID: 11400000, guid: 0892d54e46a64254cb46d9d23dbe5f88, type: 2}
+  - {fileID: 11400000, guid: 495d4bd1698c00c46b5c031ad0a733b0, type: 2}
   tpsController: {fileID: 2613098171129311318}
   debugHealth: 0
   debugStamina: 0
@@ -1382,7 +1384,7 @@ CapsuleCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
