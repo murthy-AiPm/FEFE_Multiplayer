@@ -293,7 +293,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8207628386974481640, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 63.599228
+      value: 67.42
       objectReference: {fileID: 0}
     - target: {fileID: 8207628386974481640, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: m_LocalPosition.y
@@ -2504,6 +2504,28 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1544404121 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5767345220959092614, guid: a830dbc98ef96634dbc863a7309f8a09, type: 3}
+  m_PrefabInstance: {fileID: 4501561764739345504}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1994847600376031513}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+--- !u!114 &1544404126 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6124247818986976737, guid: a830dbc98ef96634dbc863a7309f8a09, type: 3}
+  m_PrefabInstance: {fileID: 4501561764739345504}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1994847600376031513}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd8d92b02f30b3346875d23f84b4a130, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VitalManager
 --- !u!1 &1546602660
 GameObject:
   m_ObjectHideFlags: 0
@@ -3515,6 +3537,35 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!1 &1994847600376031513 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 619644485852159292, guid: a830dbc98ef96634dbc863a7309f8a09, type: 3}
+  m_PrefabInstance: {fileID: 4501561764739345504}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1994847600383449751
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1994847600376031513}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c57dba152171de448f2fbadec8272e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorldHealthBar
+  vitalManager: {fileID: 1544404126}
+  networkObject: {fileID: 1544404121}
+  heightOffset: 2.5
+  barWidth: 1.2
+  barHeight: 0.12
+  healthColor: {r: 0.8, g: 0.15, b: 0.15, a: 1}
+  bgColor: {r: 0.15, g: 0.15, b: 0.15, a: 0.85}
+  borderColor: {r: 0, g: 0, b: 0, a: 0.9}
+  visibleDistance: 20
+  hideWhenFull: 0
+  showAfterDamageTime: 5
+  fillSpeed: 5
 --- !u!1 &2114283753834967212
 GameObject:
   m_ObjectHideFlags: 0
@@ -4089,7 +4140,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 619644485852159292, guid: a830dbc98ef96634dbc863a7309f8a09, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1994847600383449751}
   m_SourcePrefab: {fileID: 100100000, guid: a830dbc98ef96634dbc863a7309f8a09, type: 3}
 --- !u!224 &4519058515441037774
 RectTransform:

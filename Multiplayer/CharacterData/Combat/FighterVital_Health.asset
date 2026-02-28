@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27f1d0f5e3b792d49825a5bef54d5317, type: 3}
   m_Name: FighterVital_Health
   m_EditorClassIdentifier: Assembly-CSharp::VitalDefinition
-  vitalName: Health
+  vitalName: health
   vitalID: health
   maxValue: 100
   startValue: 100
