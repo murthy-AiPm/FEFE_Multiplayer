@@ -128,8 +128,8 @@ public class HumanoidController : ThirdPersonController
             speed = combatSpeed;
             jumpHeight = 0;
         }
-        else if (!playerController.inputController.isCombatMode)
-            jumpHeight = 2;
+        //else if (!playerController.inputController.isCombatMode)
+        //    jumpHeight = 2;
 
         else if (playerController.inputController.isCrouch)
             speed = crouchSpeed;

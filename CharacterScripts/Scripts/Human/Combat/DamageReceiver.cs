@@ -153,21 +153,28 @@ public class DamageReceiver : NetworkBehaviour
         }
 
         // 5. Notify all clients of the hit for effects
-        NotifyHitClientRpc(finalDamage, hitPoint, wasBlocking);
+        NotifyHitClientRpc(finalDamage, hitPoint, wasBlocking, attackerObj.transform.position);
     }
 
     [ClientRpc]
-    private void NotifyHitClientRpc(float damage, Vector3 hitPoint, bool wasBlocked)
-    {
-        // Non-owner clients see the hit effect
-        if (IsOwner) return; // owner already played local feedback
 
+    private void NotifyHitClientRpc(float damage, Vector3 hitPoint, bool wasBlocked, Vector3 attackerPosition)
+    {
         _hitStunTimer = hitStunDuration;
 
         if (wasBlocked)
             OnDamageBlocked?.Invoke(damage, hitPoint);
         else
+        {
             OnDamageReceived?.Invoke(damage, hitPoint);
+
+            // Play hit reaction animation on all clients (owner + remote)
+            var driver = GetComponentInChildren<RuleAnimancerDriver>();
+            if (driver != null)
+                driver.PlayHitReaction(attackerPosition);
+        }
+
+        // Remove the IsOwner early return — owner should also play the reaction
     }
 
     private void HandleDeath()

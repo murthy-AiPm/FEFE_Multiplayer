@@ -26,6 +26,14 @@ public class RuleAnimancerDriver : MonoBehaviour
     [Header("Hitbox Integration")]
     [SerializeField] private HitboxController activeHitbox;
 
+    [Header("Hit Reaction")]
+    [Tooltip("Key in AnimationSet for the hit flinch clip. Must have useRootMotion enabled.")]
+    [SerializeField] private string hitReactionKey = "Hit/Flinch";
+    private bool _isPlayingHitReaction = false;
+
+    [Tooltip("Degrees per second to lerp toward attacker during flinch.")]
+    [SerializeField] private float hitTurnLerpSpeed = 720f;
+
     [Header("Layer Masks")]
     [Tooltip("Upper body mask for Action layer (unsheathe, interactions). " +
              "Create via Assets > Create > Avatar Mask, enable spine/arms/head only.")]
@@ -227,7 +235,10 @@ public class RuleAnimancerDriver : MonoBehaviour
         //        CancelCurrentAttack();
         //}
 
-        // 1) Attack locked → skip everything (full body, frame-critical)
+        // 1) Hit reaction playing → skip all rule evaluation (hit owns Base)
+        if (_isPlayingHitReaction)
+            return;
+        // 2) Attack locked → skip everything (full body, frame-critical)
         if (IsLayerLocked(AnimLayer.Attack))
             return;
         bool combatBusy = combatController != null &&
@@ -901,4 +912,92 @@ public class RuleAnimancerDriver : MonoBehaviour
     {
         defaultWeaponName = profileName;
     }
+    /// <summary>
+    /// Call this from your damage/health system (or a ClientRpc) when this
+    /// character takes a hit. Plays the flinch animation on the Base layer
+    /// and lerps the character to face the attacker.
+    ///
+    /// Works on both owner and remote clients — call it on whoever receives
+    /// the damage notification.
+    /// </summary>
+    public void PlayHitReaction(Vector3 attackerWorldPos)
+    {
+        if (!animationSet.TryGet(hitReactionKey, out var transition)
+            || transition == null
+            || transition.Clip == null)
+        {
+            Debug.LogWarning($"[HitReaction] Key '{hitReactionKey}' not found in AnimationSet.");
+            return;
+        }
+
+        // Stop any existing hit reaction coroutine
+        StopCoroutine(nameof(HitReactionRoutine));
+
+        StartCoroutine(HitReactionRoutine(attackerWorldPos, transition));
+    }
+
+    private System.Collections.IEnumerator HitReactionRoutine(
+        Vector3 attackerWorldPos,
+        Animancer.ClipTransition transition)
+    {
+        _isPlayingHitReaction = true;
+
+        // ── Root of the character (parent of the driver's GameObject) ──
+        Transform root = transform.parent != null ? transform.parent : transform;
+
+        // ── Direction to face (Y-plane only) ──
+        Vector3 toAttacker = attackerWorldPos - root.position;
+        toAttacker.y = 0f;
+        Quaternion targetRot = toAttacker.sqrMagnitude > 0.001f
+            ? Quaternion.LookRotation(toAttacker.normalized)
+            : root.rotation;
+
+        // ── Suppress Action layer so it doesn't bleed through the flinch ──
+        float savedActionWeight = _actionLayer.Weight;
+        bool actionWasLocked = IsLayerLocked(AnimLayer.Action);
+        _actionLayer.StartFade(0f, 0.05f);
+
+        // ── Force-unlock Base so the hit can override any ongoing Base lock ──
+        _isLocked[AnimLayer.Base] = false;
+        _lockedState[AnimLayer.Base] = null;
+
+        // ── Enable root motion for this clip ──
+        bool wantRoot = allowRootMotion && animationSet.IsRootMotion(hitReactionKey);
+        _rootMotionActive = wantRoot;
+        if (_animator != null)
+            _animator.applyRootMotion = wantRoot;
+
+        // ── Play flinch on Base layer ──
+        var state = _baseLayer.Play(transition, baseFade);
+        state.Time = 0f;
+
+        float clipDuration = transition.Clip.length;
+
+        // ── Lerp toward attacker during first half of clip ──
+        float turnDuration = clipDuration * 0.5f;
+        float elapsed = 0f;
+
+        while (elapsed < turnDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / turnDuration);
+            // Smooth step for a bit of easing
+            t = t * t * (3f - 2f * t);
+            root.rotation = Quaternion.Lerp(root.rotation, targetRot, Time.deltaTime * hitTurnLerpSpeed * (1f - t + 0.1f));
+            yield return null;
+        }
+
+        // ── Wait for the rest of the clip ──
+        float remaining = clipDuration - turnDuration;
+        yield return new WaitForSeconds(remaining);
+
+        // ── Cleanup ──
+        _isPlayingHitReaction = false;
+        DisableRootMotion();
+
+        // Restore Action layer only if it wasn't locked before (sheathing etc.)
+        if (!actionWasLocked && savedActionWeight > 0f)
+            _actionLayer.StartFade(savedActionWeight, 0.15f);
+    }
+
 }
