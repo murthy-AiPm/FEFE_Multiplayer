@@ -505,4 +505,14 @@ public class CombatController : NetworkBehaviour
 
         IsFistCombatMode = fistCombatMode;
     }
+    public void ResetState()
+    {
+        SetState(CombatState.None);
+        IsInvincible = false;
+        IsFistCombatMode = false;
+        _dodgeTimer = 0f;
+        _dodgeCooldownTimer = 0f;
+        _iFrameTimer = 0f;
+        _bowDrawTimer = 0f;
+    }
 }

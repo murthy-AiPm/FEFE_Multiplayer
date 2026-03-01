@@ -31,6 +31,11 @@ public class RuleAnimancerDriver : MonoBehaviour
     [SerializeField] private string hitReactionKey = "Hit/Flinch";
     private bool _isPlayingHitReaction = false;
 
+    [Header("Death & Respawn")]
+    [Tooltip("Key in AnimationSet for the death clip. Root motion OFF recommended.")]
+    [SerializeField] private string deathAnimationKey = "Death/Fall";
+    private bool _isDead = false;
+
     [Tooltip("Degrees per second to lerp toward attacker during flinch.")]
     [SerializeField] private float hitTurnLerpSpeed = 720f;
 
@@ -234,7 +239,8 @@ public class RuleAnimancerDriver : MonoBehaviour
         //    if (!primaryHeld || (_attack.comboIsHeavy && !shiftHeld))
         //        CancelCurrentAttack();
         //}
-
+        //      // 0) Dead — skip all animation logic
+        if (_isDead) return;
         // 1) Hit reaction playing → skip all rule evaluation (hit owns Base)
         if (_isPlayingHitReaction)
             return;
@@ -922,6 +928,7 @@ public class RuleAnimancerDriver : MonoBehaviour
     /// </summary>
     public void PlayHitReaction(Vector3 attackerWorldPos)
     {
+        if (_isDead) return;
         if (!animationSet.TryGet(hitReactionKey, out var transition)
             || transition == null
             || transition.Clip == null)
@@ -998,6 +1005,84 @@ public class RuleAnimancerDriver : MonoBehaviour
         // Restore Action layer only if it wasn't locked before (sheathing etc.)
         if (!actionWasLocked && savedActionWeight > 0f)
             _actionLayer.StartFade(savedActionWeight, 0.15f);
+    }
+    /// <summary>
+    /// Called via ClientRpc on all clients when this character dies.
+    /// Kills all animation layers, plays death clip, freezes on last frame.
+    /// </summary>
+    public void PlayDeath()
+    {
+        if (_isDead) return;
+        _isDead = true;
+
+        // Stop any hit reaction coroutine
+        StopCoroutine(nameof(HitReactionRoutine));
+        _isPlayingHitReaction = false;
+
+        // Kill root motion immediately — no sliding corpses
+        DisableRootMotion();
+
+        // Force-unlock all layers
+        _isLocked[AnimLayer.Base] = false;
+        _isLocked[AnimLayer.Action] = false;
+        _isLocked[AnimLayer.Attack] = false;
+        _lockedState[AnimLayer.Base] = null;
+        _lockedState[AnimLayer.Action] = null;
+        _lockedState[AnimLayer.Attack] = null;
+        _attack.ResetAll();
+
+        // Fade out Action and Attack layers immediately
+        _actionLayer.StartFade(0f, 0.05f);
+        _attackLayer.StartFade(0f, 0.05f);
+
+        // Play death on Base
+        if (!animationSet.TryGet(deathAnimationKey, out var transition)
+            || transition == null || transition.Clip == null)
+        {
+            Debug.LogWarning($"[Death] Key '{deathAnimationKey}' not found in AnimationSet.");
+            return;
+        }
+
+        var state = _baseLayer.Play(transition, baseFade);
+        state.Time = 0f;
+
+        // Freeze on last frame when done
+        state.Events.OnEnd = () =>
+        {
+            state.Time = transition.Clip.length;
+            state.Speed = 0f;
+        };
+    }
+
+    /// <summary>
+    /// Called via ClientRpc on all clients when this character respawns.
+    /// Clears all death state and lets the driver resume normal rule evaluation.
+    /// </summary>
+    public void PlayRespawn()
+    {
+        _isDead = false;
+        _isPlayingHitReaction = false;
+
+        // Clear all locks
+        _isLocked[AnimLayer.Base] = false;
+        _isLocked[AnimLayer.Action] = false;
+        _isLocked[AnimLayer.Attack] = false;
+        _lockedState[AnimLayer.Base] = null;
+        _lockedState[AnimLayer.Action] = null;
+        _lockedState[AnimLayer.Attack] = null;
+        _attack.ResetAll();
+
+        DisableRootMotion();
+
+        // Restore layer weights so rule evaluation can take over again
+        _actionLayer.StartFade(0f, 0f); // keep at 0, rules will bring it back as needed
+        _attackLayer.StartFade(0f, 0f);
+
+        // Unfreeze the base layer state if it was frozen by death
+        if (_baseLayer.CurrentState != null)
+            _baseLayer.CurrentState.Speed = 1f;
+
+        // LateUpdate will now resume and pick up the correct idle/locomotion rule
     }
 
 }

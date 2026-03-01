@@ -546,3 +546,15 @@ MonoBehaviour:
       _Speed: 0.8
       _NormalizedStartTime: NaN
     useRootMotion: 1
+  - key: Death
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes:
+        - 0.8
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 1827226128182048838, guid: 4f23420c5c05337469830edb32e521db, type: 3}
+      _Speed: 0.8
+      _NormalizedStartTime: NaN
+    useRootMotion: 1

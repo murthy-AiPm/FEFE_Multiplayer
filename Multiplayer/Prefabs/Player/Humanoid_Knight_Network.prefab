@@ -390,7 +390,7 @@ Transform:
   m_GameObject: {fileID: 134043905374528843}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 59.76, y: 3.02, z: 33.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -487,6 +487,7 @@ MonoBehaviour:
   cancelFade: 0.06
   activeHitbox: {fileID: 0}
   hitReactionKey: Hit
+  deathAnimationKey: Death
   hitTurnLerpSpeed: 720
   actionLayerMask: {fileID: 0}
   attackLayerMask: {fileID: 0}
@@ -918,6 +919,9 @@ MonoBehaviour:
   blockDamageReduction: 0.8
   blockAngle: 120
   hitStunDuration: 0.2
+  spawnPoint: {fileID: 1462201416070700662}
+  respawnDelay: 3
+  animancerDriver: {fileID: 1633156696383947771}
 --- !u!114 &-1694095259213740506
 MonoBehaviour:
   m_ObjectHideFlags: 0

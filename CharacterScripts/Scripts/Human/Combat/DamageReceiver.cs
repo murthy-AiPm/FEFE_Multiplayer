@@ -23,6 +23,13 @@ public class DamageReceiver : NetworkBehaviour
     [Header("Hit Feedback")]
     [SerializeField] private float hitStunDuration = 0.2f; // brief speed reduction on hit
 
+    [Header("Respawn")]
+    [SerializeField] private Transform spawnPoint; // assign in inspector or find via SpawnManager
+    [SerializeField] private float respawnDelay = 3f;
+
+    [Header("Animation")]
+    [SerializeField] private RuleAnimancerDriver animancerDriver;
+
     // Events
     public System.Action<float, Vector3> OnDamageReceived;     // (damage, hitPoint)
     public System.Action<float, Vector3> OnDamageBlocked;      // (blockedDmg, hitPoint)
@@ -37,6 +44,7 @@ public class DamageReceiver : NetworkBehaviour
         if (vitalManager == null) vitalManager = GetComponentInParent<VitalManager>();
         if (combatController == null) combatController = GetComponentInParent<CombatController>();
         if (weaponManager == null) weaponManager = GetComponentInParent<WeaponManager>();
+        if (animancerDriver == null) animancerDriver = GetComponentInChildren<RuleAnimancerDriver>();
     }
 
     public override void OnNetworkSpawn()
@@ -176,18 +184,82 @@ public class DamageReceiver : NetworkBehaviour
 
         // Remove the IsOwner early return — owner should also play the reaction
     }
+    private System.Collections.IEnumerator RespawnAfterDelay()
+    {
+        yield return new WaitForSeconds(respawnDelay);
 
+        // Reset vitals on server
+        if (vitalManager != null)
+            vitalManager.ResetAllVitals();
+
+        // Get spawn position — use assigned spawnPoint or fall back to current position
+        Vector3 spawnPos = spawnPoint != null
+            ? spawnPoint.position
+            : transform.position;
+
+        Quaternion spawnRot = spawnPoint != null
+            ? spawnPoint.rotation
+            : transform.rotation;
+
+        // Teleport and notify all clients
+        NotifyRespawnClientRpc(spawnPos, spawnRot);
+    }
+
+    [ClientRpc]
+    private void NotifyRespawnClientRpc(Vector3 spawnPos, Quaternion spawnRot)
+    {
+        // Teleport
+        transform.position = spawnPos;
+        transform.rotation = spawnRot;
+
+        // Re-enable input and movement (owner only — matches ClientAuthoritativePlayerDriver logic)
+        if (IsOwner)
+        {
+            var input = GetComponentInChildren<InputController>();
+            if (input != null) input.enabled = true;
+
+            var tps = GetComponentInChildren<ThirdPersonController>();
+            if (tps != null) tps.enabled = true;
+
+            var combat = GetComponentInChildren<CombatController>();
+            if (combat != null)
+            {
+                combat.enabled = true;
+                combat.ResetState(); // ← this is what was missing
+            }
+        }
+
+        // Resume animation on all clients
+        if (animancerDriver != null)
+            animancerDriver.PlayRespawn();
+    }
     private void HandleDeath()
     {
         OnDeath?.Invoke();
 
-        // Disable combat
-        if (combatController != null)
-            combatController.enabled = false;
+        // Disable combat and input — server tells all clients via Rpc
+        NotifyDeathClientRpc();
 
-        // Play death animation via Animator
-        var animator = GetComponentInChildren<Animator>();
-        if (animator != null)
-            animator.SetTrigger("Death");
+        // Server schedules respawn
+        if (IsServer)
+            StartCoroutine(RespawnAfterDelay());
+    }
+
+    [ClientRpc]
+    private void NotifyDeathClientRpc()
+    {
+        // Disable input and movement so the corpse can't walk
+        var input = GetComponentInChildren<InputController>();
+        if (input != null) input.enabled = false;
+
+        var tps = GetComponentInChildren<ThirdPersonController>();
+        if (tps != null) tps.enabled = false;
+
+        var combat = GetComponentInChildren<CombatController>();
+        if (combat != null) combat.enabled = false;
+
+        // Play death animation on all clients
+        if (animancerDriver != null)
+            animancerDriver.PlayDeath();
     }
 }
