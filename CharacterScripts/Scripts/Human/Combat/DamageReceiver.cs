@@ -188,31 +188,28 @@ public class DamageReceiver : NetworkBehaviour
     {
         yield return new WaitForSeconds(respawnDelay);
 
-        // Reset vitals on server
         if (vitalManager != null)
             vitalManager.ResetAllVitals();
 
-        // Get spawn position — use assigned spawnPoint or fall back to current position
-        Vector3 spawnPos = spawnPoint != null
-            ? spawnPoint.position
-            : transform.position;
+        // Use the SpawnPoint system instead of the serialized Transform
+        Vector3 spawnPos = SpawnPoint.GetRandomSpawnPos();
+        Quaternion spawnRot = Quaternion.identity;
 
-        Quaternion spawnRot = spawnPoint != null
-            ? spawnPoint.rotation
-            : transform.rotation;
-
-        // Teleport and notify all clients
         NotifyRespawnClientRpc(spawnPos, spawnRot);
     }
 
     [ClientRpc]
     private void NotifyRespawnClientRpc(Vector3 spawnPos, Quaternion spawnRot)
     {
-        // Teleport
+        // Disable CharacterController before teleporting or it fights the position change
+        var cc = GetComponentInChildren<CharacterController>();
+        if (cc != null) cc.enabled = false;
+
         transform.position = spawnPos;
         transform.rotation = spawnRot;
 
-        // Re-enable input and movement (owner only — matches ClientAuthoritativePlayerDriver logic)
+        if (cc != null) cc.enabled = IsOwner; // only owner needs it enabled
+
         if (IsOwner)
         {
             var input = GetComponentInChildren<InputController>();
@@ -225,11 +222,10 @@ public class DamageReceiver : NetworkBehaviour
             if (combat != null)
             {
                 combat.enabled = true;
-                combat.ResetState(); // ← this is what was missing
+                combat.ResetState();
             }
         }
 
-        // Resume animation on all clients
         if (animancerDriver != null)
             animancerDriver.PlayRespawn();
     }
