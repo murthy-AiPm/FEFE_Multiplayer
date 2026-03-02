@@ -82,6 +82,7 @@ GameObject:
   - component: {fileID: 1951658524602734579}
   - component: {fileID: 4619646487853674270}
   - component: {fileID: -5162157580005954776}
+  - component: {fileID: 8725901643877715188}
   m_Layer: 0
   m_Name: Bear_PBR
   m_TagString: Untagged
@@ -307,6 +308,9 @@ MonoBehaviour:
   blockDamageReduction: 0.8
   blockAngle: 120
   hitStunDuration: 0.2
+  spawnPoint: {fileID: 0}
+  respawnDelay: 3
+  animancerDriver: {fileID: 0}
 --- !u!114 &4619646487853674270
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -331,8 +335,8 @@ MonoBehaviour:
   idleMaxTime: 5
   arrivalThreshold: 1.5
   walkSpeed: 2
-  runSpeed: 6
-  rotationSpeed: 5
+  runSpeed: 4
+  rotationSpeed: 1
   attackDuration: 1.2
   attackCooldown: 1.5
   attackDamage: 15
@@ -366,6 +370,30 @@ CapsuleCollider:
   m_Height: 2.5
   m_Direction: 2
   m_Center: {x: 0, y: 1.04, z: 0.26}
+--- !u!114 &8725901643877715188
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 619644485852159292}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c57dba152171de448f2fbadec8272e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorldHealthBar
+  vitalManager: {fileID: 6124247818986976737}
+  networkObject: {fileID: 5767345220959092614}
+  heightOffset: 2.5
+  barWidth: 1.2
+  barHeight: 0.12
+  healthColor: {r: 0.8, g: 0.15, b: 0.15, a: 1}
+  bgColor: {r: 0.15, g: 0.15, b: 0.15, a: 0.85}
+  borderColor: {r: 0, g: 0, b: 0, a: 0.9}
+  visibleDistance: 20
+  hideWhenFull: 0
+  showAfterDamageTime: 5
+  fillSpeed: 5
 --- !u!1 &902340182948239154
 GameObject:
   m_ObjectHideFlags: 0
