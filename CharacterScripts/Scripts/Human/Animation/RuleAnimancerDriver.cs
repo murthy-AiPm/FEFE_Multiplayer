@@ -847,6 +847,7 @@ public class RuleAnimancerDriver : MonoBehaviour
                 BoolParam.IsTransitioning => ctx.IsTransitioning,
                 BoolParam.Crouching => ctx.Crouching,
                 BoolParam.Dodging => ctx.Dodging,
+                BoolParam.IsDodgeStep => ctx.IsDodgeStep,
                 BoolParam.Blocking => ctx.Blocking,
                 BoolParam.BowDrawing => ctx.BowDrawing,
                 BoolParam.BowAiming => ctx.BowAiming,

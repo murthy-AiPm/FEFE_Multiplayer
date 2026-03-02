@@ -30,6 +30,7 @@ public enum BoolParam
     IsTransitioning,
     Crouching,
     Dodging,
+    IsDodgeStep,
     Blocking,
     BowDrawing,
     BowAiming,

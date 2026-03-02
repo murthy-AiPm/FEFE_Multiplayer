@@ -19,6 +19,7 @@ public struct InputSnapshot
     public bool hoverToggleDown;      // edge: toggle hover this frame
 
     // Combat
+    public bool dodgeDown; // edge: left alt pressed this frame
     public bool primaryHeld;
     public bool hoistWeaponsDown;     // edge
     public bool slot1Down;
@@ -129,6 +130,7 @@ public class InputController : MonoBehaviour
 
             jumpDown = Input.GetButtonDown("Jump"),
             jumpHeld = Input.GetButton("Jump"),
+            dodgeDown = Input.GetButtonDown("DodgeStep"),
 
             crouchToggleDown = Input.GetButtonDown("Crouch"),
             hoverToggleDown = Input.GetButtonDown("HoverMode"),

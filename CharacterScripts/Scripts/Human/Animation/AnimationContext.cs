@@ -21,6 +21,7 @@ public struct AnimationContext
     public bool Crouching => input != null && input.isCrouch;
 
     public bool Dodging => combatController != null && combatController.IsDodging;
+    public bool IsDodgeStep => combatController != null && combatController.IsDodgeStep;
     public bool Blocking => combatController != null && combatController.IsBlocking;
     public bool BowDrawing => combatController != null && combatController.IsBowDrawing;
     public bool BowAiming => combatController != null && combatController.IsBowAiming;

@@ -122,7 +122,7 @@ MonoBehaviour:
     animationKey: Sword/Idle
     all:
     - useBool: 1
-      boolParam: 17
+      boolParam: 18
       boolValue: 1
       useInput: 0
       input: 0
@@ -150,7 +150,7 @@ MonoBehaviour:
     animationKey: Sword/Equip
     all:
     - useBool: 1
-      boolParam: 14
+      boolParam: 15
       boolValue: 1
       useInput: 0
       input: 0
@@ -168,7 +168,7 @@ MonoBehaviour:
     animationKey: Sword/Unequip
     all:
     - useBool: 1
-      boolParam: 15
+      boolParam: 16
       boolValue: 1
       useInput: 0
       input: 0
@@ -196,7 +196,7 @@ MonoBehaviour:
     animationKey: Sword/Walk/Fwd
     all:
     - useBool: 1
-      boolParam: 17
+      boolParam: 18
       boolValue: 1
       useInput: 0
       input: 0
@@ -224,7 +224,7 @@ MonoBehaviour:
     animationKey: Sword/Strafe/Right
     all:
     - useBool: 1
-      boolParam: 17
+      boolParam: 18
       boolValue: 1
       useInput: 0
       input: 0
@@ -252,7 +252,7 @@ MonoBehaviour:
     animationKey: Sword/Strafe/Left
     all:
     - useBool: 1
-      boolParam: 17
+      boolParam: 18
       boolValue: 1
       useInput: 0
       input: 0
@@ -280,7 +280,7 @@ MonoBehaviour:
     animationKey: Sword/Strafe/Back
     all:
     - useBool: 1
-      boolParam: 17
+      boolParam: 18
       boolValue: 1
       useInput: 0
       input: 0
@@ -308,7 +308,7 @@ MonoBehaviour:
     animationKey: Sword/Run
     all:
     - useBool: 1
-      boolParam: 17
+      boolParam: 18
       boolValue: 1
       useInput: 0
       input: 0
@@ -346,7 +346,7 @@ MonoBehaviour:
     animationKey: Sword/Block/Idle
     all:
     - useBool: 1
-      boolParam: 11
+      boolParam: 18
       boolValue: 1
       useInput: 0
       input: 0

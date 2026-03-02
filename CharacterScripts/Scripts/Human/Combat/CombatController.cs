@@ -1,6 +1,7 @@
 using System;
 using Unity.Netcode;
 using UnityEngine;
+using System.Collections; 
 
 /// <summary>
 /// Lightweight combat coordinator for humanoid defenders.
@@ -46,6 +47,13 @@ public class CombatController : NetworkBehaviour
     [SerializeField] private float dodgeCooldown = 0.3f;
     [SerializeField] private float iFrameDuration = 0.25f;
 
+    [Header("Dodge Step")]
+    [SerializeField] private float dodgeStepStaminaCost = 12f;
+    [SerializeField] private float dodgeStepBoostSpeed = 4f;
+    [SerializeField] private float dodgeStepBoostDuration = 0.15f;
+
+   
+
     [Header("Block")]
     [SerializeField] private float blockStaminaDrain = 3f; // per second while holding block
 
@@ -56,6 +64,8 @@ public class CombatController : NetworkBehaviour
     public CombatState State { get; private set; } = CombatState.None;
     public bool IsInvincible { get; private set; }
     public bool IsDodging => State == CombatState.Dodging;
+    public bool IsDodgeStep { get; private set; }
+
     public bool IsBlocking => State == CombatState.Blocking;
     public bool IsBowDrawing => State == CombatState.BowDrawing;
     public bool IsBowAiming => State == CombatState.BowAiming;
@@ -64,6 +74,7 @@ public class CombatController : NetworkBehaviour
 
     // Timing
     private float _dodgeTimer;
+    private CharacterController _characterController;
     private float _dodgeCooldownTimer;
     private float _iFrameTimer;
     private float _bowDrawTimer;
@@ -93,7 +104,10 @@ public class CombatController : NetworkBehaviour
 
         base.OnNetworkDespawn();
     }
-
+    private void Awake()
+    {
+        _characterController = GetComponent<CharacterController>();
+    }
     private void Update()
     {
         if (!IsOwner || !IsSpawned) return;
@@ -180,11 +194,11 @@ public class CombatController : NetworkBehaviour
 
     private void HandleIdleInput()
     {
-        // Dodge: jump while in any combat mode (weapon or fist)
         bool inCombat = weaponManager.ActiveSlot != 0 || IsFistCombatMode;
-        if (_input.jumpDown && inCombat && _dodgeCooldownTimer <= 0f)
+
+        if (_input.dodgeDown && inCombat && !IsDodgeStep)
         {
-            TryDodge();
+            TryDodgeStep();
             return;
         }
 
@@ -242,6 +256,59 @@ public class CombatController : NetworkBehaviour
 
         SetState(CombatState.Dodging);
         OnDodgeStarted?.Invoke();
+    }
+
+    private void TryDodgeStep()
+    {
+        if (vitalManager != null && !vitalManager.TryConsumeStamina(dodgeStepStaminaCost))
+            return;
+
+        string dir = _input.movePressed
+            ? playerController.inputController.directions
+            : "S";
+
+        StartCoroutine(DodgeStepBoost(dir));
+        IsDodgeStep = true;
+    }
+
+    private IEnumerator DodgeStepBoost(string dir)
+    {
+        Transform cam = Camera.main?.transform;
+        Vector3 boostDir = Vector3.back;
+
+        if (cam != null)
+        {
+            Vector3 camForward = cam.forward;
+            Vector3 camRight = cam.right;
+            camForward.y = 0f;
+            camRight.y = 0f;
+            camForward.Normalize();
+            camRight.Normalize();
+
+            boostDir = dir switch
+            {
+                "W" => camForward,
+                "S" => -camForward,
+                "A" => -camRight,
+                "D" => camRight,
+                _ => -camForward,
+            };
+        }
+
+        float elapsed = 0f;
+        while (elapsed < dodgeStepBoostDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = 1f - (elapsed / dodgeStepBoostDuration);
+            Vector3 boost = boostDir * dodgeStepBoostSpeed * t;
+
+            if (_characterController != null && _characterController.enabled)
+                _characterController.Move(boost * Time.deltaTime);
+
+            yield return null;
+        }
+
+        IsDodgeStep = false;
     }
 
     private void UpdateDodge()
@@ -514,5 +581,7 @@ public class CombatController : NetworkBehaviour
         _dodgeCooldownTimer = 0f;
         _iFrameTimer = 0f;
         _bowDrawTimer = 0f;
+        IsDodgeStep = false;
+        StopAllCoroutines();
     }
 }
