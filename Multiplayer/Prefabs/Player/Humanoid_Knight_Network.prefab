@@ -361,7 +361,6 @@ GameObject:
   - component: {fileID: 3745241009434165893}
   - component: {fileID: 6350221479210210835}
   - component: {fileID: 2613098171129311318}
-  - component: {fileID: 9186692815070914475}
   - component: {fileID: -1905153288431114067}
   - component: {fileID: -8642587809906318913}
   - component: {fileID: 5099549701840047104}
@@ -615,24 +614,6 @@ MonoBehaviour:
   maxStamina: 50
   minStamina: 0
   humanStats: {fileID: 0}
---- !u!114 &9186692815070914475
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 134043905374528843}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 24856da573ed9fd4ba38a01b876856dc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vCam: {fileID: 0}
-  vCO: {fileID: 11400000, guid: 1ccf68c29059fba4385a72caa24473d6, type: 2}
-  vZO: {fileID: 11400000, guid: 526773907b0b53a44979fef10a078928, type: 2}
-  LookAt: {fileID: 9005423199851967869}
-  Follow: {fileID: 9005423199851967869}
-  ZoomLook: {fileID: 9005423199851967869}
 --- !u!114 &-1905153288431114067
 MonoBehaviour:
   m_ObjectHideFlags: 0
