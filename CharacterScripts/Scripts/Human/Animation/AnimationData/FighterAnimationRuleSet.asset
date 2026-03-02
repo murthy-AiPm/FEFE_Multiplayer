@@ -178,7 +178,7 @@ MonoBehaviour:
       useActionId: 0
       actionIdEquals: 0
     - useBool: 1
-      boolParam: 17
+      boolParam: 18
       boolValue: 1
       useInput: 0
       input: 0
@@ -679,7 +679,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Dodge/Front
     layer: 0
-    priority: 60
+    priority: 1000
     lockUntilEnd: 1
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -759,6 +759,96 @@ MonoBehaviour:
     all:
     - useBool: 1
       boolParam: 10
+      boolValue: 1
+      useInput: 0
+      input: 1
+      triggerMode: 1
+      useDirection: 0
+      direction: 2
+      useActionId: 0
+      actionIdEquals: 0
+  - name: DodgeStep/Front
+    layer: 0
+    priority: 60
+    lockUntilEnd: 1
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: DodgeStep/Front
+    all:
+    - useBool: 1
+      boolParam: 11
+      boolValue: 1
+      useInput: 0
+      input: 1
+      triggerMode: 1
+      useDirection: 1
+      direction: 1
+      useActionId: 0
+      actionIdEquals: 0
+  - name: DodgeStep/Back
+    layer: 0
+    priority: 60
+    lockUntilEnd: 1
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: DodgeStep/Back
+    all:
+    - useBool: 1
+      boolParam: 11
+      boolValue: 1
+      useInput: 0
+      input: 1
+      triggerMode: 1
+      useDirection: 1
+      direction: 3
+      useActionId: 0
+      actionIdEquals: 0
+  - name: DodgeStep/Right
+    layer: 0
+    priority: 60
+    lockUntilEnd: 1
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: DodgeStep/Right
+    all:
+    - useBool: 1
+      boolParam: 11
+      boolValue: 1
+      useInput: 0
+      input: 1
+      triggerMode: 1
+      useDirection: 1
+      direction: 4
+      useActionId: 0
+      actionIdEquals: 0
+  - name: DodgeStep/Left
+    layer: 0
+    priority: 60
+    lockUntilEnd: 1
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: DodgeStep/Left
+    all:
+    - useBool: 1
+      boolParam: 11
+      boolValue: 1
+      useInput: 0
+      input: 1
+      triggerMode: 1
+      useDirection: 1
+      direction: 2
+      useActionId: 0
+      actionIdEquals: 0
+  - name: DodgeStep/Default
+    layer: 0
+    priority: 59
+    lockUntilEnd: 1
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: DodgeStep/Back
+    all:
+    - useBool: 1
+      boolParam: 11
       boolValue: 1
       useInput: 0
       input: 1

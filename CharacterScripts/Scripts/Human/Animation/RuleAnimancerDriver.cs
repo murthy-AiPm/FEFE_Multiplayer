@@ -291,7 +291,7 @@ public class RuleAnimancerDriver : MonoBehaviour
         }
 
         if (best == null) return false;
-
+        
         if (!animationSet.TryGet(best.animationKey, out var transition) || transition == null || transition.Clip == null)
             return false;
 
@@ -322,7 +322,8 @@ public class RuleAnimancerDriver : MonoBehaviour
             if (_animator != null)
                 _animator.applyRootMotion = wantRoot;
         }
-
+        if (best != null && layer == AnimLayer.Base)
+    
         if (best.lockUntilEnd)
             LockLayerUntilEnd(layer, state);
 

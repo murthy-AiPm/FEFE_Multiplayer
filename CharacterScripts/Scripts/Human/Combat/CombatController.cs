@@ -201,6 +201,12 @@ public class CombatController : NetworkBehaviour
             TryDodgeStep();
             return;
         }
+        // Evade: space  ← THIS IS MISSING
+        if (_input.jumpDown && inCombat && _dodgeCooldownTimer <= 0f)
+        {
+            TryDodge();
+            return;
+        }
 
         // Fist mode: first attack while unarmed activates fist combat mode
         if (weaponManager.ActiveSlot == 0 && !IsFistCombatMode && _input.primaryDown)
@@ -234,8 +240,14 @@ public class CombatController : NetworkBehaviour
 
     private void TryDodge()
     {
+        Debug.Log($"[TryDodge] stamina check: {vitalManager != null}");
         if (vitalManager != null && !vitalManager.TryConsumeStamina(dodgeStaminaCost))
+        {
+            Debug.Log("[TryDodge] Failed stamina check");
             return;
+        }
+
+        Debug.Log("[TryDodge] Setting state to Dodging");
 
         // Direction: input direction or backward
         if (_input.movePressed && humanoidController != null && humanoidController.cam != null)
