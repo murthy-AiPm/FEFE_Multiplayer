@@ -879,6 +879,9 @@ MonoBehaviour:
   dodgeStaminaCost: 15
   dodgeCooldown: 0.3
   iFrameDuration: 0.25
+  dodgeStepStaminaCost: 0
+  dodgeStepBoostSpeed: 4
+  dodgeStepBoostDuration: 0.15
   blockStaminaDrain: 3
   fistStaminaCost: 8
 --- !u!114 &3527247635661846369
