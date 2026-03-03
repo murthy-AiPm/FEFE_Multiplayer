@@ -281,6 +281,7 @@ public class CombatController : NetworkBehaviour
 
         StartCoroutine(DodgeStepBoost(dir));
         IsDodgeStep = true;
+        IsInvincible = true;
     }
 
     private IEnumerator DodgeStepBoost(string dir)
@@ -321,6 +322,8 @@ public class CombatController : NetworkBehaviour
         }
 
         IsDodgeStep = false;
+        IsInvincible = false;
+
     }
 
     private void UpdateDodge()

@@ -9,6 +9,11 @@ using UnityEngine;
 [RequireComponent(typeof(NetworkObject))]
 public class DamageReceiver : NetworkBehaviour
 {
+    [Header("Respawn")]
+    [SerializeField] private bool isPlayer = true; // ← add this
+    [SerializeField] private Transform spawnPoint;
+    [SerializeField] private float respawnDelay = 3f;
+
     [Header("Dependencies")]
     [SerializeField] private VitalManager vitalManager;
     [SerializeField] private CombatController combatController;
@@ -23,9 +28,9 @@ public class DamageReceiver : NetworkBehaviour
     [Header("Hit Feedback")]
     [SerializeField] private float hitStunDuration = 0.2f; // brief speed reduction on hit
 
-    [Header("Respawn")]
-    [SerializeField] private Transform spawnPoint; // assign in inspector or find via SpawnManager
-    [SerializeField] private float respawnDelay = 3f;
+    //[Header("Respawn")]
+    //[SerializeField] private Transform spawnPoint; // assign in inspector or find via SpawnManager
+    //[SerializeField] private float respawnDelay = 3f;
 
     [Header("Animation")]
     [SerializeField] private RuleAnimancerDriver animancerDriver;
@@ -232,12 +237,9 @@ public class DamageReceiver : NetworkBehaviour
     private void HandleDeath()
     {
         OnDeath?.Invoke();
-
-        // Disable combat and input — server tells all clients via Rpc
         NotifyDeathClientRpc();
 
-        // Server schedules respawn
-        if (IsServer)
+        if (IsServer && isPlayer)  // ← add isPlayer check
             StartCoroutine(RespawnAfterDelay());
     }
 
