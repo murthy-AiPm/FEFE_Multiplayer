@@ -27,6 +27,13 @@ public class DragonGroundingSystem : MonoBehaviour
     [SerializeField] private Transform leftFoot;
     [SerializeField] private Transform rightFoot;
 
+    [Header("Debug (Read Only)")]
+    [SerializeField] private bool _debugIsGrounded;
+    [SerializeField] private bool _debugIsFalling;
+    [SerializeField] private bool _debugIsOnCliff;
+    [SerializeField] private bool _debugFrontPawsGrounded;
+    [SerializeField] private bool _debugIsLanding;
+
     [Header("Raycast Settings")]
     [SerializeField] private float raycastDistance = 1.5f;
     [Tooltip("Start raycast this high above paw transform (prevents hitting own collider)")]
@@ -61,7 +68,8 @@ public class DragonGroundingSystem : MonoBehaviour
     // Public read-only state
     public bool IsGrounded => _isGrounded;
     public bool IsFalling => _isFalling;
-    public bool IsOnCliff => _isOnCliff;
+    public bool IsLanding => leftHandGrounded && rightHandGrounded && !leftFootGrounded && !rightFootGrounded;
+    public bool IsOnCliff => leftFootGrounded && rightFootGrounded && !leftHandGrounded && !rightHandGrounded;
     public bool FrontPawsGrounded => leftHandGrounded && rightHandGrounded;
 
     private void Update()
@@ -97,6 +105,12 @@ public class DragonGroundingSystem : MonoBehaviour
 
         isHit = didHit;
         hit = didHit ? rh : default;
+
+        _debugIsGrounded = _isGrounded;
+        _debugIsFalling = _isFalling;
+        _debugIsOnCliff = IsOnCliff;
+        _debugIsLanding = IsLanding;
+        _debugFrontPawsGrounded = FrontPawsGrounded;
     }
 
     private void UpdateGroundedState()
@@ -125,18 +139,18 @@ public class DragonGroundingSystem : MonoBehaviour
 
     private void UpdateFallingState()
     {
-        // Falling = both front paws off ground AND currently grounded (walked off edge)
-        // Once falling, stays falling until grounded again
         if (_isGrounded)
         {
             _isFalling = false;
-            _isOnCliff = !FrontPawsGrounded;
         }
-        else if (_isOnCliff && !_isFalling)
+        else
         {
-            // Transitioned from cliff edge to actual fall
             _isFalling = true;
         }
+
+        // IsOnCliff is now a pure property — no state needed here
+        // Update debug mirror
+        _debugIsOnCliff = IsOnCliff;
     }
 
     /// <summary>

@@ -361,7 +361,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 711040484119619372}
   serializedVersion: 5
-  m_Mass: 10000
+  m_Mass: 100
   m_LinearDamping: 0
   m_AngularDamping: 0
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -379,7 +379,7 @@ Rigidbody:
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 112
-  m_CollisionDetection: 0
+  m_CollisionDetection: 2
 --- !u!114 &3713399862824024303
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -419,6 +419,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DragonGroundController
   ShowTopMostFoldoutHeaderGroup: 1
   ignoreOwnershipForTesting: 0
+  debugRespawnPoint: {fileID: 708371055730441476}
+  debugRespawnKey: 117
   groundingSystem: {fileID: 8455803096756853017}
   groundAlignment: {fileID: 8530419662592711100}
   flightController: {fileID: 0}
@@ -433,13 +435,18 @@ MonoBehaviour:
   takeoffLiftSpeed: 8
   jumpUpAnimationDuration: 0.8
   jumpAnimationDuration: 1.18
+  rootMotionOnJump: 1
+  rootMotionOnCliff: 1
+  rootMotionOnFalling: 0
+  rootMotionOnLanding: 1
   walkSpeed: 2
   runSpeed: 10
   turnSmoothTime: 0.1
   turnHeadAngle: 15
   useFakeGravity: 1
-  fakeGravity: -9.81
-  maxFallSpeed: -5
+  fakeGravity: 20
+  maxFallSpeed: 7
+  cliffFallPush: 9
 --- !u!114 &8455803096756853017
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -456,6 +463,11 @@ MonoBehaviour:
   rightHand: {fileID: 4376441648706682908}
   leftFoot: {fileID: 4369190220620971560}
   rightFoot: {fileID: 4369583985020536638}
+  _debugIsGrounded: 0
+  _debugIsFalling: 0
+  _debugIsOnCliff: 0
+  _debugFrontPawsGrounded: 0
+  _debugIsLanding: 0
   raycastDistance: 1
   raycastOriginOffset: 0
   groundMask:
@@ -8503,7 +8515,7 @@ Transform:
   m_GameObject: {fileID: 1725069009520660425}
   serializedVersion: 2
   m_LocalRotation: {x: 0.6485585, y: -0.17579328, z: -0.71145433, w: 0.20567304}
-  m_LocalPosition: {x: 0.00799942, y: 1.7336946, z: 1.3670006}
+  m_LocalPosition: {x: 0.00799942, y: 1.7336955, z: 1.3670044}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -9274,7 +9286,7 @@ SphereCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4370849277759601514}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 42d5dd7d05386204bb0e507bb73c28e8, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -9580,7 +9592,7 @@ SphereCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4371115937919561322}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 42d5dd7d05386204bb0e507bb73c28e8, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -9634,7 +9646,7 @@ SphereCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4371135360147733774}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 42d5dd7d05386204bb0e507bb73c28e8, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -10255,7 +10267,7 @@ SphereCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4371629048111620846}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 42d5dd7d05386204bb0e507bb73c28e8, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -35185,7 +35197,7 @@ ParentConstraint:
   m_TranslationAtRest: {x: 0, y: 1.8230007, z: 1.6609997}
   m_RotationAtRest: {x: 0, y: 0, z: 0}
   m_TranslationOffsets:
-  - {x: -0.1339283, y: 0.13389015, z: 0}
+  - {x: -0.1339302, y: 0.13388824, z: 0.0000038146973}
   m_RotationOffsets:
   - {x: -47.28265, y: -89.99991, z: 179.99976}
   m_AffectTranslationX: 1
@@ -35327,7 +35339,7 @@ Transform:
   m_GameObject: {fileID: 7710883938556244672}
   serializedVersion: 2
   m_LocalRotation: {x: 0.6695521, y: -0.21558358, z: -0.675044, w: 0.22257438}
-  m_LocalPosition: {x: 0, y: 1.6414733, z: 1.1917343}
+  m_LocalPosition: {x: 0, y: 1.6414723, z: 1.1917343}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -35411,7 +35423,7 @@ Transform:
   m_GameObject: {fileID: 7710883939590498031}
   serializedVersion: 2
   m_LocalRotation: {x: 0.65143526, y: -0.27501026, z: -0.65143627, w: 0.27501342}
-  m_LocalPosition: {x: 0.0009994507, y: 0.9981675, z: 0.6914749}
+  m_LocalPosition: {x: 0.0009994507, y: 0.99816704, z: 0.6914749}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -35537,7 +35549,7 @@ ParentConstraint:
   m_TranslationAtRest: {x: 0, y: 1.8207344, z: 1.4717761}
   m_RotationAtRest: {x: 0.00018441501, y: -89.99994, z: -132.71738}
   m_TranslationOffsets:
-  - {x: -0.0038986206, y: -0.0035972595, z: 0}
+  - {x: -0.003894806, y: -0.0036010742, z: 0}
   m_RotationOffsets:
   - {x: 0, y: 0, z: 0}
   m_AffectTranslationX: 1
@@ -45830,7 +45842,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8401523639375035623}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.15212332, y: -0.00000007916015, z: 0.00000000545476, w: 0.98836154}
+  m_LocalRotation: {x: 0.15212333, y: -0.00000919649, z: -0.000060355018, w: 0.98836154}
   m_LocalPosition: {x: 0, y: 1.5035291, z: -4.768585}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0

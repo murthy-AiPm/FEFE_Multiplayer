@@ -14,6 +14,10 @@ public class DragonGroundController : NetworkBehaviour
     [Header("Testing")]
     [SerializeField] private bool ignoreOwnershipForTesting = false;
 
+    [Header("Debug Respawn")]
+    [SerializeField] private Transform debugRespawnPoint;
+    [SerializeField] private KeyCode debugRespawnKey = KeyCode.U;
+
     [Header("References")]
     [SerializeField] private DragonGroundingSystem groundingSystem;
     [SerializeField] private DragonGroundAlignment groundAlignment;
@@ -36,6 +40,12 @@ public class DragonGroundController : NetworkBehaviour
     [Header("Jump Animation")]
     [SerializeField] private float jumpAnimationDuration = 1.18f;
 
+    [Header("Root Motion Per State")]
+    [SerializeField] private bool rootMotionOnJump = true;
+    [SerializeField] private bool rootMotionOnCliff = false;
+    [SerializeField] private bool rootMotionOnFalling = false;
+    [SerializeField] private bool rootMotionOnLanding = true;
+
     [Header("Movement")]
     [SerializeField] private float walkSpeed = 5f;
     [SerializeField] private float runSpeed = 10f;
@@ -51,6 +61,14 @@ public class DragonGroundController : NetworkBehaviour
     private int jumpForwardHash;
     private int jumpUpHash;
 
+    //falling
+    [Header("Cliff Fall")]
+    [SerializeField] private float cliffFallPush = 2f;
+    private bool _wasOnCliff = false;
+    private int isFreeFallingHash;
+    private int isOnCliffHash;
+    private int isLandingHash;
+    private bool _pendingRespawn = false;
     // State
     private bool isActive;
     private bool isPlayingJump;  // Jump animation playing (still grounded)
@@ -87,6 +105,9 @@ public class DragonGroundController : NetworkBehaviour
 
         jumpForwardHash = Animator.StringToHash("JumpForward");
         jumpUpHash = Animator.StringToHash("JumpUp");
+        isFreeFallingHash = Animator.StringToHash("IsFreeFalling");
+        isOnCliffHash = Animator.StringToHash("IsOnCliff");
+        isLandingHash = Animator.StringToHash("IsLanding");
 
         // Enable root motion - we'll disable it when flying
         if (animator != null)
@@ -95,8 +116,15 @@ public class DragonGroundController : NetworkBehaviour
 
     private void Update()
     {
+        if (Input.GetKeyDown(debugRespawnKey) && debugRespawnPoint != null)
+        {
+            Debug.Log("RESPAWN");
+            transform.position = debugRespawnPoint.position;
+            transform.rotation = debugRespawnPoint.rotation;
+            _fallVelocity = 0f;
+            groundingSystem.ResetFallingState();
+        }
 
-        // Takeoff in progress - handled separately
         if (isTakingOff)
         {
             HandleTakeoffState();
@@ -120,21 +148,24 @@ public class DragonGroundController : NetworkBehaviour
         {
             isActive = false;
         }
+        UpdateFallAnimParams();
     }
 
     private void FixedUpdate()
     {
-        //if (useFakeGravity)
-        //{
-        //    if (groundingSystem.IsGrounded)
-        //        _fallVelocity = 0f;
-        //    else
-        //    {
-        //        _fallVelocity += fakeGravity * Time.fixedDeltaTime;
-        //        _fallVelocity = Mathf.Min(_fallVelocity, maxFallSpeed);
-        //        rb.MovePosition(rb.position + Vector3.down * _fallVelocity * Time.fixedDeltaTime);
-        //    }
-        //}
+
+
+        if (useFakeGravity)
+        {
+            if (groundingSystem.IsGrounded)
+                _fallVelocity = 0f;
+            else if (!isPlayingJump)
+            {
+                _fallVelocity += fakeGravity * Time.fixedDeltaTime;
+                _fallVelocity = Mathf.Min(_fallVelocity, maxFallSpeed);
+                rb.MovePosition(rb.position + Vector3.down * _fallVelocity * Time.fixedDeltaTime);
+            }
+        }
         if (!ignoreOwnershipForTesting && !IsOwner) return;
 
         // Takeoff - lift dragon up
@@ -156,7 +187,22 @@ public class DragonGroundController : NetworkBehaviour
         // Normal ground movement
         HandleGroundMovement();
     }
+    private void UpdateFallAnimParams()
+    {
+        if (animator == null || groundingSystem == null) return;
+        bool falling = groundingSystem.IsFalling && !isPlayingJump;
+        bool onCliff = groundingSystem.IsOnCliff && !isPlayingJump;
+        bool landing = groundingSystem.IsLanding && !isPlayingJump;
 
+        // Push horse forward when first stepping off cliff
+        if (onCliff && !_wasOnCliff)
+            rb.AddForce(transform.forward * cliffFallPush, ForceMode.VelocityChange);
+        _wasOnCliff = onCliff;
+
+        animator.SetBool(isFreeFallingHash, falling);
+        animator.SetBool(isOnCliffHash, onCliff);
+        animator.SetBool(isLandingHash, landing);
+    }
     private void UpdateGroundNormal()
     {
         if (groundingSystem == null || !groundingSystem.IsGrounded)
@@ -385,15 +431,15 @@ public class DragonGroundController : NetworkBehaviour
         if (animator == null || rb == null) return;
         if (!IsOwner) return;
 
-        // During jump or takeoff, apply animation root motion to rigidbody
-        if (isPlayingJump /*|| isTakingOff*/)
-        {
-            // Apply position delta from animation
-            Vector3 deltaPos = animator.deltaPosition;
-            rb.MovePosition(rb.position + deltaPos);
+        bool shouldApply =
+            (isPlayingJump && rootMotionOnJump) ||
+            (groundingSystem.IsOnCliff && rootMotionOnCliff) ||
+            (groundingSystem.IsFalling && rootMotionOnFalling) ||
+            (groundingSystem.IsLanding && rootMotionOnLanding);
 
-            // Apply rotation delta from animation (optional - comment out if you don't want it)
-            // rb.MoveRotation(rb.rotation * animator.deltaRotation);
+        if (shouldApply)
+        {
+            rb.MovePosition(rb.position + animator.deltaPosition);
         }
     }
 
