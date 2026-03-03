@@ -190,7 +190,7 @@ public class DragonGroundController : NetworkBehaviour
     private void UpdateFallAnimParams()
     {
         if (animator == null || groundingSystem == null) return;
-        bool falling = groundingSystem.IsFalling && !isPlayingJump;
+        bool falling = groundingSystem.IsFalling && !isPlayingJump && !groundingSystem.IsOnCliff;
         bool onCliff = groundingSystem.IsOnCliff && !isPlayingJump;
         bool landing = groundingSystem.IsLanding && !isPlayingJump;
 
@@ -269,12 +269,18 @@ public class DragonGroundController : NetworkBehaviour
             IsTurningLeft = angleDelta < -turnHeadAngle;
             IsTurningRight = angleDelta > turnHeadAngle;
             TurnSpeed = Mathf.Abs(angleDelta) / 180f;
+            rb.constraints = RigidbodyConstraints.FreezeRotation;
+
+
         }
         else
         {
             IsTurningLeft = false;
             IsTurningRight = false;
             TurnSpeed = 0f;
+
+            if (groundingSystem.IsGrounded)
+                rb.constraints = RigidbodyConstraints.FreezeAll;
         }
 
         // Jump animation (Space) - just plays animation, stays grounded
@@ -409,6 +415,13 @@ public class DragonGroundController : NetworkBehaviour
         isActive = true;
         ClearState();
 
+        // Kill leftover velocity from fall
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+
         // Sync yaw to current rotation so dragon doesn't snap
         if (groundAlignment != null)
         {
@@ -416,7 +429,6 @@ public class DragonGroundController : NetworkBehaviour
             groundAlignment.SetYawImmediate(currentYaw);
         }
 
-        // Re-enable root motion for ground movement
         if (animator != null)
             animator.applyRootMotion = true;
     }

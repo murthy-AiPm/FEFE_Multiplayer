@@ -143,9 +143,6 @@ AnimatorStateTransition:
   m_Name: 
   m_Conditions:
   - m_ConditionMode: 1
-    m_ConditionEvent: IsFreeFalling
-    m_EventTreshold: 0
-  - m_ConditionMode: 1
     m_ConditionEvent: IsOnCliff
     m_EventTreshold: 0
   m_DstStateMachine: {fileID: 0}
@@ -659,9 +656,6 @@ AnimatorStateTransition:
   - m_ConditionMode: 1
     m_ConditionEvent: IsGrounded
     m_EventTreshold: 0
-  - m_ConditionMode: 2
-    m_ConditionEvent: IsLanding
-    m_EventTreshold: 0
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: -581463877586572006}
   m_Solo: 0
@@ -805,12 +799,6 @@ AnimatorController:
     m_DefaultInt: 0
     m_DefaultBool: 0
     m_Controller: {fileID: 9100000}
-  - m_Name: IsLanding 0
-    m_Type: 4
-    m_DefaultFloat: 0
-    m_DefaultInt: 0
-    m_DefaultBool: 0
-    m_Controller: {fileID: 9100000}
   m_AnimatorLayers:
   - serializedVersion: 5
     m_Name: Base Layer
@@ -926,7 +914,7 @@ AnimatorStateMachine:
     m_Position: {x: 1410, y: -230, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 6310032785712762261}
-    m_Position: {x: 1020, y: 540, z: 0}
+    m_Position: {x: 940, y: 540, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 4525881895591730560}
     m_Position: {x: 1730, y: 100, z: 0}
@@ -950,13 +938,13 @@ AnimatorStateMachine:
     m_Position: {x: 1840, y: -40, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -4930576501804413241}
-    m_Position: {x: 630, y: 380, z: 0}
+    m_Position: {x: 450, y: 390, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 1040786730882181267}
     m_Position: {x: 460, y: 180, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 213600004269329579}
-    m_Position: {x: 730, y: 620, z: 0}
+    m_Position: {x: 450, y: 530, z: 0}
   m_ChildStateMachines:
   - serializedVersion: 1
     m_StateMachine: {fileID: 4046750496236623717}
@@ -968,7 +956,7 @@ AnimatorStateMachine:
   m_EntryTransitions: []
   m_StateMachineTransitions: {}
   m_StateMachineBehaviours: []
-  m_AnyStatePosition: {x: 840, y: 20, z: 0}
+  m_AnyStatePosition: {x: 780, y: 180, z: 0}
   m_EntryPosition: {x: 1050, y: -70, z: 0}
   m_ExitPosition: {x: 1060, y: -220, z: 0}
   m_ParentStateMachinePosition: {x: 804, y: -84, z: 0}
@@ -1355,6 +1343,9 @@ AnimatorStateTransition:
   - m_ConditionMode: 1
     m_ConditionEvent: JumpForward
     m_EventTreshold: 0
+  - m_ConditionMode: 2
+    m_ConditionEvent: IsFreeFalling
+    m_EventTreshold: 0
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: 6310032785712762261}
   m_Solo: 0
@@ -1496,7 +1487,7 @@ AnimatorStateTransition:
   m_Name: 
   m_Conditions:
   - m_ConditionMode: 1
-    m_ConditionEvent: IsLanding
+    m_ConditionEvent: IsGrounded
     m_EventTreshold: 0
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: 213600004269329579}

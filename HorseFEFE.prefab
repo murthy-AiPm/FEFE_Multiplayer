@@ -445,8 +445,8 @@ MonoBehaviour:
   turnHeadAngle: 15
   useFakeGravity: 1
   fakeGravity: 20
-  maxFallSpeed: 7
-  cliffFallPush: 9
+  maxFallSpeed: 8
+  cliffFallPush: 7
 --- !u!114 &8455803096756853017
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -468,8 +468,8 @@ MonoBehaviour:
   _debugIsOnCliff: 0
   _debugFrontPawsGrounded: 0
   _debugIsLanding: 0
-  raycastDistance: 1
-  raycastOriginOffset: 0
+  raycastDistance: 2
+  raycastOriginOffset: 0.3
   groundMask:
     serializedVersion: 2
     m_Bits: 1

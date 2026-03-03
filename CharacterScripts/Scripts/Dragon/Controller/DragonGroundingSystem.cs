@@ -139,7 +139,7 @@ public class DragonGroundingSystem : MonoBehaviour
 
     private void UpdateFallingState()
     {
-        if (_isGrounded)
+        if (_isGrounded || IsOnCliff)
         {
             _isFalling = false;
         }
