@@ -279,8 +279,8 @@ public class DragonGroundController : NetworkBehaviour
             IsTurningRight = false;
             TurnSpeed = 0f;
 
-            if (groundingSystem.IsGrounded)
-                rb.constraints = RigidbodyConstraints.FreezeAll;
+            //if (groundingSystem.IsGrounded && !isPlayingJump)
+            //    rb.constraints = RigidbodyConstraints.FreezeAll;
         }
 
         // Jump animation (Space) - just plays animation, stays grounded
