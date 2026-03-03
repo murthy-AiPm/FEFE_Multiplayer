@@ -258,8 +258,10 @@ public class RuleAnimancerDriver : MonoBehaviour
         //    Action lock only prevents new Action rules, NOT Base layer updates.
         //    This allows locomotion to keep running under a masked Action (e.g. unsheathe over combat walk).
         if (TryPlayBestRule(ctx, AnimLayer.Attack)) return;
-        if (!IsLayerLocked(AnimLayer.Action))
+        bool actionFadingOut = !IsLayerLocked(AnimLayer.Action) && _actionLayer.Weight > 0f && _actionLayer.Weight < 1f;
+        if (!IsLayerLocked(AnimLayer.Action) && !actionFadingOut)
             TryPlayBestRule(ctx, AnimLayer.Action);
+
         TryPlayBestRule(ctx, AnimLayer.Base);
 
         if (_actionId != 0 && !IsLayerLocked(AnimLayer.Action))
@@ -322,7 +324,7 @@ public class RuleAnimancerDriver : MonoBehaviour
             if (_animator != null)
                 _animator.applyRootMotion = wantRoot;
         }
-        if (best != null && layer == AnimLayer.Base)
+
     
         if (best.lockUntilEnd)
             LockLayerUntilEnd(layer, state);
