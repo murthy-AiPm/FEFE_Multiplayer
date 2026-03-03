@@ -361,7 +361,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 711040484119619372}
   serializedVersion: 5
-  m_Mass: 400
+  m_Mass: 10000
   m_LinearDamping: 0
   m_AngularDamping: 0
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -9244,7 +9244,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4376861480341825374}
   - component: {fileID: 2885322215400451880}
-  m_Layer: 8
+  m_Layer: 7
   m_Name: R Foot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9423,7 +9423,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4376671995807711940}
-  m_Layer: 8
+  m_Layer: 7
   m_Name: L Finger0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9486,7 +9486,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4376441648706682908}
-  m_Layer: 8
+  m_Layer: 7
   m_Name: R Finger0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9550,7 +9550,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4376457694001007042}
   - component: {fileID: 1876458886762959615}
-  m_Layer: 8
+  m_Layer: 7
   m_Name: L Hand
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9604,7 +9604,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4376405266173883122}
   - component: {fileID: 1612412318578172052}
-  m_Layer: 8
+  m_Layer: 7
   m_Name: L Foot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10225,7 +10225,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4369616411071302638}
   - component: {fileID: 1773511733545217618}
-  m_Layer: 8
+  m_Layer: 7
   m_Name: R Hand
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10375,7 +10375,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4369583985020536638}
-  m_Layer: 8
+  m_Layer: 7
   m_Name: R Toe0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10437,7 +10437,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4369190220620971560}
-  m_Layer: 8
+  m_Layer: 7
   m_Name: L Toe0
   m_TagString: Untagged
   m_Icon: {fileID: 0}

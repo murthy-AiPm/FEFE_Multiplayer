@@ -26,6 +26,10 @@ public class MountableEntity : NetworkBehaviour
     [Range(0f, 0.95f)]
     [SerializeField] private float speedSmoothing = 0.6f;
 
+
+    //ridigbody
+
+    private Rigidbody _rb;
     // Network state
     private NetworkVariable<ulong> riderId = new NetworkVariable<ulong>(
         0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -74,6 +78,8 @@ public class MountableEntity : NetworkBehaviour
 
     private void Awake()
     {
+        _rb = GetComponent<Rigidbody>();
+        SetMounted(false); // start frozen
         if (groundController == null)
             groundController = GetComponent<DragonGroundController>();
 
@@ -148,21 +154,20 @@ public class MountableEntity : NetworkBehaviour
         // Validate: is mount available?
         if (IsMounted)
         {
-            Debug.LogWarning($"[MountableEntity] Mount request denied - already mounted by {riderId.Value}");
+            //Debug.LogWarning($"[MountableEntity] Mount request denied - already mounted by {riderId.Value}");
             return;
         }
 
         // Find the rider's player object
         if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(requestingClientId, out var client))
         {
-            Debug.LogError($"[MountableEntity] Could not find client {requestingClientId}");
-            Debug.Log($"[MountableEntity] Available clients: {string.Join(", ", NetworkManager.Singleton.ConnectedClients.Keys)}");
+            //Debug.Log($"[MountableEntity] Available clients: {string.Join(", ", NetworkManager.Singleton.ConnectedClients.Keys)}");
             return;
         }
 
         if (client.PlayerObject == null)
         {
-            Debug.LogError($"[MountableEntity] Client {requestingClientId} has no PlayerObject");
+            //Debug.LogError($"[MountableEntity] Client {requestingClientId} has no PlayerObject");
             return;
         }
 
@@ -181,18 +186,20 @@ public class MountableEntity : NetworkBehaviour
         // (0 means unmounted, so host clientId 0 would not trigger change)
         Debug.Log($"[MountableEntity] Setting riderId.Value from {riderId.Value} to {requestingClientId + 1}");
         riderId.Value = requestingClientId + 1;
-       // Debug.Log($"[MountableEntity] riderId.Value is now: {riderId.Value}, IsMounted: {IsMounted}");
+        SetMounted(true);
+        // Debug.Log($"[MountableEntity] riderId.Value is now: {riderId.Value}, IsMounted: {IsMounted}");
 
         currentRider = riderObject;
+        SetMounted(true);
 
         // Transfer ownership of mount to rider
-       // Debug.Log($"[MountableEntity] Transferring ownership to client {requestingClientId}");
+        // Debug.Log($"[MountableEntity] Transferring ownership to client {requestingClientId}");
         NetworkObject.ChangeOwnership(requestingClientId);
         // Sync current yaw to new owner so they don't snap to stale rotation
         float currentYaw = transform.eulerAngles.y;
         SyncYawClientRpc(currentYaw);
 
-       // Debug.Log($"[MountableEntity] Ownership transferred. NetworkObject.OwnerClientId: {NetworkObject.OwnerClientId}");
+        // Debug.Log($"[MountableEntity] Ownership transferred. NetworkObject.OwnerClientId: {NetworkObject.OwnerClientId}");
 
         // IMPORTANT: Parenting must be network-driven (server sets it) so EVERY client sees the rider attached.
         // Do NOT rely on local Transform.SetParent on the owner only.
@@ -213,7 +220,7 @@ public class MountableEntity : NetworkBehaviour
         // Notify rider to complete mount on their end
         mountController.CompleteMountClientRpc(NetworkObjectId);
 
-   //     Debug.Log($"[MountableEntity] Client {requestingClientId} mounted successfully");
+        //     Debug.Log($"[MountableEntity] Client {requestingClientId} mounted successfully");
     }
 
     /// <summary>
@@ -223,7 +230,7 @@ public class MountableEntity : NetworkBehaviour
     {
         if (localIsMounted)
         {
-          //  Debug.LogWarning("[MountableEntity] Already mounted locally");
+            //  Debug.LogWarning("[MountableEntity] Already mounted locally");
             return;
         }
 
@@ -231,7 +238,7 @@ public class MountableEntity : NetworkBehaviour
         localRiderId = fakeClientId;
         currentRider = riderObject;
 
-      //  Debug.Log($"[MountableEntity] Local mount complete");
+        //  Debug.Log($"[MountableEntity] Local mount complete");
     }
 
     /// <summary>
@@ -254,6 +261,7 @@ public class MountableEntity : NetworkBehaviour
         {
             Debug.LogError("[MountableEntity] currentRider is null but riderId is set");
             riderId.Value = 0;
+            SetMounted(false);
             return;
         }
 
@@ -279,6 +287,7 @@ public class MountableEntity : NetworkBehaviour
         }
 
         currentRider = null;
+        SetMounted(false);
         // Sync horse yaw before returning ownership
         var alignment = GetComponent<DragonGroundAlignment>();
         if (alignment != null)
@@ -382,5 +391,20 @@ public class MountableEntity : NetworkBehaviour
         var alignment = GetComponent<DragonGroundAlignment>();
         if (alignment != null)
             alignment.SetYawImmediate(yaw);
+    }
+
+    private void SetMounted(bool mounted)
+    {
+        if (_rb == null) return;
+        if (mounted)
+        {
+            // Release all constraints — horse can move freely
+            _rb.constraints = RigidbodyConstraints.FreezeRotation;
+        }
+        else
+        {
+            // Freeze everything — horse won't slide but stays non-kinematic
+            _rb.constraints = RigidbodyConstraints.FreezeAll;
+        }
     }
 }

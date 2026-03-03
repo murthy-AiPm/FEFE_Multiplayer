@@ -809,7 +809,7 @@ MonoBehaviour:
   detectionRadius: 2
   mountLayer:
     serializedVersion: 2
-    m_Bits: 128
+    m_Bits: 1048704
   thirdPersonController: {fileID: 2613098171129311318}
   inputController: {fileID: 6350221479210210835}
   characterController: {fileID: 123231446064690230}
@@ -897,14 +897,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DamageReceiver
   ShowTopMostFoldoutHeaderGroup: 1
+  isPlayer: 1
+  spawnPoint: {fileID: 0}
+  respawnDelay: 3
   vitalManager: {fileID: 8696267403149252337}
   combatController: {fileID: -8912580098338169080}
   weaponManager: {fileID: -5298135234070216236}
   blockDamageReduction: 0.8
   blockAngle: 120
   hitStunDuration: 0.2
-  spawnPoint: {fileID: 0}
-  respawnDelay: 3
   animancerDriver: {fileID: 1633156696383947771}
 --- !u!114 &-1694095259213740506
 MonoBehaviour:
