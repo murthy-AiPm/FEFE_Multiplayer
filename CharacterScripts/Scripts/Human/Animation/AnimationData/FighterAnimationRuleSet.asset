@@ -620,7 +620,7 @@ MonoBehaviour:
     animationKey: Fists/Idle
     all:
     - useBool: 1
-      boolParam: 16
+      boolParam: 17
       boolValue: 1
       useInput: 0
       input: 0
@@ -648,7 +648,7 @@ MonoBehaviour:
     animationKey: Fists/Walk
     all:
     - useBool: 1
-      boolParam: 16
+      boolParam: 17
       boolValue: 1
       useInput: 0
       input: 0

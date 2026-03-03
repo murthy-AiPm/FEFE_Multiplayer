@@ -341,7 +341,7 @@ MonoBehaviour:
   rotationSpeed: 2
   attackDuration: 1.2
   attackCooldown: 1.5
-  attackDamage: 15
+  attackDamage: 30
   biteHitbox: {fileID: 6387743574187067218}
   hitboxEnableDelay: 0.3
   hitboxActiveDuration: 1
@@ -384,8 +384,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6c57dba152171de448f2fbadec8272e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorldHealthBar
+  ShowTopMostFoldoutHeaderGroup: 1
   vitalManager: {fileID: 6124247818986976737}
   networkObject: {fileID: 5767345220959092614}
+  isPlayer: 0
   canvasRoot: {fileID: 1018957143558286619}
   fillImage: {fileID: 1062163131552955322}
   heightOffset: 2.5

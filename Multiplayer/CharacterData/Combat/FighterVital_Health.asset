@@ -15,10 +15,10 @@ MonoBehaviour:
   vitalName: health
   vitalID: health
   maxValue: 100
-  startValue: 20
+  startValue: 100
   regenEnabled: 1
-  regenRate: 100
-  regenDelay: 1
+  regenRate: 10
+  regenDelay: 3
   regenOnlyWhenGrounded: 0
   clampAtZero: 1
   killOnDepleted: 1
