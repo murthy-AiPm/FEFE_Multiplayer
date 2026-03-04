@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Netcode;
+using Unity.Cinemachine;
 
 /// <summary>
 /// Attach to player prefab root.
@@ -18,6 +19,11 @@ public class BallistaOperator : NetworkBehaviour
     [SerializeField] private ThirdPersonController thirdPersonController;
     [SerializeField] private CombatController combatController;
     [SerializeField] private InputController inputController;
+
+    [Header("Camera")]
+    [SerializeField] private CinemachineCamera vcam;
+    [SerializeField] private Transform camCube;
+    [SerializeField] private Transform ballistaCube;
 
     [Header("IK Settings")]
     [Tooltip("How strongly the spine bends toward aim (0-1)")]
@@ -112,12 +118,14 @@ public class BallistaOperator : NetworkBehaviour
             return;
         }
 
-        // Keep player at stand point
+        // Keep player at stand point, rotating with the base
         if (_currentBallista.OperatorStandPoint != null)
         {
             transform.position = _currentBallista.OperatorStandPoint.position;
-            transform.rotation = Quaternion.Euler(0f,
-                _currentBallista.transform.eulerAngles.y, 0f);
+            float baseYaw = _currentBallista.BallistaBase != null
+                ? _currentBallista.BallistaBase.eulerAngles.y
+                : _currentBallista.transform.eulerAngles.y;
+            transform.rotation = Quaternion.Euler(0f, baseYaw, 0f);
         }
 
         // Update aim target for IK (point camera looks at)
@@ -148,7 +156,8 @@ public class BallistaOperator : NetworkBehaviour
         }
 
         IsOperating = true;
-
+        if (vcam != null && ballistaCube != null)
+            vcam.Target.TrackingTarget = ballistaCube;
         // Disable normal player controls
         if (thirdPersonController != null) thirdPersonController.enabled = false;
         if (combatController != null) combatController.enabled = false;
@@ -167,7 +176,8 @@ public class BallistaOperator : NetworkBehaviour
         _currentBallista?.UnregisterOperator();
         _currentBallista = null;
         IsOperating = false;
-
+        if (vcam != null && camCube != null)
+            vcam.Target.TrackingTarget = camCube;
         // Re-enable player controls
         if (thirdPersonController != null) thirdPersonController.enabled = true;
         if (combatController != null) combatController.enabled = true;

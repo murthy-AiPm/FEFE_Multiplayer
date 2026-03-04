@@ -67,6 +67,7 @@ public class BallistaController : NetworkBehaviour
     public bool IsReloading => _isReloading.Value;
     public Transform OperatorStandPoint => operatorStandPoint;
     public Transform FirePoint => firePoint;
+    public Transform BallistaBase => ballistaBase;
     public float MinPitch => minPitch;
     public float MaxPitch => maxPitch;
 
@@ -142,7 +143,6 @@ public class BallistaController : NetworkBehaviour
         _netPitch.Value = _currentPitch;
 
         // Apply locally (no need to wait for network callback on owner)
-       // Debug.Log($"[Ballista] camPitch raw: {Camera.main.transform.eulerAngles.x}, currentPitch: {_currentPitch}");
         ApplyRotation(_currentYaw, _currentPitch);
     }
 
@@ -151,15 +151,11 @@ public class BallistaController : NetworkBehaviour
         if (!Input.GetKeyDown(fireKey)) return;
         if (_isReloading.Value) return;
 
-        // Pass fire direction from client so server uses correct pitch
-        RequestFireServerRpc(firePoint.position, firePoint.rotation);
-        Debug.Log($"[Ballista] Client firePoint.forward: {firePoint.forward}");
-
+        RequestFireServerRpc();
     }
 
     private void ApplyRotation(float yaw, float pitch)
     {
-        Debug.Log($"[Ballista] Barrel localRotation: {barrel.localRotation.eulerAngles}, FirePoint worldRotation: {firePoint.rotation.eulerAngles}");
         if (ballistaBase != null)
             ballistaBase.rotation = Quaternion.Euler(0f, yaw, 0f);
 
@@ -183,8 +179,7 @@ public class BallistaController : NetworkBehaviour
 
     private void OnOperatorChanged(ulong oldVal, ulong newVal)
     {
-       //
-       //Debug.Log($"[BallistaController] Operator changed: {oldVal} -> {newVal}");
+        Debug.Log($"[BallistaController] Operator changed: {oldVal} -> {newVal}");
     }
 
     // ─── ServerRpcs ───
@@ -242,21 +237,20 @@ public class BallistaController : NetworkBehaviour
 
         operator_?.CompleteDismountClientRpc();
 
-        //Debug.Log($"[BallistaController] Client {clientId} dismounted ballista");
+        Debug.Log($"[BallistaController] Client {clientId} dismounted ballista");
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void RequestFireServerRpc(Vector3 spawnPosition, Quaternion spawnRotation, ServerRpcParams rpcParams = default)
+    private void RequestFireServerRpc(ServerRpcParams rpcParams = default)
     {
         if (_isReloading.Value) return;
-        if (arrowPrefab == null) return;
+        if (firePoint == null || arrowPrefab == null) return;
 
-        // Use client-provided position/rotation so pitch is correct
-        var arrow = Instantiate(arrowPrefab, spawnPosition, spawnRotation);
+        // Spawn arrow
+        var arrow = Instantiate(arrowPrefab, firePoint.position, firePoint.rotation);
         var rb = arrow.GetComponent<Rigidbody>();
-        Debug.Log($"[Ballista] spawnRotation forward: {spawnRotation * Vector3.forward}");
         if (rb != null)
-            rb.linearVelocity = spawnRotation * Vector3.forward * arrowSpeed;
+            rb.linearVelocity = firePoint.forward * arrowSpeed;
 
         var netObj = arrow.GetComponent<NetworkObject>();
         if (netObj != null)
