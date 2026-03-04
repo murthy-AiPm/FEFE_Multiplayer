@@ -475,7 +475,7 @@ MonoBehaviour:
       useInput: 0
       input: 2
       triggerMode: 2
-      useDirection: 1
+      useDirection: 0
       direction: 1
       useActionId: 0
       actionIdEquals: 0

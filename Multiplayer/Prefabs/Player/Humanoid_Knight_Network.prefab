@@ -388,8 +388,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 134043905374528843}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: -0.031090906, y: 0.8807443, z: -0.059079416, w: -0.46886298}
+  m_LocalPosition: {x: 67.69, y: 4.01, z: 31.04}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -582,7 +582,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerController: {fileID: 3745241009434165893}
   controller: {fileID: 123231446064690230}
-  cam: {fileID: 0}
+  cam: {fileID: 984537843786185945}
   jumpHeight: 2
   DistToGround: 0.5
   gravityValue: -9.81
@@ -2490,8 +2490,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8300432995685533065}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.15187436, y: 0.056534883, z: -0.0087015545, w: 0.9867433}
-  m_LocalPosition: {x: 0, y: 3.103529, z: -4.7685847}
+  m_LocalRotation: {x: -0.036566757, y: -0.884424, z: 0.1974717, w: -0.42126247}
+  m_LocalPosition: {x: -3.9549232, y: 3.447356, z: 2.438416}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
