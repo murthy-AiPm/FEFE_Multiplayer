@@ -128,7 +128,7 @@ public class RuleAnimancerDriver : MonoBehaviour
         if (input == null) input = GetComponentInParent<InputController>();
         if (networkSync == null) networkSync = GetComponentInParent<ClientAuthoritativeAnimancerSync>();
         if (mountController == null) mountController = GetComponentInParent<MountController>();
-        if (combatController == null)combatController = GetComponentInParent<CombatController>();
+        if (combatController == null) combatController = GetComponentInParent<CombatController>();
         if (weaponManager == null) weaponManager = GetComponentInParent<WeaponManager>();
         var netObj = GetComponentInParent<Unity.Netcode.NetworkBehaviour>();
         if (netObj != null)
@@ -257,6 +257,8 @@ public class RuleAnimancerDriver : MonoBehaviour
         // 3) Rule evaluation: Attack > Action > Base
         //    Action lock only prevents new Action rules, NOT Base layer updates.
         //    This allows locomotion to keep running under a masked Action (e.g. unsheathe over combat walk).
+        if (weaponManager != null)
+            Debug.Log($"[WeaponManager] ActiveSlot: {weaponManager.ActiveSlot}, EquipState: {weaponManager.CurrentEquipState}, Equipping: {ctx.Equipping}, WeaponSlot1: {ctx.ActiveWeaponSlot == 1}, WeaponSlot2: {ctx.ActiveWeaponSlot == 2}");
         if (TryPlayBestRule(ctx, AnimLayer.Attack)) return;
         bool actionFadingOut = !IsLayerLocked(AnimLayer.Action) && _actionLayer.Weight > 0f && _actionLayer.Weight < 1f;
         if (!IsLayerLocked(AnimLayer.Action) && !actionFadingOut)
@@ -276,7 +278,7 @@ public class RuleAnimancerDriver : MonoBehaviour
     {
         AnimationRule best = null;
         int bestPriority = int.MinValue;
-        
+
         var rules = ruleSet.rules;
         for (int i = 0; i < rules.Count; i++)
         {
@@ -293,7 +295,7 @@ public class RuleAnimancerDriver : MonoBehaviour
         }
 
         if (best == null) return false;
-        
+
         if (!animationSet.TryGet(best.animationKey, out var transition) || transition == null || transition.Clip == null)
             return false;
 
@@ -303,9 +305,15 @@ public class RuleAnimancerDriver : MonoBehaviour
         var animLayer = GetAnimancerLayer(layer);
         if (IsPlayingClipOnLayer(animLayer, transition.Clip)) return true;
 
-        // Apply per-rule mask override if specified
+        // Apply per-rule mask override, or restore default layer mask, or clear to full body
         if (best.maskOverride != null)
             animLayer.SetMask(best.maskOverride);
+        else if (layer == AnimLayer.Action && actionLayerMask != null)
+            animLayer.SetMask(actionLayerMask);
+        else if (layer == AnimLayer.Attack && attackLayerMask != null)
+            animLayer.SetMask(attackLayerMask);
+        else
+            animLayer.SetMask(null);
 
         var fade = layer switch
         {
@@ -325,7 +333,7 @@ public class RuleAnimancerDriver : MonoBehaviour
                 _animator.applyRootMotion = wantRoot;
         }
 
-    
+
         if (best.lockUntilEnd)
             LockLayerUntilEnd(layer, state);
 
