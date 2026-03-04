@@ -688,6 +688,12 @@ MonoBehaviour:
     - Attack/Fist/Left
     heavyComboKeys:
     - Attack/Kick/Right
+  - weaponName: Bow
+    singleAttackKeys:
+    - Bow/Draw
+    lightComboKeys: []
+    heavyComboKeys:
+    - Attack/Kick/Right
 --- !u!114 &6485369523047652345
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CombatLoadout
   primaryWeapon: {fileID: 11400000, guid: faa4939142e595c4db44cfab8edba7df, type: 2}
   shield: {fileID: 0}
-  secondaryWeapon: {fileID: 0}
+  secondaryWeapon: {fileID: 11400000, guid: 6791a5225446bf2418db3bbf0de89a30, type: 2}
   fistWeapon: {fileID: 11400000, guid: bde5e7d05e4ac214ab23c8d594e94709, type: 2}
   healthOverride: -1
   staminaOverride: -1

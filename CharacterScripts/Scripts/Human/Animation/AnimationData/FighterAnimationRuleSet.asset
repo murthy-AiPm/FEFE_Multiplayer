@@ -557,14 +557,14 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Bow/Equip
     layer: 1
-    priority: 30
-    lockUntilEnd: 0
+    priority: 121
+    lockUntilEnd: 1
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
     animationKey: Bow/Equip
     all:
     - useBool: 1
-      boolParam: 17
+      boolParam: 19
       boolValue: 1
       useInput: 0
       input: 0
@@ -574,11 +574,75 @@ MonoBehaviour:
       useActionId: 0
       actionIdEquals: 0
     - useBool: 1
-      boolParam: 1
+      boolParam: 15
       boolValue: 1
       useInput: 0
       input: 0
       triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Bow/Idle
+    layer: 0
+    priority: 120
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Bow/Idle
+    all:
+    - useBool: 1
+      boolParam: 19
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 0
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Bow/Draw/Idle
+    layer: 1
+    priority: 35
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Bow/Draw/Idle
+    all:
+    - useBool: 1
+      boolParam: 19
+      boolValue: 1
+      useInput: 1
+      input: 0
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Bow/Release
+    layer: 1
+    priority: 35
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Bow/Release
+    all:
+    - useBool: 1
+      boolParam: 19
+      boolValue: 1
+      useInput: 1
+      input: 0
+      triggerMode: 3
       useDirection: 0
       direction: 0
       useActionId: 0
@@ -589,10 +653,10 @@ MonoBehaviour:
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
-    animationKey: Bow/Equip
+    animationKey: Bow/UnEquip
     all:
     - useBool: 1
-      boolParam: 7
+      boolParam: 19
       boolValue: 1
       useInput: 0
       input: 0
@@ -602,7 +666,7 @@ MonoBehaviour:
       useActionId: 0
       actionIdEquals: 0
     - useBool: 1
-      boolParam: 17
+      boolParam: 16
       boolValue: 1
       useInput: 0
       input: 0
