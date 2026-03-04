@@ -169,20 +169,16 @@ public class HumanoidController : ThirdPersonController
     private void SprintStaminaDrain()
     {
         if (vitalManager == null) return;
-
         if (isMoving && isModified)
         {
-            // Pause regen while sprinting (regen delay resets)
-            vitalManager.SetStaminaRegenPaused(true);
-
-            // Actively drain stamina while sprinting
-            vitalManager.TryConsumeStamina(staminaModifier * Time.deltaTime);
+            combatController.SetStaminaRegenPausedExternal(true);
+            combatController.ConsumeStaminaExternal(staminaModifier * Time.deltaTime);
         }
         else
         {
-            // Resume regen when not sprinting
-            vitalManager.SetStaminaRegenPaused(false);
+            combatController.SetStaminaRegenPausedExternal(false);
         }
     }
+
 
 }

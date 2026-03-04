@@ -240,14 +240,15 @@ public class CombatController : NetworkBehaviour
 
     private void TryDodge()
     {
-        Debug.Log($"[TryDodge] stamina check: {vitalManager != null}");
-        if (vitalManager != null && !vitalManager.TryConsumeStamina(dodgeStaminaCost))
+        //Debug.Log($"[TryDodge] stamina check: {vitalManager != null}");
+        if (vitalManager != null)
         {
-            Debug.Log("[TryDodge] Failed stamina check");
-            return;
+            var stamina = vitalManager.GetVital("stamina");
+            if (stamina != null && stamina.Current < dodgeStaminaCost) return;
+            ConsumeStamina(dodgeStaminaCost);
         }
 
-        Debug.Log("[TryDodge] Setting state to Dodging");
+        // Debug.Log("[TryDodge] Setting state to Dodging");
 
         // Direction: input direction or backward
         if (_input.movePressed && humanoidController != null && humanoidController.cam != null)
@@ -272,8 +273,12 @@ public class CombatController : NetworkBehaviour
 
     private void TryDodgeStep()
     {
-        if (vitalManager != null && !vitalManager.TryConsumeStamina(dodgeStepStaminaCost))
-            return;
+        if (vitalManager != null)
+        {
+            var stamina = vitalManager.GetVital("stamina");
+            if (stamina != null && stamina.Current < dodgeStepStaminaCost) return;
+            ConsumeStamina(dodgeStepStaminaCost);
+        }
 
         string dir = _input.movePressed
             ? playerController.inputController.directions
@@ -385,7 +390,7 @@ public class CombatController : NetworkBehaviour
                 OnBlockEnded?.Invoke();
                 return;
             }
-            vitalManager.TryConsumeStamina(blockStaminaDrain * Time.deltaTime);
+            ConsumeStamina(blockStaminaDrain * Time.deltaTime);
         }
     }
 
@@ -396,8 +401,12 @@ public class CombatController : NetworkBehaviour
         var weapon = weaponManager.ActiveWeapon;
         if (weapon == null) return;
 
-        if (vitalManager != null && !vitalManager.TryConsumeStamina(weapon.staminaCostLight))
-            return;
+        if (vitalManager != null)
+        {
+            var stamina = vitalManager.GetVital("stamina");
+            if (stamina != null && stamina.Current < weapon.staminaCostLight) return;
+            ConsumeStamina(weapon.staminaCostLight);
+        }
 
         _bowDrawTimer = weapon.drawTime;
         SetState(CombatState.BowDrawing);
@@ -484,14 +493,24 @@ public class CombatController : NetworkBehaviour
     /// </summary>
     public void ConsumeAttackStamina(bool isHeavy)
     {
-        var weapon = weaponManager.ActiveWeapon;
-        float cost;
-
-        if (weapon != null)
-            cost = isHeavy ? weapon.staminaCostHeavy : weapon.staminaCostLight;
+        if (IsServer)
+            ApplyAttackStamina(isHeavy);
         else
-            cost = fistStaminaCost;
+            ConsumeAttackStaminaServerRpc(isHeavy);
+    }
 
+    [ServerRpc]
+    private void ConsumeAttackStaminaServerRpc(bool isHeavy)
+    {
+        ApplyAttackStamina(isHeavy);
+    }
+
+    private void ApplyAttackStamina(bool isHeavy)
+    {
+        var weapon = weaponManager.ActiveWeapon;
+        float cost = weapon != null
+            ? (isHeavy ? weapon.staminaCostHeavy : weapon.staminaCostLight)
+            : fistStaminaCost;
         vitalManager?.TryConsumeStamina(cost);
     }
 
@@ -598,5 +617,34 @@ public class CombatController : NetworkBehaviour
         _bowDrawTimer = 0f;
         IsDodgeStep = false;
         StopAllCoroutines();
+    }
+
+    private void ConsumeStamina(float cost)
+    {
+        if (IsServer)
+            vitalManager?.TryConsumeStamina(cost);
+        else
+            ConsumeStaminaServerRpc(cost);
+    }
+
+    [ServerRpc]
+    private void ConsumeStaminaServerRpc(float cost)
+    {
+        vitalManager?.TryConsumeStamina(cost);
+    }
+
+    public void ConsumeStaminaExternal(float cost) => ConsumeStamina(cost);
+    public void SetStaminaRegenPausedExternal(bool paused)
+    {
+        if (IsServer)
+            vitalManager?.SetStaminaRegenPaused(paused);
+        else
+            SetStaminaRegenPausedServerRpc(paused);
+    }
+
+    [ServerRpc]
+    private void SetStaminaRegenPausedServerRpc(bool paused)
+    {
+        vitalManager?.SetStaminaRegenPaused(paused);
     }
 }

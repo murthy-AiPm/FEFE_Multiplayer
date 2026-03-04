@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8228fd885521a3f48baae950106de4ba, type: 3}
   m_Name: Fighter
   m_EditorClassIdentifier: Assembly-CSharp::CharacterData
-  characterName: Warrior
-  icon: {fileID: 21300000, guid: 7c232e7a3260743889344dc1f01242f9, type: 3}
+  characterName: Fighter
+  icon: {fileID: 21300000, guid: 9067f6c584a614405bdd890ad61cefad, type: 3}
   characterColor: {r: 1, g: 1, b: 1, a: 1}
   prefab: {fileID: 134043905374528843, guid: e051520e6f4a70447a642fbb2e6af0e2, type: 3}
   combatLoadout: {fileID: 11400000, guid: 2b5d1c2772db3a949ac1046709a1880d, type: 2}
