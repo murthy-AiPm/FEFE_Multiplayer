@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 432376799511807123}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ R Hand
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -41,7 +41,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1504998078853882130}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ L Toe02
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -83,9 +83,9 @@ GameObject:
   - component: {fileID: 4619646487853674270}
   - component: {fileID: -5162157580005954776}
   - component: {fileID: 8725901643877715188}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Bear_PBR
-  m_TagString: Untagged
+  m_TagString: Animal
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -286,7 +286,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VitalManager
   ShowTopMostFoldoutHeaderGroup: 1
   vitalDefinitions:
-  - {fileID: 11400000, guid: 63269331d6b135948ada6c4c9a159393, type: 2}
+  - {fileID: 11400000, guid: 422b7cac4e5e7c04492ecde7376b6c90, type: 2}
   tpsController: {fileID: 0}
   debugHealth: 0
   debugStamina: 0
@@ -404,7 +404,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3578796907127831794}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ R Toe0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -439,7 +439,7 @@ GameObject:
   - component: {fileID: 7903433317463703969}
   - component: {fileID: 613723243990599694}
   - component: {fileID: 8382918853555470122}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -538,7 +538,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8842961383426318707}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ Neck
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -573,7 +573,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3292897724334435711}
   - component: {fileID: 4660265131499836387}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Bear_LOD0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -697,7 +697,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3049247205196637666}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -730,7 +730,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5161157866683945567}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ Queue de cheval 1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -762,7 +762,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4149792322285173307}
   - component: {fileID: 1570732830390655210}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Bear_LOD1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -886,7 +886,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9129037734332218698}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ L Calf
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -918,7 +918,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4300395621597420319}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ L UpperArm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -950,7 +950,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6379290024651558678}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ L Forearm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -982,7 +982,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7003257815000965446}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ Head
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1015,7 +1015,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3231093215668097832}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ R Forearm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1047,7 +1047,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4232507577351661495}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ Footsteps
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1078,7 +1078,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 337533023509668803}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ L Hand
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1110,7 +1110,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 393072168624849775}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ R Foot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1142,7 +1142,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6687625688166975876}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ L Finger01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1175,7 +1175,7 @@ GameObject:
   - component: {fileID: 8156361700376916393}
   - component: {fileID: 2971411888086858131}
   - component: {fileID: 1062163131552955322}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Image
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1248,7 +1248,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5666200122529224833}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ L Toe0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1281,7 +1281,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2975671220272340584}
   - component: {fileID: 3160587867679754893}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Bear_LOD3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1402,7 +1402,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1354505292842852208}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ R Finger01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1433,7 +1433,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2801153603858965043}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ Spine
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1467,7 +1467,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5610405028788850071}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ L Clavicle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1499,7 +1499,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3883044785086876554}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ R Toe01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1531,7 +1531,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6412930154779905893}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ R Clavicle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1563,7 +1563,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6843947384628826284}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ R Toe02
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1594,7 +1594,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3036349111655277622}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ Spine1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1626,7 +1626,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7099277423015351658}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ L Thigh
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1658,7 +1658,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 33031694502911759}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ L Foot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1690,7 +1690,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1673749784004193360}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ L Finger0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1723,7 +1723,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7519660712849464250}
   - component: {fileID: 6082409910853037955}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Bear_LOD2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1846,7 +1846,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6880747137391336215}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ Pelvis
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1879,7 +1879,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6384330836786571380}
   - component: {fileID: 6387743574187067218}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Hitbox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1933,7 +1933,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4533754908357780878}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ R UpperArm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1967,7 +1967,7 @@ GameObject:
   - component: {fileID: 8224108411341989383}
   - component: {fileID: 2659043240128779040}
   - component: {fileID: 7431887959694732036}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Image
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2041,7 +2041,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9108926355536103936}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ R Finger0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2073,7 +2073,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3676204635809088608}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ R Thigh
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2105,7 +2105,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5519473413292642991}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: root
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2137,7 +2137,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 725239028683324587}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ R Calf
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2169,7 +2169,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2475908714828677121}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ L Toe01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2201,7 +2201,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7213409128621861900}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: BEAR_ Neck1
   m_TagString: Untagged
   m_Icon: {fileID: 0}

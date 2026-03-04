@@ -274,7 +274,18 @@ public class BallistaController : NetworkBehaviour
 
         _currentOperator?.OnFired();
     }
+    public void ForceDismount(ulong clientId)
+    {
+        if (_operatorId.Value != clientId) return;
 
+        if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client))
+        {
+            var op = client.PlayerObject?.GetComponent<BallistaOperator>();
+            _operatorId.Value = ulong.MaxValue;
+            NetworkObject.ChangeOwnership(NetworkManager.ServerClientId);
+            op?.CompleteDismountClientRpc();
+        }
+    }
     // ─── Public API ───
 
     public void RegisterOperator(BallistaOperator op) => _currentOperator = op;

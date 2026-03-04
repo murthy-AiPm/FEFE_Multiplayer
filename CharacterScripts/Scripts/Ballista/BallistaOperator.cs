@@ -53,6 +53,7 @@ public class BallistaOperator : NetworkBehaviour
     private BallistaController _currentBallista;
     private float _currentIKWeight = 0f;
     private Vector3 _aimTarget;
+    public BallistaController CurrentBallista => _currentBallista;
 
     private void Awake()
     {

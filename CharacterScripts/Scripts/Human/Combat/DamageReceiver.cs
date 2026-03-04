@@ -238,6 +238,14 @@ public class DamageReceiver : NetworkBehaviour
     {
         OnDeath?.Invoke();
         NotifyDeathClientRpc();
+        // Dismount ballista if operating one
+        var ballistaOperator = GetComponent<BallistaOperator>();
+        if (ballistaOperator != null && ballistaOperator.IsOperating)
+        {
+            var ballista = ballistaOperator.CurrentBallista;
+            if (ballista != null)
+                ballista.ForceDismount(GetComponent<NetworkObject>().OwnerClientId);
+        }
 
         if (IsServer && isPlayer)  // ← add isPlayer check
             StartCoroutine(RespawnAfterDelay());
