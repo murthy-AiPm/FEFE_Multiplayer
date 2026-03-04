@@ -546,6 +546,7 @@ GameObject:
   - component: {fileID: 3999042474549380367}
   - component: {fileID: 993689943252265533}
   - component: {fileID: 6395660929140234960}
+  - component: {fileID: -6598896016854509520}
   m_Layer: 6
   m_Name: Humanoid_Warrior_Network
   m_TagString: Player
@@ -1096,6 +1097,35 @@ MonoBehaviour:
   combatController: {fileID: 3999042474549380367}
   weaponManager: {fileID: 417194811012884007}
   activeHitbox: {fileID: 0}
+--- !u!114 &-6598896016854509520
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1445852226725472433}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9fa6166848d604348814ca597ad40318, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BallistaOperator
+  ShowTopMostFoldoutHeaderGroup: 1
+  animator: {fileID: 7940650818366492366}
+  animancerDriver: {fileID: 381001960750757277}
+  thirdPersonController: {fileID: 23822479843493899}
+  combatController: {fileID: 3999042474549380367}
+  inputController: {fileID: 3160448840952355266}
+  spineIKWeight: 0.6
+  headIKWeight: 0.8
+  aimDistance: 20
+  ikBlendSpeed: 5
+  leftHandIKWeight: 0.8
+  rightHandIKWeight: 0.8
+  leftHandGrip: {fileID: 3085104189472785432}
+  rightHandGrip: {fileID: 3085104189472785434}
+  interactionRadius: 2.5
+  interactKey: 101
+  dismountKey: 102
 --- !u!1 &1489072902395659800
 GameObject:
   m_ObjectHideFlags: 0
@@ -1697,7 +1727,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4663046882825290033}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.15191735, y: 0.051423784, z: -0.007914879, w: 0.9870229}
+  m_LocalRotation: {x: 0.15194735, y: 0.047533024, z: -0.007316031, w: 0.9872179}
   m_LocalPosition: {x: 0, y: 3.103529, z: -4.7685847}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -3002,6 +3032,30 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5306752342235830711, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
+      propertyPath: m_AABB.m_Center.x
+      value: NaN
+      objectReference: {fileID: 0}
+    - target: {fileID: 5306752342235830711, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
+      propertyPath: m_AABB.m_Center.y
+      value: NaN
+      objectReference: {fileID: 0}
+    - target: {fileID: 5306752342235830711, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
+      propertyPath: m_AABB.m_Center.z
+      value: NaN
+      objectReference: {fileID: 0}
+    - target: {fileID: 5306752342235830711, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
+      propertyPath: m_AABB.m_Extent.x
+      value: NaN
+      objectReference: {fileID: 0}
+    - target: {fileID: 5306752342235830711, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
+      propertyPath: m_AABB.m_Extent.y
+      value: NaN
+      objectReference: {fileID: 0}
+    - target: {fileID: 5306752342235830711, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
+      propertyPath: m_AABB.m_Extent.z
+      value: NaN
+      objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 5306752342231721851, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
     m_RemovedGameObjects: []
@@ -3014,6 +3068,11 @@ PrefabInstance:
       addedObject: {fileID: 4988381823973546676}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
+--- !u!4 &3085104189472785432 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5306752342222653627, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
+  m_PrefabInstance: {fileID: 7166672631427435683}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &3085104189472785434 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5306752342222653625, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
