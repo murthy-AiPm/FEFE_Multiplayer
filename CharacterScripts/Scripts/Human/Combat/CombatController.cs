@@ -450,11 +450,16 @@ public class CombatController : NetworkBehaviour
 
     private void FireArrow()
     {
-        Vector3 spawnPos = arrowSpawnPoint != null ? arrowSpawnPoint.position : transform.position + Vector3.up * 1.5f;
-        Vector3 fireDir = Camera.main.transform.forward;
+        Vector3 spawnPos = transform.position + Vector3.up * 1.5f;
+        if (arrowSpawnPoint != null)
+            spawnPos = arrowSpawnPoint.position;
+
+        Vector3 fireDir = transform.forward;
+        if (arrowSpawnPoint != null)
+            fireDir = arrowSpawnPoint.forward;
+
         RequestFireArrowServerRpc(spawnPos, fireDir);
     }
-
     [ServerRpc(RequireOwnership = false)]
     private void RequestFireArrowServerRpc(Vector3 spawnPos, Vector3 fireDir)
     {
