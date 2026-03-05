@@ -287,7 +287,8 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   damage: 50
   maxRange: 200
-  despawnDelay: 0.2
+  stickDuration: 5
+  despawnDelay: 5
   impactEffectPrefab: {fileID: 0}
 --- !u!54 &-4240585652584953110
 Rigidbody:

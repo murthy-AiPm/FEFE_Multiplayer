@@ -12,6 +12,7 @@ public class BallistaArrow : NetworkBehaviour
     [Header("Settings")]
     [SerializeField] private float damage = 50f;
     [SerializeField] private float maxRange = 200f;
+    [SerializeField] private float stickDuration = 5f; // how long before despawn after sticking
     [SerializeField] private float despawnDelay = 0.2f; // small delay so clients see impact
 
     [Header("Effects")]
@@ -50,11 +51,17 @@ public class BallistaArrow : NetworkBehaviour
         // Ignore the shooter
         var hitNetObj = other.GetComponentInParent<NetworkObject>();
         if (hitNetObj != null && hitNetObj.OwnerClientId == OwnerClientId) return;
-
         _hasHit = true;
+        var rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.isKinematic = true;
+        }
 
-        // Try to deal damage — apply directly via VitalManager since we're already on the server.
-        // Bypasses DamageReceiver's RPC path which has a 5m range check that rejects arrow hits.
+
+        // Try to deal damage
         var vitalManager = other.GetComponentInParent<VitalManager>();
         if (vitalManager != null)
         {
@@ -62,11 +69,14 @@ public class BallistaArrow : NetworkBehaviour
             Debug.Log($"[BallistaArrow] Applied {damage} damage to {vitalManager.gameObject.name}");
         }
 
-        // Spawn impact effect on all clients
+        // Notify impact effects on clients
         NotifyImpactClientRpc(transform.position, transform.rotation);
 
-        // Despawn after short delay
-        Invoke(nameof(DespawnArrow), despawnDelay);
+        // Stick into surface
+        StickArrowClientRpc(transform.position, transform.rotation);
+
+        // Despawn after stick duration
+        Invoke(nameof(DespawnArrow), stickDuration);
     }
 
     private void DespawnArrow()
@@ -80,5 +90,19 @@ public class BallistaArrow : NetworkBehaviour
     {
         if (impactEffectPrefab != null)
             Instantiate(impactEffectPrefab, position, rotation);
+    }
+    [ClientRpc]
+    private void StickArrowClientRpc(Vector3 position, Quaternion rotation)
+    {
+        // Stop physics and freeze in place
+        var rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.isKinematic = true;
+        }
+        transform.position = position;
+        transform.rotation = rotation;
     }
 }

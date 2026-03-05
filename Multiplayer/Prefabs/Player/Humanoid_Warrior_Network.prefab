@@ -1057,6 +1057,7 @@ MonoBehaviour:
   humanoidController: {fileID: 23822479843493899}
   playerController: {fileID: 6485369523047652345}
   animancerDriver: {fileID: 381001960750757277}
+  arrowSpawnPoint: {fileID: 5040030533022051345}
   allowMountedCombat: 0
   mountController: {fileID: 1702340493594479308}
   dodgeSpeed: 8
@@ -1771,7 +1772,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4663046882825290033}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.22942662, y: 0.051854257, z: -0.012241131, w: 0.97186667}
+  m_LocalRotation: {x: 0.2294344, y: 0.051234726, z: -0.012094882, w: 0.9718995}
   m_LocalPosition: {x: 0, y: 3.6000004, z: -4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -2539,6 +2540,37 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 2
   m_Center: {x: 0, y: 0, z: 0.92}
+--- !u!1 &6959817453031896080
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5040030533022051345}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5040030533022051345
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6959817453031896080}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.00000017881385, y: -0.62449145, z: -0.0000002682208, w: 0.7810317}
+  m_LocalPosition: {x: -0.0000009274672, y: 0.0000014286737, z: -0.00000033304008}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3085104189472785432}
+  m_LocalEulerAnglesHint: {x: 0, y: -77.29, z: 0}
 --- !u!1 &7387302304941838029
 GameObject:
   m_ObjectHideFlags: 0
@@ -3221,6 +3253,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 5306752342222653627, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8682566526124229713}
+    - targetCorrespondingSourceObject: {fileID: 5306752342222653627, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5040030533022051345}
     - targetCorrespondingSourceObject: {fileID: 5306752342222653625, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4988381823973546676}
