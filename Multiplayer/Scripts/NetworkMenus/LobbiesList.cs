@@ -69,7 +69,22 @@ public class LobbiesList : MonoBehaviour
 
         try
         {
-            Lobby joiningLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobby.Id);
+            Lobby joiningLobby;
+
+            // Check if this player is already a member of this lobby (e.g. from a
+            // previous Play-mode session that didn't cleanly leave). If so, reconnect
+            // instead of joining fresh — avoids the 409 Conflict from UGS.
+            List<string> joinedLobbyIds = await LobbyService.Instance.GetJoinedLobbiesAsync();
+
+            if (joinedLobbyIds.Contains(lobby.Id))
+            {
+                joiningLobby = await LobbyService.Instance.ReconnectToLobbyAsync(lobby.Id);
+            }
+            else
+            {
+                joiningLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobby.Id);
+            }
+
             string joinCode = joiningLobby.Data["JoinCode"].Value;
 
             await ClientSingleton.Instance.GameManager.StartClientAsync(joinCode);

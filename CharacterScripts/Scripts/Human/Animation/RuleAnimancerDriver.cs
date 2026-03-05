@@ -250,19 +250,31 @@ public class RuleAnimancerDriver : MonoBehaviour
         if (_isPlayingHitReaction)
             return;
         // Bow aim spine rotation
+        // FIX: remote puppets must use the owner's synced camera pitch, not
+        // Camera.main (which is always the local observer's camera).
         if (combatController != null && ctx.ActiveWeaponSlot == 2)
         {
-            float camPitch = Camera.main.transform.eulerAngles.x;
-            if (camPitch > 180f) camPitch -= 360f;
-            float aimPitch = -camPitch; // invert so looking up = positive pitch
+            float rawPitch;
+            if (_isRemoteClient && networkSync != null)
+            {
+                // Read pitch that was transmitted by the owning client
+                rawPitch = networkSync.RemoteAimPitch;
+            }
+            else
+            {
+                rawPitch = Camera.main != null ? Camera.main.transform.eulerAngles.x : 0f;
+                if (rawPitch > 180f) rawPitch -= 360f;
+            }
 
-            var chest = _animator.GetBoneTransform(HumanBodyBones.Chest);
+            float aimPitch = -rawPitch; // invert: looking up = positive spine bend
+
+            var chest      = _animator.GetBoneTransform(HumanBodyBones.Chest);
             var upperChest = _animator.GetBoneTransform(HumanBodyBones.UpperChest);
 
             if (chest != null)
-                chest.Rotate(Vector3.up, aimPitch * 0.4f, Space.Self);
+                chest.Rotate(Vector3.up, aimPitch * spineChestWeight, Space.Self);
             if (upperChest != null)
-                upperChest.Rotate(Vector3.up, aimPitch * 0.6f, Space.Self);
+                upperChest.Rotate(Vector3.up, aimPitch * spineUpperChestWeight, Space.Self);
         }
         // 2) Attack locked → skip everything (full body, frame-critical)
         if (IsLayerLocked(AnimLayer.Attack))

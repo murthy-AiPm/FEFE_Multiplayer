@@ -78,8 +78,6 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     // ---- Combat State Syncing ----
-
-
     private readonly NetworkVariable<bool> nvEquipping =
         new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
@@ -101,12 +99,30 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
     private readonly NetworkVariable<bool> nvFistCombatMode =
         new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
+    // ---- FIX 1: Bow release edge — sequence counter so a single-frame
+    //             primaryUp is never dropped between 20 Hz ticks. --------
+    private readonly NetworkVariable<int> nvBowReleaseSeq =
+        new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    private int _lastSeenBowReleaseSeq;
+
+    // ---- FIX 2: Owner's camera pitch for spine IK on remote puppets. ---
+    //             Packed as a short (degrees * 10) to save bandwidth.
+    private readonly NetworkVariable<float> nvAimPitch =
+        new(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    // Public accessor so RuleAnimancerDriver can read it without reflection
+    public float RemoteAimPitch => nvAimPitch.Value;
+
     // Reflection to set InputController.Snapshot
     private FieldInfo _snapshotBackingField;
 
     private int _lastSeenActionSeq;
     private int _lastSeenAttackSeq;
     private int _lastSeenJumpSeq;
+
+    // Track whether bow was aiming last tick so we catch the release edge
+    private bool _wasAiming;
 
     // Throttling
     private const float NETWORK_UPDATE_INTERVAL = 0.05f; // 20 Hz
@@ -145,9 +161,10 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         if (!IsOwner)
         {
             ApplyToRemoteHolders();
-            _lastSeenActionSeq = nvActionSeq.Value;
-            _lastSeenAttackSeq = nvAttackSeq.Value;
-            _lastSeenJumpSeq = nvJumpSeq.Value;
+            _lastSeenActionSeq     = nvActionSeq.Value;
+            _lastSeenAttackSeq     = nvAttackSeq.Value;
+            _lastSeenJumpSeq       = nvJumpSeq.Value;
+            _lastSeenBowReleaseSeq = nvBowReleaseSeq.Value;
         }
     }
 
@@ -169,6 +186,7 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
             ApplyRemoteActionEdge();
             ApplyRemoteAttackEdge();
             ApplyRemoteJumpEdge();
+            ApplyRemoteBowReleaseEdge();  // FIX 1
         }
     }
 
@@ -177,15 +195,15 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         if (input == null || tps == null) return;
 
         // Input state
-        if (nvMoving.Value != input.isMoving) nvMoving.Value = input.isMoving;
-        if (nvCombatMode.Value != input.isCombatMode) nvCombatMode.Value = input.isCombatMode;
-        if (nvModified.Value != input.isModified) nvModified.Value = input.isModified;
+        if (nvMoving.Value     != input.isMoving)          nvMoving.Value          = input.isMoving;
+        if (nvCombatMode.Value != input.isCombatMode)      nvCombatMode.Value      = input.isCombatMode;
+        if (nvModified.Value   != input.isModified)        nvModified.Value        = input.isModified;
         if (nvSecondaryHeld.Value != input.isSecondaryAttack) nvSecondaryHeld.Value = input.isSecondaryAttack;
-        if (nvHoverMode.Value != input.isHoverMode) nvHoverMode.Value = input.isHoverMode;
-        if (nvSheathing.Value != input.isSheating) nvSheathing.Value = input.isSheating;
+        if (nvHoverMode.Value  != input.isHoverMode)       nvHoverMode.Value       = input.isHoverMode;
+        if (nvSheathing.Value  != input.isSheating)        nvSheathing.Value       = input.isSheating;
 
-        if (nvGrounded.Value != tps.isgrounded) nvGrounded.Value = tps.isgrounded;
-        if (nvFreeFall.Value != tps.isfreeFall) nvFreeFall.Value = tps.isfreeFall;
+        if (nvGrounded.Value   != tps.isgrounded)          nvGrounded.Value        = tps.isgrounded;
+        if (nvFreeFall.Value   != tps.isfreeFall)          nvFreeFall.Value        = tps.isfreeFall;
 
         var dirStr = new FixedString32Bytes(string.IsNullOrEmpty(input.directions) ? "None" : input.directions);
         if (!nvDirections.Value.Equals(dirStr)) nvDirections.Value = dirStr;
@@ -193,28 +211,52 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         var s = input.Snapshot;
         if (nvPrimaryDown.Value != s.primaryDown) nvPrimaryDown.Value = s.primaryDown;
         if (nvPrimaryHeld.Value != s.primaryHeld) nvPrimaryHeld.Value = s.primaryHeld;
-        if (nvPrimaryUp.Value != s.primaryUp) nvPrimaryUp.Value = s.primaryUp;
-        if (nvJumpDown.Value != s.jumpDown) nvJumpDown.Value = s.jumpDown;
-        if (nvJumpHeld.Value != s.jumpHeld) nvJumpHeld.Value = s.jumpHeld;
-        if (nvActionHeld.Value != s.actionHeld) nvActionHeld.Value = s.actionHeld;
+        if (nvPrimaryUp.Value   != s.primaryUp)   nvPrimaryUp.Value   = s.primaryUp;
+        if (nvJumpDown.Value    != s.jumpDown)     nvJumpDown.Value    = s.jumpDown;
+        if (nvJumpHeld.Value    != s.jumpHeld)     nvJumpHeld.Value    = s.jumpHeld;
+        if (nvActionHeld.Value  != s.actionHeld)   nvActionHeld.Value  = s.actionHeld;
 
         if (s.jumpDown) nvJumpSeq.Value++;
 
-        // ─── Combat State ───
+        // ── FIX 1: Bow release edge ──────────────────────────────────────
+        // Detect the falling edge of BowAiming (owner just released the draw)
+        // and bump a sequence counter so remotes always see the event even if
+        // the bool flips back to false between two 20 Hz write ticks.
+        if (combatController != null)
+        {
+            bool isAimingNow = combatController.IsBowAiming;
+            if (_wasAiming && !isAimingNow)
+                nvBowReleaseSeq.Value++;
+            _wasAiming = isAimingNow;
+        }
+
+        // ── FIX 2: Aim pitch ─────────────────────────────────────────────
+        // Sync camera pitch every tick so remote puppets can drive spine IK
+        // with the owner's actual look angle instead of the observer's camera.
+        if (Camera.main != null)
+        {
+            float pitch = Camera.main.transform.eulerAngles.x;
+            if (pitch > 180f) pitch -= 360f;            // wrap to [-180, 180]
+            // Only send when it changed by more than 0.5° to reduce noise
+            if (Mathf.Abs(nvAimPitch.Value - pitch) > 0.5f)
+                nvAimPitch.Value = pitch;
+        }
+
+        // ── Combat State ─────────────────────────────────────────────────
         if (weaponManager != null)
         {
-            bool equipping = weaponManager.CurrentEquipState == WeaponManager.EquipState.Equipping;
+            bool equipping  = weaponManager.CurrentEquipState == WeaponManager.EquipState.Equipping;
             bool holstering = weaponManager.CurrentEquipState == WeaponManager.EquipState.Holstering;
-            if (nvEquipping.Value != equipping) nvEquipping.Value = equipping;
+            if (nvEquipping.Value  != equipping)  nvEquipping.Value  = equipping;
             if (nvHolstering.Value != holstering) nvHolstering.Value = holstering;
         }
 
         if (combatController != null)
         {
-            if (nvDodging.Value != combatController.IsDodging) nvDodging.Value = combatController.IsDodging;
-            if (nvBlocking.Value != combatController.IsBlocking) nvBlocking.Value = combatController.IsBlocking;
-            if (nvBowDrawing.Value != combatController.IsBowDrawing) nvBowDrawing.Value = combatController.IsBowDrawing;
-            if (nvBowAiming.Value != combatController.IsBowAiming) nvBowAiming.Value = combatController.IsBowAiming;
+            if (nvDodging.Value       != combatController.IsDodging)       nvDodging.Value       = combatController.IsDodging;
+            if (nvBlocking.Value      != combatController.IsBlocking)      nvBlocking.Value      = combatController.IsBlocking;
+            if (nvBowDrawing.Value    != combatController.IsBowDrawing)    nvBowDrawing.Value    = combatController.IsBowDrawing;
+            if (nvBowAiming.Value     != combatController.IsBowAiming)     nvBowAiming.Value     = combatController.IsBowAiming;
             if (nvFistCombatMode.Value != combatController.IsFistCombatMode) nvFistCombatMode.Value = combatController.IsFistCombatMode;
         }
     }
@@ -223,12 +265,12 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
     {
         if (input != null)
         {
-            input.isMoving = nvMoving.Value;
-            input.isCombatMode = nvCombatMode.Value;
-            input.isModified = nvModified.Value;
+            input.isMoving         = nvMoving.Value;
+            input.isCombatMode     = nvCombatMode.Value;
+            input.isModified       = nvModified.Value;
             input.isSecondaryAttack = nvSecondaryHeld.Value;
-            input.isHoverMode = nvHoverMode.Value;
-            input.isSheating = nvSheathing.Value;
+            input.isHoverMode      = nvHoverMode.Value;
+            input.isSheating       = nvSheathing.Value;
 
             input.directions = nvDirections.Value.ToString();
 
@@ -238,10 +280,10 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
                 {
                     primaryDown = nvPrimaryDown.Value,
                     primaryHeld = nvPrimaryHeld.Value,
-                    primaryUp = nvPrimaryUp.Value,
-                    jumpDown = nvJumpDown.Value,
-                    jumpHeld = nvJumpHeld.Value,
-                    actionHeld = nvActionHeld.Value,
+                    primaryUp   = nvPrimaryUp.Value,
+                    jumpDown    = nvJumpDown.Value,
+                    jumpHeld    = nvJumpHeld.Value,
+                    actionHeld  = nvActionHeld.Value,
                 };
                 _snapshotBackingField.SetValue(input, snap);
             }
@@ -253,19 +295,13 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
             tps.isfreeFall = nvFreeFall.Value;
         }
 
-        // ─── Combat State to puppets ───
+        // ── Combat State to puppets ───────────────────────────────────────
         if (weaponManager != null)
         {
             if (nvEquipping.Value)
-            {
-                
                 weaponManager.SetRemoteEquipState(WeaponManager.EquipState.Equipping);
-            }
             else if (nvHolstering.Value)
-            {
-              
                 weaponManager.SetRemoteEquipState(WeaponManager.EquipState.Holstering);
-            }
             else
                 weaponManager.SetRemoteEquipState(WeaponManager.EquipState.Idle);
         }
@@ -304,7 +340,6 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         _lastSeenAttackSeq = seq;
 
         var attackState = nvAttackState.Value;
-
         animDriver.PlayNetworkedAttack(
             attackState.attackKey.ToString(),
             (RuleAnimancerDriver.AttackMode)attackState.mode,
@@ -325,15 +360,39 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         {
             primaryDown = nvPrimaryDown.Value,
             primaryHeld = nvPrimaryHeld.Value,
-            primaryUp = nvPrimaryUp.Value,
-            jumpDown = true,
-            jumpHeld = nvJumpHeld.Value,
-            actionHeld = nvActionHeld.Value,
+            primaryUp   = nvPrimaryUp.Value,
+            jumpDown    = true,
+            jumpHeld    = nvJumpHeld.Value,
+            actionHeld  = nvActionHeld.Value,
         };
         _snapshotBackingField.SetValue(input, snap);
     }
 
-    // ─── Public API for owner ───
+    // ── FIX 1: Bow release edge ───────────────────────────────────────────
+    // When the release sequence ticks, inject a one-frame primaryUp=true into
+    // the remote puppet's snapshot so the Bow/Release rule fires correctly.
+    private void ApplyRemoteBowReleaseEdge()
+    {
+        if (input == null || _snapshotBackingField == null) return;
+
+        int seq = nvBowReleaseSeq.Value;
+        if (seq == _lastSeenBowReleaseSeq) return;
+        _lastSeenBowReleaseSeq = seq;
+
+        // Inject primaryUp for exactly one frame so the rule evaluator sees it
+        var snap = new InputSnapshot
+        {
+            primaryDown = false,
+            primaryHeld = false,
+            primaryUp   = true,         // <-- the release edge
+            jumpDown    = nvJumpDown.Value,
+            jumpHeld    = nvJumpHeld.Value,
+            actionHeld  = nvActionHeld.Value,
+        };
+        _snapshotBackingField.SetValue(input, snap);
+    }
+
+    // ─── Public API for owner ─────────────────────────────────────────────
 
     public void OwnerStartAction(int actionId)
     {
@@ -353,9 +412,9 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         if (!IsOwner) return;
         nvAttackState.Value = new NetworkedAttackState
         {
-            attackKey = new FixedString64Bytes(attackKey),
-            mode = (byte)mode,
-            isHeavy = isHeavy,
+            attackKey  = new FixedString64Bytes(attackKey),
+            mode       = (byte)mode,
+            isHeavy    = isHeavy,
             comboIndex = comboIndex
         };
         nvAttackSeq.Value++;

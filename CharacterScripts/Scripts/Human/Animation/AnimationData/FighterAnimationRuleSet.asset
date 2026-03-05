@@ -15,7 +15,7 @@ MonoBehaviour:
   rules:
   - name: Idle
     layer: 0
-    priority: 1
+    priority: 10
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -33,7 +33,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Walk
     layer: 0
-    priority: 2
+    priority: 12
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -51,7 +51,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Run
     layer: 0
-    priority: 3
+    priority: 14
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -79,7 +79,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Jump
     layer: 0
-    priority: 15
+    priority: 25
     lockUntilEnd: 1
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -97,7 +97,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Fall
     layer: 0
-    priority: 10
+    priority: 20
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -199,7 +199,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Sword/Walk/Straight
     layer: 0
-    priority: 55
+    priority: 52
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -227,7 +227,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Sword/Strafe/Right
     layer: 0
-    priority: 57
+    priority: 54
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -255,7 +255,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Sword/Strafe/Left
     layer: 0
-    priority: 57
+    priority: 54
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -283,7 +283,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Sword/Strafe/Back
     layer: 0
-    priority: 55
+    priority: 53
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -311,7 +311,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Sword/Run
     layer: 0
-    priority: 58
+    priority: 56
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -349,7 +349,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Sword/Block/Idle
     layer: 0
-    priority: 57
+    priority: 55
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -387,7 +387,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Riding/Gallop
     layer: 0
-    priority: 100
+    priority: 204
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -425,7 +425,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Riding/Idle
     layer: 0
-    priority: 100
+    priority: 200
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -463,7 +463,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Riding/Walk/Front
     layer: 0
-    priority: 100
+    priority: 202
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -501,7 +501,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Crouch/Walk
     layer: 0
-    priority: 5
+    priority: 32
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -529,7 +529,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Crouch/Idle
     layer: 0
-    priority: 4
+    priority: 30
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -595,7 +595,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Bow/Idle
     layer: 0
-    priority: 120
+    priority: 70
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -687,7 +687,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Bow/Walk/Right
     layer: 0
-    priority: 122
+    priority: 72
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -715,7 +715,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Bow/Walk/Left
     layer: 0
-    priority: 122
+    priority: 72
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -743,7 +743,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Bow/Walk/Front
     layer: 0
-    priority: 122
+    priority: 72
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -771,7 +771,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Bow/Walk/Back
     layer: 0
-    priority: 122
+    priority: 72
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -799,7 +799,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Bow/Aim/Walk/Right
     layer: 0
-    priority: 130
+    priority: 80
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -827,7 +827,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Bow/Aim/Walk/Left
     layer: 0
-    priority: 130
+    priority: 80
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -855,7 +855,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Bow/Aim/Walk/Front
     layer: 0
-    priority: 130
+    priority: 80
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -883,7 +883,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Bow/Aim/Walk/Back
     layer: 0
-    priority: 130
+    priority: 80
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -911,7 +911,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Fists/Idle
     layer: 0
-    priority: 35
+    priority: 40
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -939,7 +939,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Fists/Walk
     layer: 0
-    priority: 36
+    priority: 42
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -977,7 +977,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Dodge/Front
     layer: 0
-    priority: 1000
+    priority: 500
     lockUntilEnd: 1
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -995,7 +995,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Dodge/Back
     layer: 0
-    priority: 60
+    priority: 500
     lockUntilEnd: 1
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -1013,7 +1013,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Dodge/Right
     layer: 0
-    priority: 60
+    priority: 500
     lockUntilEnd: 1
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -1031,7 +1031,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Dodge/Left
     layer: 0
-    priority: 60
+    priority: 500
     lockUntilEnd: 1
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -1049,7 +1049,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Dodge/Default
     layer: 0
-    priority: 59
+    priority: 490
     lockUntilEnd: 1
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -1067,7 +1067,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: DodgeStep/Front
     layer: 0
-    priority: 60
+    priority: 500
     lockUntilEnd: 1
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -1085,7 +1085,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: DodgeStep/Back
     layer: 0
-    priority: 60
+    priority: 500
     lockUntilEnd: 1
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -1103,7 +1103,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: DodgeStep/Right
     layer: 0
-    priority: 60
+    priority: 500
     lockUntilEnd: 1
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -1121,7 +1121,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: DodgeStep/Left
     layer: 0
-    priority: 60
+    priority: 500
     lockUntilEnd: 1
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
@@ -1139,7 +1139,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: DodgeStep/Default
     layer: 0
-    priority: 59
+    priority: 490
     lockUntilEnd: 1
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
