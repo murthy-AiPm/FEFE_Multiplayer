@@ -50,6 +50,11 @@ public class RuleAnimancerDriver : MonoBehaviour
     [Tooltip("Fade duration when a masked layer finishes and fades out.")]
     [SerializeField] private float layerFadeOutDuration = 0.15f;
 
+    [Header("Bow Aim IK")]
+    [SerializeField] private Vector3 spineAimAxis = Vector3.right;
+    [SerializeField] private float spineChestWeight = 0.4f;
+    [SerializeField] private float spineUpperChestWeight = 0.6f;
+
     [Header("Root Motion")]
     [Tooltip("When enabled, root motion from the current Base rule (if flagged) " +
              "will drive the CharacterController via OnAnimatorMove.")]
@@ -271,6 +276,21 @@ public class RuleAnimancerDriver : MonoBehaviour
 
         if (_actionId != 0 && !IsLayerLocked(AnimLayer.Action))
             _actionId = 0;
+        // Bow aim spine rotation
+        if (combatController != null && (combatController.IsBowDrawing || combatController.IsBowAiming))
+        {
+            float camPitch = Camera.main.transform.eulerAngles.x;
+            if (camPitch > 180f) camPitch -= 360f;
+            float aimPitch = -camPitch; // invert so looking up = positive pitch
+
+            var chest = _animator.GetBoneTransform(HumanBodyBones.Chest);
+            var upperChest = _animator.GetBoneTransform(HumanBodyBones.UpperChest);
+
+            if (chest != null)
+                chest.Rotate(Vector3.up, aimPitch * 0.4f, Space.Self);
+            if (upperChest != null)
+                upperChest.Rotate(Vector3.up, aimPitch * 0.6f, Space.Self);
+        }
     }
 
     // ═════════════════════════════════════════════════════
