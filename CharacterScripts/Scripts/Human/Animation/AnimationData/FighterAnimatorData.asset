@@ -686,7 +686,7 @@ MonoBehaviour:
       _Clip: {fileID: -203655887218126122, guid: 4291ad04454f32c44b66bbb9e501c74b, type: 3}
       _Speed: 0.8
       _NormalizedStartTime: NaN
-    useRootMotion: 0
+    useRootMotion: 1
   - key: Bow/Aim/Walk/Left
     transition:
       _FadeDuration: 0
@@ -698,7 +698,7 @@ MonoBehaviour:
       _Clip: {fileID: -203655887218126122, guid: cfb8d66ad669b6749bb4e5b55921c911, type: 3}
       _Speed: 0.8
       _NormalizedStartTime: NaN
-    useRootMotion: 0
+    useRootMotion: 1
   - key: Bow/Aim/Walk/Front
     transition:
       _FadeDuration: 0
@@ -710,7 +710,7 @@ MonoBehaviour:
       _Clip: {fileID: -203655887218126122, guid: 685d912c2028fd34eb08dbd38e505e24, type: 3}
       _Speed: 0.8
       _NormalizedStartTime: NaN
-    useRootMotion: 0
+    useRootMotion: 1
   - key: Bow/Aim/Walk/Back
     transition:
       _FadeDuration: 0

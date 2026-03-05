@@ -713,34 +713,6 @@ MonoBehaviour:
       direction: 4
       useActionId: 0
       actionIdEquals: 0
-  - name: Bow/Aim/Walk/Right
-    layer: 0
-    priority: 1000
-    lockUntilEnd: 0
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: Bow/Aim/Walk/Right
-    all:
-    - useBool: 1
-      boolParam: 19
-      boolValue: 1
-      useInput: 1
-      input: 0
-      triggerMode: 2
-      useDirection: 1
-      direction: 4
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 0
-      boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 0
-      useDirection: 0
-      direction: 4
-      useActionId: 0
-      actionIdEquals: 0
   - name: Bow/Walk/Left
     layer: 0
     priority: 122
@@ -825,6 +797,34 @@ MonoBehaviour:
       direction: 3
       useActionId: 0
       actionIdEquals: 0
+  - name: Bow/Aim/Walk/Right
+    layer: 0
+    priority: 130
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Bow/Aim/Walk/Right
+    all:
+    - useBool: 1
+      boolParam: 19
+      boolValue: 1
+      useInput: 1
+      input: 0
+      triggerMode: 2
+      useDirection: 1
+      direction: 4
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 4
+      useActionId: 0
+      actionIdEquals: 0
   - name: Bow/Aim/Walk/Left
     layer: 0
     priority: 130
@@ -836,9 +836,9 @@ MonoBehaviour:
     - useBool: 1
       boolParam: 0
       boolValue: 1
-      useInput: 0
+      useInput: 1
       input: 0
-      triggerMode: 0
+      triggerMode: 2
       useDirection: 1
       direction: 2
       useActionId: 0
@@ -846,7 +846,7 @@ MonoBehaviour:
     - useBool: 1
       boolParam: 19
       boolValue: 1
-      useInput: 1
+      useInput: 0
       input: 0
       triggerMode: 1
       useDirection: 0
@@ -864,9 +864,9 @@ MonoBehaviour:
     - useBool: 1
       boolParam: 0
       boolValue: 1
-      useInput: 0
+      useInput: 1
       input: 0
-      triggerMode: 0
+      triggerMode: 2
       useDirection: 1
       direction: 1
       useActionId: 0
@@ -874,7 +874,7 @@ MonoBehaviour:
     - useBool: 1
       boolParam: 19
       boolValue: 1
-      useInput: 1
+      useInput: 0
       input: 0
       triggerMode: 1
       useDirection: 0
@@ -892,9 +892,9 @@ MonoBehaviour:
     - useBool: 1
       boolParam: 0
       boolValue: 1
-      useInput: 0
+      useInput: 1
       input: 0
-      triggerMode: 0
+      triggerMode: 2
       useDirection: 1
       direction: 3
       useActionId: 0
@@ -902,7 +902,7 @@ MonoBehaviour:
     - useBool: 1
       boolParam: 19
       boolValue: 1
-      useInput: 1
+      useInput: 0
       input: 0
       triggerMode: 1
       useDirection: 0
