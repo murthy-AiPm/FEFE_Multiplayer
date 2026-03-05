@@ -20,11 +20,30 @@ public class BallistaArrow : NetworkBehaviour
 
     private Vector3 _startPosition;
     private bool _hasHit;
+    private Collider _collider;
+
+    private void Awake()
+    {
+        _collider = GetComponent<Collider>();
+    }
 
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
         _startPosition = transform.position;
+
+        // Disable collider briefly so arrow clears its spawn point
+        if (_collider != null)
+        {
+            _collider.enabled = false;
+            Invoke(nameof(EnableCollider), 0.1f);
+        }
+    }
+
+    private void EnableCollider()
+    {
+        if (_collider != null)
+            _collider.enabled = true;
     }
 
     private void Update()
@@ -45,12 +64,13 @@ public class BallistaArrow : NetworkBehaviour
         if (!IsServer) return;
         if (_hasHit) return;
 
-        // Ignore other ballista arrows
-        if (other.GetComponent<BallistaArrow>() != null) return;
+        // Ignore other ballista arrows (check self and parent)
+        if (other.GetComponentInParent<BallistaArrow>() != null) return;
 
-        // Ignore the shooter
+        // Ignore the shooter (only skip owner check for players, not NPCs like bears)
         var hitNetObj = other.GetComponentInParent<NetworkObject>();
-        if (hitNetObj != null && hitNetObj.OwnerClientId == OwnerClientId) return;
+        bool isPlayer = hitNetObj != null && other.GetComponentInParent<CombatController>() != null;
+        if (isPlayer && hitNetObj.OwnerClientId == OwnerClientId) return;
         _hasHit = true;
         var rb = GetComponent<Rigidbody>();
         if (rb != null)

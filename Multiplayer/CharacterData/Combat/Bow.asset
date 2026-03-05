@@ -23,7 +23,7 @@ MonoBehaviour:
   staminaCostHeavy: 25
   blockStaminaCost: 5
   arrowPrefab: {fileID: 1959729250425484, guid: 38cb626ac302a884db72d4272b729337, type: 3}
-  arrowSpeed: 2
+  arrowSpeed: 20
   drawTime: 0.8
   holsterBone: Spine_Holster
   holsterLocalPos: {x: 0, y: 0, z: 0}

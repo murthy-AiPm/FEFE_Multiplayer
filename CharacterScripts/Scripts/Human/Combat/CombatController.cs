@@ -2,6 +2,7 @@ using System;
 using Unity.Netcode;
 using UnityEngine;
 using System.Collections;
+using Unity.Cinemachine;
 
 /// <summary>
 /// Lightweight combat coordinator for humanoid defenders.
@@ -38,6 +39,13 @@ public class CombatController : NetworkBehaviour
 
     [Header("Bow")]
     [SerializeField] private Transform arrowSpawnPoint;
+
+    [Header("Bow Camera")]
+    [SerializeField] private CinemachineCamera vcam;
+    [SerializeField] private Transform defaultCamTarget;
+    [SerializeField] private Transform aimCube;
+    [SerializeField] private float aimFOV = 40f;
+    private float _defaultFOV;
 
     [Header("Mounted Combat")]
     [SerializeField] private bool allowMountedCombat = false;
@@ -403,7 +411,12 @@ public class CombatController : NetworkBehaviour
     {
         var weapon = weaponManager.ActiveWeapon;
         if (weapon == null) return;
-
+        if (vcam != null && aimCube != null)
+        {
+            _defaultFOV = vcam.Lens.FieldOfView;
+            vcam.Target.TrackingTarget = aimCube;
+            vcam.Lens.FieldOfView = aimFOV;
+        }
         if (vitalManager != null)
         {
             var stamina = vitalManager.GetVital("stamina");
@@ -448,17 +461,29 @@ public class CombatController : NetworkBehaviour
         }
     }
 
+    //private void FireArrow()
+    //{
+    //    Vector3 spawnPos = transform.position + Vector3.up * 1.5f;
+    //    if (arrowSpawnPoint != null)
+    //        spawnPos = arrowSpawnPoint.position;
+
+    //    Vector3 fireDir = transform.forward;
+    //    if (arrowSpawnPoint != null)
+    //        fireDir = arrowSpawnPoint.forward;
+
+    //    RequestFireArrowServerRpc(spawnPos, fireDir);
+    //}
+
     private void FireArrow()
     {
         Vector3 spawnPos = transform.position + Vector3.up * 1.5f;
         if (arrowSpawnPoint != null)
             spawnPos = arrowSpawnPoint.position;
 
-        Vector3 fireDir = transform.forward;
-        if (arrowSpawnPoint != null)
-            fireDir = arrowSpawnPoint.forward;
+        Vector3 fireDir = Camera.main.transform.forward;
 
         RequestFireArrowServerRpc(spawnPos, fireDir);
+        // cam cube 0.5,1.6,0
     }
     [ServerRpc(RequireOwnership = false)]
     private void RequestFireArrowServerRpc(Vector3 spawnPos, Vector3 fireDir)
@@ -556,6 +581,18 @@ public class CombatController : NetworkBehaviour
     private void SetState(CombatState newState)
     {
         if (State == newState) return;
+
+        // Restore camera when leaving bow states
+        if ((State == CombatState.BowDrawing || State == CombatState.BowAiming)
+            && newState != CombatState.BowDrawing && newState != CombatState.BowAiming)
+        {
+            if (vcam != null && defaultCamTarget != null)
+            {
+                vcam.Target.TrackingTarget = defaultCamTarget;
+                vcam.Lens.FieldOfView = _defaultFOV;
+            }
+        }
+
         State = newState;
         OnStateChanged?.Invoke(newState);
     }
@@ -623,6 +660,11 @@ public class CombatController : NetworkBehaviour
         _iFrameTimer = 0f;
         _bowDrawTimer = 0f;
         IsDodgeStep = false;
+        if (vcam != null && defaultCamTarget != null)
+        {
+            vcam.Target.TrackingTarget = defaultCamTarget;
+            vcam.Lens.FieldOfView = _defaultFOV;
+        }
         StopAllCoroutines();
     }
 

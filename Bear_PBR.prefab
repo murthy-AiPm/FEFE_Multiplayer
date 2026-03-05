@@ -176,7 +176,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2517650064
+  GlobalObjectIdHash: 893738681
   InScenePlacedSourceGlobalObjectIdHash: 4233055752
   DeferredDespawnTick: 0
   Ownership: 1
@@ -391,7 +391,7 @@ MonoBehaviour:
   canvasRoot: {fileID: 1018957143558286619}
   fillImage: {fileID: 1062163131552955322}
   heightOffset: 2.5
-  visibleDistance: 20
+  visibleDistance: 200
   hideWhenFull: 0
   showAfterDamageTime: 5
   fillSpeed: 5

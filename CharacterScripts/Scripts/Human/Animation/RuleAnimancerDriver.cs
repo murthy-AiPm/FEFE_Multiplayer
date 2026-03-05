@@ -280,8 +280,6 @@ public class RuleAnimancerDriver : MonoBehaviour
         // 3) Rule evaluation: Attack > Action > Base
         //    Action lock only prevents new Action rules, NOT Base layer updates.
         //    This allows locomotion to keep running under a masked Action (e.g. unsheathe over combat walk).
-        if (weaponManager != null)
-            Debug.Log($"[WeaponManager] ActiveSlot: {weaponManager.ActiveSlot}, EquipState: {weaponManager.CurrentEquipState}, Equipping: {ctx.Equipping}, WeaponSlot1: {ctx.ActiveWeaponSlot == 1}, WeaponSlot2: {ctx.ActiveWeaponSlot == 2}");
         if (TryPlayBestRule(ctx, AnimLayer.Attack)) return;
         bool actionFadingOut = !IsLayerLocked(AnimLayer.Action) && _actionLayer.Weight > 0f && _actionLayer.Weight < 1f;
         if (!IsLayerLocked(AnimLayer.Action) && !actionFadingOut)
