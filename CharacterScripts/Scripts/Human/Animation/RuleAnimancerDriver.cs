@@ -97,8 +97,8 @@ public class RuleAnimancerDriver : MonoBehaviour
     // Root motion
     private bool _rootMotionActive = false;
 
-    // Network
-    private bool _isRemoteClient = false;
+    // Network — evaluated lazily after spawn so IsOwner is valid
+    private bool _isRemoteClient => networkSync != null && networkSync.IsSpawned && !networkSync.IsOwner;
 
     // ───────────────────── Public API ─────────────────────
 
@@ -135,9 +135,6 @@ public class RuleAnimancerDriver : MonoBehaviour
         if (mountController == null) mountController = GetComponentInParent<MountController>();
         if (combatController == null) combatController = GetComponentInParent<CombatController>();
         if (weaponManager == null) weaponManager = GetComponentInParent<WeaponManager>();
-        var netObj = GetComponentInParent<Unity.Netcode.NetworkBehaviour>();
-        if (netObj != null)
-            _isRemoteClient = netObj.IsSpawned && !netObj.IsOwner;
 
         SetupLayers();
     }
@@ -250,14 +247,15 @@ public class RuleAnimancerDriver : MonoBehaviour
         if (_isPlayingHitReaction)
             return;
         // Bow aim spine rotation
-        // FIX: remote puppets must use the owner's synced camera pitch, not
-        // Camera.main (which is always the local observer's camera).
-        if (combatController != null && ctx.ActiveWeaponSlot == 2)
+        // For the local owner: use Camera.main pitch directly.
+        // For remote puppets: use the synced RemoteAimPitch from the owner.
+        // Gate: only apply when bow is slot 2 AND player is aiming/drawing.
+        bool bowIsActive = ctx.BowAiming || ctx.BowDrawing;
+        if (combatController != null && ctx.ActiveWeaponSlot == 2 && bowIsActive)
         {
             float rawPitch;
             if (_isRemoteClient && networkSync != null)
             {
-                // Read pitch that was transmitted by the owning client
                 rawPitch = networkSync.RemoteAimPitch;
             }
             else
