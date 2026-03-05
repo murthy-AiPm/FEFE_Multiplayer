@@ -129,11 +129,7 @@ public class BallistaArrow : NetworkBehaviour
         transform.position = position;
         transform.rotation = rotation;
 
-        // Parent to hit NetworkObject so arrow moves with it
-        if (parentNetId != ulong.MaxValue &&
-            NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(parentNetId, out var parentNetObj))
-        {
-            transform.SetParent(parentNetObj.transform, true);
-        }
+        // Do NOT call SetParent here — server's TrySetParent replicates automatically.
+        // Calling it on the client throws NotServerException.
     }
 }
