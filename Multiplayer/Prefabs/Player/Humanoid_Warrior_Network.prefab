@@ -811,7 +811,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 4039243730
+  GlobalObjectIdHash: 141270869
   InScenePlacedSourceGlobalObjectIdHash: 4039243730
   DeferredDespawnTick: 0
   Ownership: 1
@@ -1986,8 +1986,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4663046882825290033}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.22940698, y: 0.053392693, z: -0.012604306, w: 0.97178334}
-  m_LocalPosition: {x: 0, y: 3.6000004, z: -4}
+  m_LocalRotation: {x: 0.073829725, y: 0.91532236, z: 0.19668674, w: -0.34358191}
+  m_LocalPosition: {x: 1.1932259, y: 0.6593065, z: 1.7130966}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2073,7 +2073,7 @@ MonoBehaviour:
     SplineCurvature: 0.5
   RecenteringTarget: 2
   HorizontalAxis:
-    Value: 0
+    Value: -145.14166
     Center: 0
     Range: {x: -180, y: 180}
     Wrap: 1
@@ -2083,7 +2083,7 @@ MonoBehaviour:
       Time: 2
     Restrictions: 0
   VerticalAxis:
-    Value: 17.5
+    Value: -8.995911
     Center: 17.5
     Range: {x: -10, y: 45}
     Wrap: 0
@@ -3546,27 +3546,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5306752342235830711, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
       propertyPath: m_AABB.m_Center.x
-      value: NaN
+      value: 0.15316603
       objectReference: {fileID: 0}
     - target: {fileID: 5306752342235830711, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
       propertyPath: m_AABB.m_Center.y
-      value: NaN
+      value: 0.044528797
       objectReference: {fileID: 0}
     - target: {fileID: 5306752342235830711, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
       propertyPath: m_AABB.m_Center.z
-      value: NaN
+      value: 0.000000074505806
       objectReference: {fileID: 0}
     - target: {fileID: 5306752342235830711, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
       propertyPath: m_AABB.m_Extent.x
-      value: NaN
+      value: 0.23733553
       objectReference: {fileID: 0}
     - target: {fileID: 5306752342235830711, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
       propertyPath: m_AABB.m_Extent.y
-      value: NaN
+      value: 0.19465186
       objectReference: {fileID: 0}
     - target: {fileID: 5306752342235830711, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
       propertyPath: m_AABB.m_Extent.z
-      value: NaN
+      value: 0.19471262
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 5306752342231721851, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}

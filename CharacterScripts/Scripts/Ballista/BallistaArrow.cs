@@ -21,7 +21,6 @@ public class BallistaArrow : NetworkBehaviour
     private Vector3 _startPosition;
     private bool _hasHit;
     private Collider _collider;
-
     private void Awake()
     {
         _collider = GetComponent<Collider>();
