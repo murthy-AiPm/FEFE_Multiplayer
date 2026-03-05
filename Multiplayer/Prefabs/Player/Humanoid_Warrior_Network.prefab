@@ -1033,7 +1033,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   loadout: {fileID: 11400000, guid: 2b5d1c2772db3a949ac1046709a1880d, type: 2}
   rightHandAttach: {fileID: 4988381823973546676}
-  leftHandAttach: {fileID: 0}
+  leftHandAttach: {fileID: 8682566526124229713}
   backHolster: {fileID: 0}
   hipHolster: {fileID: 3085104189472785492}
   shieldBackHolster: {fileID: 0}
@@ -1273,6 +1273,37 @@ MonoBehaviour:
   staminaBgColor: {r: 0.05, g: 0.2, b: 0.08, a: 0.8}
   borderColor: {r: 0, g: 0, b: 0, a: 0.9}
   fillSpeed: 5
+--- !u!1 &1661579671795230286
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8682566526124229713}
+  m_Layer: 0
+  m_Name: LHA
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8682566526124229713
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1661579671795230286}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.008120034, y: 0.81359315, z: 0.58135754, w: 0.00486757}
+  m_LocalPosition: {x: 0.14293888, y: -0.065671355, z: -0.27467018}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3085104189472785432}
+  m_LocalEulerAnglesHint: {x: -71.067, y: 176.933, z: 3.334}
 --- !u!1 &2075063792288878763
 GameObject:
   m_ObjectHideFlags: 0
@@ -1522,7 +1553,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4988381823973546676}
   m_Layer: 0
-  m_Name: Weapon
+  m_Name: RHA
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1740,7 +1771,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4663046882825290033}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.22949238, y: 0.046339802, z: -0.010939344, w: 0.9721452}
+  m_LocalRotation: {x: 0.22942662, y: 0.051854257, z: -0.012241131, w: 0.97186667}
   m_LocalPosition: {x: 0, y: 3.6000004, z: -4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -3187,6 +3218,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 5306752342222653689, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8947820919275887374}
+    - targetCorrespondingSourceObject: {fileID: 5306752342222653627, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8682566526124229713}
     - targetCorrespondingSourceObject: {fileID: 5306752342222653625, guid: e310f6060973bbe4a8f7c981a0e58133, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4988381823973546676}

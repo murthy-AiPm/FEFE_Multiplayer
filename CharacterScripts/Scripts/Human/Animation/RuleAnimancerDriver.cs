@@ -249,6 +249,21 @@ public class RuleAnimancerDriver : MonoBehaviour
         // 1) Hit reaction playing → skip all rule evaluation (hit owns Base)
         if (_isPlayingHitReaction)
             return;
+        // Bow aim spine rotation
+        if (combatController != null && ctx.ActiveWeaponSlot == 2)
+        {
+            float camPitch = Camera.main.transform.eulerAngles.x;
+            if (camPitch > 180f) camPitch -= 360f;
+            float aimPitch = -camPitch; // invert so looking up = positive pitch
+
+            var chest = _animator.GetBoneTransform(HumanBodyBones.Chest);
+            var upperChest = _animator.GetBoneTransform(HumanBodyBones.UpperChest);
+
+            if (chest != null)
+                chest.Rotate(Vector3.up, aimPitch * 0.4f, Space.Self);
+            if (upperChest != null)
+                upperChest.Rotate(Vector3.up, aimPitch * 0.6f, Space.Self);
+        }
         // 2) Attack locked → skip everything (full body, frame-critical)
         if (IsLayerLocked(AnimLayer.Attack))
         {
@@ -276,21 +291,7 @@ public class RuleAnimancerDriver : MonoBehaviour
 
         if (_actionId != 0 && !IsLayerLocked(AnimLayer.Action))
             _actionId = 0;
-        // Bow aim spine rotation
-        if (combatController != null && (combatController.IsBowDrawing || combatController.IsBowAiming))
-        {
-            float camPitch = Camera.main.transform.eulerAngles.x;
-            if (camPitch > 180f) camPitch -= 360f;
-            float aimPitch = -camPitch; // invert so looking up = positive pitch
-
-            var chest = _animator.GetBoneTransform(HumanBodyBones.Chest);
-            var upperChest = _animator.GetBoneTransform(HumanBodyBones.UpperChest);
-
-            if (chest != null)
-                chest.Rotate(Vector3.up, aimPitch * 0.4f, Space.Self);
-            if (upperChest != null)
-                upperChest.Rotate(Vector3.up, aimPitch * 0.6f, Space.Self);
-        }
+      
     }
 
     // ═════════════════════════════════════════════════════
@@ -412,7 +413,7 @@ public class RuleAnimancerDriver : MonoBehaviour
         // Stamina check
         if (combatController != null && !combatController.CanAttack())
             return false;
-
+      
         // If currently attacking, buffer the click for combo continuation
         if (IsLayerLocked(AnimLayer.Attack))
         {

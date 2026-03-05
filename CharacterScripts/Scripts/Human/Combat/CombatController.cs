@@ -1,7 +1,7 @@
 using System;
 using Unity.Netcode;
 using UnityEngine;
-using System.Collections; 
+using System.Collections;
 
 /// <summary>
 /// Lightweight combat coordinator for humanoid defenders.
@@ -36,6 +36,9 @@ public class CombatController : NetworkBehaviour
     [SerializeField] private PlayerController playerController;
     [SerializeField] private RuleAnimancerDriver animancerDriver;
 
+    [Header("Bow")]
+    [SerializeField] private Transform arrowSpawnPoint;
+
     [Header("Mounted Combat")]
     [SerializeField] private bool allowMountedCombat = false;
     [SerializeField] private MountController mountController;
@@ -52,7 +55,7 @@ public class CombatController : NetworkBehaviour
     [SerializeField] private float dodgeStepBoostSpeed = 4f;
     [SerializeField] private float dodgeStepBoostDuration = 0.15f;
 
-   
+
 
     [Header("Block")]
     [SerializeField] private float blockStaminaDrain = 3f; // per second while holding block
@@ -447,25 +450,24 @@ public class CombatController : NetworkBehaviour
 
     private void FireArrow()
     {
-        RequestFireArrowServerRpc();
+        Vector3 spawnPos = arrowSpawnPoint != null ? arrowSpawnPoint.position : transform.position + Vector3.up * 1.5f;
+        Vector3 fireDir = Camera.main.transform.forward;
+        RequestFireArrowServerRpc(spawnPos, fireDir);
     }
 
-    [ServerRpc]
-    private void RequestFireArrowServerRpc()
+    [ServerRpc(RequireOwnership = false)]
+    private void RequestFireArrowServerRpc(Vector3 spawnPos, Vector3 fireDir)
     {
         var weapon = weaponManager.GetWeaponForSlot(2);
         if (weapon == null || weapon.arrowPrefab == null) return;
 
-        var spawnPos = transform.position + Vector3.up * 1.5f + transform.forward * 0.5f;
-        var arrow = Instantiate(weapon.arrowPrefab, spawnPos, transform.rotation);
+        var arrow = Instantiate(weapon.arrowPrefab, spawnPos, Quaternion.LookRotation(fireDir));
 
         var rb = arrow.GetComponent<Rigidbody>();
-        if (rb != null)
-            rb.linearVelocity = transform.forward * weapon.arrowSpeed;
+        if (rb != null) rb.linearVelocity = fireDir * weapon.arrowSpeed;
 
         var netObj = arrow.GetComponent<NetworkObject>();
-        if (netObj != null)
-            netObj.Spawn();
+        if (netObj != null) netObj.Spawn();
     }
 
     // ─── Stamina Gating API (called by RuleAnimancerDriver before playing attacks) ───

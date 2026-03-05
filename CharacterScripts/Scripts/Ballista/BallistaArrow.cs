@@ -47,6 +47,10 @@ public class BallistaArrow : NetworkBehaviour
         // Ignore other ballista arrows
         if (other.GetComponent<BallistaArrow>() != null) return;
 
+        // Ignore the shooter
+        var hitNetObj = other.GetComponentInParent<NetworkObject>();
+        if (hitNetObj != null && hitNetObj.OwnerClientId == OwnerClientId) return;
+
         _hasHit = true;
 
         // Try to deal damage — apply directly via VitalManager since we're already on the server.
