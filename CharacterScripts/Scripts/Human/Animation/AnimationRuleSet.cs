@@ -39,6 +39,8 @@ public enum BoolParam
     WeaponSlot0,   // fists
     WeaponSlot1,   // primary melee
     WeaponSlot2,   // bow
+    PendingSlot1,
+    PendingSlot2,
 }
 
 public enum InputEdge

@@ -664,7 +664,7 @@ MonoBehaviour:
   deathAnimationKey: Death
   hitTurnLerpSpeed: 720
   actionLayerMask: {fileID: 0}
-  attackLayerMask: {fileID: 0}
+  attackLayerMask: {fileID: 31900000, guid: 8a05a2e26dcdf4c4dbc0913d2f466bb0, type: 2}
   layerFadeOutDuration: 0.15
   allowRootMotion: 1
   combatController: {fileID: 3999042474549380367}

@@ -41,6 +41,7 @@ public class WeaponManager : NetworkBehaviour
         0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     public int ActiveSlot => _activeSlot.Value;
+    public int PendingSlot => _pendingSlot;
     public EquipState CurrentEquipState { get; private set; } = EquipState.Idle;
     public WeaponData ActiveWeapon => GetWeaponForSlot(ActiveSlot);
 

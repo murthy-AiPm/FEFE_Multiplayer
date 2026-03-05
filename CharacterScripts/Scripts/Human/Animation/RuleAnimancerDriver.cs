@@ -246,7 +246,10 @@ public class RuleAnimancerDriver : MonoBehaviour
             return;
         // 2) Attack locked → skip everything (full body, frame-critical)
         if (IsLayerLocked(AnimLayer.Attack))
+        {
+            TryPlayBestRule(ctx, AnimLayer.Base);
             return;
+        }
         bool combatBusy = combatController != null &&
             (combatController.IsDodging || combatController.IsBlocking ||
              combatController.IsBowDrawing || combatController.IsBowAiming);
@@ -293,9 +296,8 @@ public class RuleAnimancerDriver : MonoBehaviour
                 best = r;
             }
         }
-
         if (best == null) return false;
-
+        
         if (!animationSet.TryGet(best.animationKey, out var transition) || transition == null || transition.Clip == null)
             return false;
 
@@ -867,6 +869,8 @@ public class RuleAnimancerDriver : MonoBehaviour
                 BoolParam.WeaponSlot0 => ctx.ActiveWeaponSlot == 0,
                 BoolParam.WeaponSlot1 => ctx.ActiveWeaponSlot == 1,
                 BoolParam.WeaponSlot2 => ctx.ActiveWeaponSlot == 2,
+                BoolParam.PendingSlot1 => ctx.PendingWeaponSlot == 1,
+                BoolParam.PendingSlot2 => ctx.PendingWeaponSlot == 2,
                 _ => false
             };
 

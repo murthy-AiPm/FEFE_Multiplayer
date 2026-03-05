@@ -30,6 +30,7 @@ public struct AnimationContext
     weaponManager.CurrentEquipState == WeaponManager.EquipState.Equipping;
     public bool Holstering => weaponManager != null &&
         weaponManager.CurrentEquipState == WeaponManager.EquipState.Holstering;
+    public int PendingWeaponSlot => weaponManager != null ? weaponManager.PendingSlot : -1;
     // Mounting states (NEW)
     public bool IsMounted => mountController != null && mountController.IsMounted;
     public bool IsTransitioning => mountController != null && mountController.IsTransitioning;
