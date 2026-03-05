@@ -16,7 +16,7 @@ MonoBehaviour:
   vitalID: health
   maxValue: 200
   startValue: 200
-  regenEnabled: 0
+  regenEnabled: 1
   regenRate: 10
   regenDelay: 3
   regenOnlyWhenGrounded: 0

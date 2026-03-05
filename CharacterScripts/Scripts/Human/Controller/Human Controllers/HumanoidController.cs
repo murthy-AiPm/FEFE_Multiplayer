@@ -41,15 +41,21 @@ public class HumanoidController : ThirdPersonController
 
     protected override void Jump()
     {
+        // Don't jump if combat controller is handling the input as a dodge
+        if (combatController != null && (combatController.IsDodging || combatController.IsDodgeStep))
+            return;
+
+        // In combat mode, Space is used for dodge — block jumping entirely
+        if (playerController.inputController.isCombatMode)
+            return;
+
         if (isJumpPressed && isgrounded && isobstacle)
         {
             playerVelocity.y = Mathf.Sqrt(jumpHeight * -jumpnum * gravityValue);
-
         }
         else if (isJumpPressed && isgrounded && !isobstacle)
         {
             playerVelocity.y = Mathf.Sqrt(jumpHeight * -1 * gravityValue);
-
         }
     }
 

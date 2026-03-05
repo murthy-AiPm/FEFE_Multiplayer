@@ -207,7 +207,8 @@ public class CombatController : NetworkBehaviour
     {
         bool inCombat = weaponManager.ActiveSlot != 0 || IsFistCombatMode;
 
-        if (_input.dodgeDown && inCombat && !IsDodgeStep)
+        var activeWeaponType = weaponManager.GetActiveWeaponType();
+        if (_input.dodgeDown && inCombat && !IsDodgeStep && activeWeaponType != WeaponType.Bow)
         {
             TryDodgeStep();
             return;
@@ -228,7 +229,7 @@ public class CombatController : NetworkBehaviour
         }
 
         // Block: secondary held + primary melee equipped
-        var weaponType = weaponManager.GetActiveWeaponType();
+        var weaponType = activeWeaponType;
         if (_input.secondaryHeld && weaponManager.ActiveSlot == 1 &&
             (weaponType == WeaponType.OneHanded || weaponType == WeaponType.TwoHanded))
         {
