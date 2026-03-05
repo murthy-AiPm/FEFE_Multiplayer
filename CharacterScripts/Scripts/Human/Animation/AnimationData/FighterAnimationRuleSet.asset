@@ -659,8 +659,8 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Bow/UnEquip
     layer: 1
-    priority: 35
-    lockUntilEnd: 0
+    priority: 122
+    lockUntilEnd: 1
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
     animationKey: Bow/UnEquip

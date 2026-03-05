@@ -318,7 +318,7 @@ MonoBehaviour:
       _Clip: {fileID: -203655887218126122, guid: ae781d53f3674534bb2325133ec7efd3, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN
-    useRootMotion: 1
+    useRootMotion: 0
   - key: Bow/UnEquip
     transition:
       _FadeDuration: 0
