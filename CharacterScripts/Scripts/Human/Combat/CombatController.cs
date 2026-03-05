@@ -476,14 +476,21 @@ public class CombatController : NetworkBehaviour
 
     private void FireArrow()
     {
-        Vector3 spawnPos = transform.position + Vector3.up * 1.5f;
+        Vector3 spawnPos = transform.position + Vector3.up;
         if (arrowSpawnPoint != null)
             spawnPos = arrowSpawnPoint.position;
 
-        Vector3 fireDir = Camera.main.transform.forward;
+        // Raycast from camera to find the real aim point, then direct arrow toward it
+        // This ensures the arrow lands exactly where the crosshair/debug sphere is
+        var cam = Camera.main;
+        Ray ray = new Ray(cam.transform.position, cam.transform.forward);
+        Vector3 aimPoint = Physics.Raycast(ray, out RaycastHit hit, 200f)
+            ? hit.point
+            : ray.origin + ray.direction * 200f;
+
+        Vector3 fireDir = (aimPoint - spawnPos).normalized;
 
         RequestFireArrowServerRpc(spawnPos, fireDir);
-        // cam cube 0.5,1.6,0
     }
     [ServerRpc(RequireOwnership = false)]
     private void RequestFireArrowServerRpc(Vector3 spawnPos, Vector3 fireDir)

@@ -91,8 +91,13 @@ public class BallistaArrow : NetworkBehaviour
         // Notify impact effects on clients
         NotifyImpactClientRpc(transform.position, transform.rotation);
 
-        // Stick into surface
-        StickArrowClientRpc(transform.position, transform.rotation);
+        // Stick into surface — parent to hit NetworkObject if available so arrow moves with it
+        ulong parentNetId = hitNetObj != null ? hitNetObj.NetworkObjectId : ulong.MaxValue;
+        StickArrowClientRpc(transform.position, transform.rotation, parentNetId);
+
+        // Also parent on server
+        if (hitNetObj != null)
+            NetworkObject.TrySetParent(hitNetObj.transform, true);
 
         // Despawn after stick duration
         Invoke(nameof(DespawnArrow), stickDuration);
@@ -111,7 +116,7 @@ public class BallistaArrow : NetworkBehaviour
             Instantiate(impactEffectPrefab, position, rotation);
     }
     [ClientRpc]
-    private void StickArrowClientRpc(Vector3 position, Quaternion rotation)
+    private void StickArrowClientRpc(Vector3 position, Quaternion rotation, ulong parentNetId)
     {
         // Stop physics and freeze in place
         var rb = GetComponent<Rigidbody>();
@@ -123,5 +128,12 @@ public class BallistaArrow : NetworkBehaviour
         }
         transform.position = position;
         transform.rotation = rotation;
+
+        // Parent to hit NetworkObject so arrow moves with it
+        if (parentNetId != ulong.MaxValue &&
+            NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(parentNetId, out var parentNetObj))
+        {
+            transform.SetParent(parentNetObj.transform, true);
+        }
     }
 }
