@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cfacfa3c263cc6a428d3be61dab66368, type: 3}
-  m_Name: FighterAnimatorData
+  m_Name: SwordAndShieldAnimationData
   m_EditorClassIdentifier: 
   clips:
   - key: Locomotion/Idle

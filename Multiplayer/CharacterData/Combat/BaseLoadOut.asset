@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 340c51165dcaa3747811ec02d62beb32, type: 3}
-  m_Name: FighterLoadOut
+  m_Name: BaseLoadOut
   m_EditorClassIdentifier: Assembly-CSharp::CombatLoadout
   primaryWeapon: {fileID: 11400000, guid: faa4939142e595c4db44cfab8edba7df, type: 2}
   shield: {fileID: 0}

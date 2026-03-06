@@ -24,6 +24,8 @@ public class DamageReceiver : NetworkBehaviour
     [SerializeField] private float blockDamageReduction = 0.8f;
     [Tooltip("Angle in degrees — attacks from within this cone in front are blockable")]
     [SerializeField] private float blockAngle = 120f;
+    [Tooltip("Stamina consumed per block = incomingDamage * this ratio")]
+    [SerializeField] private float blockStaminaRatio = 0.5f;
 
     [Header("Hit Feedback")]
     [SerializeField] private float hitStunDuration = 0.2f; // brief speed reduction on hit
@@ -150,12 +152,11 @@ public class DamageReceiver : NetworkBehaviour
         {
             finalDamage *= (1f - blockDamageReduction);
 
-            // Consume block stamina
+            // Stamina cost proportional to raw incoming damage
             if (vitalManager != null)
             {
-                var weapon = weaponManager != null ? weaponManager.ActiveWeapon : null;
-                float blockCost = weapon != null ? weapon.blockStaminaCost : 5f;
-                vitalManager.TryConsumeStamina(blockCost);
+                float blockStaminaCost = rawDamage * blockStaminaRatio;
+                vitalManager.TryConsumeStamina(blockStaminaCost);
             }
         }
 

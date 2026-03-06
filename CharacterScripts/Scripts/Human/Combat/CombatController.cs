@@ -66,7 +66,10 @@ public class CombatController : NetworkBehaviour
 
 
     [Header("Block")]
-    [SerializeField] private float blockStaminaDrain = 3f; // per second while holding block
+    [SerializeField] private float blockStaminaDrain = 3f; // per second while holding block (unused — kept for reference)
+
+    [Header("Bow Aim")]
+    [SerializeField] private float bowAimStaminaDrain = 5f; // per second while holding aim
 
     [Header("Stamina Costs")]
     [SerializeField] private float fistStaminaCost = 8f;
@@ -391,18 +394,17 @@ public class CombatController : NetworkBehaviour
             return;
         }
 
-        // Drain stamina while blocking
+        // Block stamina is now consumed per hit in DamageReceiver, not per frame.
+        // Only check here if stamina has already been drained to zero (break block).
         if (vitalManager != null)
         {
             var stamina = vitalManager.GetVital("stamina");
             if (stamina != null && stamina.Current <= 0f)
             {
-                // Stamina depleted — forced to drop block
                 SetState(CombatState.None);
                 OnBlockEnded?.Invoke();
                 return;
             }
-            ConsumeStamina(blockStaminaDrain * Time.deltaTime);
         }
     }
 
@@ -418,13 +420,8 @@ public class CombatController : NetworkBehaviour
             vcam.Target.TrackingTarget = aimCube;
             vcam.Lens.FieldOfView = aimFOV;
         }
-        if (vitalManager != null)
-        {
-            var stamina = vitalManager.GetVital("stamina");
-            if (stamina != null && stamina.Current < weapon.staminaCostLight) return;
-            ConsumeStamina(weapon.staminaCostLight);
-        }
 
+        // No stamina cost on draw start — stamina drains per-second while aiming (UpdateBowAim)
         _bowDrawTimer = weapon.drawTime;
         SetState(CombatState.BowDrawing);
     }
@@ -455,7 +452,14 @@ public class CombatController : NetworkBehaviour
                 humanoidController.transform.rotation = Quaternion.LookRotation(camForward);
         }
 
-        if (_input.primaryUp || !_input.primaryHeld)
+        // Drain stamina per-second while holding aim
+        ConsumeStamina(bowAimStaminaDrain * Time.deltaTime);
+
+        // Check stamina — if depleted, force fire and exit
+        var stamina = vitalManager?.GetVital("stamina");
+        bool outOfStamina = stamina != null && stamina.Current <= 0f;
+
+        if (_input.primaryUp || !_input.primaryHeld || outOfStamina)
         {
             FireArrow();
             SetState(CombatState.None);
