@@ -612,6 +612,13 @@ public class CombatController : NetworkBehaviour
                 vcam.Target.TrackingTarget = defaultCamTarget;
                 vcam.Lens.FieldOfView = _defaultFOV;
             }
+
+            // ► FIX: Fade out the Action layer animation (bow aim/draw)
+            if (animancerDriver != null && animancerDriver.Animancer != null)
+            {
+                var actionLayer = animancerDriver.Animancer.Layers[1];
+                actionLayer.StartFade(0f, 0.15f); // fade to 0 over 0.15 seconds
+            }
         }
 
         State = newState;

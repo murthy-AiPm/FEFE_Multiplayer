@@ -1075,6 +1075,7 @@ MonoBehaviour:
   dodgeStepBoostSpeed: 4
   dodgeStepBoostDuration: 0.15
   blockStaminaDrain: 3
+  bowAimStaminaDrain: 5
   fistStaminaCost: 8
 --- !u!114 &993689943252265533
 MonoBehaviour:
@@ -1097,6 +1098,7 @@ MonoBehaviour:
   weaponManager: {fileID: 417194811012884007}
   blockDamageReduction: 0.8
   blockAngle: 120
+  blockStaminaRatio: 0.5
   hitStunDuration: 0.2
   animancerDriver: {fileID: 381001960750757277}
 --- !u!114 &6395660929140234960

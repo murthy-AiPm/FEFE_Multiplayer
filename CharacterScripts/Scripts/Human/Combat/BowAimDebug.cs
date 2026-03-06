@@ -96,7 +96,7 @@ public class BowAimDebug : MonoBehaviour
 
         // Also log screen position so you know where to place the UI crosshair
         Vector3 screenPos = cam.WorldToScreenPoint(_aimPoint);
-        Debug.Log($"[BowAimDebug] AimPoint: {_aimPoint} | ScreenPos: {screenPos} | Hit: {(_hasHit ? hit.collider.name : "none")}");
+        //Debug.Log($"[BowAimDebug] AimPoint: {_aimPoint} | ScreenPos: {screenPos} | Hit: {(_hasHit ? hit.collider.name : "none")}");
     }
 
     private void OnDrawGizmos()
