@@ -3940,8 +3940,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6202847008849006649}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.28549546, y: -0.34102023, z: 0.25102633, w: 0.8597578}
-  m_LocalPosition: {x: 0.089185424, y: -0.3890896, z: 0.08018732}
+  m_LocalRotation: {x: 0.034399394, y: -0.5649701, z: 0.027831683, w: 0.82392406}
+  m_LocalPosition: {x: -0.0000132620335, y: 0.08799926, z: -0.000013068318}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4217,7 +4217,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6450013997866560284}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.074049465, y: 0.91494113, z: 0.19661252, w: -0.344591}
+  m_LocalRotation: {x: 0.07643311, y: 0.9106863, z: 0.19569817, w: -0.35568333}
   m_LocalPosition: {x: 1.1932259, y: 0.6593065, z: 1.7130966}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -6500,6 +6500,7 @@ MonoBehaviour:
   dodgeStepBoostSpeed: 4
   dodgeStepBoostDuration: 0.15
   blockStaminaDrain: 3
+  bowAimStaminaDrain: 5
   fistStaminaCost: 8
 --- !u!114 &6854998894812114630
 MonoBehaviour:
@@ -6522,6 +6523,7 @@ MonoBehaviour:
   weaponManager: {fileID: 4819312757928810008}
   blockDamageReduction: 0.8
   blockAngle: 120
+  blockStaminaRatio: 0.5
   hitStunDuration: 0.2
   animancerDriver: {fileID: 2683264340040594894}
 --- !u!114 &6257174079470732274

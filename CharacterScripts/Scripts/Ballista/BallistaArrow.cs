@@ -59,7 +59,7 @@ public class BallistaArrow : NetworkBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log($"[BallistaArrow] Hit: {other.gameObject.name}");
+      //  Debug.Log($"[BallistaArrow] Hit: {other.gameObject.name}");
         if (!IsServer) return;
         if (_hasHit) return;
 

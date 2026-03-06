@@ -642,7 +642,7 @@ MonoBehaviour:
   - name: Bow/Release
     layer: 1
     priority: 141
-    lockUntilEnd: 0
+    lockUntilEnd: 1
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 31900000, guid: 8a05a2e26dcdf4c4dbc0913d2f466bb0, type: 2}
     animationKey: Bow/Release
