@@ -94,6 +94,10 @@ public class CombatController : NetworkBehaviour
     private float _bowDrawTimer;
     private Vector3 _dodgeDirection;
 
+    // Bow aim stamina tracking (client-side, avoids ServerRpc sync lag)
+    private float _bowAimStaminaAtStart;
+    private float _bowAimStaminaSpent;
+
     // Input cache
     private InputSnapshot _input;
 
@@ -421,7 +425,11 @@ public class CombatController : NetworkBehaviour
             vcam.Lens.FieldOfView = aimFOV;
         }
 
-        // No stamina cost on draw start — stamina drains per-second while aiming (UpdateBowAim)
+        // Capture stamina locally at aim start — used to detect depletion without ServerRpc lag
+        var stamina = vitalManager?.GetVital("stamina");
+        _bowAimStaminaAtStart = stamina != null ? stamina.Current : 0f;
+        _bowAimStaminaSpent = 0f;
+
         _bowDrawTimer = weapon.drawTime;
         SetState(CombatState.BowDrawing);
     }
@@ -452,12 +460,13 @@ public class CombatController : NetworkBehaviour
                 humanoidController.transform.rotation = Quaternion.LookRotation(camForward);
         }
 
-        // Drain stamina per-second while holding aim
-        ConsumeStamina(bowAimStaminaDrain * Time.deltaTime);
+        // Accumulate drain locally — no ServerRpc dependency, no sync lag
+        float drainThisFrame = bowAimStaminaDrain * Time.deltaTime;
+        _bowAimStaminaSpent += drainThisFrame;
+        ConsumeStamina(drainThisFrame);
 
-        // Check stamina — if depleted, force fire and exit
-        var stamina = vitalManager?.GetVital("stamina");
-        bool outOfStamina = stamina != null && stamina.Current <= 0f;
+        // Out of stamina when we've spent everything we had at aim start
+        bool outOfStamina = _bowAimStaminaSpent >= _bowAimStaminaAtStart;
 
         if (_input.primaryUp || !_input.primaryHeld || outOfStamina)
         {
