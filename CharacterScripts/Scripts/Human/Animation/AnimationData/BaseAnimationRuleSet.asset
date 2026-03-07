@@ -621,18 +621,28 @@ MonoBehaviour:
       direction: 0
       useActionId: 0
       actionIdEquals: 0
-  - name: Bow/Draw/Idle
-    layer: 1
+  - name: Bow/Aim/Idle
+    layer: 0
     priority: 140
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
-    maskOverride: {fileID: 31900000, guid: 8a05a2e26dcdf4c4dbc0913d2f466bb0, type: 2}
-    animationKey: Bow/Draw/Idle
+    maskOverride: {fileID: 0}
+    animationKey: Bow/Aim/Idle
     all:
     - useBool: 1
       boolParam: 19
       boolValue: 1
       useInput: 1
+      input: 0
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 0
+      useInput: 0
       input: 0
       triggerMode: 2
       useDirection: 0

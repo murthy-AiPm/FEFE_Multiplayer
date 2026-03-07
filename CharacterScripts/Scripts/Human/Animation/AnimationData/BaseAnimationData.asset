@@ -352,7 +352,7 @@ MonoBehaviour:
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 0
-  - key: Bow/Draw/Idle
+  - key: Bow/Aim/Idle
     transition:
       _FadeDuration: 0
       _Events:
@@ -722,7 +722,7 @@ MonoBehaviour:
       _Clip: {fileID: -203655887218126122, guid: df5c5a521f25de14f85ef2e0908dc744, type: 3}
       _Speed: 0.8
       _NormalizedStartTime: NaN
-    useRootMotion: 0
+    useRootMotion: 1
   - key: Bow/Run/Front
     transition:
       _FadeDuration: 0
