@@ -113,7 +113,7 @@ public class CharacterSelectManager : NetworkBehaviour
             PlayerName = playerName
         });
 
-        Debug.Log($"[CharacterSelectManager] Added player: {playerName} (ID: {clientId})");
+       // Debug.Log($"[CharacterSelectManager] Added player: {playerName} (ID: {clientId})");
     }
 
     private void RemovePlayer(ulong clientId)
@@ -124,7 +124,7 @@ public class CharacterSelectManager : NetworkBehaviour
             {
                 selections.RemoveAt(i);
                 serverSelections.Remove(clientId);
-                Debug.Log($"[CharacterSelectManager] Removed player {clientId}");
+               // Debug.Log($"[CharacterSelectManager] Removed player {clientId}");
                 break;
             }
         }
@@ -170,7 +170,7 @@ public class CharacterSelectManager : NetworkBehaviour
         // Check locally first to give instant feedback
         if (enforceUniqueCharacters && IsCharacterTaken(characterIndex, localClientId))
         {
-            Debug.Log($"[CharacterSelectManager] Character {characterIndex} is already taken!");
+            //Debug.Log($"[CharacterSelectManager] Character {characterIndex} is already taken!");
             return;
         }
 
@@ -186,7 +186,7 @@ public class CharacterSelectManager : NetworkBehaviour
         // Validate character isn't taken
         if (enforceUniqueCharacters && IsCharacterTaken(characterIndex, clientId))
         {
-            Debug.Log($"[CharacterSelectManager] Server rejected: Character {characterIndex} already taken");
+           // Debug.Log($"[CharacterSelectManager] Server rejected: Character {characterIndex} already taken");
             RejectSelectionClientRpc(characterIndex, new ClientRpcParams
             {
                 Send = new ClientRpcSendParams
@@ -209,7 +209,7 @@ public class CharacterSelectManager : NetworkBehaviour
                 // Store for spawning
                 serverSelections[clientId] = characterIndex;
 
-                Debug.Log($"[CharacterSelectManager] Server accepted: Client {clientId} selected character {characterIndex}");
+               // Debug.Log($"[CharacterSelectManager] Server accepted: Client {clientId} selected character {characterIndex}");
                 break;
             }
         }
@@ -218,7 +218,7 @@ public class CharacterSelectManager : NetworkBehaviour
     [ClientRpc]
     private void RejectSelectionClientRpc(int characterIndex, ClientRpcParams rpcParams = default)
     {
-        Debug.Log($"[CharacterSelectManager] Selection rejected: Character {characterIndex} is taken");
+       // Debug.Log($"[CharacterSelectManager] Selection rejected: Character {characterIndex} is taken");
         OnSelectionsChanged?.Invoke(); // Refresh UI
     }
 
@@ -253,13 +253,13 @@ public class CharacterSelectManager : NetworkBehaviour
                 // Can only be ready if character is selected
                 if (ready && sel.CharacterIndex < 0)
                 {
-                    Debug.Log($"[CharacterSelectManager] Client {clientId} cannot ready without selecting character");
+                   // Debug.Log($"[CharacterSelectManager] Client {clientId} cannot ready without selecting character");
                     return;
                 }
 
                 sel.IsReady = ready;
                 selections[i] = sel;
-                Debug.Log($"[CharacterSelectManager] Client {clientId} ready: {ready}");
+              //  Debug.Log($"[CharacterSelectManager] Client {clientId} ready: {ready}");
                 break;
             }
         }
@@ -273,11 +273,11 @@ public class CharacterSelectManager : NetworkBehaviour
         // Check if they have a valid selection
         if (!serverSelections.TryGetValue(clientId, out int charIndex) || charIndex < 0)
         {
-            Debug.Log($"[CharacterSelectManager] Client {clientId} tried to spawn without valid selection");
+            //Debug.Log($"[CharacterSelectManager] Client {clientId} tried to spawn without valid selection");
             return;
         }
 
-        Debug.Log($"[CharacterSelectManager] Client {clientId} ready to spawn with character {charIndex}");
+       // Debug.Log($"[CharacterSelectManager] Client {clientId} ready to spawn with character {charIndex}");
 
         // Spawn logic happens wherever your project currently does it.
         // You already call CharacterSpawnHandler.Instance.TrySpawnPlayerCharacter(clientId) in your current file.
@@ -318,17 +318,17 @@ public class CharacterSelectManager : NetworkBehaviour
     {
         if (serverSelections.TryGetValue(clientId, out int index))
         {
-            Debug.Log($"[CharacterSelectManager] GetPersistedCharacterIndex: Client {clientId} = {index}");
+            //Debug.Log($"[CharacterSelectManager] GetPersistedCharacterIndex: Client {clientId} = {index}");
             return index;
         }
-        Debug.Log($"[CharacterSelectManager] GetPersistedCharacterIndex: Client {clientId} not found, returning -1");
+        //Debug.Log($"[CharacterSelectManager] GetPersistedCharacterIndex: Client {clientId} not found, returning -1");
         return -1;
     }
 
     public static void SetServerCharacterSelection(ulong clientId, int characterIndex)
     {
         serverSelections[clientId] = characterIndex;
-        Debug.Log($"[CharacterSelectManager] SetServerCharacterSelection: Client {clientId} = {characterIndex}");
+      //  Debug.Log($"[CharacterSelectManager] SetServerCharacterSelection: Client {clientId} = {characterIndex}");
     }
 
     #endregion
