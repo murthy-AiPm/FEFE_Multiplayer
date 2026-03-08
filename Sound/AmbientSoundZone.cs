@@ -41,7 +41,7 @@ public class AmbientSoundZone : MonoBehaviour
     private AudioSource _source;
     private float _targetVolume;
     private float _currentVolume;
-    private bool _isInside;
+    private int _insideCount;  // counts colliders currently inside, not just bool
 
     private void Awake()
     {
@@ -82,7 +82,7 @@ public class AmbientSoundZone : MonoBehaviour
     {
         if (!IsLocalPlayerOrMount(other)) return;
 
-        _isInside = true;
+        _insideCount++;
         _targetVolume = maxVolume;
     }
 
@@ -90,26 +90,21 @@ public class AmbientSoundZone : MonoBehaviour
     {
         if (!IsLocalPlayerOrMount(other)) return;
 
-        _isInside = false;
-        _targetVolume = 0f;
+        _insideCount = Mathf.Max(0, _insideCount - 1);
+        if (_insideCount == 0)
+            _targetVolume = 0f;
     }
 
     private bool IsLocalPlayerOrMount(Collider col)
     {
         // ── Direct player check ──
-        // Check for AudioListener (usually on camera child of local player)
         if (col.GetComponentInChildren<AudioListener>() != null) return true;
         if (col.GetComponentInParent<AudioListener>() != null) return true;
 
-        // Check if the collider belongs to a NetworkBehaviour owned by the local client
         var nb = col.GetComponentInParent<Unity.Netcode.NetworkBehaviour>();
         if (nb != null && nb.IsOwner) return true;
 
         // ── Mounted horse check ──
-        // The rider is reparented under the horse on mount, so the horse collider
-        // fires OnTriggerEnter instead of the player collider. We check whether
-        // this collider's object is a MountableEntity whose current rider is the
-        // local player, identified by RiderId == LocalClientId.
         var mountable = col.GetComponentInParent<MountableEntity>();
         if (mountable != null && mountable.IsMounted)
         {
@@ -123,25 +118,16 @@ public class AmbientSoundZone : MonoBehaviour
 
     // ─── Public API ───
 
-    /// <summary>
-    /// Manually fade in the ambient sound (e.g. for global ambient at game start).
-    /// </summary>
     public void FadeIn()
     {
         _targetVolume = maxVolume;
     }
 
-    /// <summary>
-    /// Manually fade out the ambient sound.
-    /// </summary>
     public void FadeOut()
     {
         _targetVolume = 0f;
     }
 
-    /// <summary>
-    /// Set volume directly (no fade).
-    /// </summary>
     public void SetVolume(float volume)
     {
         _currentVolume = volume;
