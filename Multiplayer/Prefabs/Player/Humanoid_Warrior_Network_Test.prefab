@@ -548,6 +548,8 @@ GameObject:
   - component: {fileID: 6395660929140234960}
   - component: {fileID: -6598896016854509520}
   - component: {fileID: -6126615696977443829}
+  - component: {fileID: -6029799444001214082}
+  - component: {fileID: 8936562026618204790}
   m_Layer: 6
   m_Name: Humanoid_Warrior_Network_Test
   m_TagString: Player
@@ -564,7 +566,7 @@ Transform:
   m_GameObject: {fileID: 1445852226725472433}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 62.874294, y: 6.005188, z: 76.287926}
+  m_LocalPosition: {x: 74.12999, y: 200.14, z: 494.72778}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1076,6 +1078,7 @@ MonoBehaviour:
   dodgeStepBoostSpeed: 4
   dodgeStepBoostDuration: 0.15
   blockStaminaDrain: 3
+  bowAimStaminaDrain: 5
   fistStaminaCost: 8
 --- !u!114 &993689943252265533
 MonoBehaviour:
@@ -1098,6 +1101,7 @@ MonoBehaviour:
   weaponManager: {fileID: 417194811012884007}
   blockDamageReduction: 0.8
   blockAngle: 120
+  blockStaminaRatio: 0.5
   hitStunDuration: 0.2
   animancerDriver: {fileID: 381001960750757277}
 --- !u!114 &6395660929140234960
@@ -1167,6 +1171,57 @@ MonoBehaviour:
   sphereRadius: 0.15
   hitColor: {r: 1, g: 0, b: 0, a: 1}
   missColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+--- !u!114 &-6029799444001214082
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1445852226725472433}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2874f80ac939bb34d9b95ca2f95968f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FootstepSoundPlayer
+  ShowTopMostFoldoutHeaderGroup: 1
+  mode: 0
+  baseStepInterval: 0.5
+  sprintStepInterval: 0.3
+  minimumSpeed: 0.5
+  sprintSpeed: 8
+  raycastDistance: 3
+  raycastOffset: {x: 0, y: 0, z: 0}
+  footstepCategory: 0
+  isHeavyFootstep: 0
+  heavyCategory: 1
+--- !u!114 &8936562026618204790
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1445852226725472433}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10bd87fc9d15e7542bbeac4d3a6bac12, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CombatSoundPlayer
+  ShowTopMostFoldoutHeaderGroup: 1
+  damageReceiver: {fileID: 0}
+  combatController: {fileID: 0}
+  weaponManager: {fileID: 0}
+  animEventRelay: {fileID: 0}
+  hitboxController: {fileID: 0}
+  defaultWeaponMaterial: Metal
+  bodyMaterial: Flesh
+  swordSwingSound: Sword_Swing
+  bowDrawSound: Bow_Draw
+  bowReleaseSound: Bow_Release
+  arrowWhooshSound: Arrow_Whoosh
+  blockSound: Block_Clang
+  dodgeSound: Dodge_Whoosh
+  deathSound: Player_Death
+  respawnSound: Player_Respawn
 --- !u!1 &1489072902395659800
 GameObject:
   m_ObjectHideFlags: 0
