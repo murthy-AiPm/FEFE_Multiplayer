@@ -51,6 +51,11 @@ public class HitboxController : MonoBehaviour
     // Events
     public System.Action<HitInfo> OnHitDetected;
 
+    /// <summary>
+    /// Fired when the hitbox is enabled (swing starts). Use this for swing whoosh sounds.
+    /// </summary>
+    public System.Action OnHitboxEnabled;
+
     private void Awake()
     {
         _hitBuffer = new RaycastHit[maxHitsPerSwing];
@@ -95,6 +100,7 @@ public class HitboxController : MonoBehaviour
     {
         _active = true;
         _alreadyHit.Clear();
+        OnHitboxEnabled?.Invoke();
     }
 
     public void DisableHitbox()

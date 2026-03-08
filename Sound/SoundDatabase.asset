@@ -25,8 +25,27 @@ MonoBehaviour:
   - category: 3
     minDistance: 0
     maxDistance: 3.4028235e+38
-  sounds: []
+  sounds:
+  - soundName: Sword_Swing
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 68c1c6ee9ddcd0341a672e9f7ecbbef0, type: 3}
+    volumeMin: 0.395
+    volumeMax: 1
+    pitchMin: 0.79
+    pitchMax: 1.218
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
   terrainLayerMappings: []
-  defaultSurfaceType: Grass
-  footstepSets: []
+  defaultSurfaceType: Soil_Rocks_TerrainLayer
+  footstepSets:
+  - surfaceType: Soil_Rocks_TerrainLayer
+    footstepClips:
+    - {fileID: 8300000, guid: 72f526a6a9890f643a88e85a61c86c8a, type: 3}
+    - {fileID: 8300000, guid: 186de84b3207156479abe98f4958fed0, type: 3}
+    volumeMin: 0.256
+    volumeMax: 1
+    pitchMin: 0.8
+    pitchMax: 0.91
   impactSounds: []

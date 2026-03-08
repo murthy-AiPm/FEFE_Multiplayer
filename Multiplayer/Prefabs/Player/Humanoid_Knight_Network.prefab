@@ -3627,7 +3627,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.5
+  m_Radius: 0.25
   m_Height: 2
   m_Direction: 2
   m_Center: {x: 0, y: 0, z: 0.92}
@@ -4217,8 +4217,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6450013997866560284}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.07643311, y: 0.9106863, z: 0.19569817, w: -0.35568333}
-  m_LocalPosition: {x: 1.1932259, y: 0.6593065, z: 1.7130966}
+  m_LocalRotation: {x: 0.13095179, y: 0.8197425, z: 0.15244164, w: -0.5363166}
+  m_LocalPosition: {x: 1.8449605, y: 0.71507275, z: 1.0278095}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -5973,6 +5973,8 @@ GameObject:
   - component: {fileID: 6257174079470732274}
   - component: {fileID: 3538666518147287048}
   - component: {fileID: 6991021628600396768}
+  - component: {fileID: 4694551369967776946}
+  - component: {fileID: 5960731366256184571}
   m_Layer: 6
   m_Name: Humanoid_Knight_Network
   m_TagString: Player
@@ -5988,8 +5990,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8837511929152388741}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 103.216805, y: 1.7285498, z: 62.6231}
+  m_LocalRotation: {x: 0.027024735, y: -0.23536909, z: 0.0065474715, w: 0.9715082}
+  m_LocalPosition: {x: 54.43, y: 204.87, z: 551}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -6237,7 +6239,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1720956946
+  GlobalObjectIdHash: 1216628486
   InScenePlacedSourceGlobalObjectIdHash: 1720956946
   DeferredDespawnTick: 0
   Ownership: 1
@@ -6411,7 +6413,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MountController
   ShowTopMostFoldoutHeaderGroup: 1
-  hitCollider: {fileID: 0}
+  hitCollider: {fileID: 6016021995833078728}
   mountAnimationKey: Mount/Start
   dismountAnimationKey: Mount/Dismount
   mountAnimationDuration: 0.1
@@ -6593,6 +6595,56 @@ MonoBehaviour:
   sphereRadius: 0.15
   hitColor: {r: 1, g: 0, b: 0, a: 1}
   missColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+--- !u!114 &4694551369967776946
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8837511929152388741}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10bd87fc9d15e7542bbeac4d3a6bac12, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CombatSoundPlayer
+  ShowTopMostFoldoutHeaderGroup: 1
+  damageReceiver: {fileID: 6854998894812114630}
+  combatController: {fileID: 0}
+  weaponManager: {fileID: 0}
+  animEventRelay: {fileID: 0}
+  defaultWeaponMaterial: Metal
+  bodyMaterial: Flesh
+  swordSwingSound: Sword_Swing
+  bowDrawSound: Bow_Draw
+  bowReleaseSound: Bow_Release
+  arrowWhooshSound: Arrow_Whoosh
+  blockSound: Block_Clang
+  dodgeSound: Dodge_Whoosh
+  deathSound: Player_Death
+  respawnSound: Player_Respawn
+--- !u!114 &5960731366256184571
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8837511929152388741}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2874f80ac939bb34d9b95ca2f95968f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FootstepSoundPlayer
+  ShowTopMostFoldoutHeaderGroup: 1
+  mode: 0
+  baseStepInterval: 0.5
+  sprintStepInterval: 0.3
+  minimumSpeed: 0.5
+  sprintSpeed: 8
+  raycastDistance: 3
+  raycastOffset: {x: 0, y: 0, z: 0}
+  footstepCategory: 0
+  isHeavyFootstep: 0
+  heavyCategory: 1
 --- !u!1 &8848191647751171253
 GameObject:
   m_ObjectHideFlags: 0

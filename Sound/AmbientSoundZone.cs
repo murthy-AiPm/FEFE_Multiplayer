@@ -80,8 +80,7 @@ public class AmbientSoundZone : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        // Only respond to the local player's listener
-        if (!IsLocalPlayer(other)) return;
+        if (!IsLocalPlayerOrMount(other)) return;
 
         _isInside = true;
         _targetVolume = maxVolume;
@@ -89,40 +88,34 @@ public class AmbientSoundZone : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        if (!IsLocalPlayer(other)) return;
+        if (!IsLocalPlayerOrMount(other)) return;
 
         _isInside = false;
         _targetVolume = 0f;
     }
 
-    private bool IsLocalPlayer(Collider col)
+    private bool IsLocalPlayerOrMount(Collider col)
     {
-        // Check for AudioListener (usually on the camera or player)
+        // ── Direct player check ──
+        // Check for AudioListener (usually on camera child of local player)
         if (col.GetComponentInChildren<AudioListener>() != null) return true;
         if (col.GetComponentInParent<AudioListener>() != null) return true;
 
-        // Check for NetworkBehaviour with IsOwner (covers player directly)
-        var netBehaviour = col.GetComponentInParent<Unity.Netcode.NetworkBehaviour>();
-        if (netBehaviour != null && netBehaviour.IsOwner) return true;
+        // Check if the collider belongs to a NetworkBehaviour owned by the local client
+        var nb = col.GetComponentInParent<Unity.Netcode.NetworkBehaviour>();
+        if (nb != null && nb.IsOwner) return true;
 
-        // Check if this is a horse that the local player is riding
+        // ── Mounted horse check ──
+        // The rider is reparented under the horse on mount, so the horse collider
+        // fires OnTriggerEnter instead of the player collider. We check whether
+        // this collider's object is a MountableEntity whose current rider is the
+        // local player, identified by RiderId == LocalClientId.
         var mountable = col.GetComponentInParent<MountableEntity>();
         if (mountable != null && mountable.IsMounted)
         {
-            // The horse is mounted — check if the local player is the rider
-            // by finding any owner-controlled NetworkBehaviour in its children
-            var childNetBehaviours = col.GetComponentsInParent<Unity.Netcode.NetworkBehaviour>();
-            foreach (var nb in childNetBehaviours)
-            {
-                if (nb.IsOwner) return true;
-            }
-
-            // Also check children (rider is parented to horse)
-            var childNets = col.GetComponentsInChildren<Unity.Netcode.NetworkBehaviour>();
-            foreach (var nb in childNets)
-            {
-                if (nb.IsOwner) return true;
-            }
+            var nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm != null && mountable.RiderId == nm.LocalClientId)
+                return true;
         }
 
         return false;
