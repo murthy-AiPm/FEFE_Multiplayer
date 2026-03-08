@@ -35,7 +35,7 @@ public class HitboxController : MonoBehaviour
 
     // State
     private bool _active;
-    private HashSet<Collider> _alreadyHit = new HashSet<Collider>();
+    private HashSet<GameObject> _alreadyHit = new HashSet<GameObject>();
     private RaycastHit[] _hitBuffer;
 
     // Owner reference (set by WeaponManager when weapon is spawned)
@@ -124,6 +124,14 @@ public class HitboxController : MonoBehaviour
             var hit = _hitBuffer[i];
             if (hit.collider == null) continue;
 
+            // Skip zero-point hits (SphereCast overlap case — sword already inside collider)
+            if (hit.point == Vector3.zero) continue;
+
+            // Resolve root GameObject for deduplication
+            var hitRoot = hit.collider.attachedRigidbody != null
+                ? hit.collider.attachedRigidbody.gameObject
+                : hit.collider.gameObject;
+
             // Skip self
             if (_ownerNetObj != null)
             {
@@ -132,11 +140,11 @@ public class HitboxController : MonoBehaviour
                     continue;
             }
 
-            // Skip already hit this swing
-            if (_alreadyHit.Contains(hit.collider))
+            // Skip already hit this swing (per root object, not per collider)
+            if (_alreadyHit.Contains(hitRoot))
                 continue;
 
-            _alreadyHit.Add(hit.collider);
+            _alreadyHit.Add(hitRoot);
 
             // Build hit info
             var hitInfo = new HitInfo

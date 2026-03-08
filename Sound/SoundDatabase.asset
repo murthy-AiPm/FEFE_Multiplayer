@@ -17,7 +17,7 @@ MonoBehaviour:
     minDistance: 2
     maxDistance: 30
   - category: 1
-    minDistance: 5
+    minDistance: 1
     maxDistance: 50
   - category: 2
     minDistance: 20
@@ -30,8 +30,8 @@ MonoBehaviour:
     category: 0
     clips:
     - {fileID: 8300000, guid: 68c1c6ee9ddcd0341a672e9f7ecbbef0, type: 3}
-    volumeMin: 0.395
-    volumeMax: 1
+    volumeMin: 0.175
+    volumeMax: 0.553
     pitchMin: 0.79
     pitchMax: 1.218
     overrideDistance: 0
@@ -44,8 +44,16 @@ MonoBehaviour:
     footstepClips:
     - {fileID: 8300000, guid: 72f526a6a9890f643a88e85a61c86c8a, type: 3}
     - {fileID: 8300000, guid: 186de84b3207156479abe98f4958fed0, type: 3}
-    volumeMin: 0.256
-    volumeMax: 1
+    volumeMin: 0
+    volumeMax: 0.603
     pitchMin: 0.8
     pitchMax: 0.91
-  impactSounds: []
+  impactSounds:
+  - attackerMaterial: Metal
+    targetMaterial: Wood
+    impactClips:
+    - {fileID: 8300000, guid: e9d5d7d75655f6e4693b0d47c7a49692, type: 3}
+    volumeMin: 1
+    volumeMax: 1
+    pitchMin: 0.9
+    pitchMax: 1.1

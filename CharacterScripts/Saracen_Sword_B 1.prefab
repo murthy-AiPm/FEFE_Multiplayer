@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 8747778676176738216}
   - component: {fileID: 6810195880924193634}
   - component: {fileID: 3064014964881677884}
+  - component: {fileID: -681911263588639802}
+  - component: {fileID: 4943896919454509848}
   m_Layer: 0
   m_Name: Saracen_Sword_B 1
   m_TagString: Untagged
@@ -102,14 +104,41 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc669fd04bbc31f4baf10a9807acdccb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HitboxController
-  length: 0.5
+  length: 0.3
   radius: 0.15
   offset: {x: 0.17, y: 0, z: 0}
   castDirection: 2
   hitLayers:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 8388608
   maxHitsPerSwing: 5
   drawGizmos: 1
   activeColor: {r: 1, g: 0, b: 0, a: 1}
   inactiveColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+--- !u!114 &-681911263588639802
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 446426267964797665}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17398f65d6a23774f87c2a890b992d20, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MaterialTag
+  materialType: Metal
+--- !u!114 &4943896919454509848
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 446426267964797665}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d759e98930b69b649b9d6f33202864b9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SurfaceTag
+  surfaceType: Metal
+  impactMaterial: Metal

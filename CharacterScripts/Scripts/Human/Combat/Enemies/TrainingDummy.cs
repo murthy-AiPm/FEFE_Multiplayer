@@ -60,7 +60,7 @@ public class TrainingDummy : NetworkBehaviour
             {
                 vitalManager.ResetAllVitals();
                 _isDead = false;
-                Debug.Log("[TrainingDummy] Reset!");
+                //Debug.Log("[TrainingDummy] Reset!");
             }
         }
     }
@@ -68,13 +68,13 @@ public class TrainingDummy : NetworkBehaviour
     private void OnVitalChanged(string vitalID, float newVal, float oldVal)
     {
         float damage = oldVal - newVal;
-        if (damage > 0)
-            Debug.Log($"[TrainingDummy] Hit! {vitalID}: {oldVal:F0} → {newVal:F0} (-{damage:F0})");
+        //if (damage > 0)
+        //    Debug.Log($"[TrainingDummy] Hit! {vitalID}: {oldVal:F0} → {newVal:F0} (-{damage:F0})");
     }
 
     private void OnDeath()
     {
-        Debug.Log("[TrainingDummy] Destroyed!");
+     //   Debug.Log("[TrainingDummy] Destroyed!");
         _isDead = true;
         _resetTimer = respawnDelay;
     }

@@ -25,6 +25,7 @@ public class CombatSoundPlayer : NetworkBehaviour
 
     private CombatController.CombatState _prevState = CombatController.CombatState.None;
     private HitboxController _activeHitbox;
+    private MaterialTag _activeWeaponMaterialTag;
 
     private void Awake()
     {
@@ -32,15 +33,11 @@ public class CombatSoundPlayer : NetworkBehaviour
         if (combatController == null) combatController = GetComponentInChildren<CombatController>();
         if (weaponManager == null) weaponManager = GetComponentInChildren<WeaponManager>();
         if (animEventRelay == null) animEventRelay = GetComponentInChildren<AnimationEventRelay>();
-
-        Debug.Log($"[CombatSoundPlayer] Awake — weaponManager={weaponManager}, combatController={combatController}");
     }
 
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
-
-        Debug.Log($"[CombatSoundPlayer] OnNetworkSpawn — IsOwner={IsOwner}");
 
         if (damageReceiver != null)
         {
@@ -55,34 +52,16 @@ public class CombatSoundPlayer : NetworkBehaviour
             {
                 combatController.OnStateChanged += HandleStateChanged;
                 combatController.OnDodgeStarted += HandleDodge;
-                Debug.Log("[CombatSoundPlayer] Subscribed to CombatController events");
-            }
-            else
-            {
-                Debug.LogWarning("[CombatSoundPlayer] CombatController is NULL — state change sounds won't work");
             }
 
             if (weaponManager != null)
             {
                 weaponManager.OnWeaponEquipped += HandleWeaponEquipped;
                 weaponManager.OnWeaponHolstered += HandleWeaponHolstered;
-                Debug.Log("[CombatSoundPlayer] Subscribed to WeaponManager events");
 
-                // If a weapon is already equipped when we spawn (e.g. host), bind immediately
                 var existingHitbox = GetComponentInChildren<HitboxController>();
                 if (existingHitbox != null)
-                {
-                    Debug.Log($"[CombatSoundPlayer] Found existing HitboxController on spawn: {existingHitbox.gameObject.name}");
                     BindHitbox(existingHitbox);
-                }
-                else
-                {
-                    Debug.Log("[CombatSoundPlayer] No HitboxController found on spawn (weapon not yet in hand — OK)");
-                }
-            }
-            else
-            {
-                Debug.LogWarning("[CombatSoundPlayer] WeaponManager is NULL — swing sounds won't work");
             }
         }
     }
@@ -118,38 +97,28 @@ public class CombatSoundPlayer : NetworkBehaviour
 
     private void HandleWeaponEquipped(WeaponData weaponData)
     {
-        Debug.Log($"[CombatSoundPlayer] OnWeaponEquipped fired — weapon={weaponData?.name}");
         UnbindHitbox();
-
-        if (weaponData == null || weaponData.weaponPrefab == null)
-        {
-            Debug.Log("[CombatSoundPlayer] weaponData or prefab is null, skipping hitbox bind");
-            return;
-        }
-
-        // Weapon instance is now parented under this character — find the HitboxController
+        if (weaponData == null || weaponData.weaponPrefab == null) return;
         var hitbox = GetComponentInChildren<HitboxController>();
-        if (hitbox == null)
-        {
-            Debug.LogWarning($"[CombatSoundPlayer] No HitboxController found in children after equipping {weaponData.name}. Check weapon prefab has HitboxController.");
-            return;
-        }
-
+        if (hitbox == null) return;
         BindHitbox(hitbox);
     }
 
-    private void HandleWeaponHolstered(WeaponData weaponData)
-    {
-        Debug.Log($"[CombatSoundPlayer] OnWeaponHolstered fired — weapon={weaponData?.name}");
-        UnbindHitbox();
-    }
+    private void HandleWeaponHolstered(WeaponData weaponData) => UnbindHitbox();
 
     private void BindHitbox(HitboxController hitbox)
     {
         _activeHitbox = hitbox;
+        _activeWeaponMaterialTag = hitbox.GetComponent<MaterialTag>();
+        if (_activeWeaponMaterialTag == null)
+            _activeWeaponMaterialTag = hitbox.GetComponentInChildren<MaterialTag>();
+        if (_activeWeaponMaterialTag == null)
+            _activeWeaponMaterialTag = hitbox.GetComponentInParent<MaterialTag>();
+
+        Debug.Log($"[CombatSoundPlayer] BindHitbox: hitbox={hitbox.gameObject.name}, MaterialTag={(_activeWeaponMaterialTag != null ? _activeWeaponMaterialTag.MaterialType : "NOT FOUND")}");
+
         _activeHitbox.OnHitboxEnabled += HandleSwingStarted;
         _activeHitbox.OnHitDetected += HandleHitDetected;
-        Debug.Log($"[CombatSoundPlayer] Bound to HitboxController on {hitbox.gameObject.name}");
     }
 
     private void UnbindHitbox()
@@ -157,8 +126,8 @@ public class CombatSoundPlayer : NetworkBehaviour
         if (_activeHitbox == null) return;
         _activeHitbox.OnHitboxEnabled -= HandleSwingStarted;
         _activeHitbox.OnHitDetected -= HandleHitDetected;
-        Debug.Log($"[CombatSoundPlayer] Unbound HitboxController");
         _activeHitbox = null;
+        _activeWeaponMaterialTag = null;
     }
 
     // ═══════════════════════════════════════════════════════
@@ -167,12 +136,7 @@ public class CombatSoundPlayer : NetworkBehaviour
 
     private void HandleSwingStarted()
     {
-        Debug.Log($"[CombatSoundPlayer] HandleSwingStarted — playing '{swordSwingSound}' at {transform.position}");
-        if (ProximitySoundManager.Instance == null)
-        {
-            Debug.LogWarning("[CombatSoundPlayer] ProximitySoundManager.Instance is NULL");
-            return;
-        }
+        if (ProximitySoundManager.Instance == null) return;
         ProximitySoundManager.Instance.PlaySound(swordSwingSound, transform.position);
     }
 
@@ -200,15 +164,11 @@ public class CombatSoundPlayer : NetworkBehaviour
 
         if (newState == CombatController.CombatState.BowDrawing &&
             _prevState != CombatController.CombatState.BowDrawing)
-        {
             ProximitySoundManager.Instance.PlaySound(bowDrawSound, transform.position);
-        }
 
         if (_prevState == CombatController.CombatState.BowAiming &&
             newState == CombatController.CombatState.None)
-        {
             ProximitySoundManager.Instance.PlaySound(bowReleaseSound, transform.position);
-        }
 
         _prevState = newState;
     }
@@ -221,14 +181,15 @@ public class CombatSoundPlayer : NetworkBehaviour
 
     private void HandleHitDetected(HitInfo hitInfo)
     {
-        if (ProximitySoundManager.Instance == null) return;
-
-        string attackerMat = defaultWeaponMaterial;
-        if (_activeHitbox != null)
+        if (ProximitySoundManager.Instance == null)
         {
-            var matTag = _activeHitbox.GetComponentInParent<MaterialTag>();
-            if (matTag != null) attackerMat = matTag.MaterialType;
+            Debug.LogWarning("[CombatSoundPlayer] HandleHitDetected: ProximitySoundManager is NULL");
+            return;
         }
+
+        string attackerMat = _activeWeaponMaterialTag != null
+            ? _activeWeaponMaterialTag.MaterialType
+            : defaultWeaponMaterial;
 
         if (attackerMat == defaultWeaponMaterial && hitInfo.weaponData != null)
         {
@@ -243,11 +204,16 @@ public class CombatSoundPlayer : NetworkBehaviour
         if (hitInfo.hitCollider != null)
         {
             var surfaceTag = hitInfo.hitCollider.GetComponentInParent<SurfaceTag>();
-            if (surfaceTag != null) targetMat = surfaceTag.ImpactMaterial;
-
-            var matTag = hitInfo.hitCollider.GetComponentInParent<MaterialTag>();
-            if (matTag != null) targetMat = matTag.MaterialType;
+            if (surfaceTag != null)
+                targetMat = surfaceTag.ImpactMaterial;
+            else
+            {
+                var matTag = hitInfo.hitCollider.GetComponentInParent<MaterialTag>();
+                if (matTag != null) targetMat = matTag.MaterialType;
+            }
         }
+
+        Debug.Log($"[CombatSoundPlayer] HandleHitDetected: attacker={attackerMat}, target={targetMat}, hitCollider={hitInfo.hitCollider?.gameObject.name}, hitPoint={hitInfo.hitPoint}");
 
         ProximitySoundManager.Instance.PlayImpact(attackerMat, targetMat, hitInfo.hitPoint);
     }

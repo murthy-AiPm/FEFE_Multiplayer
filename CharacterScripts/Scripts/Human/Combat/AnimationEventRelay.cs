@@ -15,8 +15,9 @@ using UnityEngine;
 ///   - WeaponToHolster     → reparent weapon from hand to holster
 ///   - EquipComplete       → equip transition done
 ///   - HolsterComplete     → holster transition done
-///   - FootstepLeft        → left foot hits ground (for sound)
-///   - FootstepRight       → right foot hits ground (for sound)
+///   - FootSteps           → generic footstep (use this if clips don't distinguish left/right)
+///   - FootstepLeft        → left foot hits ground
+///   - FootstepRight       → right foot hits ground
 /// </summary>
 public class AnimationEventRelay : MonoBehaviour
 {
@@ -61,18 +62,12 @@ public class AnimationEventRelay : MonoBehaviour
     }
 
     // ─── Combo / Attack Events ───
-    // These are handled by RuleAnimancerDriver's lock-until-end system.
-    // Kept as empty hooks so animation events don't throw MissingMethod errors.
 
     public void ComboWindowOpen() { }
     public void AttackEnd() { }
 
     // ─── Dodge Events ───
 
-    /// <summary>
-    /// Called when dodge animation finishes. Signals CombatController if needed.
-    /// Primarily a safety fallback — CombatController also uses a timer.
-    /// </summary>
     public void DodgeEnd()
     {
         // CombatController handles dodge end via its own timer.
@@ -81,16 +76,8 @@ public class AnimationEventRelay : MonoBehaviour
 
     // ─── Weapon Equip/Holster Events ───
 
-    public void WeaponToHand()
-    {
-        // Visual only — WeaponManager handles the actual reparenting
-        // This is called mid-animation when the hand reaches the holster
-    }
-
-    public void WeaponToHolster()
-    {
-        // Visual only — paired with WeaponToHand
-    }
+    public void WeaponToHand() { }
+    public void WeaponToHolster() { }
 
     public void EquipComplete()
     {
@@ -106,11 +93,26 @@ public class AnimationEventRelay : MonoBehaviour
 
     // ─── Footstep Events ───
 
+    /// <summary>
+    /// Generic footstep — use this if your animation clips don't distinguish left/right foot.
+    /// Fires both Left and Right listeners so FootstepSoundPlayer receives it regardless of mode.
+    /// </summary>
+    public void FootSteps()
+    {
+        OnFootstepLeft?.Invoke();
+    }
+
+    /// <summary>
+    /// Left foot contact. Use FootstepLeft in animation clip Function field.
+    /// </summary>
     public void FootstepLeft()
     {
         OnFootstepLeft?.Invoke();
     }
 
+    /// <summary>
+    /// Right foot contact. Use FootstepRight in animation clip Function field.
+    /// </summary>
     public void FootstepRight()
     {
         OnFootstepRight?.Invoke();
@@ -118,10 +120,6 @@ public class AnimationEventRelay : MonoBehaviour
 
     // ─── Generic ───
 
-    /// <summary>
-    /// Catch-all for custom animation events. 
-    /// Add an event in Unity with string parameter matching your custom event name.
-    /// </summary>
     public void OnCustomEvent(string eventName)
     {
         OnGenericEvent?.Invoke(eventName);
