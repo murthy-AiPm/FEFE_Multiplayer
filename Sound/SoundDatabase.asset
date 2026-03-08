@@ -40,14 +40,14 @@ MonoBehaviour:
   terrainLayerMappings: []
   defaultSurfaceType: Soil_Rocks_TerrainLayer
   footstepSets:
-  - surfaceType: Soil_Rocks_TerrainLayer
+  - surfaceType: meh
     footstepClips:
-    - {fileID: 8300000, guid: 72f526a6a9890f643a88e85a61c86c8a, type: 3}
-    - {fileID: 8300000, guid: 186de84b3207156479abe98f4958fed0, type: 3}
-    volumeMin: 0
-    volumeMax: 0.603
-    pitchMin: 0.8
-    pitchMax: 0.91
+    - {fileID: 8300000, guid: e291157425cb7ec49aa1dd2adcdbe5f5, type: 3}
+    - {fileID: 8300000, guid: 4a46c32b0e15cf34a954c0dd09277117, type: 3}
+    volumeMin: 0.094
+    volumeMax: 0.426
+    pitchMin: 0.923
+    pitchMax: 1.147
   impactSounds:
   - attackerMaterial: Metal
     targetMaterial: Wood
