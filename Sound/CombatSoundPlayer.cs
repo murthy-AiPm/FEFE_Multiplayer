@@ -15,6 +15,7 @@ public class CombatSoundPlayer : NetworkBehaviour
 
     [Header("Sound Names (must match SoundDatabase entries)")]
     [SerializeField] private string swordSwingSound = "Sword_Swing";
+    [SerializeField] private string bowLoadSound = "Bow_Load";
     [SerializeField] private string bowDrawSound = "Bow_Draw";
     [SerializeField] private string bowReleaseSound = "Bow_Release";
     [SerializeField] private string arrowWhooshSound = "Arrow_Whoosh";
@@ -26,6 +27,7 @@ public class CombatSoundPlayer : NetworkBehaviour
     private CombatController.CombatState _prevState = CombatController.CombatState.None;
     private HitboxController _activeHitbox;
     private MaterialTag _activeWeaponMaterialTag;
+    private WeaponData _activeWeaponData;
 
     private void Awake()
     {
@@ -97,6 +99,7 @@ public class CombatSoundPlayer : NetworkBehaviour
 
     private void HandleWeaponEquipped(WeaponData weaponData)
     {
+        _activeWeaponData = weaponData;
         UnbindHitbox();
         if (weaponData == null || weaponData.weaponPrefab == null) return;
         var hitbox = GetComponentInChildren<HitboxController>();
@@ -104,7 +107,11 @@ public class CombatSoundPlayer : NetworkBehaviour
         BindHitbox(hitbox);
     }
 
-    private void HandleWeaponHolstered(WeaponData weaponData) => UnbindHitbox();
+    private void HandleWeaponHolstered(WeaponData weaponData)
+    {
+        _activeWeaponData = null;
+        UnbindHitbox();
+    }
 
     private void BindHitbox(HitboxController hitbox)
     {
@@ -137,7 +144,12 @@ public class CombatSoundPlayer : NetworkBehaviour
     private void HandleSwingStarted()
     {
         if (ProximitySoundManager.Instance == null) return;
-        ProximitySoundManager.Instance.PlaySound(swordSwingSound, transform.position);
+
+        bool isBow = _activeWeaponData != null && _activeWeaponData.weaponType == WeaponType.Bow;
+        if (isBow)
+            ProximitySoundManager.Instance.PlaySound(bowLoadSound, transform.position);
+        else
+            ProximitySoundManager.Instance.PlaySound(swordSwingSound, transform.position);
     }
 
     private void HandleDamageReceived(float damage, Vector3 hitPoint)

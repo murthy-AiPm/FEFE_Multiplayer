@@ -98,11 +98,10 @@ public class AmbientSoundZone : MonoBehaviour
     private bool IsLocalPlayerOrMount(Collider col)
     {
         // ── Direct player check ──
-        if (col.GetComponentInChildren<AudioListener>() != null) return true;
-        if (col.GetComponentInParent<AudioListener>() != null) return true;
-
-        var nb = col.GetComponentInParent<Unity.Netcode.NetworkBehaviour>();
-        if (nb != null && nb.IsOwner) return true;
+        // Check for ClientPlayerMove — the NetworkBehaviour on the player root.
+        // Arrows and other projectiles will never have this component.
+        var playerMove = col.GetComponentInParent<ClientPlayerMove>();
+        if (playerMove != null && playerMove.IsOwner) return true;
 
         // ── Mounted horse check ──
         var mountable = col.GetComponentInParent<MountableEntity>();

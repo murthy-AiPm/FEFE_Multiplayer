@@ -37,10 +37,54 @@ MonoBehaviour:
     overrideDistance: 0
     customMinDistance: 0
     customMaxDistance: 0
+  - soundName: Bow_Draw
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 7045f6b1693c78e418bd8b81cc51cb8d, type: 3}
+    volumeMin: 0.175
+    volumeMax: 0.553
+    pitchMin: 0.79
+    pitchMax: 1.218
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+  - soundName: Bow_Release
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 083a11b6fd995714a99ab776145116b2, type: 3}
+    volumeMin: 0.293
+    volumeMax: 0.66
+    pitchMin: 0.79
+    pitchMax: 1.218
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+  - soundName: Block_Clang
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 777d2f75ee2ad804498ee341ae01e06b, type: 3}
+    volumeMin: 0.652
+    volumeMax: 1
+    pitchMin: 0.79
+    pitchMax: 1.218
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+  - soundName: Bow_Load
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 7045f6b1693c78e418bd8b81cc51cb8d, type: 3}
+    volumeMin: 0.652
+    volumeMax: 1
+    pitchMin: 0.79
+    pitchMax: 1.218
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
   terrainLayerMappings: []
-  defaultSurfaceType: Soil_Rocks_TerrainLayer
+  defaultSurfaceType: Default_footstep
   footstepSets:
-  - surfaceType: meh
+  - surfaceType: Default_footstep
     footstepClips:
     - {fileID: 8300000, guid: e291157425cb7ec49aa1dd2adcdbe5f5, type: 3}
     - {fileID: 8300000, guid: 4a46c32b0e15cf34a954c0dd09277117, type: 3}
@@ -52,7 +96,7 @@ MonoBehaviour:
   - attackerMaterial: Metal
     targetMaterial: Wood
     impactClips:
-    - {fileID: 8300000, guid: e9d5d7d75655f6e4693b0d47c7a49692, type: 3}
+    - {fileID: 8300000, guid: b9e0576551c735c428fdd3988f8fc093, type: 3}
     volumeMin: 1
     volumeMax: 1
     pitchMin: 0.9

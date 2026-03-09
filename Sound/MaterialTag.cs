@@ -5,7 +5,7 @@ using UnityEngine;
 //
 // Attach to weapon prefabs and projectiles (arrows, ballista bolts).
 // Used by CombatSoundPlayer to look up the correct impact sound
-// when this weapon/projectile hits a target./
+// when this weapon/projectile hits a target.
 // ─────────────────────────────────────────────────────────
 
 public class MaterialTag : MonoBehaviour
