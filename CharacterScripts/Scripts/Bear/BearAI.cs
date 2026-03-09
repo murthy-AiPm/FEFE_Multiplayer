@@ -72,6 +72,7 @@ public class BearAI : NetworkBehaviour
     [SerializeField] private VitalManager vitalManager;
     [SerializeField] private Animator animator;
     [SerializeField] private NavMeshAgent agent;
+    [SerializeField] private AnimalSoundPlayer animalSoundPlayer;
 
     [Header("Debug")]
     [SerializeField] private bool showGizmos = true;
@@ -107,6 +108,12 @@ public class BearAI : NetworkBehaviour
         if (vitalManager == null) vitalManager = GetComponent<VitalManager>();
         if (biteHitbox != null)
             biteHitbox.Initialize(GetComponent<NetworkObject>(), null);
+        if (animalSoundPlayer == null) animalSoundPlayer = GetComponent<AnimalSoundPlayer>();
+
+        // Hit sound
+        var damageReceiver = GetComponent<DamageReceiver>();
+        if (damageReceiver != null)
+            damageReceiver.OnDamageReceived += (damage, hitPoint) => animalSoundPlayer?.PlayHitSound();
 
         // Cache hashes
         speedHash = Animator.StringToHash("Speed");
@@ -388,6 +395,7 @@ public class BearAI : NetworkBehaviour
                 stateTimer = attackDuration;
                 agent.ResetPath();
                 animator.SetTrigger(attackHash);
+                animalSoundPlayer?.PlayAttackSound();
                 // Schedule hitbox enable
                 Invoke(nameof(EnableBiteHitbox), hitboxEnableDelay);
                 break;
@@ -401,6 +409,7 @@ public class BearAI : NetworkBehaviour
                 agent.enabled = false;
                 animator.SetBool(deadHash, true);
                 DisableBiteHitbox();
+                animalSoundPlayer?.PlayDeathSound();
                 break;
         }
     }

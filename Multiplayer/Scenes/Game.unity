@@ -363,15 +363,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8207628386974481640, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 74.12999
+      value: 60.2
       objectReference: {fileID: 0}
     - target: {fileID: 8207628386974481640, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 201.64352
+      value: 201.58353
       objectReference: {fileID: 0}
     - target: {fileID: 8207628386974481640, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 493.70242
+      value: 550.23145
       objectReference: {fileID: 0}
     - target: {fileID: 8207628386974481640, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: m_LocalRotation.w
@@ -3586,6 +3586,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SurfaceTag
   surfaceType: Flesh
   impactMaterial: Flesh
+--- !u!114 &1757121067
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1757121053}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6f899d9665c9b94bbb45b8db167d695, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AnimalSoundPlayer
+  idleSound: Bear_Idle
+  attackSound: 
+  hitSound: 
+  deathSound: 
+  sleepSound: 
+  idleIntervalMin: 4
+  idleIntervalMax: 12
 --- !u!1 &1764214107
 GameObject:
   m_ObjectHideFlags: 0
@@ -5093,6 +5112,10 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 4619646487853674270, guid: a830dbc98ef96634dbc863a7309f8a09, type: 3}
+      propertyPath: playerLayer.m_Bits
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5767345220959092614, guid: a830dbc98ef96634dbc863a7309f8a09, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 2517650064
@@ -5104,6 +5127,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 619644485852159292, guid: a830dbc98ef96634dbc863a7309f8a09, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1757121066}
+    - targetCorrespondingSourceObject: {fileID: 619644485852159292, guid: a830dbc98ef96634dbc863a7309f8a09, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1757121067}
   m_SourcePrefab: {fileID: 100100000, guid: a830dbc98ef96634dbc863a7309f8a09, type: 3}
 --- !u!224 &4519058515441037774
 RectTransform:

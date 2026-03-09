@@ -80,6 +80,15 @@ MonoBehaviour:
     overrideDistance: 0
     customMinDistance: 0
     customMaxDistance: 0
+  - soundName: Bear_Idle
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: c4bf5106a30d0bb4d880cc2e4cf03451, type: 3}
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
   terrainLayerMappings: []
   defaultSurfaceType: Default_footstep
   footstepSets:
