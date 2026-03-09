@@ -37,16 +37,12 @@ public class SoundEntry
     [Tooltip("Multiple clips for random variation. One is picked at random each play.")]
     public AudioClip[] clips;
 
-    [Range(0f, 1f)]
-    public float volumeMin = 0.8f;
-    [Range(0f, 1f)]
-    public float volumeMax = 1f;
+    [MinMaxRange(0f, 1f)]
+    public Vector2 volume = new Vector2(0.8f, 1f);
 
     [Tooltip("Pitch randomization range for variety")]
-    [Range(0.5f, 1.5f)]
-    public float pitchMin = 0.95f;
-    [Range(0.5f, 1.5f)]
-    public float pitchMax = 1.05f;
+    [MinMaxRange(0.5f, 1.5f)]
+    public Vector2 pitch = new Vector2(0.95f, 1.05f);
 
     [Tooltip("If true, overrides the category's default min/max distance")]
     public bool overrideDistance;
@@ -66,8 +62,8 @@ public class SoundEntry
         return clips[UnityEngine.Random.Range(0, clips.Length)];
     }
 
-    public float GetRandomVolume() => UnityEngine.Random.Range(volumeMin, volumeMax);
-    public float GetRandomPitch() => UnityEngine.Random.Range(pitchMin, pitchMax);
+    public float GetRandomVolume() => UnityEngine.Random.Range(volume.x, volume.y);
+    public float GetRandomPitch() => UnityEngine.Random.Range(pitch.x, pitch.y);
 }
 
 /// <summary>
@@ -110,21 +106,20 @@ public class SurfaceFootstepSet
     [Tooltip("Footstep clips for this surface. One is picked randomly each step.")]
     public AudioClip[] footstepClips;
 
-    [Range(0f, 1f)]
-    public float volumeMin = 0.3f;
-    [Range(0f, 1f)]
-    public float volumeMax = 0.5f;
+    [MinMaxRange(0f, 1f)]
+    public Vector2 volume = new Vector2(0.3f, 0.5f);
 
-    [Range(0.8f, 1.2f)]
-    public float pitchMin = 0.9f;
-    [Range(0.8f, 1.2f)]
-    public float pitchMax = 1.1f;
+    [MinMaxRange(0.8f, 1.2f)]
+    public Vector2 pitch = new Vector2(0.9f, 1.1f);
 
     public AudioClip GetRandomClip()
     {
         if (footstepClips == null || footstepClips.Length == 0) return null;
         return footstepClips[UnityEngine.Random.Range(0, footstepClips.Length)];
     }
+
+    public float GetRandomVolume() => UnityEngine.Random.Range(volume.x, volume.y);
+    public float GetRandomPitch() => UnityEngine.Random.Range(pitch.x, pitch.y);
 }
 
 /// <summary>
@@ -136,6 +131,9 @@ public class SurfaceFootstepSet
 [Serializable]
 public class ImpactSoundEntry
 {
+    [Tooltip("Display name for this entry (e.g. 'Metal-Wood', 'Sword-Flesh')")]
+    public string soundName = "";
+
     [Tooltip("Material of the weapon/projectile (e.g. 'Metal', 'Wood')")]
     public string attackerMaterial = "Metal";
 
@@ -144,21 +142,20 @@ public class ImpactSoundEntry
 
     public AudioClip[] impactClips;
 
-    [Range(0f, 1f)]
-    public float volumeMin = 0.7f;
-    [Range(0f, 1f)]
-    public float volumeMax = 1f;
+    [MinMaxRange(0f, 1f)]
+    public Vector2 volume = new Vector2(0.7f, 1f);
 
-    [Range(0.8f, 1.2f)]
-    public float pitchMin = 0.9f;
-    [Range(0.8f, 1.2f)]
-    public float pitchMax = 1.1f;
+    [MinMaxRange(0.8f, 1.2f)]
+    public Vector2 pitch = new Vector2(0.9f, 1.1f);
 
     public AudioClip GetRandomClip()
     {
         if (impactClips == null || impactClips.Length == 0) return null;
         return impactClips[UnityEngine.Random.Range(0, impactClips.Length)];
     }
+
+    public float GetRandomVolume() => UnityEngine.Random.Range(volume.x, volume.y);
+    public float GetRandomPitch() => UnityEngine.Random.Range(pitch.x, pitch.y);
 }
 
 /// <summary>

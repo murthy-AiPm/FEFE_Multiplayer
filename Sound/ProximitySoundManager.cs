@@ -173,8 +173,8 @@ public class ProximitySoundManager : NetworkBehaviour
         if (footstepSet == null) return;
         var clip = footstepSet.GetRandomClip();
         if (clip == null) return;
-        float volume = Random.Range(footstepSet.volumeMin, footstepSet.volumeMax);
-        float pitch = Random.Range(footstepSet.pitchMin, footstepSet.pitchMax);
+        float volume = footstepSet.GetRandomVolume();
+        float pitch = footstepSet.GetRandomPitch();
         float minDist = quietDist?.minDistance ?? 2f;
         float maxDist = quietDist?.maxDistance ?? 30f;
         PlayClipRaw(clip, position, volume, pitch, minDist, maxDist);
@@ -198,8 +198,8 @@ public class ProximitySoundManager : NetworkBehaviour
         if (impactEntry == null) { Debug.LogWarning($"[ProximitySoundManager] PlayImpactClientRpc: no entry for '{attackerMat}|{targetMat}'"); return; }
         var clip = impactEntry.GetRandomClip();
         if (clip == null) { Debug.LogWarning($"[ProximitySoundManager] PlayImpactClientRpc: clip is null for '{attackerMat}|{targetMat}'"); return; }
-        float volume = Random.Range(impactEntry.volumeMin, impactEntry.volumeMax);
-        float pitch = Random.Range(impactEntry.pitchMin, impactEntry.pitchMax);
+        float volume = impactEntry.GetRandomVolume();
+        float pitch = impactEntry.GetRandomPitch();
         float minDist = combatDist?.minDistance ?? 5f;
         float maxDist = combatDist?.maxDistance ?? 50f;
         Debug.Log($"[ProximitySoundManager] PlayImpactClientRpc: playing '{clip.name}' vol={volume:F2} pitch={pitch:F2} dist={dist:F1} minDist={minDist} maxDist={maxDist} listenerPos={listenerTransform?.position}");

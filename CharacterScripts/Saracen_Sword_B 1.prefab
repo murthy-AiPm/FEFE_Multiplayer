@@ -110,7 +110,7 @@ MonoBehaviour:
   castDirection: 2
   hitLayers:
     serializedVersion: 2
-    m_Bits: 8388608
+    m_Bits: 9437184
   maxHitsPerSwing: 5
   drawGizmos: 1
   activeColor: {r: 1, g: 0, b: 0, a: 1}

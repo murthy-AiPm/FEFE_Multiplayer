@@ -30,43 +30,8 @@ MonoBehaviour:
     category: 0
     clips:
     - {fileID: 8300000, guid: 68c1c6ee9ddcd0341a672e9f7ecbbef0, type: 3}
-    volumeMin: 0.175
-    volumeMax: 0.553
-    pitchMin: 0.79
-    pitchMax: 1.218
-    overrideDistance: 0
-    customMinDistance: 0
-    customMaxDistance: 0
-  - soundName: Bow_Draw
-    category: 0
-    clips:
-    - {fileID: 8300000, guid: 7045f6b1693c78e418bd8b81cc51cb8d, type: 3}
-    volumeMin: 0.175
-    volumeMax: 0.553
-    pitchMin: 0.79
-    pitchMax: 1.218
-    overrideDistance: 0
-    customMinDistance: 0
-    customMaxDistance: 0
-  - soundName: Bow_Release
-    category: 0
-    clips:
-    - {fileID: 8300000, guid: 083a11b6fd995714a99ab776145116b2, type: 3}
-    volumeMin: 0.293
-    volumeMax: 0.66
-    pitchMin: 0.79
-    pitchMax: 1.218
-    overrideDistance: 0
-    customMinDistance: 0
-    customMaxDistance: 0
-  - soundName: Block_Clang
-    category: 0
-    clips:
-    - {fileID: 8300000, guid: 777d2f75ee2ad804498ee341ae01e06b, type: 3}
-    volumeMin: 0.652
-    volumeMax: 1
-    pitchMin: 0.79
-    pitchMax: 1.218
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
     overrideDistance: 0
     customMinDistance: 0
     customMaxDistance: 0
@@ -74,10 +39,44 @@ MonoBehaviour:
     category: 0
     clips:
     - {fileID: 8300000, guid: 7045f6b1693c78e418bd8b81cc51cb8d, type: 3}
-    volumeMin: 0.652
-    volumeMax: 1
-    pitchMin: 0.79
-    pitchMax: 1.218
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+  - soundName: Bow_Draw
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 7045f6b1693c78e418bd8b81cc51cb8d, type: 3}
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+  - soundName: Bow_Release
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 083a11b6fd995714a99ab776145116b2, type: 3}
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+  - soundName: Block_Clang
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 777d2f75ee2ad804498ee341ae01e06b, type: 3}
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+  - soundName: Dodge_Whoosh
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 85013b5ed05c49d4694c9e7ef4c932b8, type: 3}
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
     overrideDistance: 0
     customMinDistance: 0
     customMaxDistance: 0
@@ -88,16 +87,34 @@ MonoBehaviour:
     footstepClips:
     - {fileID: 8300000, guid: e291157425cb7ec49aa1dd2adcdbe5f5, type: 3}
     - {fileID: 8300000, guid: 4a46c32b0e15cf34a954c0dd09277117, type: 3}
-    volumeMin: 0.094
-    volumeMax: 0.426
-    pitchMin: 0.923
-    pitchMax: 1.147
+    volume: {x: 0.3, y: 0.5}
+    pitch: {x: 0.9, y: 1.1}
   impactSounds:
-  - attackerMaterial: Metal
+  - soundName: Metal-Wood
+    attackerMaterial: Metal
     targetMaterial: Wood
     impactClips:
     - {fileID: 8300000, guid: b9e0576551c735c428fdd3988f8fc093, type: 3}
-    volumeMin: 1
-    volumeMax: 1
-    pitchMin: 0.9
-    pitchMax: 1.1
+    volume: {x: 0.7, y: 1}
+    pitch: {x: 0.9, y: 1.1}
+  - soundName: Metal-Flesh
+    attackerMaterial: Metal
+    targetMaterial: Flesh
+    impactClips:
+    - {fileID: 8300000, guid: 74123cd0d58cf434ba3a5be785d5505a, type: 3}
+    volume: {x: 0.5605443, y: 0.8605443}
+    pitch: {x: 0.83129257, y: 0.9714288}
+  - soundName: Flesh-Flesh
+    attackerMaterial: Flesh
+    targetMaterial: Flesh
+    impactClips:
+    - {fileID: 8300000, guid: 74123cd0d58cf434ba3a5be785d5505a, type: 3}
+    volume: {x: 0.5605443, y: 0.8605443}
+    pitch: {x: 0.83129257, y: 0.9714288}
+  - soundName: Metal-Metal
+    attackerMaterial: Metal
+    targetMaterial: Metal
+    impactClips:
+    - {fileID: 8300000, guid: 7494fdb331be04641abca4f55da21497, type: 3}
+    volume: {x: 0.5605443, y: 0.8605443}
+    pitch: {x: 0.83129257, y: 0.9714288}

@@ -28,6 +28,8 @@ public class CombatSoundPlayer : NetworkBehaviour
     private HitboxController _activeHitbox;
     private MaterialTag _activeWeaponMaterialTag;
     private WeaponData _activeWeaponData;
+    private float _lastImpactTime;
+    private const float IMPACT_DEDUP_WINDOW = 0.1f; // ignore duplicate impact within 100ms
 
     private void Awake()
     {
@@ -155,6 +157,10 @@ public class CombatSoundPlayer : NetworkBehaviour
     private void HandleDamageReceived(float damage, Vector3 hitPoint)
     {
         if (ProximitySoundManager.Instance == null) return;
+        // Deduplicate: OnHitLocal and NotifyHitClientRpc both fire OnDamageReceived
+        // within milliseconds of each other — only play the first one
+        if (Time.time - _lastImpactTime < IMPACT_DEDUP_WINDOW) return;
+        _lastImpactTime = Time.time;
         ProximitySoundManager.Instance.PlayImpact(defaultWeaponMaterial, bodyMaterial, hitPoint);
     }
 
