@@ -305,6 +305,7 @@ GameObject:
   - component: {fileID: 6985057114362056872}
   - component: {fileID: 2991571744342027716}
   - component: {fileID: 5538343029870464451}
+  - component: {fileID: 2106045045085498608}
   m_Layer: 7
   m_Name: HorseFEFE
   m_TagString: Horse
@@ -392,7 +393,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2941436085
+  GlobalObjectIdHash: 3091181052
   InScenePlacedSourceGlobalObjectIdHash: 1503646221
   DeferredDespawnTick: 0
   Ownership: 1
@@ -680,6 +681,32 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
+--- !u!114 &2106045045085498608
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 711040484119619372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60fa51dc28aedf1438cac9dac9684ac7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HorseSoundPlayer
+  ShowTopMostFoldoutHeaderGroup: 1
+  neighSound: Horse_Neigh
+  snortSound: Horse_Snort
+  deathSound: Horse_Death
+  mountSound: Horse_Mount
+  dismountSound: Horse_Dismount
+  trotInterval: 0.45
+  gallopInterval: 0.25
+  minSpeed: 6
+  gallopSpeed: 12
+  hoofbeatCategory: 0
+  idleSnortMinInterval: 8
+  idleSnortMaxInterval: 20
+  raycastDistance: 3
 --- !u!1 &940438874208436165
 GameObject:
   m_ObjectHideFlags: 0
@@ -8515,7 +8542,7 @@ Transform:
   m_GameObject: {fileID: 1725069009520660425}
   serializedVersion: 2
   m_LocalRotation: {x: 0.6485585, y: -0.17579328, z: -0.71145433, w: 0.20567304}
-  m_LocalPosition: {x: 0.00799942, y: 1.733695, z: 1.3670044}
+  m_LocalPosition: {x: 0.008003235, y: 1.7337036, z: 1.3670044}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -35197,7 +35224,7 @@ ParentConstraint:
   m_TranslationAtRest: {x: 0, y: 1.8230007, z: 1.6609997}
   m_RotationAtRest: {x: 0, y: 0, z: 0}
   m_TranslationOffsets:
-  - {x: -0.1339302, y: 0.13388443, z: 0}
+  - {x: -0.13391113, y: 0.13391113, z: 0}
   m_RotationOffsets:
   - {x: -47.28265, y: -89.99991, z: 179.99976}
   m_AffectTranslationX: 1
@@ -35339,7 +35366,7 @@ Transform:
   m_GameObject: {fileID: 7710883938556244672}
   serializedVersion: 2
   m_LocalRotation: {x: 0.6695521, y: -0.21558358, z: -0.675044, w: 0.22257438}
-  m_LocalPosition: {x: 0, y: 1.6414728, z: 1.1917343}
+  m_LocalPosition: {x: 0, y: 1.6414642, z: 1.191742}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -35423,7 +35450,7 @@ Transform:
   m_GameObject: {fileID: 7710883939590498031}
   serializedVersion: 2
   m_LocalRotation: {x: 0.65143526, y: -0.27501026, z: -0.65143627, w: 0.27501342}
-  m_LocalPosition: {x: 0.0009994507, y: 0.9981675, z: 0.6914749}
+  m_LocalPosition: {x: 0.0009994507, y: 0.9981537, z: 0.6914673}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -35549,7 +35576,7 @@ ParentConstraint:
   m_TranslationAtRest: {x: 0, y: 1.8207344, z: 1.4717761}
   m_RotationAtRest: {x: 0.00018441501, y: -89.99994, z: -132.71738}
   m_TranslationOffsets:
-  - {x: -0.0038986206, y: -0.0036010742, z: 0}
+  - {x: -0.00390625, y: -0.0036010742, z: 0}
   m_RotationOffsets:
   - {x: 0, y: 0, z: 0}
   m_AffectTranslationX: 1
@@ -45842,7 +45869,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8401523639375035623}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.15212333, y: -0.00000919649, z: -0.000060355018, w: 0.98836154}
+  m_LocalRotation: {x: 0.15212339, y: -0.0000000380981, z: 0.000000008726429, w: 0.98836154}
   m_LocalPosition: {x: 0, y: 1.5035291, z: -4.768585}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0

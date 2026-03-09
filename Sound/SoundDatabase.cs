@@ -314,14 +314,31 @@ public class SoundDatabase : ScriptableObject
     public string DefaultSurfaceType => defaultSurfaceType;
 
     /// <summary>
-    /// Get footstep clip set for a surface type. Returns null if not configured.
+    /// Get footstep clip set for a surface type, with optional creature type prefix.
+    /// Lookup order: "CreatureType_SurfaceType" → "SurfaceType" → "Default_footstep"
     /// </summary>
-    public SurfaceFootstepSet GetFootstepSet(string surfaceType)
+    public SurfaceFootstepSet GetFootstepSet(string surfaceType, string creatureType = "")
     {
         if (_footstepMap == null) BuildLookups();
         if (string.IsNullOrEmpty(surfaceType)) surfaceType = defaultSurfaceType;
-        _footstepMap.TryGetValue(surfaceType, out var set);
-        return set;
+
+        // 1. Try creature-specific surface (e.g. "Horse_Snow")
+        if (!string.IsNullOrEmpty(creatureType))
+        {
+            string creatureKey = $"{creatureType}_{surfaceType}";
+            if (_footstepMap.TryGetValue(creatureKey, out var creatureSet)) return creatureSet;
+
+            // 2. Try creature default (e.g. "Horse_Default_footstep")
+            string creatureDefault = $"{creatureType}_Default_footstep";
+            if (_footstepMap.TryGetValue(creatureDefault, out var creatureDefaultSet)) return creatureDefaultSet;
+        }
+
+        // 3. Try plain surface (e.g. "Snow")
+        if (_footstepMap.TryGetValue(surfaceType, out var surfaceSet)) return surfaceSet;
+
+        // 4. Final fallback
+        _footstepMap.TryGetValue("Default_footstep", out var fallback);
+        return fallback;
     }
 
     /// <summary>

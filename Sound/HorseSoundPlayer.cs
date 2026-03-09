@@ -35,6 +35,10 @@ public class HorseSoundPlayer : NetworkBehaviour
     [Tooltip("Speed considered galloping")]
     [SerializeField] private float gallopSpeed = 12f;
 
+    [Header("Footstep Category")]
+    [Tooltip("Sound category for hoofbeat sounds. Use Combat for louder hoofbeats heard from further away.")]
+    [SerializeField] private SoundCategory hoofbeatCategory = SoundCategory.Combat;
+
     [Header("Idle Sounds")]
     [Tooltip("Random interval range for idle snort (seconds)")]
     [SerializeField] private float idleSnortMinInterval = 8f;
@@ -50,8 +54,9 @@ public class HorseSoundPlayer : NetworkBehaviour
     // ─── State ───
     private float _hoofbeatTimer;
     private float _idleSnortTimer;
-    private Vector3 _lastPosition;
+    private Vector3 _lastFixedPosition;
     private float _currentSpeed;
+    private float _smoothedSpeed;
     private string _cachedSurfaceType;
     private float _surfaceCacheTimer;
     private bool _wasMounted;
@@ -66,13 +71,12 @@ public class HorseSoundPlayer : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
-        _lastPosition = transform.position;
+        _lastFixedPosition = transform.position;
     }
 
     private void Update()
     {
-        // Horse sounds run on all clients based on observed state
-        // (no need for owner-only since horse movement is server-synced)
+        if (!IsSpawned) return;
         if (ProximitySoundManager.Instance == null) return;
 
         UpdateSpeed();
@@ -82,21 +86,22 @@ public class HorseSoundPlayer : NetworkBehaviour
         UpdateMountStateTransitions();
     }
 
+    private void FixedUpdate()
+    {
+        // Sample speed in FixedUpdate to match when rb.MovePosition actually runs
+        Vector3 delta = transform.position - _lastFixedPosition;
+        delta.y = 0f;
+        _currentSpeed = delta.magnitude / Mathf.Max(Time.fixedDeltaTime, 0.001f);
+        _lastFixedPosition = transform.position;
+
+        // Smooth to avoid rapid flicker between zero and real speed
+        _smoothedSpeed = Mathf.Lerp(_smoothedSpeed, _currentSpeed, 0.3f);
+    }
+
     private void UpdateSpeed()
     {
-        if (_rigidbody != null)
-        {
-            Vector3 vel = _rigidbody.linearVelocity;
-            vel.y = 0f;
-            _currentSpeed = vel.magnitude;
-        }
-        else
-        {
-            Vector3 delta = transform.position - _lastPosition;
-            delta.y = 0f;
-            _currentSpeed = delta.magnitude / Mathf.Max(Time.deltaTime, 0.001f);
-            _lastPosition = transform.position;
-        }
+        // Speed is now sampled in FixedUpdate — nothing to do here
+        // Using _smoothedSpeed in UpdateHoofbeats prevents timer reset flicker
     }
 
     private void UpdateSurface()
@@ -113,20 +118,21 @@ public class HorseSoundPlayer : NetworkBehaviour
 
     private void UpdateHoofbeats()
     {
-        if (_currentSpeed < minSpeed)
+        if (_smoothedSpeed < minSpeed)
         {
-            _hoofbeatTimer = 0f;
+            // Don't reset timer to 0 — avoids immediate fire when movement resumes
+            _hoofbeatTimer = Mathf.Max(_hoofbeatTimer, 0.1f);
             return;
         }
 
         _hoofbeatTimer -= Time.deltaTime;
         if (_hoofbeatTimer <= 0f)
-        {
+        {//
             // Play hoofbeat as a footstep (terrain-aware)
             string surface = _cachedSurfaceType ?? "Grass";
-            ProximitySoundManager.Instance.PlayFootstep(surface, transform.position, SoundCategory.Quiet);
+            ProximitySoundManager.Instance.PlayFootstep(surface, transform.position, hoofbeatCategory, "Horse");
 
-            float t = Mathf.InverseLerp(minSpeed, gallopSpeed, _currentSpeed);
+            float t = Mathf.InverseLerp(minSpeed, gallopSpeed, _smoothedSpeed);
             _hoofbeatTimer = Mathf.Lerp(trotInterval, gallopInterval, t);
         }
     }
@@ -134,7 +140,7 @@ public class HorseSoundPlayer : NetworkBehaviour
     private void UpdateIdleSounds()
     {
         // Only snort when idle and not mounted (or when mounted and idle)
-        if (_currentSpeed > minSpeed)
+        if (_smoothedSpeed > minSpeed)
         {
             ResetIdleTimer();
             return;

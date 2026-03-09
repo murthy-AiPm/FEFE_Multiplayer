@@ -120,16 +120,30 @@ public class ProximitySoundManager : NetworkBehaviour
         PlayClipAtPosition(entry, worldPosition);
     }
 
-    public void PlayFootstep(string surfaceType, Vector3 worldPosition, SoundCategory category = SoundCategory.Quiet)
+    public void PlayFootstep(string surfaceType, Vector3 worldPosition, SoundCategory category = SoundCategory.Quiet, string creatureType = "")
     {
         if (database == null) return;
-        var footstepSet = database.GetFootstepSet(surfaceType);
+        var footstepSet = database.GetFootstepSet(surfaceType, creatureType);
         if (footstepSet == null) return;
         var clip = footstepSet.GetRandomClip();
         if (clip == null) return;
-        int surfaceId = GetSoundId("Footstep_" + surfaceType);
-        if (IsServer) PlayFootstepClientRpc(surfaceId, worldPosition, surfaceType);
-        else PlayFootstepServerRpc(surfaceId, worldPosition, surfaceType);
+        int surfaceId = GetSoundId("Footstep_" + creatureType + surfaceType);
+        if (IsServer)
+        {
+            // Play locally on the host immediately
+            PlayFootstepLocal(surfaceType, worldPosition, creatureType);
+            // Send to other clients only (excludes host)
+            var clientRpcParams = new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams
+                {
+                    TargetClientIds = GetRemoteClientIds()
+                }
+            };
+            if (GetRemoteClientIds().Count > 0)
+                PlayFootstepClientRpc(surfaceId, worldPosition, surfaceType, creatureType, clientRpcParams);
+        }
+        else PlayFootstepServerRpc(surfaceId, worldPosition, surfaceType, creatureType);
     }
 
     public void PlayImpact(string attackerMaterial, string targetMaterial, Vector3 worldPosition)
@@ -161,15 +175,15 @@ public class ProximitySoundManager : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void PlayFootstepServerRpc(int surfaceId, Vector3 position, string surfaceType)
-        => PlayFootstepClientRpc(surfaceId, position, surfaceType);
+    private void PlayFootstepServerRpc(int surfaceId, Vector3 position, string surfaceType, string creatureType = "")
+        => PlayFootstepClientRpc(surfaceId, position, surfaceType, creatureType);
 
     [ClientRpc]
-    private void PlayFootstepClientRpc(int surfaceId, Vector3 position, string surfaceType)
+    private void PlayFootstepClientRpc(int surfaceId, Vector3 position, string surfaceType, string creatureType = "", ClientRpcParams clientRpcParams = default)
     {
         var quietDist = database.GetCategoryDistance(SoundCategory.Quiet);
         if (quietDist != null && GetDistanceToListener(position) > quietDist.maxDistance) return;
-        var footstepSet = database.GetFootstepSet(surfaceType);
+        var footstepSet = database.GetFootstepSet(surfaceType, creatureType);
         if (footstepSet == null) return;
         var clip = footstepSet.GetRandomClip();
         if (clip == null) return;
@@ -259,4 +273,28 @@ public class ProximitySoundManager : NetworkBehaviour
 
     public void SetListener(Transform listener) => listenerTransform = listener;
     public SoundDatabase Database => database;
+
+    private void PlayFootstepLocal(string surfaceType, Vector3 position, string creatureType)
+    {
+        var footstepSet = database.GetFootstepSet(surfaceType, creatureType);
+        if (footstepSet == null) return;
+        var clip = footstepSet.GetRandomClip();
+        if (clip == null) return;
+        var quietDist = database.GetCategoryDistance(SoundCategory.Quiet);
+        if (quietDist != null && GetDistanceToListener(position) > quietDist.maxDistance) return;
+        float minDist = quietDist?.minDistance ?? 2f;
+        float maxDist = quietDist?.maxDistance ?? 30f;
+        PlayClipRaw(clip, position, footstepSet.GetRandomVolume(), footstepSet.GetRandomPitch(), minDist, maxDist);
+    }
+
+    private List<ulong> GetRemoteClientIds()
+    {
+        var ids = new List<ulong>();
+        foreach (var id in NetworkManager.Singleton.ConnectedClientsIds)
+        {
+            if (id != NetworkManager.Singleton.LocalClientId)
+                ids.Add(id);
+        }
+        return ids;
+    }
 }

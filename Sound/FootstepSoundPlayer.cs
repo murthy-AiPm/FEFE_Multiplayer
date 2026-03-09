@@ -55,6 +55,14 @@ public class FootstepSoundPlayer : NetworkBehaviour
     [Tooltip("Sound category for heavy creatures (dragon, horse)")]
     [SerializeField] private SoundCategory heavyCategory = SoundCategory.Combat;
 
+    [Header("Server-Driven (Animals/AI)")]
+    [Tooltip("If true, server drives footstep timing instead of owning client. Use for AI-controlled creatures like bear, deer.")]
+    [SerializeField] private bool driveFromServer = false;
+
+    [Header("Creature Type (for footstep lookup)")]
+    [Tooltip("Optional. If set, looks up 'CreatureType_SurfaceType' in SoundDatabase first (e.g. 'Bear_Snow'). Leave empty for human players.")]
+    [SerializeField] private string creatureType = "";
+
     // ─── References (auto-found) ───
     private CharacterController _characterController;
     private Rigidbody _rigidbody;
@@ -80,8 +88,8 @@ public class FootstepSoundPlayer : NetworkBehaviour
     {
         base.OnNetworkSpawn();
 
-        // Only the owner drives footstep timing — sounds are networked to others
-        if (!IsOwner) return;
+        bool shouldDrive = driveFromServer ? IsServer : IsOwner;
+        if (!shouldDrive) return;
 
         // Subscribe to animation events if available
         if (_eventRelay != null && (mode == FootstepMode.AnimationEvents || mode == FootstepMode.Both))
@@ -105,7 +113,8 @@ public class FootstepSoundPlayer : NetworkBehaviour
 
     private void Update()
     {
-        if (!IsOwner) return;
+        bool shouldDrive = driveFromServer ? IsServer : IsOwner;
+        if (!shouldDrive) return;
         if (ProximitySoundManager.Instance == null) return;
 
         // Calculate speed
@@ -222,6 +231,6 @@ public class FootstepSoundPlayer : NetworkBehaviour
             surface = ProximitySoundManager.Instance.Database?.DefaultSurfaceType ?? "Grass";
 
         Vector3 pos = transform.position;
-        ProximitySoundManager.Instance.PlayFootstep(surface, pos, isHeavyFootstep ? heavyCategory : footstepCategory);
+        ProximitySoundManager.Instance.PlayFootstep(surface, pos, isHeavyFootstep ? heavyCategory : footstepCategory, creatureType);
     }
 }

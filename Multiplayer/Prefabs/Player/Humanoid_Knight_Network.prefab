@@ -6615,6 +6615,7 @@ MonoBehaviour:
   defaultWeaponMaterial: Metal
   bodyMaterial: Flesh
   swordSwingSound: Sword_Swing
+  bowLoadSound: Bow_Load
   bowDrawSound: Bow_Draw
   bowReleaseSound: Bow_Release
   arrowWhooshSound: Arrow_Whoosh

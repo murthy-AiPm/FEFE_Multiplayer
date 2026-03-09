@@ -98,6 +98,13 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 4a46c32b0e15cf34a954c0dd09277117, type: 3}
     volume: {x: 0.3, y: 0.5}
     pitch: {x: 0.9, y: 1.1}
+  - surfaceType: Horse_Default_footstep
+    footstepClips:
+    - {fileID: 8300000, guid: e291157425cb7ec49aa1dd2adcdbe5f5, type: 3}
+    - {fileID: 8300000, guid: d4bd5d534336847409f6971341ef8550, type: 3}
+    - {fileID: 8300000, guid: 4a46c32b0e15cf34a954c0dd09277117, type: 3}
+    volume: {x: 0.3, y: 0.5}
+    pitch: {x: 1.049063, y: 1.1427598}
   impactSounds:
   - soundName: Metal-Wood
     attackerMaterial: Metal
