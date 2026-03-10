@@ -707,7 +707,7 @@ MonoBehaviour:
   gallopInterval: 0.25
   minSpeed: 1
   gallopSpeed: 12
-  hoofbeatCategory: 1
+  hoofbeatCategory: 0
   idleSnortMinInterval: 8
   idleSnortMaxInterval: 20
   raycastDistance: 3
@@ -740,10 +740,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RandomIdleAnimator
   animator: {fileID: 615835660554086812}
-  parameterName: IdleVariant
-  variantCount: 4
+  variantCount: 5
   minInterval: 1
-  maxInterval: 1
+  maxInterval: 2
+  variantDurations:
+  - 3.08
+  - 3.08
+  - 2.05
+  - 5.03
+  - 2.19
+  blendSpeed: 4
+  paramPrefix: Idle
 --- !u!1 &940438874208436165
 GameObject:
   m_ObjectHideFlags: 0
