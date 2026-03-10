@@ -92,7 +92,9 @@ MonoBehaviour:
   - soundName: Horse_Mount
     category: 0
     clips:
-    - {fileID: 8300000, guid: 8732e1c6be9135946b80c461e5d8d89d, type: 3}
+    - {fileID: 8300000, guid: 1a94a8046d605244ab725b04ee3fdc40, type: 3}
+    - {fileID: 8300000, guid: 768786c0d3c67a24686088fca6047717, type: 3}
+    - {fileID: 8300000, guid: 3745cdc707598774a8110693733e9829, type: 3}
     volume: {x: 0.8, y: 1}
     pitch: {x: 0.95, y: 1.05}
     overrideDistance: 0
@@ -112,6 +114,7 @@ MonoBehaviour:
     clips:
     - {fileID: 8300000, guid: c4bf5106a30d0bb4d880cc2e4cf03451, type: 3}
     - {fileID: 8300000, guid: 6da718969fc6cfc4682d3a0f2a141513, type: 3}
+    - {fileID: 8300000, guid: 8732e1c6be9135946b80c461e5d8d89d, type: 3}
     volume: {x: 0.8, y: 1}
     pitch: {x: 0.95, y: 1.05}
     overrideDistance: 0
@@ -120,7 +123,9 @@ MonoBehaviour:
   - soundName: Horse_Jump
     category: 0
     clips:
-    - {fileID: 8300000, guid: 8732e1c6be9135946b80c461e5d8d89d, type: 3}
+    - {fileID: 8300000, guid: 768786c0d3c67a24686088fca6047717, type: 3}
+    - {fileID: 8300000, guid: 86543bc639a8f7f44a1a6a5223ce3339, type: 3}
+    - {fileID: 8300000, guid: 0b12c7e4ff3ebc34e80ef36ccb6bbdab, type: 3}
     volume: {x: 0.8, y: 1}
     pitch: {x: 0.95, y: 1.05}
     overrideDistance: 0
