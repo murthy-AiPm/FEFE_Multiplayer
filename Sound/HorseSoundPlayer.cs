@@ -22,6 +22,10 @@ public class HorseSoundPlayer : NetworkBehaviour
     [SerializeField] private string mountSound = "Horse_Mount";
     [SerializeField] private string dismountSound = "Horse_Dismount";
 
+    [Header("Footstep Mode")]
+    [Tooltip("If true, footsteps are driven by animation events (HorseFootStep). If false, uses cadence timer.")]
+    [SerializeField] private bool useAnimationEvents = false;
+
     [Header("Gallop Settings")]
     [Tooltip("Base interval between hoofbeats at trot speed")]
     [SerializeField] private float trotInterval = 0.45f;
@@ -118,6 +122,8 @@ public class HorseSoundPlayer : NetworkBehaviour
 
     private void UpdateHoofbeats()
     {
+        if (useAnimationEvents) return;
+
         if (_smoothedSpeed < minSpeed)
         {
             // Don't reset timer to 0 — avoids immediate fire when movement resumes
@@ -183,6 +189,16 @@ public class HorseSoundPlayer : NetworkBehaviour
     // ═══════════════════════════════════════════════════════
     //  PUBLIC API
     // ═══════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Called from animation event named 'HorseFootStep'.
+    /// </summary>
+    public void HorseFootStep()
+    {
+        if (ProximitySoundManager.Instance == null) return;
+        string surface = _cachedSurfaceType ?? "Grass";
+        ProximitySoundManager.Instance.PlayFootstep(surface, transform.position, hoofbeatCategory, "Horse");
+    }
 
     /// <summary>
     /// Call when horse takes damage or is startled.
