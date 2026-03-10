@@ -23,6 +23,10 @@ public class CombatSoundPlayer : NetworkBehaviour
     [SerializeField] private string dodgeSound = "Dodge_Whoosh";
     [SerializeField] private string deathSound = "Player_Death";
     [SerializeField] private string respawnSound = "Player_Respawn";
+    [SerializeField] private string swordEquipSound = "Sword_Equip";
+    [SerializeField] private string swordUnequipSound = "Sword_Unequip";
+    [SerializeField] private string bowEquipSound = "Bow_Equip";
+    [SerializeField] private string bowUnequipSound = "Bow_Unequip";
 
     private CombatController.CombatState _prevState = CombatController.CombatState.None;
     private HitboxController _activeHitbox;
@@ -104,6 +108,13 @@ public class CombatSoundPlayer : NetworkBehaviour
         _activeWeaponData = weaponData;
         UnbindHitbox();
         if (weaponData == null || weaponData.weaponPrefab == null) return;
+
+        if (ProximitySoundManager.Instance != null)
+        {
+            bool isBow = weaponData.weaponType == WeaponType.Bow;
+            ProximitySoundManager.Instance.PlaySound(isBow ? bowEquipSound : swordEquipSound, transform.position);
+        }
+
         var hitbox = GetComponentInChildren<HitboxController>();
         if (hitbox == null) return;
         BindHitbox(hitbox);
@@ -111,6 +122,12 @@ public class CombatSoundPlayer : NetworkBehaviour
 
     private void HandleWeaponHolstered(WeaponData weaponData)
     {
+        if (ProximitySoundManager.Instance != null && weaponData != null)
+        {
+            bool isBow = weaponData.weaponType == WeaponType.Bow;
+            ProximitySoundManager.Instance.PlaySound(isBow ? bowUnequipSound : swordUnequipSound, transform.position);
+        }
+
         _activeWeaponData = null;
         UnbindHitbox();
     }

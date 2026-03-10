@@ -2945,34 +2945,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
---- !u!1 &1264215679 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 711040484119619372, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
-  m_PrefabInstance: {fileID: 1493873669}
-  m_PrefabAsset: {fileID: 0}
---- !u!95 &1264215693 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 615835660554086812, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
-  m_PrefabInstance: {fileID: 1493873669}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1264215696
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1264215679}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7f8d31a71020ea54fa2d1fd3857f6130, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RandomIdleAnimator
-  animator: {fileID: 1264215693}
-  parameterName: IdleVariant
-  variantCount: 4
-  minInterval: 1
-  maxInterval: 1
-  onlyWhenIdle: 1
 --- !u!1 &1343891899
 GameObject:
   m_ObjectHideFlags: 0
@@ -3158,6 +3130,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: HorseFEFE (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 2106045045085498608, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
+      propertyPath: hoofbeatCategory
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3713399862824024303, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 3091181052
@@ -3165,10 +3141,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 711040484119619372, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1264215696}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
 --- !u!1 &1509017765
 GameObject:

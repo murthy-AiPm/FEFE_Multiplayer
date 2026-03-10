@@ -203,7 +203,10 @@ public class HorseSoundPlayer : NetworkBehaviour
         if (footstepMode != FootstepMode.AnimationEvents) return;
         if (ProximitySoundManager.Instance == null) return;
         string surface = _cachedSurfaceType ?? "Grass";
-        ProximitySoundManager.Instance.PlayFootstep(surface, transform.position, hoofbeatCategory, "Horse");
+        // Play locally only — ProximitySoundManager.PlayFootstep routes through RPCs
+        // which causes double-play on host. Each client plays independently based on
+        // observed animation, so no networking needed here.
+        ProximitySoundManager.Instance.PlayFootstepDirect(surface, transform.position, hoofbeatCategory, "Horse");
     }
 
     /// <summary>

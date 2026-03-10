@@ -131,13 +131,41 @@ MonoBehaviour:
     overrideDistance: 0
     customMinDistance: 0
     customMaxDistance: 0
-  terrainLayerMappings: []
+  terrainLayerMappings:
+  - terrainLayerIndex: 0
+    surfaceType: Soil
+  - terrainLayerIndex: 1
+    surfaceType: Snow
+  - terrainLayerIndex: 2
+    surfaceType: Grass
+  - terrainLayerIndex: 4
+    surfaceType: Pebbles
+  - terrainLayerIndex: 5
+    surfaceType: Sand
   defaultSurfaceType: Default_footstep
   footstepSets:
   - surfaceType: Default_footstep
     footstepClips:
     - {fileID: 8300000, guid: e291157425cb7ec49aa1dd2adcdbe5f5, type: 3}
     - {fileID: 8300000, guid: 4a46c32b0e15cf34a954c0dd09277117, type: 3}
+    volume: {x: 0.59897804, y: 0.798978}
+    pitch: {x: 1.1703576, y: 1.2}
+  - surfaceType: Soil
+    footstepClips:
+    - {fileID: 8300000, guid: e291157425cb7ec49aa1dd2adcdbe5f5, type: 3}
+    - {fileID: 8300000, guid: 4a46c32b0e15cf34a954c0dd09277117, type: 3}
+    volume: {x: 0.43893966, y: 0.6389396}
+    pitch: {x: 1.1703576, y: 1.2}
+  - surfaceType: Snow
+    footstepClips:
+    - {fileID: 8300000, guid: 599bc94c1b0318b428f664208bb388e7, type: 3}
+    - {fileID: 8300000, guid: 9861ae18f8d1843499eef943dc468418, type: 3}
+    - {fileID: 8300000, guid: 518397ecbc519ae498193be93c10b6f5, type: 3}
+    - {fileID: 8300000, guid: f45a615d7d667bc42ae42b9a34f7d4d0, type: 3}
+    - {fileID: 8300000, guid: a0f821adfddf6d14781f37e961cc7107, type: 3}
+    - {fileID: 8300000, guid: d346a6b22b6fe624bb40f6ad6ff149fc, type: 3}
+    - {fileID: 8300000, guid: b925f65decc08f44a8b154bff2373852, type: 3}
+    - {fileID: 8300000, guid: ead4f2b5164fe2b4db0e9af59d7f7e84, type: 3}
     volume: {x: 0.43893966, y: 0.6389396}
     pitch: {x: 1.1703576, y: 1.2}
   - surfaceType: Horse_Default_footstep
@@ -154,7 +182,7 @@ MonoBehaviour:
     - {fileID: 8300000, guid: b7976d94497e0704880155be20ae1cd5, type: 3}
     - {fileID: 8300000, guid: 8c9e775650d72cd4dafef8df3e41ca3a, type: 3}
     - {fileID: 8300000, guid: 7b9b1014b79cc624abec6bb90af9546f, type: 3}
-    volume: {x: 0.79999995, y: 1}
+    volume: {x: 0.44224867, y: 0.6422487}
     pitch: {x: 0.80063593, y: 0.80219424}
   impactSounds:
   - soundName: Metal-Wood

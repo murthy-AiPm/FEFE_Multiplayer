@@ -307,6 +307,7 @@ GameObject:
   - component: {fileID: 5538343029870464451}
   - component: {fileID: 2106045045085498608}
   - component: {fileID: 3253512111400153319}
+  - component: {fileID: 8769035553107744475}
   m_Layer: 7
   m_Name: HorseFEFE
   m_TagString: Horse
@@ -706,7 +707,7 @@ MonoBehaviour:
   gallopInterval: 0.25
   minSpeed: 1
   gallopSpeed: 12
-  hoofbeatCategory: 0
+  hoofbeatCategory: 1
   idleSnortMinInterval: 8
   idleSnortMaxInterval: 20
   raycastDistance: 3
@@ -726,6 +727,23 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   cooldown: 0.1
+--- !u!114 &8769035553107744475
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 711040484119619372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f8d31a71020ea54fa2d1fd3857f6130, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RandomIdleAnimator
+  animator: {fileID: 615835660554086812}
+  parameterName: IdleVariant
+  variantCount: 4
+  minInterval: 1
+  maxInterval: 1
 --- !u!1 &940438874208436165
 GameObject:
   m_ObjectHideFlags: 0

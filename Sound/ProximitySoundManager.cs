@@ -130,20 +130,15 @@ public class ProximitySoundManager : NetworkBehaviour
         int surfaceId = GetSoundId("Footstep_" + creatureType + surfaceType);
         if (IsServer)
         {
-            // Play locally on the host immediately
-            PlayFootstepLocal(surfaceType, worldPosition, creatureType);
-            // Send to other clients only (excludes host)
+            PlayFootstepLocal(surfaceType, worldPosition, creatureType, category);
             var clientRpcParams = new ClientRpcParams
             {
-                Send = new ClientRpcSendParams
-                {
-                    TargetClientIds = GetRemoteClientIds()
-                }
+                Send = new ClientRpcSendParams { TargetClientIds = GetRemoteClientIds() }
             };
             if (GetRemoteClientIds().Count > 0)
-                PlayFootstepClientRpc(surfaceId, worldPosition, surfaceType, creatureType, clientRpcParams);
+                PlayFootstepClientRpc(surfaceId, worldPosition, surfaceType, creatureType, (int)category, clientRpcParams);
         }
-        else PlayFootstepServerRpc(surfaceId, worldPosition, surfaceType, creatureType);
+        else PlayFootstepServerRpc(surfaceId, worldPosition, surfaceType, creatureType, (int)category);
     }
 
     public void PlayImpact(string attackerMaterial, string targetMaterial, Vector3 worldPosition)
@@ -175,22 +170,22 @@ public class ProximitySoundManager : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void PlayFootstepServerRpc(int surfaceId, Vector3 position, string surfaceType, string creatureType = "")
-        => PlayFootstepClientRpc(surfaceId, position, surfaceType, creatureType);
+    private void PlayFootstepServerRpc(int surfaceId, Vector3 position, string surfaceType, string creatureType = "", int category = (int)SoundCategory.Quiet)
+        => PlayFootstepClientRpc(surfaceId, position, surfaceType, creatureType, category);
 
     [ClientRpc]
-    private void PlayFootstepClientRpc(int surfaceId, Vector3 position, string surfaceType, string creatureType = "", ClientRpcParams clientRpcParams = default)
+    private void PlayFootstepClientRpc(int surfaceId, Vector3 position, string surfaceType, string creatureType = "", int category = (int)SoundCategory.Quiet, ClientRpcParams clientRpcParams = default)
     {
-        var quietDist = database.GetCategoryDistance(SoundCategory.Quiet);
-        if (quietDist != null && GetDistanceToListener(position) > quietDist.maxDistance) return;
+        var catDist = database.GetCategoryDistance((SoundCategory)category);
+        if (catDist != null && GetDistanceToListener(position) > catDist.maxDistance) return;
         var footstepSet = database.GetFootstepSet(surfaceType, creatureType);
         if (footstepSet == null) return;
         var clip = footstepSet.GetRandomClip();
         if (clip == null) return;
         float volume = footstepSet.GetRandomVolume();
         float pitch = footstepSet.GetRandomPitch();
-        float minDist = quietDist?.minDistance ?? 2f;
-        float maxDist = quietDist?.maxDistance ?? 30f;
+        float minDist = catDist?.minDistance ?? 2f;
+        float maxDist = catDist?.maxDistance ?? 30f;
         PlayClipRaw(clip, position, volume, pitch, minDist, maxDist);
     }
 
@@ -274,16 +269,21 @@ public class ProximitySoundManager : NetworkBehaviour
     public void SetListener(Transform listener) => listenerTransform = listener;
     public SoundDatabase Database => database;
 
-    private void PlayFootstepLocal(string surfaceType, Vector3 position, string creatureType)
+    public void PlayFootstepDirect(string surfaceType, Vector3 worldPosition, SoundCategory category = SoundCategory.Quiet, string creatureType = "")
+    {
+        PlayFootstepLocal(surfaceType, worldPosition, creatureType, category);
+    }
+
+    private void PlayFootstepLocal(string surfaceType, Vector3 position, string creatureType, SoundCategory category = SoundCategory.Quiet)
     {
         var footstepSet = database.GetFootstepSet(surfaceType, creatureType);
         if (footstepSet == null) return;
         var clip = footstepSet.GetRandomClip();
         if (clip == null) return;
-        var quietDist = database.GetCategoryDistance(SoundCategory.Quiet);
-        if (quietDist != null && GetDistanceToListener(position) > quietDist.maxDistance) return;
-        float minDist = quietDist?.minDistance ?? 2f;
-        float maxDist = quietDist?.maxDistance ?? 30f;
+        var catDist = database.GetCategoryDistance(category);
+        if (catDist != null && GetDistanceToListener(position) > catDist.maxDistance) return;
+        float minDist = catDist?.minDistance ?? 2f;
+        float maxDist = catDist?.maxDistance ?? 30f;
         PlayClipRaw(clip, position, footstepSet.GetRandomVolume(), footstepSet.GetRandomPitch(), minDist, maxDist);
     }
 
