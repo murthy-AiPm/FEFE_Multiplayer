@@ -11,7 +11,7 @@ public class ProximitySoundManager : NetworkBehaviour
 
     [Header("Audio Source Pool")]
     [SerializeField] private int poolSize = 32;
-    [SerializeField] private AudioRolloffMode rolloffMode = AudioRolloffMode.Linear;
+    [SerializeField] private AudioRolloffMode defaultRolloffMode = AudioRolloffMode.Logarithmic;
 
     [Header("Listener")]
     [SerializeField] private Transform listenerTransform;
@@ -75,7 +75,7 @@ public class ProximitySoundManager : NetworkBehaviour
             var source = go.AddComponent<AudioSource>();
             source.playOnAwake = false;
             source.spatialBlend = 1f;
-            source.rolloffMode = rolloffMode;
+            source.rolloffMode = defaultRolloffMode;
             source.dopplerLevel = 0.3f;
             source.spread = 30f;
             source.loop = false;
@@ -186,7 +186,8 @@ public class ProximitySoundManager : NetworkBehaviour
         float pitch = footstepSet.GetRandomPitch();
         float minDist = catDist?.minDistance ?? 2f;
         float maxDist = catDist?.maxDistance ?? 30f;
-        PlayClipRaw(clip, position, volume, pitch, minDist, maxDist);
+        AudioRolloffMode rolloff = catDist?.rolloffMode ?? defaultRolloffMode;
+        PlayClipRaw(clip, position, volume, pitch, minDist, maxDist, rolloff);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -211,8 +212,9 @@ public class ProximitySoundManager : NetworkBehaviour
         float pitch = impactEntry.GetRandomPitch();
         float minDist = combatDist?.minDistance ?? 5f;
         float maxDist = combatDist?.maxDistance ?? 50f;
+        AudioRolloffMode rolloff = combatDist?.rolloffMode ?? defaultRolloffMode;
         Debug.Log($"[ProximitySoundManager] PlayImpactClientRpc: playing '{clip.name}' vol={volume:F2} pitch={pitch:F2} dist={dist:F1} minDist={minDist} maxDist={maxDist} listenerPos={listenerTransform?.position}");
-        PlayClipRaw(clip, position, volume, pitch, minDist, maxDist);
+        PlayClipRaw(clip, position, volume, pitch, minDist, maxDist, rolloff);
     }
 
     // ═══════════════════════════════════════════════════════
@@ -237,10 +239,16 @@ public class ProximitySoundManager : NetworkBehaviour
         var clip = entry.GetRandomClip();
         if (clip == null) return;
         database.GetDistanceForSound(entry, out float minDist, out float maxDist);
-        PlayClipRaw(clip, position, entry.GetRandomVolume(), entry.GetRandomPitch(), minDist, maxDist);
+        AudioRolloffMode rolloff = entry.overrideRolloff
+            ? entry.customRolloffMode
+            : (database.GetCategoryDistance(entry.category)?.rolloffMode ?? defaultRolloffMode);
+        AnimationCurve curve = (entry.overrideRolloff && entry.customRolloffMode == AudioRolloffMode.Custom)
+            ? entry.customRolloffCurve : null;
+        Debug.Log($"[ProximitySoundManager] PlayClipAtPosition: sound={entry.soundName} overrideRolloff={entry.overrideRolloff} rolloff={rolloff} curveNull={curve == null} curveKeys={curve?.keys.Length}");
+        PlayClipRaw(clip, position, entry.GetRandomVolume(), entry.GetRandomPitch(), minDist, maxDist, rolloff, curve);
     }
 
-    private void PlayClipRaw(AudioClip clip, Vector3 position, float volume, float pitch, float minDist, float maxDist)
+    private void PlayClipRaw(AudioClip clip, Vector3 position, float volume, float pitch, float minDist, float maxDist, AudioRolloffMode rolloffMode = AudioRolloffMode.Logarithmic, AnimationCurve customCurve = null)
     {
         if (clip == null) return;
         if (volume <= 0f) return;
@@ -253,6 +261,8 @@ public class ProximitySoundManager : NetworkBehaviour
         source.minDistance = minDist;
         source.maxDistance = maxDist;
         source.rolloffMode = rolloffMode;
+        if (rolloffMode == AudioRolloffMode.Custom && customCurve != null)
+            source.SetCustomCurve(AudioSourceCurveType.CustomRolloff, customCurve);
         source.spatialBlend = 1f;
         source.loop = false;
         Debug.Log($"[ProximitySoundManager] PlayClipRaw: clip={clip.name} vol={volume:F2} pitch={pitch:F2} pos={position} minDist={minDist} maxDist={maxDist}");
@@ -284,7 +294,8 @@ public class ProximitySoundManager : NetworkBehaviour
         if (catDist != null && GetDistanceToListener(position) > catDist.maxDistance) return;
         float minDist = catDist?.minDistance ?? 2f;
         float maxDist = catDist?.maxDistance ?? 30f;
-        PlayClipRaw(clip, position, footstepSet.GetRandomVolume(), footstepSet.GetRandomPitch(), minDist, maxDist);
+        AudioRolloffMode rolloff = catDist?.rolloffMode ?? defaultRolloffMode;
+        PlayClipRaw(clip, position, footstepSet.GetRandomVolume(), footstepSet.GetRandomPitch(), minDist, maxDist, rolloff);
     }
 
     private List<ulong> GetRemoteClientIds()

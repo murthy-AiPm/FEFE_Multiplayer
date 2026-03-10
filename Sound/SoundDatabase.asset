@@ -16,15 +16,19 @@ MonoBehaviour:
   - category: 0
     minDistance: 2
     maxDistance: 30
+    rolloffMode: 0
   - category: 1
     minDistance: 1
     maxDistance: 50
+    rolloffMode: 0
   - category: 2
     minDistance: 20
     maxDistance: 500
+    rolloffMode: 0
   - category: 3
     minDistance: 0
     maxDistance: 3.4028235e+38
+    rolloffMode: 0
   sounds:
   - soundName: Sword_Swing
     category: 0
@@ -35,6 +39,32 @@ MonoBehaviour:
     overrideDistance: 0
     customMinDistance: 0
     customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   - soundName: Bow_Load
     category: 0
     clips:
@@ -44,6 +74,32 @@ MonoBehaviour:
     overrideDistance: 0
     customMinDistance: 0
     customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   - soundName: Bow_Draw
     category: 0
     clips:
@@ -53,6 +109,32 @@ MonoBehaviour:
     overrideDistance: 0
     customMinDistance: 0
     customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   - soundName: Bow_Release
     category: 0
     clips:
@@ -62,6 +144,32 @@ MonoBehaviour:
     overrideDistance: 0
     customMinDistance: 0
     customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   - soundName: Block_Clang
     category: 0
     clips:
@@ -71,6 +179,32 @@ MonoBehaviour:
     overrideDistance: 0
     customMinDistance: 0
     customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   - soundName: Dodge_Whoosh
     category: 0
     clips:
@@ -80,6 +214,32 @@ MonoBehaviour:
     overrideDistance: 0
     customMinDistance: 0
     customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   - soundName: Bear_Idle
     category: 0
     clips:
@@ -89,6 +249,32 @@ MonoBehaviour:
     overrideDistance: 0
     customMinDistance: 0
     customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   - soundName: Horse_Mount
     category: 0
     clips:
@@ -100,26 +286,122 @@ MonoBehaviour:
     overrideDistance: 0
     customMinDistance: 0
     customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   - soundName: Horse_Dismount
     category: 0
     clips:
     - {fileID: 8300000, guid: 74ca4b82206abf64ca3fffe62af3a525, type: 3}
-    volume: {x: 0.8, y: 1}
+    volume: {x: 0.10373825, y: 0.3037383}
     pitch: {x: 0.95, y: 1.05}
     overrideDistance: 0
     customMinDistance: 0
     customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   - soundName: Horse_Snort
     category: 0
     clips:
-    - {fileID: 8300000, guid: c4bf5106a30d0bb4d880cc2e4cf03451, type: 3}
-    - {fileID: 8300000, guid: 6da718969fc6cfc4682d3a0f2a141513, type: 3}
     - {fileID: 8300000, guid: 8732e1c6be9135946b80c461e5d8d89d, type: 3}
-    volume: {x: 0.8, y: 1}
+    - {fileID: 8300000, guid: 8732e1c6be9135946b80c461e5d8d89d, type: 3}
+    - {fileID: 8300000, guid: 6da718969fc6cfc4682d3a0f2a141513, type: 3}
+    volume: {x: 0.77663535, y: 0.97663546}
     pitch: {x: 0.95, y: 1.05}
     overrideDistance: 0
     customMinDistance: 0
     customMaxDistance: 0
+    overrideRolloff: 1
+    customRolloffMode: 2
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 0.17377439
+        value: 0.14740184
+        inSlope: -1.4661943
+        outSlope: -1.4661943
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 0.4289487
+        value: 0.037263244
+        inSlope: 0.061175905
+        outSlope: 0.061175905
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 0.92322415
+        value: -0.043656558
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   - soundName: Horse_Jump
     category: 0
     clips:
@@ -131,6 +413,32 @@ MonoBehaviour:
     overrideDistance: 0
     customMinDistance: 0
     customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   terrainLayerMappings:
   - terrainLayerIndex: 0
     surfaceType: Soil

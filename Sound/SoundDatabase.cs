@@ -12,7 +12,7 @@ using UnityEngine;
 
 /// <summary>
 /// Sound category determines base hearing distance.
-/// </summary>
+/// </summary>//
 public enum SoundCategory
 {
     Quiet,      // footsteps, cloth, bow draw
@@ -53,6 +53,15 @@ public class SoundEntry
     [Tooltip("Distance at which sound fades to zero (only if overrideDistance is true)")]
     public float customMaxDistance = 50f;
 
+    [Tooltip("If true, overrides the category's rolloff mode for this sound")]
+    public bool overrideRolloff;
+
+    [Tooltip("Rolloff mode for this sound (only if overrideRolloff is true)")]
+    public AudioRolloffMode customRolloffMode = AudioRolloffMode.Logarithmic;
+
+    [Tooltip("Custom rolloff curve (only used when customRolloffMode is set to Custom)")]
+    public AnimationCurve customRolloffCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
+
     /// <summary>
     /// Get a random clip from the array. Returns null if empty.
     /// </summary>
@@ -79,6 +88,9 @@ public class CategoryDistanceSettings
 
     [Tooltip("Distance at which sound fades to zero / is not played")]
     public float maxDistance = 50f;
+
+    [Tooltip("Rolloff mode for this category. Logarithmic sounds more natural, Linear gives precise control.")]
+    public AudioRolloffMode rolloffMode = AudioRolloffMode.Logarithmic;
 }
 
 /// <summary>

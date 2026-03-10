@@ -72,6 +72,7 @@ public class HorseSoundPlayer : NetworkBehaviour
     {
         _mountable = GetComponent<MountableEntity>();
         _rigidbody = GetComponent<Rigidbody>();
+        _wasMounted = _mountable != null && _mountable.IsMounted;
         ResetIdleTimer();
     }
 
@@ -79,6 +80,8 @@ public class HorseSoundPlayer : NetworkBehaviour
     {
         base.OnNetworkSpawn();
         _lastFixedPosition = transform.position;
+        // Initialize to current mount state to prevent false dismount event on spawn
+        _wasMounted = _mountable != null && _mountable.IsMounted;
     }
 
     private void Update()
@@ -166,19 +169,20 @@ public class HorseSoundPlayer : NetworkBehaviour
     private void UpdateMountStateTransitions()
     {
         if (_mountable == null) return;
+        if (!IsServer) return; // server drives mount/dismount sounds via RPC
 
         bool isMounted = _mountable.IsMounted;
 
         if (isMounted && !_wasMounted)
         {
-            // Just mounted
             ProximitySoundManager.Instance.PlaySound(mountSound, transform.position);
             ProximitySoundManager.Instance.PlaySound(neighSound, transform.position);
+            ResetIdleTimer();
         }
         else if (!isMounted && _wasMounted)
         {
-            // Just dismounted
             ProximitySoundManager.Instance.PlaySound(dismountSound, transform.position);
+            ResetIdleTimer();
         }
 
         _wasMounted = isMounted;
