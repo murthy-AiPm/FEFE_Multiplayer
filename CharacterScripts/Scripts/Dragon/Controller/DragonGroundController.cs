@@ -57,6 +57,14 @@ public class DragonGroundController : NetworkBehaviour
     [SerializeField] private KeyCode trotToggleKey = KeyCode.T;
     [SerializeField] private float turnAngleSmoothing = 5f;
 
+    [Header("Turn Rate (deg/sec)")]
+    [SerializeField] private float walkTurnRate = 90f;
+    [SerializeField] private float trotTurnRate = 120f;
+    [SerializeField] private float sprintTurnRate = 160f;
+
+    [Header("Root Motion")]
+    [SerializeField] protected bool useRootMotion = false;
+
     [Header("Fake Gravity (for horse)")]
     [SerializeField] private bool useFakeGravity = false;
     [SerializeField] private float fakeGravity = 20f;
@@ -78,6 +86,7 @@ public class DragonGroundController : NetworkBehaviour
     private bool isActive;
     private float _turnAngleRaw;
     private float _turnAngleVel;
+    private float _cappedYaw;  // yaw that moves toward targetAngle at a capped rate
     private bool isPlayingJump;  // Jump animation playing (still grounded)
     private bool isTakingOff;    // Lifting up to hover
     private float stateTimer;
@@ -98,7 +107,7 @@ public class DragonGroundController : NetworkBehaviour
     public float GaitSpeed { get; private set; }   // 0 walk, 1 trot, 2 sprint
     public bool IsTrotMode { get; private set; }   // Caps Lock toggle
 
-    private void Awake()
+    protected virtual void Awake()
     {
         if (groundingSystem == null)
             groundingSystem = GetComponent<DragonGroundingSystem>();
@@ -283,28 +292,34 @@ public class DragonGroundController : NetworkBehaviour
             Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
             float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + cam.eulerAngles.y;
 
-            // ONLY update yaw - let DragonGroundAlignment handle actual rotation
-            if (groundAlignment != null)
-                groundAlignment.UpdateTargetYaw(targetAngle);
+            // Cap how fast the desired yaw can change per gait
+            float turnRate = sprint ? sprintTurnRate : (IsTrotMode ? trotTurnRate : walkTurnRate);
+            _cappedYaw = Mathf.MoveTowardsAngle(_cappedYaw, targetAngle, turnRate * Time.fixedDeltaTime);
 
-            // Slope-projected movement
-            Vector3 worldForward = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
+            // Feed the capped yaw to rotation — horse turns gradually
+            if (groundAlignment != null)
+                groundAlignment.UpdateTargetYaw(_cappedYaw);
+
+            // Move in the capped direction so horse doesn't slide sideways
+            Vector3 worldForward = Quaternion.Euler(0f, _cappedYaw, 0f) * Vector3.forward;
             Vector3 moveDir = ProjectOnSlope(worldForward, currentGroundNormal);
 
-            float speed = sprint ? runSpeed : (IsTrotMode ? trotSpeed : walkSpeed);
-            rb.MovePosition(rb.position + moveDir * speed * Time.fixedDeltaTime);
+            if (!useRootMotion)
+            {
+                float speed = sprint ? runSpeed : (IsTrotMode ? trotSpeed : walkSpeed);
+                rb.MovePosition(rb.position + moveDir * speed * Time.fixedDeltaTime);
+            }
 
-            // Turn detection (for animation)
+            // TurnAngle from delta between where horse is facing and where it needs to face
+            // Normalize over 30 degrees so ±1 is reachable in normal turns
             float currentYaw = rb.rotation.eulerAngles.y;
-            float angleDelta = Mathf.DeltaAngle(currentYaw, targetAngle);
+            float angleDelta = Mathf.DeltaAngle(currentYaw, _cappedYaw);
+            float targetTurnAngle = Mathf.Clamp(angleDelta / 30f, -1f, 1f);
+            TurnAngle = Mathf.SmoothDamp(TurnAngle, targetTurnAngle,
+                ref _turnAngleVel, 1f / turnAngleSmoothing);
             IsTurningLeft = angleDelta < -turnHeadAngle;
             IsTurningRight = angleDelta > turnHeadAngle;
             TurnSpeed = Mathf.Abs(angleDelta) / 180f;
-
-            // Smooth TurnAngle: -1 = hard left, +1 = hard right
-            float targetTurnAngle = Mathf.Clamp(angleDelta / 90f, -1f, 1f);
-            TurnAngle = Mathf.SmoothDamp(TurnAngle, isMoving ? targetTurnAngle : 0f,
-                ref _turnAngleVel, 1f / turnAngleSmoothing);
 
             rb.constraints = RigidbodyConstraints.FreezeRotation;
 
@@ -312,6 +327,10 @@ public class DragonGroundController : NetworkBehaviour
         }
         else
         {
+            // Snap _cappedYaw to current facing so horse stops turning immediately
+            _cappedYaw = rb.rotation.eulerAngles.y;
+            TurnAngle = Mathf.MoveTowards(TurnAngle, 0f, turnAngleSmoothing * Time.fixedDeltaTime);
+
             IsTurningLeft = false;
             IsTurningRight = false;
             TurnSpeed = 0f;
@@ -461,11 +480,10 @@ public class DragonGroundController : NetworkBehaviour
         }
 
         // Sync yaw to current rotation so dragon doesn't snap
+        float currentYaw = rb.rotation.eulerAngles.y;
+        _cappedYaw = currentYaw;
         if (groundAlignment != null)
-        {
-            float currentYaw = rb.rotation.eulerAngles.y;
             groundAlignment.SetYawImmediate(currentYaw);
-        }
 
         if (animator != null)
             animator.applyRootMotion = true;
@@ -482,6 +500,7 @@ public class DragonGroundController : NetworkBehaviour
         if (!IsOwner) return;
 
         bool shouldApply =
+            useRootMotion ||
             (isPlayingJump && rootMotionOnJump) ||
             (groundingSystem.IsOnCliff && rootMotionOnCliff) ||
             (groundingSystem.IsFalling && rootMotionOnFalling) ||

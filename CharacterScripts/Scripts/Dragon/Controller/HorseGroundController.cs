@@ -2,6 +2,11 @@ using UnityEngine;
 
 public class HorseGroundController : DragonGroundController
 {
+    protected override void Awake()
+    {
+        base.Awake();
+        useRootMotion = true;
+    }
     //[Header("Horse Gravity")]
     //[SerializeField] private float fakeGravity = 20f;
     //[SerializeField] private float maxFallSpeed = 30f;

@@ -17,6 +17,6 @@
  * 16. Add character change option pause menu
  * 17. Player respwan option in pause menu
  * 18. Add offline mode
- * 19. Exit option in all screens
+ * 19. Exit option in all screens//
  */
 
