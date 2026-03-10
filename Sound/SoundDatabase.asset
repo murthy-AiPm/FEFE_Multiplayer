@@ -243,7 +243,7 @@ MonoBehaviour:
   - soundName: Bear_Idle
     category: 0
     clips:
-    - {fileID: 8300000, guid: c4bf5106a30d0bb4d880cc2e4cf03451, type: 3}
+    - {fileID: 0}
     volume: {x: 0.8, y: 1}
     pitch: {x: 0.95, y: 1.05}
     overrideDistance: 0
@@ -490,7 +490,7 @@ MonoBehaviour:
     - {fileID: 8300000, guid: b7976d94497e0704880155be20ae1cd5, type: 3}
     - {fileID: 8300000, guid: 8c9e775650d72cd4dafef8df3e41ca3a, type: 3}
     - {fileID: 8300000, guid: 7b9b1014b79cc624abec6bb90af9546f, type: 3}
-    volume: {x: 0.44224867, y: 0.6422487}
+    volume: {x: 0.4487179, y: 0.5897434}
     pitch: {x: 0.80063593, y: 0.80219424}
   impactSounds:
   - soundName: Metal-Wood

@@ -12,6 +12,8 @@ public class ProximitySoundManager : NetworkBehaviour
     [Header("Audio Source Pool")]
     [SerializeField] private int poolSize = 32;
     [SerializeField] private AudioRolloffMode defaultRolloffMode = AudioRolloffMode.Logarithmic;
+    [Tooltip("Duration in seconds to fade out clip volume before it ends, to prevent waveform pop.")]
+    [SerializeField] private float clipFadeOutDuration = 0.02f;
 
     [Header("Listener")]
     [SerializeField] private Transform listenerTransform;
@@ -267,13 +269,31 @@ public class ProximitySoundManager : NetworkBehaviour
         source.loop = false;
         Debug.Log($"[ProximitySoundManager] PlayClipRaw: clip={clip.name} vol={volume:F2} pitch={pitch:F2} pos={position} minDist={minDist} maxDist={maxDist}");
         source.Play();
-        StartCoroutine(ReturnToPoolAfterPlay(source, clip.length / Mathf.Max(pitch, 0.1f)));
+        float adjustedLength = clip.length / Mathf.Max(pitch, 0.1f);
+        StartCoroutine(FadeOutAndReturn(source, volume, adjustedLength));
     }
 
-    private System.Collections.IEnumerator ReturnToPoolAfterPlay(AudioSource source, float duration)
+    private System.Collections.IEnumerator FadeOutAndReturn(AudioSource source, float originalVolume, float clipLength)
     {
-        yield return new WaitForSeconds(duration + 0.1f);
-        if (source != null && !source.isPlaying) source.gameObject.SetActive(false);
+        float fadeStart = clipLength - clipFadeOutDuration;
+        if (fadeStart > 0f)
+            yield return new WaitForSeconds(fadeStart);
+
+        // Fade volume to zero over clipFadeOutDuration
+        float elapsed = 0f;
+        while (elapsed < clipFadeOutDuration && source != null && source.isPlaying)
+        {
+            source.volume = Mathf.Lerp(originalVolume, 0f, elapsed / clipFadeOutDuration);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        if (source != null)
+        {
+            source.Stop();
+            source.volume = originalVolume; // reset for pool reuse
+            source.gameObject.SetActive(false);
+        }
     }
 
     public void SetListener(Transform listener) => listenerTransform = listener;
