@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Audio;
 
 public class ProximitySoundManager : NetworkBehaviour
 {
@@ -8,6 +9,14 @@ public class ProximitySoundManager : NetworkBehaviour
 
     [Header("Database")]
     [SerializeField] private SoundDatabase database;
+
+    [Header("Audio Mixer")]
+    [SerializeField] private AudioMixer audioMixer;
+    [SerializeField] private AudioMixerGroup footstepsMixerGroup;
+    [SerializeField] private AudioMixerGroup combatMixerGroup;
+    [SerializeField] private AudioMixerGroup loudMixerGroup;
+    [SerializeField] private AudioMixerGroup ambientMixerGroup;
+    [SerializeField] private AudioMixerGroup uiMixerGroup;
 
     [Header("Audio Source Pool")]
     [SerializeField] private int poolSize = 32;
@@ -81,7 +90,7 @@ public class ProximitySoundManager : NetworkBehaviour
             source.dopplerLevel = 0.3f;
             source.spread = 30f;
             source.loop = false;
-            go.SetActive(false);
+            // Keep always active — deactivating causes Unity to drop outputAudioMixerGroup
             _pool.Add(source);
         }
     }
@@ -189,7 +198,7 @@ public class ProximitySoundManager : NetworkBehaviour
         float minDist = catDist?.minDistance ?? 2f;
         float maxDist = catDist?.maxDistance ?? 30f;
         AudioRolloffMode rolloff = catDist?.rolloffMode ?? defaultRolloffMode;
-        PlayClipRaw(clip, position, volume, pitch, minDist, maxDist, rolloff);
+        PlayClipRaw(clip, position, volume, pitch, minDist, maxDist, rolloff, null, (SoundCategory)category);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -216,7 +225,7 @@ public class ProximitySoundManager : NetworkBehaviour
         float maxDist = combatDist?.maxDistance ?? 50f;
         AudioRolloffMode rolloff = combatDist?.rolloffMode ?? defaultRolloffMode;
         Debug.Log($"[ProximitySoundManager] PlayImpactClientRpc: playing '{clip.name}' vol={volume:F2} pitch={pitch:F2} dist={dist:F1} minDist={minDist} maxDist={maxDist} listenerPos={listenerTransform?.position}");
-        PlayClipRaw(clip, position, volume, pitch, minDist, maxDist, rolloff);
+        PlayClipRaw(clip, position, volume, pitch, minDist, maxDist, rolloff, null, SoundCategory.Combat);
     }
 
     // ═══════════════════════════════════════════════════════
@@ -247,15 +256,24 @@ public class ProximitySoundManager : NetworkBehaviour
         AnimationCurve curve = (entry.overrideRolloff && entry.customRolloffMode == AudioRolloffMode.Custom)
             ? entry.customRolloffCurve : null;
         Debug.Log($"[ProximitySoundManager] PlayClipAtPosition: sound={entry.soundName} overrideRolloff={entry.overrideRolloff} rolloff={rolloff} curveNull={curve == null} curveKeys={curve?.keys.Length}");
-        PlayClipRaw(clip, position, entry.GetRandomVolume(), entry.GetRandomPitch(), minDist, maxDist, rolloff, curve);
+        PlayClipRaw(clip, position, entry.GetRandomVolume(), entry.GetRandomPitch(), minDist, maxDist, rolloff, curve, entry.category);
     }
 
-    private void PlayClipRaw(AudioClip clip, Vector3 position, float volume, float pitch, float minDist, float maxDist, AudioRolloffMode rolloffMode = AudioRolloffMode.Logarithmic, AnimationCurve customCurve = null)
+    public AudioMixerGroup GetMixerGroup(SoundCategory category) => category switch
+    {
+        SoundCategory.Quiet   => footstepsMixerGroup,
+        SoundCategory.Combat  => combatMixerGroup,
+        SoundCategory.Loud    => loudMixerGroup,
+        SoundCategory.Ambient => ambientMixerGroup,
+        SoundCategory.Global  => uiMixerGroup,
+        _                     => null
+    };
+
+    private void PlayClipRaw(AudioClip clip, Vector3 position, float volume, float pitch, float minDist, float maxDist, AudioRolloffMode rolloffMode = AudioRolloffMode.Logarithmic, AnimationCurve customCurve = null, SoundCategory category = SoundCategory.Combat)
     {
         if (clip == null) return;
         if (volume <= 0f) return;
         var source = GetPooledSource();
-        source.gameObject.SetActive(true);
         source.transform.position = position;
         source.clip = clip;
         source.volume = volume;
@@ -265,6 +283,8 @@ public class ProximitySoundManager : NetworkBehaviour
         source.rolloffMode = rolloffMode;
         if (rolloffMode == AudioRolloffMode.Custom && customCurve != null)
             source.SetCustomCurve(AudioSourceCurveType.CustomRolloff, customCurve);
+        var mixerGroup = GetMixerGroup(category);
+        if (mixerGroup != null) source.outputAudioMixerGroup = mixerGroup;
         source.spatialBlend = 1f;
         source.loop = false;
         Debug.Log($"[ProximitySoundManager] PlayClipRaw: clip={clip.name} vol={volume:F2} pitch={pitch:F2} pos={position} minDist={minDist} maxDist={maxDist}");
@@ -292,7 +312,6 @@ public class ProximitySoundManager : NetworkBehaviour
         {
             source.Stop();
             source.volume = originalVolume; // reset for pool reuse
-            source.gameObject.SetActive(false);
         }
     }
 
@@ -315,7 +334,7 @@ public class ProximitySoundManager : NetworkBehaviour
         float minDist = catDist?.minDistance ?? 2f;
         float maxDist = catDist?.maxDistance ?? 30f;
         AudioRolloffMode rolloff = catDist?.rolloffMode ?? defaultRolloffMode;
-        PlayClipRaw(clip, position, footstepSet.GetRandomVolume(), footstepSet.GetRandomPitch(), minDist, maxDist, rolloff);
+        PlayClipRaw(clip, position, footstepSet.GetRandomVolume(), footstepSet.GetRandomPitch(), minDist, maxDist, rolloff, null, category);
     }
 
     private List<ulong> GetRemoteClientIds()

@@ -2,7 +2,7 @@
  * 1.  Setup horse height
  * 2.  Setup Arrow spwan point
  * 3.  Zoom out camera bit or add camera controls
- * 4.  Add higher resolutions
+ * 4.  Add higher resolutions -? 
  * 5.  Disable controls on pause menu
  * 6.  Hide player UI on pause menu
  * 7.  Setup Spawn points

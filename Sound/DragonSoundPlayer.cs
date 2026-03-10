@@ -212,7 +212,8 @@ public class DragonSoundPlayer : NetworkBehaviour
         _fireBreathLoopSource.loop = true;
         _fireBreathLoopSource.spatialBlend = 1f;
         _fireBreathLoopSource.volume = entry.GetRandomVolume();
-        _fireBreathLoopSource.rolloffMode = AudioRolloffMode.Linear;
+        _fireBreathLoopSource.rolloffMode = AudioRolloffMode.Logarithmic;
+        _fireBreathLoopSource.outputAudioMixerGroup = ProximitySoundManager.Instance?.GetMixerGroup(SoundCategory.Loud);
 
         db.GetDistanceForSound(entry, out float minDist, out float maxDist);
         _fireBreathLoopSource.minDistance = minDist;

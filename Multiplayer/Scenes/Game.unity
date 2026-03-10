@@ -2634,6 +2634,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 920963637}
     m_Modifications:
+    - target: {fileID: 3578810951724788841, guid: c1d75879462f5f1488140c1d819f3fa3, type: 3}
+      propertyPath: audioMixer
+      value: 
+      objectReference: {fileID: 24100000, guid: 9cf34031b41a9df4496ab5ef974442c3, type: 2}
     - target: {fileID: 4842473737153674502, guid: c1d75879462f5f1488140c1d819f3fa3, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -5024,6 +5028,30 @@ PrefabInstance:
       propertyPath: poolSize
       value: 32
       objectReference: {fileID: 0}
+    - target: {fileID: 2224647165458553143, guid: 58e5343fa059e024e9b239f44954eb4e, type: 3}
+      propertyPath: audioMixer
+      value: 
+      objectReference: {fileID: 24100000, guid: 9cf34031b41a9df4496ab5ef974442c3, type: 2}
+    - target: {fileID: 2224647165458553143, guid: 58e5343fa059e024e9b239f44954eb4e, type: 3}
+      propertyPath: uiMixerGroup
+      value: 
+      objectReference: {fileID: -4342021086169524163, guid: 9cf34031b41a9df4496ab5ef974442c3, type: 2}
+    - target: {fileID: 2224647165458553143, guid: 58e5343fa059e024e9b239f44954eb4e, type: 3}
+      propertyPath: loudMixerGroup
+      value: 
+      objectReference: {fileID: 5626068579484538893, guid: 9cf34031b41a9df4496ab5ef974442c3, type: 2}
+    - target: {fileID: 2224647165458553143, guid: 58e5343fa059e024e9b239f44954eb4e, type: 3}
+      propertyPath: combatMixerGroup
+      value: 
+      objectReference: {fileID: 7086363107398680109, guid: 9cf34031b41a9df4496ab5ef974442c3, type: 2}
+    - target: {fileID: 2224647165458553143, guid: 58e5343fa059e024e9b239f44954eb4e, type: 3}
+      propertyPath: ambientMixerGroup
+      value: 
+      objectReference: {fileID: 664979197177679298, guid: 9cf34031b41a9df4496ab5ef974442c3, type: 2}
+    - target: {fileID: 2224647165458553143, guid: 58e5343fa059e024e9b239f44954eb4e, type: 3}
+      propertyPath: footstepsMixerGroup
+      value: 
+      objectReference: {fileID: 5326472285103448584, guid: 9cf34031b41a9df4496ab5ef974442c3, type: 2}
     - target: {fileID: 6593948738104006691, guid: 58e5343fa059e024e9b239f44954eb4e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 73.9674
