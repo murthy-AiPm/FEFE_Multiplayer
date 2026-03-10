@@ -48,9 +48,14 @@ public class DragonGroundController : NetworkBehaviour
 
     [Header("Movement")]
     [SerializeField] private float walkSpeed = 5f;
-    [SerializeField] private float runSpeed = 10f;
+    [SerializeField] private float trotSpeed = 8f;
+    [SerializeField] private float runSpeed = 14f;
     [SerializeField] private float turnSmoothTime = 0.1f;
     [SerializeField] private float turnHeadAngle = 18;
+
+    [Header("Gait")]
+    [SerializeField] private KeyCode trotToggleKey = KeyCode.T;
+    [SerializeField] private float turnAngleSmoothing = 5f;
 
     [Header("Fake Gravity (for horse)")]
     [SerializeField] private bool useFakeGravity = false;
@@ -71,6 +76,8 @@ public class DragonGroundController : NetworkBehaviour
     private bool _pendingRespawn = false;
     // State
     private bool isActive;
+    private float _turnAngleRaw;
+    private float _turnAngleVel;
     private bool isPlayingJump;  // Jump animation playing (still grounded)
     private bool isTakingOff;    // Lifting up to hover
     private float stateTimer;
@@ -87,6 +94,9 @@ public class DragonGroundController : NetworkBehaviour
     public bool IsTurningRight { get; private set; }
     public float ForwardSpeed { get; private set; }
     public float TurnSpeed { get; private set; }
+    public float TurnAngle { get; private set; }   // -1 left .. +1 right
+    public float GaitSpeed { get; private set; }   // 0 walk, 1 trot, 2 sprint
+    public bool IsTrotMode { get; private set; }   // Caps Lock toggle
 
     private void Awake()
     {
@@ -116,6 +126,16 @@ public class DragonGroundController : NetworkBehaviour
 
     private void Update()
     {
+        // Gait toggle must be in Update — GetKeyDown is unreliable in FixedUpdate
+        if (IsOwner && Input.GetKeyDown(trotToggleKey))
+        {
+            IsTrotMode = !IsTrotMode;
+            bool isMoving = new Vector2(Input.GetAxisRaw(strafeAxis), Input.GetAxisRaw(forwardAxis)).magnitude > 0.1f;
+            bool sprint = Input.GetKey(sprintKey);
+            if (isMoving && !sprint)
+                GaitSpeed = IsTrotMode ? 0.66f : 0.33f;
+        }
+
         if (Input.GetKeyDown(debugRespawnKey) && debugRespawnPoint != null)
         {
             Debug.Log("RESPAWN");
@@ -241,8 +261,19 @@ public class DragonGroundController : NetworkBehaviour
         Vector2 input = new Vector2(horizontal, vertical);
         bool isMoving = input.magnitude > 0.1f;
 
+        // Gait: 0=idle, 0.33=walk, 0.66=trot, 1=sprint
+        float targetGait;
+        if (!isMoving)          targetGait = 0f;
+        else if (sprint)        targetGait = 1f;
+        else if (IsTrotMode)    targetGait = 0.66f;
+        else                    targetGait = 0.33f;
+
+        // Only smooth ramp for start/stop — not for gait toggle
+        float rampSpeed = (sprint && !Input.GetKey(sprintKey)) ? 6f : 4f;
+        GaitSpeed = Mathf.MoveTowards(GaitSpeed, targetGait, rampSpeed * Time.deltaTime);
+
         // State
-        IsWalking = isMoving && !sprint;
+        IsWalking = isMoving && !sprint && !IsTrotMode;
         IsRunning = isMoving && sprint;
         ForwardSpeed = vertical;
 
@@ -260,7 +291,7 @@ public class DragonGroundController : NetworkBehaviour
             Vector3 worldForward = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
             Vector3 moveDir = ProjectOnSlope(worldForward, currentGroundNormal);
 
-            float speed = sprint ? runSpeed : walkSpeed;
+            float speed = sprint ? runSpeed : (IsTrotMode ? trotSpeed : walkSpeed);
             rb.MovePosition(rb.position + moveDir * speed * Time.fixedDeltaTime);
 
             // Turn detection (for animation)
@@ -269,6 +300,12 @@ public class DragonGroundController : NetworkBehaviour
             IsTurningLeft = angleDelta < -turnHeadAngle;
             IsTurningRight = angleDelta > turnHeadAngle;
             TurnSpeed = Mathf.Abs(angleDelta) / 180f;
+
+            // Smooth TurnAngle: -1 = hard left, +1 = hard right
+            float targetTurnAngle = Mathf.Clamp(angleDelta / 90f, -1f, 1f);
+            TurnAngle = Mathf.SmoothDamp(TurnAngle, isMoving ? targetTurnAngle : 0f,
+                ref _turnAngleVel, 1f / turnAngleSmoothing);
+
             rb.constraints = RigidbodyConstraints.FreezeRotation;
 
 
@@ -464,5 +501,8 @@ public class DragonGroundController : NetworkBehaviour
         IsTurningRight = false;
         ForwardSpeed = 0f;
         TurnSpeed = 0f;
+        TurnAngle = 0f;
+        GaitSpeed = 0f;
+        _turnAngleVel = 0f;
     }
 }

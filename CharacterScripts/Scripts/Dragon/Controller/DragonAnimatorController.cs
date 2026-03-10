@@ -43,6 +43,8 @@ public class DragonAnimatorController : NetworkBehaviour
     private int isTurningLeftHash;
     private int isTurningRightHash;
     private int turnSpeedHash;
+    private int turnAngleHash;
+    private int gaitSpeedHash;
 
     // ─── NetworkVariables ────────────────────────────────
 
@@ -81,6 +83,10 @@ public class DragonAnimatorController : NetworkBehaviour
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<float> netTurnSpeed = new NetworkVariable<float>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<float> netTurnAngle = new NetworkVariable<float>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<float> netGaitSpeed = new NetworkVariable<float>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     // ─── Throttling ──────────────────────────────────────
     private const float NETWORK_UPDATE_INTERVAL = 0.05f; // 20 updates/sec instead of 60
@@ -118,6 +124,8 @@ public class DragonAnimatorController : NetworkBehaviour
         isTurningLeftHash = Animator.StringToHash("IsTurningLeft");
         isTurningRightHash = Animator.StringToHash("IsTurningRight");
         turnSpeedHash = Animator.StringToHash("TurnSpeed");
+        turnAngleHash = Animator.StringToHash("TurnAngle");
+        gaitSpeedHash = Animator.StringToHash("GaitSpeed");
     }
 
     private void LateUpdate()
@@ -157,6 +165,8 @@ public class DragonAnimatorController : NetworkBehaviour
         animator.SetBool(isTurningLeftHash, netIsTurningLeft.Value);
         animator.SetBool(isTurningRightHash, netIsTurningRight.Value);
         animator.SetFloat(turnSpeedHash, netTurnSpeed.Value);
+        animator.SetFloat(turnAngleHash, netTurnAngle.Value);
+        animator.SetFloat(gaitSpeedHash, netGaitSpeed.Value);
     }
 
     /// <summary>
@@ -230,6 +240,14 @@ public class DragonAnimatorController : NetworkBehaviour
             float turnSpeed = groundController.TurnSpeed;
             if (Mathf.Abs(netTurnSpeed.Value - turnSpeed) > FLOAT_EPSILON)
                 netTurnSpeed.Value = turnSpeed;
+
+            float turnAngle = groundController.TurnAngle;
+            if (Mathf.Abs(netTurnAngle.Value - turnAngle) > FLOAT_EPSILON)
+                netTurnAngle.Value = turnAngle;
+
+            float gaitSpeed = groundController.GaitSpeed;
+            if (Mathf.Abs(netGaitSpeed.Value - gaitSpeed) > FLOAT_EPSILON)
+                netGaitSpeed.Value = gaitSpeed;
 
             // ForwardSpeed: use ground state when grounded
             if (groundingSystem != null && groundingSystem.IsGrounded)
