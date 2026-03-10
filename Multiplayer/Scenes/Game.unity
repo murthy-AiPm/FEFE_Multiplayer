@@ -363,15 +363,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8207628386974481640, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 60.2
+      value: 74.12999
       objectReference: {fileID: 0}
     - target: {fileID: 8207628386974481640, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 201.58353
+      value: 201.64352
       objectReference: {fileID: 0}
     - target: {fileID: 8207628386974481640, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 550.23145
+      value: 493.70242
       objectReference: {fileID: 0}
     - target: {fileID: 8207628386974481640, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: m_LocalRotation.w
@@ -2916,6 +2916,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: HorseFEFE
       objectReference: {fileID: 0}
+    - target: {fileID: 711040484119619372, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3646262856744043521, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
       propertyPath: m_TranslationOffsets.Array.data[0].y
       value: 0.1338501
@@ -3125,14 +3129,6 @@ PrefabInstance:
     - target: {fileID: 711040484119619372, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
       propertyPath: m_Name
       value: HorseFEFE (1)
-      objectReference: {fileID: 0}
-    - target: {fileID: 2106045045085498608, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
-      propertyPath: minSpeed
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2106045045085498608, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
-      propertyPath: useAnimationEvents
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3713399862824024303, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
       propertyPath: GlobalObjectIdHash

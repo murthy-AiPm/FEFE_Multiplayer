@@ -322,6 +322,7 @@ public class DragonGroundController : NetworkBehaviour
         IsPlayingJump = true;
         //stateTimer = 0f;
         JumpForwardServerRpc();
+        GetComponent<HorseSoundPlayer>()?.OnJump();
     }
 
     [ServerRpc]

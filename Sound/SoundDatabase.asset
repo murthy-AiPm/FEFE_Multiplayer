@@ -89,6 +89,43 @@ MonoBehaviour:
     overrideDistance: 0
     customMinDistance: 0
     customMaxDistance: 0
+  - soundName: Horse_Mount
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 8732e1c6be9135946b80c461e5d8d89d, type: 3}
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+  - soundName: Horse_Dismount
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 74ca4b82206abf64ca3fffe62af3a525, type: 3}
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+  - soundName: Horse_Snort
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: c4bf5106a30d0bb4d880cc2e4cf03451, type: 3}
+    - {fileID: 8300000, guid: 6da718969fc6cfc4682d3a0f2a141513, type: 3}
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+  - soundName: Horse_Jump
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 8732e1c6be9135946b80c461e5d8d89d, type: 3}
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
   terrainLayerMappings: []
   defaultSurfaceType: Default_footstep
   footstepSets:
@@ -96,8 +133,8 @@ MonoBehaviour:
     footstepClips:
     - {fileID: 8300000, guid: e291157425cb7ec49aa1dd2adcdbe5f5, type: 3}
     - {fileID: 8300000, guid: 4a46c32b0e15cf34a954c0dd09277117, type: 3}
-    volume: {x: 0.3, y: 0.5}
-    pitch: {x: 0.81822824, y: 0.8478707}
+    volume: {x: 0.43893966, y: 0.6389396}
+    pitch: {x: 1.1703576, y: 1.2}
   - surfaceType: Horse_Default_footstep
     footstepClips:
     - {fileID: 8300000, guid: 429adddfb3d6d2a4e8c13e0a2f40b76c, type: 3}
@@ -113,7 +150,7 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 8c9e775650d72cd4dafef8df3e41ca3a, type: 3}
     - {fileID: 8300000, guid: 7b9b1014b79cc624abec6bb90af9546f, type: 3}
     volume: {x: 0.79999995, y: 1}
-    pitch: {x: 1.0712026, y: 1.1648997}
+    pitch: {x: 0.80063593, y: 0.80219424}
   impactSounds:
   - soundName: Metal-Wood
     attackerMaterial: Metal

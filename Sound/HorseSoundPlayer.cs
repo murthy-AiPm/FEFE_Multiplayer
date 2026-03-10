@@ -21,10 +21,13 @@ public class HorseSoundPlayer : NetworkBehaviour
     [SerializeField] private string deathSound = "Horse_Death";
     [SerializeField] private string mountSound = "Horse_Mount";
     [SerializeField] private string dismountSound = "Horse_Dismount";
+    [SerializeField] private string jumpSound = "Horse_Jump";
+    //
+    public enum FootstepMode { CadenceTimer, AnimationEvents, HoofCollision }
 
     [Header("Footstep Mode")]
-    [Tooltip("If true, footsteps are driven by animation events (HorseFootStep). If false, uses cadence timer.")]
-    [SerializeField] private bool useAnimationEvents = false;
+    [Tooltip("CadenceTimer: automatic timer. AnimationEvents: driven by animation clip events. HoofCollision: driven by hoof sphere colliders hitting ground.")]
+    [SerializeField] private FootstepMode footstepMode = FootstepMode.CadenceTimer;
 
     [Header("Gallop Settings")]
     [Tooltip("Base interval between hoofbeats at trot speed")]
@@ -122,7 +125,7 @@ public class HorseSoundPlayer : NetworkBehaviour
 
     private void UpdateHoofbeats()
     {
-        if (useAnimationEvents) return;
+        if (footstepMode != FootstepMode.CadenceTimer) return;
 
         if (_smoothedSpeed < minSpeed)
         {
@@ -190,11 +193,14 @@ public class HorseSoundPlayer : NetworkBehaviour
     //  PUBLIC API
     // ═══════════════════════════════════════════════════════
 
+    public FootstepMode GetFootstepMode() => footstepMode;
+
     /// <summary>
     /// Called from animation event named 'HorseFootStep'.
     /// </summary>
     public void HorseFootStep()
     {
+        if (footstepMode != FootstepMode.AnimationEvents) return;
         if (ProximitySoundManager.Instance == null) return;
         string surface = _cachedSurfaceType ?? "Grass";
         ProximitySoundManager.Instance.PlayFootstep(surface, transform.position, hoofbeatCategory, "Horse");
@@ -216,5 +222,11 @@ public class HorseSoundPlayer : NetworkBehaviour
     {
         if (ProximitySoundManager.Instance == null) return;
         ProximitySoundManager.Instance.PlaySound(deathSound, transform.position);
+    }
+
+    public void OnJump()
+    {
+        if (ProximitySoundManager.Instance == null) return;
+        ProximitySoundManager.Instance.PlaySound(jumpSound, transform.position);
     }
 }

@@ -306,6 +306,7 @@ GameObject:
   - component: {fileID: 2991571744342027716}
   - component: {fileID: 5538343029870464451}
   - component: {fileID: 2106045045085498608}
+  - component: {fileID: 3253512111400153319}
   m_Layer: 7
   m_Name: HorseFEFE
   m_TagString: Horse
@@ -393,7 +394,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3091181052
+  GlobalObjectIdHash: 1503646221
   InScenePlacedSourceGlobalObjectIdHash: 1503646221
   DeferredDespawnTick: 0
   Ownership: 1
@@ -699,14 +700,32 @@ MonoBehaviour:
   deathSound: Horse_Death
   mountSound: Horse_Mount
   dismountSound: Horse_Dismount
+  jumpSound: Horse_Jump
+  footstepMode: 1
   trotInterval: 0.45
   gallopInterval: 0.25
-  minSpeed: 6
+  minSpeed: 1
   gallopSpeed: 12
   hoofbeatCategory: 0
   idleSnortMinInterval: 8
   idleSnortMaxInterval: 20
   raycastDistance: 3
+--- !u!114 &3253512111400153319
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 711040484119619372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17bb3f0ab3e261a4a9eced4598cb49c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HoofCollisionSoundPlayer
+  groundLayers:
+    serializedVersion: 2
+    m_Bits: 1
+  cooldown: 0.1
 --- !u!1 &940438874208436165
 GameObject:
   m_ObjectHideFlags: 0
@@ -9321,12 +9340,12 @@ SphereCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
   m_Radius: 0.13
-  m_Center: {x: 0, y: 0.14, z: 0}
+  m_Center: {x: 0, y: 0.2, z: 0}
 --- !u!1 &4370943035594816344
 GameObject:
   m_ObjectHideFlags: 0
@@ -9627,12 +9646,12 @@ SphereCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
   m_Radius: 0.13
-  m_Center: {x: -0.12, y: -0, z: 0}
+  m_Center: {x: -0.2, y: -0, z: 0}
 --- !u!1 &4371135360147733774
 GameObject:
   m_ObjectHideFlags: 0
@@ -9659,7 +9678,7 @@ Transform:
   m_GameObject: {fileID: 4371135360147733774}
   serializedVersion: 2
   m_LocalRotation: {x: -0.004119747, y: -0.0022895464, z: 0.61035246, w: 0.7921159}
-  m_LocalPosition: {x: -0.36589423, y: 0, z: -0.000000028610229}
+  m_LocalPosition: {x: -0.419, y: 0.014, z: -0.001}
   m_LocalScale: {x: 0.99999994, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -9681,12 +9700,12 @@ SphereCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
   m_Radius: 0.13
-  m_Center: {x: 0, y: 0.14, z: 0}
+  m_Center: {x: 0, y: 0.2, z: 0}
 --- !u!1 &4371138394421721392
 GameObject:
   m_ObjectHideFlags: 0
@@ -10302,12 +10321,12 @@ SphereCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
   m_Radius: 0.13
-  m_Center: {x: -0.12, y: -0, z: 0}
+  m_Center: {x: -0.2, y: -0, z: 0}
 --- !u!1 &4371659858023898910
 GameObject:
   m_ObjectHideFlags: 0
