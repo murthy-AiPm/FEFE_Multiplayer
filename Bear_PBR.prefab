@@ -83,6 +83,8 @@ GameObject:
   - component: {fileID: 4619646487853674270}
   - component: {fileID: -5162157580005954776}
   - component: {fileID: 8725901643877715188}
+  - component: {fileID: 8556638307979913573}
+  - component: {fileID: 8414193513841770537}
   m_Layer: 20
   m_Name: Bear_PBR
   m_TagString: Animal
@@ -176,7 +178,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 893738681
+  GlobalObjectIdHash: 2517650064
   InScenePlacedSourceGlobalObjectIdHash: 4233055752
   DeferredDespawnTick: 0
   Ownership: 1
@@ -311,6 +313,7 @@ MonoBehaviour:
   weaponManager: {fileID: 0}
   blockDamageReduction: 0.8
   blockAngle: 120
+  blockStaminaRatio: 0.5
   hitStunDuration: 0.2
   animancerDriver: {fileID: 0}
 --- !u!114 &4619646487853674270
@@ -348,6 +351,7 @@ MonoBehaviour:
   vitalManager: {fileID: 6124247818986976737}
   animator: {fileID: 5119333705707283841}
   agent: {fileID: 1212467679657730948}
+  animalSoundPlayer: {fileID: 0}
   showGizmos: 1
 --- !u!136 &-5162157580005954776
 CapsuleCollider:
@@ -395,6 +399,39 @@ MonoBehaviour:
   hideWhenFull: 0
   showAfterDamageTime: 5
   fillSpeed: 5
+--- !u!114 &8556638307979913573
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 619644485852159292}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d759e98930b69b649b9d6f33202864b9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SurfaceTag
+  surfaceType: Flesh
+  impactMaterial: Flesh
+--- !u!114 &8414193513841770537
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 619644485852159292}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6f899d9665c9b94bbb45b8db167d695, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AnimalSoundPlayer
+  idleSound: Bear_Idle
+  attackSound: 
+  hitSound: 
+  deathSound: 
+  sleepSound: 
+  idleIntervalMin: 4
+  idleIntervalMax: 12
 --- !u!1 &902340182948239154
 GameObject:
   m_ObjectHideFlags: 0

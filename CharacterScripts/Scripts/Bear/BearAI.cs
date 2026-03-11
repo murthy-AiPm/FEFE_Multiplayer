@@ -437,12 +437,13 @@ public class BearAI : NetworkBehaviour
 
     private Transform FindNearestPlayer()
     {
-        // Throttle detection
         if (_detectionTimer > 0f) return currentTarget;
         _detectionTimer = _detectionInterval;
 
         int count = Physics.OverlapSphereNonAlloc(
             transform.position, detectionRadius, _detectionBuffer, playerLayer);
+
+        Debug.Log($"[BearAI] overlap count = {count}");
 
         Transform nearest = null;
         float nearestDist = float.MaxValue;
@@ -452,24 +453,37 @@ public class BearAI : NetworkBehaviour
             var col = _detectionBuffer[i];
             if (col == null) continue;
 
-            // Check if it's a player with health
             var receiver = col.GetComponentInParent<DamageReceiver>();
+            var vitals = col.GetComponentInParent<VitalManager>();
+            var netObj = col.GetComponentInParent<NetworkObject>();
+
+            Debug.Log(
+                $"[BearAI] collider={col.name}, layer={LayerMask.LayerToName(col.gameObject.layer)}, " +
+                $"receiver={(receiver != null ? receiver.name : "null")}, " +
+                $"vitals={(vitals != null ? vitals.name : "null")}, " +
+                $"netObj={(netObj != null ? netObj.name : "null")}"
+            );
+
             if (receiver == null) continue;
 
-            var vitals = col.GetComponentInParent<VitalManager>();
+            Transform targetRoot = receiver.transform;
+
             if (vitals != null)
             {
                 var health = vitals.GetVital("health");
-                if (health != null && health.Current <= 0f) continue; // Skip dead players
+                if (health != null && health.Current <= 0f) continue;
             }
 
-            float dist = Vector3.Distance(transform.position, col.transform.position);
+            float dist = Vector3.Distance(transform.position, targetRoot.position);
             if (dist < nearestDist)
             {
                 nearestDist = dist;
-                nearest = col.transform;
+                nearest = targetRoot;
             }
         }
+
+        if (nearest != null)
+            Debug.Log($"[BearAI] selected target = {nearest.name}");
 
         return nearest;
     }

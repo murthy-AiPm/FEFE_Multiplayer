@@ -3727,44 +3727,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1546602660}
   m_CullTransparentMesh: 1
---- !u!1 &1757121053 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 619644485852159292, guid: a830dbc98ef96634dbc863a7309f8a09, type: 3}
-  m_PrefabInstance: {fileID: 4501561764739345504}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1757121066
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1757121053}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d759e98930b69b649b9d6f33202864b9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SurfaceTag
-  surfaceType: Flesh
-  impactMaterial: Flesh
---- !u!114 &1757121067
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1757121053}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e6f899d9665c9b94bbb45b8db167d695, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AnimalSoundPlayer
-  idleSound: Bear_Idle
-  attackSound: 
-  hitSound: 
-  deathSound: 
-  sleepSound: 
-  idleIntervalMin: 4
-  idleIntervalMax: 12
 --- !u!1 &1764214107
 GameObject:
   m_ObjectHideFlags: 0
@@ -5490,18 +5452,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Bear_PBR
       objectReference: {fileID: 0}
-    - target: {fileID: 1212467679657730948, guid: a830dbc98ef96634dbc863a7309f8a09, type: 3}
-      propertyPath: m_Enabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4619646487853674270, guid: a830dbc98ef96634dbc863a7309f8a09, type: 3}
-      propertyPath: m_Enabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4619646487853674270, guid: a830dbc98ef96634dbc863a7309f8a09, type: 3}
-      propertyPath: playerLayer.m_Bits
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 5767345220959092614, guid: a830dbc98ef96634dbc863a7309f8a09, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 2517650064
@@ -5509,13 +5459,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 619644485852159292, guid: a830dbc98ef96634dbc863a7309f8a09, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1757121066}
-    - targetCorrespondingSourceObject: {fileID: 619644485852159292, guid: a830dbc98ef96634dbc863a7309f8a09, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1757121067}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a830dbc98ef96634dbc863a7309f8a09, type: 3}
 --- !u!224 &4519058515441037774
 RectTransform:
