@@ -414,19 +414,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 750151600500385422, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: field of view
-      value: 60.000004
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 750151600500385422, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: far clip plane
-      value: 1000
+      value: 5000
       objectReference: {fileID: 0}
     - target: {fileID: 750151600500385422, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: near clip plane
-      value: 0.3
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 750151600500385422, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: orthographic size
-      value: 5
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 5336444178699145629, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: m_Name
@@ -438,31 +438,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8207628386974481640, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 73.88
+      value: 57.21672
       objectReference: {fileID: 0}
     - target: {fileID: 8207628386974481640, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 215.99
+      value: 205.496
       objectReference: {fileID: 0}
     - target: {fileID: 8207628386974481640, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 490.47
+      value: 555.1221
       objectReference: {fileID: 0}
     - target: {fileID: 8207628386974481640, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.98836154
+      value: -0.29860413
       objectReference: {fileID: 0}
     - target: {fileID: 8207628386974481640, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.15212339
+      value: 0.02348979
       objectReference: {fileID: 0}
     - target: {fileID: 8207628386974481640, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.000000037646817
+      value: 0.9511495
       objectReference: {fileID: 0}
     - target: {fileID: 8207628386974481640, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.0000000057943996
+      value: 0.07482248
       objectReference: {fileID: 0}
     - target: {fileID: 8207628386974481640, guid: e225a12ec87ff724885ba424768e4da6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -3358,28 +3358,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1343891899}
   m_CullTransparentMesh: 1
---- !u!1 &1393919665 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 711040484119619372, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
-  m_PrefabInstance: {fileID: 1493873669}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1393919684
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1393919665}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6c0be61502bb534f922ebb746851216, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkRigidbody
-  ShowTopMostFoldoutHeaderGroup: 1
-  NetworkRigidbodyBaseExpanded: 0
-  UseRigidBodyForMotion: 1
-  AutoUpdateKinematicState: 1
-  AutoSetKinematicOnDespawn: 1
 --- !u!1 &1396609066
 GameObject:
   m_ObjectHideFlags: 0
@@ -3468,10 +3446,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: HorseFEFE (1)
       objectReference: {fileID: 0}
-    - target: {fileID: 2598117054184361289, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
-      propertyPath: gaitSmoothSpeed
-      value: 0.5
-      objectReference: {fileID: 0}
     - target: {fileID: 3713399862824024303, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 3091181052
@@ -3479,10 +3453,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 711040484119619372, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1393919684}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
 --- !u!1 &1509017765
 GameObject:

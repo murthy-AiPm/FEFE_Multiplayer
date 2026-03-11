@@ -4048,8 +4048,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6450013997866560284}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.13016684, y: 0.82188743, z: 0.15284051, w: -0.53310174}
-  m_LocalPosition: {x: 1.8449591, y: 0.52508116, z: 1.0278006}
+  m_LocalRotation: {x: 0.054728746, y: 0.85563564, z: 0.043412417, w: -0.51284283}
+  m_LocalPosition: {x: 4.3643093, y: 0.7578783, z: 2.3510811}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -4120,7 +4120,7 @@ MonoBehaviour:
     AngularDampingMode: 0
     RotationDamping: {x: 1, y: 1, z: 1}
     QuaternionDamping: 1
-  OrbitStyle: 1
+  OrbitStyle: 0
   Radius: 5
   Orbits:
     Top:
@@ -4177,7 +4177,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineRotationComposer
   Composition:
-    ScreenPosition: {x: -0.1, y: 0}
+    ScreenPosition: {x: 0, y: 0}
     DeadZone:
       Enabled: 0
       Size: {x: 0.2, y: 0.2}
@@ -4221,8 +4221,8 @@ MonoBehaviour:
         CancelDeltaTime: 0
       InputValue: 0
       Driver:
-        AccelTime: 0.2
-        DecelTime: 0.2
+        AccelTime: 1
+        DecelTime: 1
     - Name: Look Orbit Y
       Owner: {fileID: 5037344622936793839}
       Enabled: 1
@@ -4234,8 +4234,8 @@ MonoBehaviour:
         CancelDeltaTime: 0
       InputValue: -0
       Driver:
-        AccelTime: 0.2
-        DecelTime: 0.2
+        AccelTime: 1
+        DecelTime: 1
     - Name: Orbit Scale
       Owner: {fileID: 5037344622936793839}
       Enabled: 1

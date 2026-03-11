@@ -308,6 +308,7 @@ GameObject:
   - component: {fileID: 2106045045085498608}
   - component: {fileID: 3253512111400153319}
   - component: {fileID: 8769035553107744475}
+  - component: {fileID: 2668717209941594772}
   m_Layer: 7
   m_Name: HorseFEFE
   m_TagString: Horse
@@ -448,9 +449,11 @@ MonoBehaviour:
   turnHeadAngle: 15
   trotToggleKey: 116
   turnAngleSmoothing: 5
-  walkTurnRate: 180
-  trotTurnRate: 210
-  sprintTurnRate: 240
+  gaitSmoothSpeed: 0.5
+  minInputHoldTime: 0.15
+  walkTurnRate: 60
+  trotTurnRate: 90
+  sprintTurnRate: 120
   useRootMotion: 1
   useFakeGravity: 1
   fakeGravity: 20
@@ -757,6 +760,23 @@ MonoBehaviour:
   - 2.19
   blendSpeed: 4
   paramPrefix: Idle
+--- !u!114 &2668717209941594772
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 711040484119619372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6c0be61502bb534f922ebb746851216, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkRigidbody
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkRigidbodyBaseExpanded: 0
+  UseRigidBodyForMotion: 1
+  AutoUpdateKinematicState: 1
+  AutoSetKinematicOnDespawn: 1
 --- !u!1 &940438874208436165
 GameObject:
   m_ObjectHideFlags: 0
