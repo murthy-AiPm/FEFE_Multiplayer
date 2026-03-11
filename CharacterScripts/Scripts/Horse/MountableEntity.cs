@@ -79,7 +79,10 @@ public class MountableEntity : NetworkBehaviour
     private void Awake()
     {
         _rb = GetComponent<Rigidbody>();
-        SetMounted(false); // start frozen
+        // Start with rotation frozen only — groundController starts disabled so horse won't move.
+        // FreezeAll at startup can interfere with the first TrySetParent call.
+        if (_rb != null)
+            _rb.constraints = RigidbodyConstraints.FreezeRotation;
         if (groundController == null)
             groundController = GetComponent<DragonGroundController>();
 
