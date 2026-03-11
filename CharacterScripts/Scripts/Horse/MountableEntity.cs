@@ -398,13 +398,13 @@ public class MountableEntity : NetworkBehaviour
         if (_rb == null) return;
         if (mounted)
         {
-            // Release all constraints — horse can move freely
+            // Release all constraints ï¿½ horse can move freely
             _rb.constraints = RigidbodyConstraints.FreezeRotation;
         }
         else
         {
-            // Freeze everything — horse won't slide but stays non-kinematic
-            _rb.constraints = RigidbodyConstraints.FreezeAll;
+            // Keep rotation frozen but allow position â€” horse stays put via physics
+            _rb.constraints = RigidbodyConstraints.FreezeRotation;
         }
     }
 }

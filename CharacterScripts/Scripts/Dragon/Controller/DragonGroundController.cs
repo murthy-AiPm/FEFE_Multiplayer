@@ -56,6 +56,11 @@ public class DragonGroundController : NetworkBehaviour
     [Header("Gait")]
     [SerializeField] private KeyCode trotToggleKey = KeyCode.T;
     [SerializeField] private float turnAngleSmoothing = 5f;
+    [SerializeField] private float gaitSmoothSpeed = 2f;
+    [SerializeField] private float minInputHoldTime = 0.15f;
+
+    private float _inputHoldTimer;
+    private bool _inputConfirmed;
 
     [Header("Turn Rate (deg/sec)")]
     [SerializeField] private float walkTurnRate = 90f;
@@ -138,13 +143,7 @@ public class DragonGroundController : NetworkBehaviour
     {
         // Gait toggle must be in Update — GetKeyDown is unreliable in FixedUpdate
         if (IsOwner && Input.GetKeyDown(trotToggleKey))
-        {
             IsTrotMode = !IsTrotMode;
-            bool isMoving = new Vector2(Input.GetAxisRaw(strafeAxis), Input.GetAxisRaw(forwardAxis)).magnitude > 0.1f;
-            bool sprint = Input.GetKey(sprintKey);
-            if (isMoving && !sprint)
-                GaitSpeed = IsTrotMode ? 0.66f : 0.33f;
-        }
 
         if (Input.GetKeyDown(debugRespawnKey) && debugRespawnPoint != null)
         {
@@ -273,7 +272,18 @@ public class DragonGroundController : NetworkBehaviour
         float horizontal = Input.GetAxisRaw(strafeAxis);
         bool sprint = Input.GetKey(sprintKey);
         Vector2 input = new Vector2(horizontal, vertical);
-        bool isMoving = input.magnitude > 0.1f;
+        bool hasInput = input.magnitude > 0.1f;
+
+        // Require key to be held for minInputHoldTime before movement registers
+        if (hasInput)
+            _inputHoldTimer += Time.fixedDeltaTime;
+        else
+            _inputHoldTimer = 0f;
+
+        if (_inputHoldTimer >= minInputHoldTime) _inputConfirmed = true;
+        if (!hasInput) _inputConfirmed = false;
+
+        bool isMoving = _inputConfirmed;
 
         // Gait: 0=idle, 0.33=walk, 0.66=trot, 1=sprint
         float targetGait;
@@ -282,9 +292,7 @@ public class DragonGroundController : NetworkBehaviour
         else if (IsTrotMode)    targetGait = 0.66f;
         else                    targetGait = 0.33f;
 
-        // Only smooth ramp for start/stop — not for gait toggle
-        float rampSpeed = (sprint && !Input.GetKey(sprintKey)) ? 6f : 4f;
-        GaitSpeed = Mathf.MoveTowards(GaitSpeed, targetGait, rampSpeed * Time.deltaTime);
+        GaitSpeed = Mathf.MoveTowards(GaitSpeed, targetGait, gaitSmoothSpeed * Time.fixedDeltaTime);
 
         // State
         IsWalking = isMoving && !sprint && !IsTrotMode;
