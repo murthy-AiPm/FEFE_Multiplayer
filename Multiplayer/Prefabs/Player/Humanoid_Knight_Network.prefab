@@ -5806,6 +5806,7 @@ GameObject:
   - component: {fileID: 6991021628600396768}
   - component: {fileID: 4694551369967776946}
   - component: {fileID: 5960731366256184571}
+  - component: {fileID: 1685920396762890958}
   m_Layer: 6
   m_Name: Humanoid_Knight_Network
   m_TagString: Player
@@ -6070,7 +6071,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1720956946
+  GlobalObjectIdHash: 1216628486
   InScenePlacedSourceGlobalObjectIdHash: 1720956946
   DeferredDespawnTick: 0
   Ownership: 1
@@ -6161,7 +6162,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ClientNetworkTransform
   ShowTopMostFoldoutHeaderGroup: 1
-  NetworkTransformExpanded: 1
+  NetworkTransformExpanded: 0
   AutoOwnerAuthorityTickOffset: 1
   PositionInterpolationType: 0
   RotationInterpolationType: 0
@@ -6485,6 +6486,35 @@ MonoBehaviour:
   heavyCategory: 1
   driveFromServer: 0
   creatureType: 
+--- !u!114 &1685920396762890958
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8837511929152388741}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a806683a7321b9b49abdbcd69ad13fd1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MaterialColorRandomizer
+  ShowTopMostFoldoutHeaderGroup: 1
+  targetRenderer: {fileID: 7489031203335996812}
+  materialIndex: 0
+  usePalette: 0
+  palette:
+  - {r: 1, g: 0, b: 0, a: 1}
+  - {r: 0, g: 0, b: 1, a: 1}
+  - {r: 0, g: 1, b: 0, a: 1}
+  - {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  - {r: 0, g: 1, b: 1, a: 1}
+  - {r: 1, g: 0, b: 1, a: 1}
+  - {r: 1, g: 0.5, b: 0, a: 1}
+  - {r: 1, g: 1, b: 1, a: 1}
+  saturationMin: 0.6
+  saturationMax: 1
+  valueMin: 0.7
+  valueMax: 1
 --- !u!1 &8848191647751171253
 GameObject:
   m_ObjectHideFlags: 0
