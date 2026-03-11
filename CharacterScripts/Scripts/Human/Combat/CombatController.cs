@@ -48,7 +48,7 @@ public class CombatController : NetworkBehaviour
     private float _defaultFOV;
 
     [Header("Mounted Combat")]
-    [SerializeField] private bool allowMountedCombat = false;
+    [SerializeField] public bool allowMountedCombat = false;
     [SerializeField] private MountController mountController;
 
     [Header("Dodge")]

@@ -1001,6 +1001,8 @@ MonoBehaviour:
   inputController: {fileID: 3160448840952355266}
   characterController: {fileID: 2373466715171789214}
   animator: {fileID: 7940650818366492366}
+  weaponManager: {fileID: 0}
+  combatController: {fileID: 0}
 --- !u!114 &4797097460622196439
 MonoBehaviour:
   m_ObjectHideFlags: 0

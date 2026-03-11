@@ -3156,6 +3156,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: HorseFEFE (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 2598117054184361289, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
+      propertyPath: gaitSmoothSpeed
+      value: 0.5
+      objectReference: {fileID: 0}
     - target: {fileID: 3713399862824024303, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 3091181052

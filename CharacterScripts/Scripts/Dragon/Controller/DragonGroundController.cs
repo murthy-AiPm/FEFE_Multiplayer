@@ -268,9 +268,9 @@ public class DragonGroundController : NetworkBehaviour
 
     private void HandleGroundMovement()
     {
-        float vertical = Input.GetAxisRaw(forwardAxis);
-        float horizontal = Input.GetAxisRaw(strafeAxis);
-        bool sprint = Input.GetKey(sprintKey);
+        float vertical = _ignoreInput ? 0f : Input.GetAxisRaw(forwardAxis);
+        float horizontal = _ignoreInput ? 0f : Input.GetAxisRaw(strafeAxis);
+        bool sprint = !_ignoreInput && Input.GetKey(sprintKey);
         Vector2 input = new Vector2(horizontal, vertical);
         bool hasInput = input.magnitude > 0.1f;
 
@@ -347,6 +347,8 @@ public class DragonGroundController : NetworkBehaviour
             IsTurningLeft = false;
             IsTurningRight = false;
             TurnSpeed = 0f;
+
+
 
             //if (groundingSystem.IsGrounded && !isPlayingJump)
             //    rb.constraints = RigidbodyConstraints.FreezeAll;
@@ -483,6 +485,7 @@ public class DragonGroundController : NetworkBehaviour
     private void OnBecameGrounded()
     {
         isActive = true;
+        _ignoreInput = false;
         ClearState();
 
         // Kill leftover velocity from fall
@@ -514,6 +517,12 @@ public class DragonGroundController : NetworkBehaviour
         if (animator == null || rb == null) return;
         if (!IsOwner) return;
 
+        if (!enabled)
+        {
+            rb.linearVelocity = Vector3.zero;
+            return;
+        }
+
         bool shouldApply =
             useRootMotion ||
             (isPlayingJump && rootMotionOnJump) ||
@@ -536,6 +545,23 @@ public class DragonGroundController : NetworkBehaviour
     }
 
 
+
+    public void ClearInputState() => ClearState();
+
+    private bool _ignoreInput;
+
+    public void StopGradually()
+    {
+        GaitSpeed = 0f;
+        IsWalking = false;
+        IsRunning = false;
+        ForwardSpeed = 0f;
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+    }
 
     private void ClearState()
     {

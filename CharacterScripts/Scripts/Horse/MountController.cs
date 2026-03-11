@@ -43,6 +43,8 @@ public class MountController : NetworkBehaviour
     [SerializeField] private InputController inputController;
     [SerializeField] private CharacterController characterController;
     [SerializeField] private Animator animator;
+    [SerializeField] private WeaponManager weaponManager;
+    [SerializeField] private CombatController combatController;
 
     // Network state (synced across all clients)
     private NetworkVariable<bool> netIsMounted = new NetworkVariable<bool>(
@@ -347,6 +349,22 @@ public class MountController : NetworkBehaviour
             }
 
             transform.position = position;
+
+            // Zero horse input so it doesn't keep sprinting after dismount
+            if (currentMount != null)
+            {
+                var horseController = currentMount.GetComponentInChildren<DragonGroundController>();
+                Debug.Log($"[MountController] horseController found: {horseController != null} on {currentMount.name}");
+                if (horseController != null)
+                    horseController.StopGradually();
+            }
+
+            // Instantly holster if mounted combat is disabled
+            if (weaponManager != null && combatController != null && !combatController.allowMountedCombat)
+            {
+                if (weaponManager.ActiveSlot != 0)
+                    weaponManager.InstantEquip(0);
+            }
 
             // Re-enable humanoid movement
             if (thirdPersonController != null)

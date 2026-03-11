@@ -143,6 +143,13 @@ public class DragonAnimatorController : NetworkBehaviour
             }
         }
 
+        // Ramp GaitSpeed to zero when ground controller is disabled (e.g. after dismount)
+        if (groundController != null && !groundController.enabled && netGaitSpeed.Value > 0.01f)
+        {
+            if (IsOwner)
+                netGaitSpeed.Value = Mathf.MoveTowards(netGaitSpeed.Value, 0f, 2f * Time.deltaTime);
+        }
+
         // ─── Everyone reads NetworkVariables → Animator ──
 
         // Shared
@@ -245,9 +252,12 @@ public class DragonAnimatorController : NetworkBehaviour
             if (Mathf.Abs(netTurnAngle.Value - turnAngle) > FLOAT_EPSILON)
                 netTurnAngle.Value = turnAngle;
 
-            float gaitSpeed = groundController.GaitSpeed;
-            if (Mathf.Abs(netGaitSpeed.Value - gaitSpeed) > FLOAT_EPSILON)
-                netGaitSpeed.Value = gaitSpeed;
+            if (groundController.enabled)
+            {
+                float gaitSpeed = groundController.GaitSpeed;
+                if (Mathf.Abs(netGaitSpeed.Value - gaitSpeed) > FLOAT_EPSILON)
+                    netGaitSpeed.Value = gaitSpeed;
+            }
 
             // ForwardSpeed: use ground state when grounded
             if (groundingSystem != null && groundingSystem.IsGrounded)
