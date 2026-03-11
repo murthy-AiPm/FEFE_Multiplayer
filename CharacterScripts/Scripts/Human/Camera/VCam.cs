@@ -9,10 +9,33 @@ public class VCam : MonoBehaviour
     public VCameraObject vCO,vZO;
     [SerializeField] Transform LookAt,Follow,ZoomLook;
 
+    // Base axis speeds (at sensitivity multiplier = 1).
+    // Adjust these to match the feel you want at the default 1x setting.
+    [SerializeField] private float baseSensX = 300f;
+    [SerializeField] private float baseSensY = 2f;
 
-    void Start()
+    private const string PrefSensX = "Sens_X";
+
+    void Start() { }
+
+    private void OnEnable()
     {
-        
+        // Apply saved sensitivity when this camera activates (owner-only objects
+        // start disabled and are enabled after network spawn).
+        ApplySensitivity(PlayerPrefs.GetFloat(PrefSensX, 1f));
+        SettingsMenuUI.OnSensitivityChanged += ApplySensitivity;
+    }
+
+    private void OnDisable()
+    {
+        SettingsMenuUI.OnSensitivityChanged -= ApplySensitivity;
+    }
+
+    private void ApplySensitivity(float multiplier)
+    {
+        if (vCam == null) return;
+        vCam.m_XAxis.m_MaxSpeed = baseSensX * multiplier;
+        vCam.m_YAxis.m_MaxSpeed = baseSensY * multiplier;
     }
 
     void Update()

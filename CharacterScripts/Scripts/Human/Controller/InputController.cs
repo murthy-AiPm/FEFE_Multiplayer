@@ -108,7 +108,7 @@ public class InputController : MonoBehaviour
         _wasGrounded = onGround;
 
         // 1) Read input ONCE
-        Snapshot = ReadSnapshot();
+        Snapshot = PauseMenu.IsPaused ? default : ReadSnapshot();
 
         // 2) Apply snapshot into existing flags (compat)
         ApplySnapshotToLegacyFlags(Snapshot);

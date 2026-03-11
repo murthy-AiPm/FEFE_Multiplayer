@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.UI;
 using TMPro;
-
 public class SettingsMenuUI : MonoBehaviour
 {
     [Header("UI")]
@@ -21,6 +20,12 @@ public class SettingsMenuUI : MonoBehaviour
     [SerializeField] private Slider combatSlider;
     [SerializeField] private Slider ambientSlider;
 
+    [Header("Mouse Sensitivity")]
+    [SerializeField] private Slider sensitivitySlider;
+
+    // Any VCam in the scene subscribes to this — no Inspector wiring needed.
+    public static event System.Action<float> OnSensitivityChanged;
+
     private Resolution[] _resolutions;
     private List<Resolution> _uniqueResolutions = new();
     private int _selectedIndex;
@@ -34,12 +39,16 @@ public class SettingsMenuUI : MonoBehaviour
     private const string PrefFootsteps  = "Vol_Footsteps";
     private const string PrefCombat     = "Vol_Combat";
     private const string PrefAmbient    = "Vol_Ambient";
+    private const string PrefSensX      = "Sens_X";
+    private const string PrefSensY      = "Sens_Y";
+
 
     private void Awake()
     {
         BuildResolutionList();
         LoadAndApplySavedSettings();
         LoadAndApplyVolumes();
+        LoadAndApplySensitivity();
         if (panel != null) panel.SetActive(false);
     }
 
@@ -123,6 +132,38 @@ public class SettingsMenuUI : MonoBehaviour
     public void Open()
     {
         if (panel != null) panel.SetActive(true);
+        // Re-broadcast current sensitivity in case VCam spawned after Awake.
+        if (sensitivitySlider != null)
+            ApplySensitivity(sensitivitySlider.value);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  SENSITIVITY
+    // ═══════════════════════════════════════════════════════
+
+    private void LoadAndApplySensitivity()
+    {
+        if (sensitivitySlider == null) return;
+
+        sensitivitySlider.minValue = 0.1f;
+        sensitivitySlider.maxValue = 2f;
+
+        float savedX = PlayerPrefs.GetFloat(PrefSensX, 1f);
+        sensitivitySlider.value = savedX;
+        ApplySensitivity(savedX);
+
+        sensitivitySlider.onValueChanged.AddListener(value =>
+        {
+            ApplySensitivity(value);
+            PlayerPrefs.SetFloat(PrefSensX, value);
+            PlayerPrefs.SetFloat(PrefSensY, value);
+            PlayerPrefs.Save();
+        });
+    }
+
+    private void ApplySensitivity(float multiplier)
+    {
+        OnSensitivityChanged?.Invoke(multiplier);
     }
 
     public void Close()

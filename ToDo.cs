@@ -13,10 +13,10 @@
  * 12. Expose mouse sensitivity on settings
  * 13. Expose key bindings on settings
  * 14. Single space dodgestep, double space dodge
- * 15. Horse freeze all when idle 
+ * 15. Horse freeze all when idle - done
  * 16. Add character change option pause menu
  * 17. Player respwan option in pause menu
  * 18. Add offline mode
- * 19. Exit option in all screens//
+ * 19. Exit option in all screens////
  */
 

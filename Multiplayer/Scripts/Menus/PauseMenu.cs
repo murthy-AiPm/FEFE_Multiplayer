@@ -8,6 +8,7 @@ public class PauseMenu : MonoBehaviour
     [SerializeField] private SettingsMenuUI settingsMenu;
 
     private bool isPaused;
+    public static bool IsPaused { get; private set; }
 
     private void Update()
     {
@@ -23,6 +24,7 @@ public class PauseMenu : MonoBehaviour
         pausePanel.SetActive(true);
         //Time.timeScale = 0f;
         isPaused = true;
+        IsPaused = true;
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
@@ -33,6 +35,7 @@ public class PauseMenu : MonoBehaviour
         pausePanel.SetActive(false);
        // Time.timeScale = 1f;
         isPaused = false;
+        IsPaused = false;
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
