@@ -255,7 +255,10 @@ public class DragonAnimatorController : NetworkBehaviour
             if (groundController.enabled)
             {
                 float gaitSpeed = groundController.GaitSpeed;
-                if (Mathf.Abs(netGaitSpeed.Value - gaitSpeed) > FLOAT_EPSILON)
+                // Force zero through without epsilon check so animator doesn't stick at stale value
+                if (gaitSpeed == 0f && netGaitSpeed.Value != 0f)
+                    netGaitSpeed.Value = 0f;
+                else if (Mathf.Abs(netGaitSpeed.Value - gaitSpeed) > FLOAT_EPSILON)
                     netGaitSpeed.Value = gaitSpeed;
             }
 

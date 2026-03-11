@@ -416,6 +416,11 @@ public class RuleAnimancerDriver : MonoBehaviour
 
     private bool HandleWitcherAttacks(AnimationContext ctx)
     {
+        // Skip attacks when mounted with combat disabled
+        if (mountController != null && mountController.IsMounted
+            && combatController != null && !combatController.allowMountedCombat)
+            return false;
+
         bool down = ctx.snapshot.primaryDown;
 
         // Stamina check
