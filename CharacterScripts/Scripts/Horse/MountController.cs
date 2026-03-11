@@ -306,6 +306,14 @@ public class MountController : NetworkBehaviour
             if (characterController != null)
                 characterController.enabled = false;
 
+            // Instantly holster weapon on mount
+            if (weaponManager != null && weaponManager.ActiveSlot != 0)
+                weaponManager.InstantEquip(0);
+
+            // Stop player footstep sounds
+            var footsteps = GetComponentInChildren<FootstepSoundPlayer>();
+            if (footsteps != null)
+                footsteps.enabled = false;
         }
 
         Debug.Log($"[MountController] Mount complete (IsOwner: {IsOwner})");
@@ -369,6 +377,11 @@ public class MountController : NetworkBehaviour
             // Re-enable humanoid movement
             if (thirdPersonController != null)
                 thirdPersonController.enabled = true;
+
+            // Re-enable player footstep sounds
+            var footsteps = GetComponentInChildren<FootstepSoundPlayer>();
+            if (footsteps != null)
+                footsteps.enabled = true;
            // var hitCollider = GetComponentInChildren<CapsuleCollider>();
             if (hitCollider != null) hitCollider.isTrigger = false;
             if (characterController != null)
