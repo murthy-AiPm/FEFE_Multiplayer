@@ -22,7 +22,7 @@ public class DragonGroundController : NetworkBehaviour
     [SerializeField] private DragonGroundingSystem groundingSystem;
     [SerializeField] private DragonGroundAlignment groundAlignment;
     [SerializeField] private DragonFlightController flightController;
-    [SerializeField] private Animator animator;
+    [SerializeField] protected Animator animator;
     [SerializeField] private Rigidbody rb;
     [SerializeField] private Transform cam;
 
@@ -64,6 +64,7 @@ public class DragonGroundController : NetworkBehaviour
 
     [Header("Root Motion")]
     [SerializeField] protected bool useRootMotion = false;
+    public bool UseRootMotion => useRootMotion;
 
     [Header("Fake Gravity (for horse)")]
     [SerializeField] private bool useFakeGravity = false;
@@ -130,7 +131,7 @@ public class DragonGroundController : NetworkBehaviour
 
         // Enable root motion - we'll disable it when flying
         if (animator != null)
-            animator.applyRootMotion = true;
+            animator.applyRootMotion = !useRootMotion; // horse manages root motion manually
     }
 
     private void Update()
@@ -182,7 +183,11 @@ public class DragonGroundController : NetworkBehaviour
 
     private void FixedUpdate()
     {
-
+        if (_pendingRootMotion != Vector3.zero && rb != null)
+        {
+            rb.MovePosition(rb.position + _pendingRootMotion);
+            _pendingRootMotion = Vector3.zero;
+        }
 
         if (useFakeGravity)
         {
@@ -494,6 +499,8 @@ public class DragonGroundController : NetworkBehaviour
     /// This makes the camera follow the dragon during jump animations.
     /// Requires "Apply Root Motion" checked on the Animator.
     /// </summary>
+    private Vector3 _pendingRootMotion;
+
     private void OnAnimatorMove()
     {
         if (animator == null || rb == null) return;
@@ -508,9 +515,19 @@ public class DragonGroundController : NetworkBehaviour
 
         if (shouldApply)
         {
-            rb.MovePosition(rb.position + animator.deltaPosition);
+            if (useRootMotion)
+            {
+                if (animator.deltaPosition.sqrMagnitude > 0.00001f)
+                    rb.linearVelocity = animator.deltaPosition / Time.deltaTime;
+                else
+                    rb.linearVelocity = Vector3.zero;
+            }
+            else
+                _pendingRootMotion += animator.deltaPosition;
         }
     }
+
+
 
     private void ClearState()
     {

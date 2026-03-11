@@ -6,6 +6,8 @@ public class HorseGroundController : DragonGroundController
     {
         base.Awake();
         useRootMotion = true;
+        if (animator != null)
+            animator.applyRootMotion = false;
     }
     //[Header("Horse Gravity")]
     //[SerializeField] private float fakeGravity = 20f;

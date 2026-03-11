@@ -130,7 +130,12 @@ public class DragonGroundAlignment : NetworkBehaviour
             smoothedUp = up;
 
         // Smooth yaw towards target
-        currentYaw = Mathf.LerpAngle(currentYaw, targetYaw, yawSmoothSpeed * Time.fixedDeltaTime);
+        // When root motion is active, the ground controller already rate-caps yaw via _cappedYaw.
+        // Applying LerpAngle on top double-smooths and causes turn jitter.
+        if (groundController != null && groundController.UseRootMotion)
+            currentYaw = targetYaw;
+        else
+            currentYaw = Mathf.LerpAngle(currentYaw, targetYaw, yawSmoothSpeed * Time.fixedDeltaTime);
 
         // Build final rotation
         Quaternion targetRotation = BuildSlopeRotation(smoothedUp, currentYaw);

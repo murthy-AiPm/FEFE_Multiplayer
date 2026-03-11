@@ -253,6 +253,17 @@ MonoBehaviour:
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 0
+  - key: Riding/Jump
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400000, guid: e149c60208244a949b6dea89124f7152, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
   - key: Crouch/Idle
     transition:
       _FadeDuration: 0
