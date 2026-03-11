@@ -6071,7 +6071,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1216628486
+  GlobalObjectIdHash: 1720956946
   InScenePlacedSourceGlobalObjectIdHash: 1720956946
   DeferredDespawnTick: 0
   Ownership: 1
@@ -6501,16 +6501,14 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   targetRenderer: {fileID: 7489031203335996812}
   materialIndex: 0
-  usePalette: 0
+  usePalette: 1
   palette:
   - {r: 1, g: 0, b: 0, a: 1}
   - {r: 0, g: 0, b: 1, a: 1}
-  - {r: 0, g: 1, b: 0, a: 1}
+  - {r: 0.294391, g: 0.408805, b: 0.294391, a: 1}
   - {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   - {r: 0, g: 1, b: 1, a: 1}
-  - {r: 1, g: 0, b: 1, a: 1}
-  - {r: 1, g: 0.5, b: 0, a: 1}
-  - {r: 1, g: 1, b: 1, a: 1}
+  - {r: 0, g: 0, b: 0, a: 1}
   saturationMin: 0.6
   saturationMax: 1
   valueMin: 0.7

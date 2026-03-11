@@ -15,5 +15,5 @@ MonoBehaviour:
   characterName: Test
   icon: {fileID: 21300000, guid: 9906f88412ec44325a68c6f8b61c5b32, type: 3}
   characterColor: {r: 1, g: 1, b: 1, a: 1}
-  prefab: {fileID: 8837511929152388741, guid: 8be51bd5914cf834e8db17d07b129dd0, type: 3}
+  prefab: {fileID: 8837511929152388741, guid: e660dd53f51f57a4697e1aed85a91df4, type: 3}
   combatLoadout: {fileID: 11400000, guid: 2b5d1c2772db3a949ac1046709a1880d, type: 2}
