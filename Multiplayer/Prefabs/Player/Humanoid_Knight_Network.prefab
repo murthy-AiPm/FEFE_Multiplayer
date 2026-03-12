@@ -5953,8 +5953,7 @@ MonoBehaviour:
     heavyComboKeys:
     - Attack/Kick/Right
   - weaponName: Bow
-    singleAttackKeys:
-    - Bow/Draw
+    singleAttackKeys: []
     lightComboKeys: []
     heavyComboKeys:
     - Attack/Kick/Right
