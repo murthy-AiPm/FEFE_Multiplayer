@@ -40,6 +40,7 @@ public class DamageReceiver : NetworkBehaviour
     public System.Action OnDeath;
 
     private float _hitStunTimer;
+    private Coroutine _hideCorpseCoroutine;
 
     public bool IsHitStunned => _hitStunTimer > 0f;
 
@@ -181,7 +182,11 @@ public class DamageReceiver : NetworkBehaviour
         NotifyDeathClientRpc();
 
         if (IsServer && isPlayer)
-            StartCoroutine(HideCorpseAfterDelay());
+        {
+            if (_hideCorpseCoroutine != null)
+                StopCoroutine(_hideCorpseCoroutine);
+            _hideCorpseCoroutine = StartCoroutine(HideCorpseAfterDelay());
+        }
     }
 
     [ClientRpc]
@@ -211,6 +216,7 @@ public class DamageReceiver : NetworkBehaviour
     {
         yield return new WaitForSeconds(corpseVisibleTime);
         HideCorpseClientRpc();
+        _hideCorpseCoroutine = null;
     }
 
     [ClientRpc]
@@ -225,6 +231,13 @@ public class DamageReceiver : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     public void RequestRespawnServerRpc(int spawnPointIndex)
     {
+        // Cancel the corpse hide timer so it doesn't disable renderers after respawn
+        if (_hideCorpseCoroutine != null)
+        {
+            StopCoroutine(_hideCorpseCoroutine);
+            _hideCorpseCoroutine = null;
+        }
+
         var points = SpawnPoint.GetAllSpawnPoints();
 
         Vector3 spawnPos;
