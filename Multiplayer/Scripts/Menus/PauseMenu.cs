@@ -43,6 +43,10 @@ public class PauseMenu : MonoBehaviour
     {
         pausePanel.SetActive(false);
         settingsMenu.Open();
+        isPaused = true;
+        IsPaused = true;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     // Called by Escape and by the Back button in the settings panel
@@ -83,7 +87,7 @@ public class PauseMenu : MonoBehaviour
         Unity.Netcode.NetworkObject[] netObjects =
 #if UNITY_2023_1_OR_NEWER
     FindObjectsByType<Unity.Netcode.NetworkObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-#else
+#else//
     Resources.FindObjectsOfTypeAll<Unity.Netcode.NetworkObject>();
 #endif
 
