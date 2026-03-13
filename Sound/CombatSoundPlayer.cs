@@ -28,6 +28,9 @@ public class CombatSoundPlayer : NetworkBehaviour
     [SerializeField] private string bowEquipSound = "Bow_Equip";
     [SerializeField] private string bowUnequipSound = "Bow_Unequip";
 
+    [Header("Heavy Attack Sound Names (must match SoundDatabase entries)")]
+    [SerializeField] private string heavyAttackSwingSound = "HeavyAttack_Swing";
+
     private CombatController.CombatState _prevState = CombatController.CombatState.None;
     private HitboxController _activeHitbox;
     private MaterialTag _activeWeaponMaterialTag;
@@ -71,6 +74,9 @@ public class CombatSoundPlayer : NetworkBehaviour
                 if (existingHitbox != null)
                     BindHitbox(existingHitbox);
             }
+
+            if (animEventRelay != null)
+                animEventRelay.OnGenericEvent += HandleGenericAnimEvent;
         }
     }
 
@@ -94,6 +100,9 @@ public class CombatSoundPlayer : NetworkBehaviour
             weaponManager.OnWeaponEquipped -= HandleWeaponEquipped;
             weaponManager.OnWeaponHolstered -= HandleWeaponHolstered;
         }
+
+        if (animEventRelay != null)
+            animEventRelay.OnGenericEvent -= HandleGenericAnimEvent;
 
         UnbindHitbox();
         base.OnNetworkDespawn();
@@ -212,6 +221,18 @@ public class CombatSoundPlayer : NetworkBehaviour
     {
         if (ProximitySoundManager.Instance == null) return;
         ProximitySoundManager.Instance.PlaySound(dodgeSound, transform.position);
+    }
+
+    private void HandleGenericAnimEvent(string eventName)
+    {
+        if (ProximitySoundManager.Instance == null) return;
+        switch (eventName)
+        {
+            case "HeavyAttackSwing":
+                ProximitySoundManager.Instance.PlaySound(heavyAttackSwingSound, transform.position);
+                Debug.Log("playsound");
+                break;
+        }
     }
 
     private void HandleHitDetected(HitInfo hitInfo)

@@ -5706,7 +5706,6 @@ MonoBehaviour:
     lightComboKeys: []
     heavyComboKeys:
     - Attack/Sword/Heavy
-    - Attack/Sword/Light3
   - weaponName: Fist
     singleAttackKeys:
     - Attack/Fist/Left
@@ -6082,7 +6081,7 @@ MonoBehaviour:
   humanoidController: {fileID: 834153548958768503}
   playerController: {fileID: 6395165421274534476}
   animancerDriver: {fileID: 2683264340040594894}
-  arrowSpawnPoint: {fileID: 0}
+  arrowSpawnPoint: {fileID: 1379066709997379217}
   vcam: {fileID: 6169671671747164374}
   defaultCamTarget: {fileID: 3897897725061523244}
   aimCube: {fileID: 7222214418373944958}
@@ -6223,6 +6222,7 @@ MonoBehaviour:
   swordUnequipSound: Sword_Unequip
   bowEquipSound: Bow_Equip
   bowUnequipSound: Bow_Unequip
+  heavyAttackSwingSound: HeavyAttack_Swing
 --- !u!114 &5960731366256184571
 MonoBehaviour:
   m_ObjectHideFlags: 0

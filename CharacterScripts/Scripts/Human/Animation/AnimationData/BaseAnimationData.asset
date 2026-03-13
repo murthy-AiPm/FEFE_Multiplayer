@@ -120,7 +120,7 @@ MonoBehaviour:
     useRootMotion: 0
   - key: Sword/Walk/Fwd
     transition:
-      _FadeDuration: 0
+      _FadeDuration: 0.15
       _Events:
         _NormalizedTimes: []
         _Callbacks: []
@@ -128,10 +128,10 @@ MonoBehaviour:
       _Clip: {fileID: 7400018, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN
-    useRootMotion: 0
+    useRootMotion: 1
   - key: Sword/Strafe/Right
     transition:
-      _FadeDuration: 0
+      _FadeDuration: 0.15
       _Events:
         _NormalizedTimes: []
         _Callbacks: []
@@ -139,10 +139,10 @@ MonoBehaviour:
       _Clip: {fileID: 7400022, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN
-    useRootMotion: 0
+    useRootMotion: 1
   - key: Sword/Strafe/Left
     transition:
-      _FadeDuration: 0
+      _FadeDuration: 0.15
       _Events:
         _NormalizedTimes: []
         _Callbacks: []
@@ -150,10 +150,10 @@ MonoBehaviour:
       _Clip: {fileID: 7400026, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN
-    useRootMotion: 0
+    useRootMotion: 1
   - key: Sword/Strafe/Back
     transition:
-      _FadeDuration: 0
+      _FadeDuration: 0.15
       _Events:
         _NormalizedTimes: []
         _Callbacks: []
@@ -161,7 +161,7 @@ MonoBehaviour:
       _Clip: {fileID: 7400038, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN
-    useRootMotion: 0
+    useRootMotion: 1
   - key: Sword/Run
     transition:
       _FadeDuration: 0
@@ -206,6 +206,22 @@ MonoBehaviour:
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 1
+  - key: Sword/Block/Idle
+    transition:
+      _FadeDuration: 0.075
+      _Events:
+        _NormalizedTimes:
+        - 0.2
+        - 0.5
+        - NaN
+        _Callbacks: []
+        _Names:
+        - Start
+        - End
+      _Clip: {fileID: 7400000, guid: 1cbd301ed53c2394492267f6afbbac77, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
   - key: Attack/Sword/Light1
     transition:
       _FadeDuration: 0
@@ -331,28 +347,6 @@ MonoBehaviour:
       _NormalizedStartTime: NaN
     useRootMotion: 0
   - key: Locomotion/Dodge
-    transition:
-      _FadeDuration: 0
-      _Events:
-        _NormalizedTimes: []
-        _Callbacks: []
-        _Names: []
-      _Clip: {fileID: 0}
-      _Speed: NaN
-      _NormalizedStartTime: NaN
-    useRootMotion: 0
-  - key: Locomotion/BlockIdle
-    transition:
-      _FadeDuration: 0
-      _Events:
-        _NormalizedTimes: []
-        _Callbacks: []
-        _Names: []
-      _Clip: {fileID: 0}
-      _Speed: NaN
-      _NormalizedStartTime: NaN
-    useRootMotion: 0
-  - key: Locomotion/BlockIdle
     transition:
       _FadeDuration: 0
       _Events:
@@ -528,18 +522,6 @@ MonoBehaviour:
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 0
-  - key: Sword/Block
-    transition:
-      _FadeDuration: 0
-      _Events:
-        _NormalizedTimes:
-        - 0.7
-        _Callbacks: []
-        _Names: []
-      _Clip: {fileID: 7400004, guid: a9e228972999b0d46a21e30edf97d812, type: 3}
-      _Speed: NaN
-      _NormalizedStartTime: NaN
-    useRootMotion: 1
   - key: Horse/Attack
     transition:
       _FadeDuration: 0
@@ -549,17 +531,6 @@ MonoBehaviour:
         _Callbacks: []
         _Names: []
       _Clip: {fileID: 7400004, guid: a9e228972999b0d46a21e30edf97d812, type: 3}
-      _Speed: NaN
-      _NormalizedStartTime: NaN
-    useRootMotion: 0
-  - key: Sword/Block/Idle
-    transition:
-      _FadeDuration: 0
-      _Events:
-        _NormalizedTimes: []
-        _Callbacks: []
-        _Names: []
-      _Clip: {fileID: -203655887218126122, guid: 14d92bb5ab922364ab5a1c86de8a9d8c, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 0

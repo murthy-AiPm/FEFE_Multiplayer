@@ -20,7 +20,7 @@
  * 19. Exit option in all screens
  * 20. Bow draw not syncing
  * 21. Need to understand blendtree sync better
- * 22. Horse not blending well when spam A/D - done
+ * 22. Horse not blending well when spam A/D - done//
  
 Phase 1
 * Build sound library

@@ -295,7 +295,15 @@ public class RuleAnimancerDriver : MonoBehaviour
         if (TryPlayBestRule(ctx, AnimLayer.Attack)) return;
         bool actionFadingOut = !IsLayerLocked(AnimLayer.Action) && _actionLayer.Weight > 0f && _actionLayer.Weight < 1f;
         if (!IsLayerLocked(AnimLayer.Action) && !actionFadingOut)
-            TryPlayBestRule(ctx, AnimLayer.Action);
+        {
+            bool actionRulePlayed = TryPlayBestRule(ctx, AnimLayer.Action);
+            // If no Action rule matched and the layer still has weight, fade it out and reset its mask
+            if (!actionRulePlayed && _actionLayer.Weight > 0f)
+            {
+                _actionLayer.SetMask(actionLayerMask);
+                _actionLayer.StartFade(0, layerFadeOutDuration);
+            }
+        }
 
         TryPlayBestRule(ctx, AnimLayer.Base);
 
@@ -850,9 +858,11 @@ public class RuleAnimancerDriver : MonoBehaviour
             {
                 var animLayer = GetAnimancerLayer(layer);
 
-                // Restore default mask on Attack layer to clear any per-rule mask override
+                // Restore default mask so it doesn't bleed onto the next rule
                 if (layer == AnimLayer.Attack)
                     animLayer.SetMask(attackLayerMask);
+                else if (layer == AnimLayer.Action)
+                    animLayer.SetMask(actionLayerMask);
 
                 animLayer.StartFade(0, layerFadeOutDuration);
             }
