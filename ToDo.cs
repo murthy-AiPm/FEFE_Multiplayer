@@ -2,7 +2,7 @@
  * 1.  Setup horse height
  * 2.  Setup Arrow spwan point
  * 3.  Zoom out camera bit or add camera controls
- * 4.  Add higher resolutions -? 
+ * 4.  Add higher resolutions - for screen settings
  * 5.  Disable controls on pause menu
  * 6.  Hide player UI on pause menu
  * 7.  Setup Spawn points
@@ -17,6 +17,16 @@
  * 16. Add character change option pause menu
  * 17. Player respwan option in pause menu
  * 18. Add offline mode
- * 19. Exit option in all screens////
+ * 19. Exit option in all screens
+ * 20. Bow draw not syncing
+ * 21. Need to understand blendtree sync better
+ * 22. Horse not blending well when spam A/D
+ 
+Phase 1
+* Build sound library
+* Build Character library
+* Build Castle/City/Battlegrounds
+* Finish Dragon
+* Buil AI foundation
  */
 

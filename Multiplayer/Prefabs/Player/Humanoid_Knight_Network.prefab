@@ -5844,7 +5844,8 @@ MonoBehaviour:
     - Attack/Sword/Light1
     - Attack/Sword/Light2
     lightComboKeys: []
-    heavyComboKeys: []
+    heavyComboKeys:
+    - Attack/Sword/Heavy
   - weaponName: Fist
     singleAttackKeys:
     - Attack/Fist/Left

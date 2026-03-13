@@ -340,9 +340,10 @@ public class DragonGroundController : NetworkBehaviour
         }
         else
         {
-            // Snap _cappedYaw to current facing so horse stops turning immediately
-            _cappedYaw = rb.rotation.eulerAngles.y;
-            TurnAngle = Mathf.MoveTowards(TurnAngle, 0f, turnAngleSmoothing * Time.fixedDeltaTime);
+            // Gradually track current facing so TurnAngle decays smoothly instead of snapping
+            float currentYaw = rb.rotation.eulerAngles.y;
+            _cappedYaw = Mathf.MoveTowardsAngle(_cappedYaw, currentYaw, walkTurnRate * Time.fixedDeltaTime);
+            TurnAngle = Mathf.SmoothDamp(TurnAngle, 0f, ref _turnAngleVel, 1f / turnAngleSmoothing);
 
             IsTurningLeft = false;
             IsTurningRight = false;

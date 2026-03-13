@@ -309,7 +309,7 @@ MonoBehaviour:
       direction: 3
       useActionId: 0
       actionIdEquals: 0
-  - name: Sword/Run
+  - name: Sword/Run/Front
     layer: 0
     priority: 56
     lockUntilEnd: 0
@@ -324,7 +324,121 @@ MonoBehaviour:
       input: 0
       triggerMode: 1
       useDirection: 1
+      direction: 1
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 1
       direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 2
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 1
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Sword/Run/Right
+    layer: 0
+    priority: 56
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Sword/Run/Right
+    all:
+    - useBool: 1
+      boolParam: 18
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 1
+      direction: 4
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 1
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 2
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 1
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Sword/Run/Left
+    layer: 0
+    priority: 56
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Sword/Run/Left
+    all:
+    - useBool: 1
+      boolParam: 18
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 1
+      direction: 2
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 1
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 2
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 1
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Sword/Run/Back
+    layer: 0
+    priority: 56
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Sword/Run/Back
+    all:
+    - useBool: 1
+      boolParam: 18
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 1
+      direction: 3
       useActionId: 0
       actionIdEquals: 0
     - useBool: 1
