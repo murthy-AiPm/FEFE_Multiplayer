@@ -834,6 +834,11 @@ public class RuleAnimancerDriver : MonoBehaviour
             if (layer != AnimLayer.Base)
             {
                 var animLayer = GetAnimancerLayer(layer);
+
+                // Restore default mask on Attack layer to clear any per-rule mask override
+                if (layer == AnimLayer.Attack)
+                    animLayer.SetMask(attackLayerMask);
+
                 animLayer.StartFade(0, layerFadeOutDuration);
             }
 
