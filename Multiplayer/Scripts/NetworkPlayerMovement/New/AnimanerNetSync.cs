@@ -188,6 +188,19 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
 
         if (IsOwner)
         {
+            // Bow draw edge: checked every frame so a one-frame primaryDown is never missed
+            if (input != null && weaponManager != null && weaponManager.ActiveSlot == 2)
+            {
+                bool bowActiveNow = input.Snapshot.primaryDown;
+                if (!_wasBowActive && bowActiveNow)
+                    nvBowDrawSeq.Value++;
+                _wasBowActive = bowActiveNow;
+            }
+            else
+            {
+                _wasBowActive = false;
+            }
+
             if (Time.time >= nextNetworkUpdateTime)
             {
                 nextNetworkUpdateTime = Time.time + NETWORK_UPDATE_INTERVAL;
@@ -242,13 +255,10 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
                 nvBowReleaseSeq.Value++;
             _wasAiming = isAimingNow;
 
-            // ── Bow draw edge: primaryDown rising while slot==2 ──────────
-            bool bowActiveNow = weaponManager != null && weaponManager.ActiveSlot == 2
-                                && input.Snapshot.primaryDown;
-            if (!_wasBowActive && bowActiveNow)
-                nvBowDrawSeq.Value++;
-            _wasBowActive = bowActiveNow;
         }
+
+        // ── Bow draw edge (checked every frame, not throttled) ───────
+        // Moved to Update() to avoid missing the one-frame primaryDown edge.
 
         // ── Equip start edge ─────────────────────────────────────────────
         if (weaponManager != null)
