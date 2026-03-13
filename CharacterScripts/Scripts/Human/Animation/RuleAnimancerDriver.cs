@@ -729,6 +729,9 @@ public class RuleAnimancerDriver : MonoBehaviour
             _isLocked[AnimLayer.Attack] = false;
             _lockedState[AnimLayer.Attack] = null;
 
+            // Restore default attack layer mask (clears any per-rule mask override)
+            _attackLayer.SetMask(attackLayerMask);
+
             // Fade out attack layer so Base takes over
             _attackLayer.StartFade(0, layerFadeOutDuration);
 
