@@ -448,12 +448,12 @@ MonoBehaviour:
   turnSmoothTime: 1
   turnHeadAngle: 15
   trotToggleKey: 116
-  turnAngleSmoothing: 5
+  turnAngleSmoothing: 8
   gaitSmoothSpeed: 0.5
   minInputHoldTime: 0.15
-  walkTurnRate: 60
-  trotTurnRate: 90
-  sprintTurnRate: 120
+  walkTurnRate: 120
+  trotTurnRate: 150
+  sprintTurnRate: 180
   useRootMotion: 1
   useFakeGravity: 1
   fakeGravity: 20

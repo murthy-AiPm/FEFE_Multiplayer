@@ -2996,6 +2996,22 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 9072069978009329096, guid: c1d75879462f5f1488140c1d819f3fa3, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9072069978009329096, guid: c1d75879462f5f1488140c1d819f3fa3, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 943494407}
+    - target: {fileID: 9072069978009329096, guid: c1d75879462f5f1488140c1d819f3fa3, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: OnSettingsClosed
+      objectReference: {fileID: 0}
+    - target: {fileID: 9072069978009329096, guid: c1d75879462f5f1488140c1d819f3fa3, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: PauseMenu, Assembly-CSharp
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -3450,22 +3466,6 @@ PrefabInstance:
     - target: {fileID: 711040484119619372, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
       propertyPath: m_Name
       value: HorseFEFE (1)
-      objectReference: {fileID: 0}
-    - target: {fileID: 2598117054184361289, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
-      propertyPath: trotTurnRate
-      value: 150
-      objectReference: {fileID: 0}
-    - target: {fileID: 2598117054184361289, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
-      propertyPath: walkTurnRate
-      value: 120
-      objectReference: {fileID: 0}
-    - target: {fileID: 2598117054184361289, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
-      propertyPath: sprintTurnRate
-      value: 180
-      objectReference: {fileID: 0}
-    - target: {fileID: 2598117054184361289, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
-      propertyPath: turnAngleSmoothing
-      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 3713399862824024303, guid: a053a535ab0389f43b9a6f9d18d23419, type: 3}
       propertyPath: GlobalObjectIdHash
@@ -4398,8 +4398,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 159, y: -25.356}
-  m_SizeDelta: {x: 376.4445, y: 50.7117}
+  m_AnchoredPosition: {x: 182.86, y: -25.356}
+  m_SizeDelta: {x: 365.73, y: 50.7117}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1972067760
 GameObject:

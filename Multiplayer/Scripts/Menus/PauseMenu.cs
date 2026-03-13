@@ -14,7 +14,8 @@ public class PauseMenu : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            if (isPaused) Resume();
+            if (settingsMenu.IsOpen) OnSettingsClosed();
+            else if (isPaused) Resume();
             else Pause();
         }
     }
@@ -22,10 +23,8 @@ public class PauseMenu : MonoBehaviour
     public void Pause()
     {
         pausePanel.SetActive(true);
-        //Time.timeScale = 0f;
         isPaused = true;
         IsPaused = true;
-
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
@@ -33,17 +32,24 @@ public class PauseMenu : MonoBehaviour
     public void Resume()
     {
         pausePanel.SetActive(false);
-       // Time.timeScale = 1f;
+        settingsMenu.Close();
         isPaused = false;
         IsPaused = false;
-
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
     public void OpenSettings()
     {
+        pausePanel.SetActive(false);
         settingsMenu.Open();
+    }
+
+    // Called by Escape and by the Back button in the settings panel
+    public void OnSettingsClosed()
+    {
+        settingsMenu.Close();
+        pausePanel.SetActive(true);
     }
 
     public void BackToMainMenu()

@@ -11,10 +11,10 @@ public class VCam : MonoBehaviour
 
     // Base axis speeds (at sensitivity multiplier = 1).
     // Adjust these to match the feel you want at the default 1x setting.
-    [SerializeField] private float baseSensX = 300f;
-    [SerializeField] private float baseSensY = 2f;
+    [SerializeField] private float gainX = 300f;
+    [SerializeField] private float gainY = 2f;
 
-    private const string PrefSensX = "Sens_X";
+    private const string PrefSensX = "Gain_X";
 
     void Start() { }
 
@@ -34,8 +34,8 @@ public class VCam : MonoBehaviour
     private void ApplySensitivity(float multiplier)
     {
         if (vCam == null) return;
-        vCam.m_XAxis.m_MaxSpeed = baseSensX * multiplier;
-        vCam.m_YAxis.m_MaxSpeed = baseSensY * multiplier;
+        vCam.m_XAxis.m_MaxSpeed = gainX * multiplier;
+        vCam.m_YAxis.m_MaxSpeed = gainY * multiplier;
     }
 
     void Update()

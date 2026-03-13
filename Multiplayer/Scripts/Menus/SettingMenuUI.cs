@@ -26,6 +26,8 @@ public class SettingsMenuUI : MonoBehaviour
     // Any VCam in the scene subscribes to this — no Inspector wiring needed.
     public static event System.Action<float> OnSensitivityChanged;
 
+    public bool IsOpen => panel != null && panel.activeSelf;
+
     private Resolution[] _resolutions;
     private List<Resolution> _uniqueResolutions = new();
     private int _selectedIndex;
@@ -39,8 +41,8 @@ public class SettingsMenuUI : MonoBehaviour
     private const string PrefFootsteps  = "Vol_Footsteps";
     private const string PrefCombat     = "Vol_Combat";
     private const string PrefAmbient    = "Vol_Ambient";
-    private const string PrefSensX      = "Sens_X";
-    private const string PrefSensY      = "Sens_Y";
+    private const string PrefSensX      = "Gain_X";
+    private const string PrefSensY      = "Gain_Y";
 
 
     private void Awake()
@@ -145,7 +147,7 @@ public class SettingsMenuUI : MonoBehaviour
     {
         if (sensitivitySlider == null) return;
 
-        sensitivitySlider.minValue = 0.1f;
+        sensitivitySlider.minValue = 0.4f;
         sensitivitySlider.maxValue = 2f;
 
         float savedX = PlayerPrefs.GetFloat(PrefSensX, 1f);
@@ -154,9 +156,11 @@ public class SettingsMenuUI : MonoBehaviour
 
         sensitivitySlider.onValueChanged.AddListener(value =>
         {
-            ApplySensitivity(value);
-            PlayerPrefs.SetFloat(PrefSensX, value);
-            PlayerPrefs.SetFloat(PrefSensY, value);
+            float snapped = Mathf.Round(value / 0.2f) * 0.2f;
+            sensitivitySlider.SetValueWithoutNotify(snapped);
+            ApplySensitivity(snapped);
+            PlayerPrefs.SetFloat(PrefSensX, snapped);
+            PlayerPrefs.SetFloat(PrefSensY, snapped);
             PlayerPrefs.Save();
         });
     }
