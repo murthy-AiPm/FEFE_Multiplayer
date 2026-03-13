@@ -5838,14 +5838,17 @@ MonoBehaviour:
   doubleClickWindow: 0.25
   comboHoldThreshold: 0.08
   defaultWeaponName: Sword
+  singleAttackResetTime: 10
   weapons:
   - weaponName: Sword
     singleAttackKeys:
     - Attack/Sword/Light1
     - Attack/Sword/Light2
+    - Attack/Sword/Light3
     lightComboKeys: []
     heavyComboKeys:
     - Attack/Sword/Heavy
+    - Attack/Sword/Light3
   - weaponName: Fist
     singleAttackKeys:
     - Attack/Fist/Left

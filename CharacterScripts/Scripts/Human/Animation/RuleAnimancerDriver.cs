@@ -68,6 +68,8 @@ public class RuleAnimancerDriver : MonoBehaviour
     [SerializeField] private float doubleClickWindow = 0.25f;
     [SerializeField] private float comboHoldThreshold = 0.12f;
     [SerializeField] private string defaultWeaponName = "Sword";
+    [Tooltip("Seconds of inactivity after which the single-attack sequence resets to the beginning.")]
+    [SerializeField] private float singleAttackResetTime = 10f;
 
     [Header("Weapon Attack Profiles (data)")]
     [SerializeField] private List<WeaponAttackProfile> weapons = new List<WeaponAttackProfile>();
@@ -402,15 +404,25 @@ public class RuleAnimancerDriver : MonoBehaviour
         public bool bufferedClick;
         public bool bufferedHeavy;
 
+        // Sequential attack tracking (light, heavy, single share same timeout logic)
+        public int lightIndex = 0;
+        public int heavyIndex = 0;
+        public int singleIndex = 0;
+        public float lastLightAttackTime = -999f;
+        public float lastHeavyAttackTime = -999f;
+        public float lastSingleAttackTime = -999f;
+
         public void ResetAll()
         {
             mode = AttackMode.None;
             comboIsHeavy = false;
-            weaponName = null;
+            // weaponName intentionally kept — used for weapon-change detection in sequential single attacks
             comboKeys = null;
             comboIndex = 0;
             bufferedClick = false;
             bufferedHeavy = false;
+            // singleIndex and lastSingleAttackTime intentionally kept
+            // so the sequence persists across attacks within the timeout window
         }
     }
 
@@ -449,6 +461,20 @@ public class RuleAnimancerDriver : MonoBehaviour
         return false;
     }
 
+    // ─── Sequential attack helper ───
+
+    private bool PlayNextFromList(List<string> keys, ref int index, ref float lastTime, bool isHeavy)
+    {
+        if (keys == null || keys.Count == 0) return false;
+        index = index % keys.Count;
+        string key = keys[index];
+        if (!TryPlayAttackKey(key, AttackMode.Single, isHeavy, 0))
+            return false;
+        index++;
+        lastTime = Time.time;
+        return true;
+    }
+
     // ─── New: Start attack using combo sequence (not random) ───
 
     private bool StartSequentialAttack(AnimationContext ctx, bool heavy)
@@ -462,44 +488,40 @@ public class RuleAnimancerDriver : MonoBehaviour
             return false;
         }
 
-        var keys = heavy ? profile.heavyComboKeys : profile.lightComboKeys;
-
-        // Fallback to single attacks if no combo keys
-        if (keys == null || keys.Count == 0)
-        {
-            if (profile.singleAttackKeys != null && profile.singleAttackKeys.Count > 0)
-            {
-                int r = UnityEngine.Random.Range(0, profile.singleAttackKeys.Count);
-                string singleKey = profile.singleAttackKeys[r];
-                if (!TryPlayAttackKey(singleKey, AttackMode.Single, false, 0))
-                    return false;
-                combatController?.ConsumeAttackStamina(false);
-                return true;
-            }
-            return false;
-        }
-
-        // Start or continue combo
-        _attack.mode = AttackMode.Combo;
-        _attack.comboIsHeavy = heavy;
+        bool weaponChanged = !string.Equals(_attack.weaponName, weapon);
         _attack.weaponName = weapon;
-        _attack.comboKeys = keys;
-        _attack.bufferedClick = false;
-        _attack.bufferedHeavy = false;
+        combatController?.ConsumeAttackStamina(heavy);
 
-        // If already in a combo for this weapon, advance to next step
-        // Otherwise start from 0
-        if (_attack.comboIndex > 0 && string.Equals(_attack.weaponName, weapon))
+        if (heavy)
         {
-            // Continue combo from where we left off (handled by OnEnd callback)
+            var keys = profile.heavyComboKeys;
+            if (keys != null && keys.Count > 0)
+            {
+                if (weaponChanged || (Time.time - _attack.lastHeavyAttackTime) > singleAttackResetTime)
+                    _attack.heavyIndex = 0;
+                return PlayNextFromList(keys, ref _attack.heavyIndex, ref _attack.lastHeavyAttackTime, true);
+            }
         }
         else
         {
-            _attack.comboIndex = 0;
+            var keys = profile.lightComboKeys;
+            if (keys != null && keys.Count > 0)
+            {
+                if (weaponChanged || (Time.time - _attack.lastLightAttackTime) > singleAttackResetTime)
+                    _attack.lightIndex = 0;
+                return PlayNextFromList(keys, ref _attack.lightIndex, ref _attack.lastLightAttackTime, false);
+            }
         }
 
-        combatController?.ConsumeAttackStamina(heavy);
-        return PlayComboIndex(_attack.comboIndex);
+        // Fallback to singleAttackKeys
+        if (profile.singleAttackKeys != null && profile.singleAttackKeys.Count > 0)
+        {
+            if (weaponChanged || (Time.time - _attack.lastSingleAttackTime) > singleAttackResetTime)
+                _attack.singleIndex = 0;
+            return PlayNextFromList(profile.singleAttackKeys, ref _attack.singleIndex, ref _attack.lastSingleAttackTime, heavy);
+        }
+
+        return false;
     }
 
     // ─── New: Snap player rotation to camera direction ───
@@ -735,58 +757,8 @@ public class RuleAnimancerDriver : MonoBehaviour
             // Fade out attack layer so Base takes over
             _attackLayer.StartFade(0, layerFadeOutDuration);
 
-            // Single attack — just end
-            if (_attack.mode == AttackMode.Single)
-            {
-                _attack.ResetAll();
-                DisableRootMotion();
-                return;
-            }
-
-            // Combo — check if player buffered a click during the attack
-            if (_attack.mode == AttackMode.Combo)
-            {
-                if (_attack.bufferedClick)
-                {
-                    _attack.bufferedClick = false;
-
-                    // If switching between heavy/light mid-combo, restart
-                    if (_attack.bufferedHeavy != _attack.comboIsHeavy)
-                    {
-                        string weapon = _attack.weaponName;
-                        var profile = GetWeaponProfile(weapon);
-                        if (profile != null)
-                        {
-                            var newKeys = _attack.bufferedHeavy ? profile.heavyComboKeys : profile.lightComboKeys;
-                            if (newKeys != null && newKeys.Count > 0)
-                            {
-                                _attack.comboIsHeavy = _attack.bufferedHeavy;
-                                _attack.comboKeys = newKeys;
-                                _attack.comboIndex = 0;
-                            }
-                        }
-                    }
-
-                    int next = _attack.comboIndex + 1;
-
-                    // Loop back to start if we've reached the end of combo
-                    if (_attack.comboKeys == null || next >= _attack.comboKeys.Count)
-                        next = 0;
-
-                    // Snap rotation again for the next attack
-                    SnapRotationToCamera();
-
-                    // Consume stamina for next attack
-                    combatController?.ConsumeAttackStamina(_attack.comboIsHeavy);
-
-                    PlayComboIndex(next);
-                    return;
-                }
-
-                // No buffered click — combo ends
-                _attack.ResetAll();
-                DisableRootMotion();
-            }
+            _attack.ResetAll();
+            DisableRootMotion();
         };
     }
 
