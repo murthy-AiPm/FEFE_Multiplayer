@@ -172,8 +172,16 @@ public class DragonAnimatorController : NetworkBehaviour
         animator.SetBool(isTurningLeftHash, netIsTurningLeft.Value);
         animator.SetBool(isTurningRightHash, netIsTurningRight.Value);
         animator.SetFloat(turnSpeedHash, netTurnSpeed.Value);
-        animator.SetFloat(turnAngleHash, netTurnAngle.Value);
-        animator.SetFloat(gaitSpeedHash, netGaitSpeed.Value);
+        if (IsOwner)
+        {
+            animator.SetFloat(gaitSpeedHash, groundController.GaitSpeed);
+            animator.SetFloat(turnAngleHash, groundController.TurnAngle);
+        }
+        else
+        {
+            animator.SetFloat(gaitSpeedHash, netGaitSpeed.Value);
+            animator.SetFloat(turnAngleHash, netTurnAngle.Value);
+        }
     }
 
     /// <summary>
