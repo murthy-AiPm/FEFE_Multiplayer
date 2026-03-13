@@ -157,7 +157,7 @@ public class ProximitySoundManager : NetworkBehaviour
         if (database == null) { Debug.LogWarning("[ProximitySoundManager] PlayImpact: database is null"); return; }
         var impactEntry = database.GetImpactSound(attackerMaterial, targetMaterial);
         if (impactEntry == null) { Debug.LogWarning($"[ProximitySoundManager] PlayImpact: no entry for '{attackerMaterial}|{targetMaterial}'"); return; }
-        Debug.Log($"[ProximitySoundManager] PlayImpact: found '{attackerMaterial}|{targetMaterial}', IsServer={IsServer}, clips={impactEntry.impactClips?.Length}");
+        //Debug.Log($"[ProximitySoundManager] PlayImpact: found '{attackerMaterial}|{targetMaterial}', IsServer={IsServer}, clips={impactEntry.impactClips?.Length}");
         int impactId = GetSoundId($"Impact_{attackerMaterial}_{targetMaterial}");
         if (IsServer) PlayImpactClientRpc(impactId, worldPosition, attackerMaterial, targetMaterial);
         else PlayImpactServerRpc(impactId, worldPosition, attackerMaterial, targetMaterial);
@@ -219,12 +219,12 @@ public class ProximitySoundManager : NetworkBehaviour
         if (impactEntry == null) { Debug.LogWarning($"[ProximitySoundManager] PlayImpactClientRpc: no entry for '{attackerMat}|{targetMat}'"); return; }
         var clip = impactEntry.GetRandomClip();
         if (clip == null) { Debug.LogWarning($"[ProximitySoundManager] PlayImpactClientRpc: clip is null for '{attackerMat}|{targetMat}'"); return; }
-        float volume = impactEntry.GetRandomVolume();
+        float volume = impactEntry.GetRandomVolume();//
         float pitch = impactEntry.GetRandomPitch();
         float minDist = combatDist?.minDistance ?? 5f;
         float maxDist = combatDist?.maxDistance ?? 50f;
         AudioRolloffMode rolloff = combatDist?.rolloffMode ?? defaultRolloffMode;
-        Debug.Log($"[ProximitySoundManager] PlayImpactClientRpc: playing '{clip.name}' vol={volume:F2} pitch={pitch:F2} dist={dist:F1} minDist={minDist} maxDist={maxDist} listenerPos={listenerTransform?.position}");
+       // Debug.Log($"[ProximitySoundManager] PlayImpactClientRpc: playing '{clip.name}' vol={volume:F2} pitch={pitch:F2} dist={dist:F1} minDist={minDist} maxDist={maxDist} listenerPos={listenerTransform?.position}");
         PlayClipRaw(clip, position, volume, pitch, minDist, maxDist, rolloff, null, SoundCategory.Combat);
     }
 
@@ -255,7 +255,7 @@ public class ProximitySoundManager : NetworkBehaviour
             : (database.GetCategoryDistance(entry.category)?.rolloffMode ?? defaultRolloffMode);
         AnimationCurve curve = (entry.overrideRolloff && entry.customRolloffMode == AudioRolloffMode.Custom)
             ? entry.customRolloffCurve : null;
-        Debug.Log($"[ProximitySoundManager] PlayClipAtPosition: sound={entry.soundName} overrideRolloff={entry.overrideRolloff} rolloff={rolloff} curveNull={curve == null} curveKeys={curve?.keys.Length}");
+        //Debug.Log($"[ProximitySoundManager] PlayClipAtPosition: sound={entry.soundName} overrideRolloff={entry.overrideRolloff} rolloff={rolloff} curveNull={curve == null} curveKeys={curve?.keys.Length}");
         PlayClipRaw(clip, position, entry.GetRandomVolume(), entry.GetRandomPitch(), minDist, maxDist, rolloff, curve, entry.category);
     }
 

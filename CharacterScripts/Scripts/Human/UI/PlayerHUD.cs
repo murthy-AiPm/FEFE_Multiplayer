@@ -81,6 +81,11 @@ public class PlayerHUD : MonoBehaviour
     {
         if (vitalManager == null) return;
 
+        // Hide HUD while paused
+        bool shouldBeVisible = !PauseMenu.IsPaused;
+        if (_canvas.enabled != shouldBeVisible)
+            _canvas.enabled = shouldBeVisible;
+
         // Get current vitals
         var health = vitalManager.GetVital("health");
         var stamina = vitalManager.GetVital("stamina");

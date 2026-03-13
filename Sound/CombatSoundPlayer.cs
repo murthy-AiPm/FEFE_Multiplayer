@@ -141,7 +141,7 @@ public class CombatSoundPlayer : NetworkBehaviour
         if (_activeWeaponMaterialTag == null)
             _activeWeaponMaterialTag = hitbox.GetComponentInParent<MaterialTag>();
 
-        Debug.Log($"[CombatSoundPlayer] BindHitbox: hitbox={hitbox.gameObject.name}, MaterialTag={(_activeWeaponMaterialTag != null ? _activeWeaponMaterialTag.MaterialType : "NOT FOUND")}");
+        //Debug.Log($"[CombatSoundPlayer] BindHitbox: hitbox={hitbox.gameObject.name}, MaterialTag={(_activeWeaponMaterialTag != null ? _activeWeaponMaterialTag.MaterialType : "NOT FOUND")}");
 
         _activeHitbox.OnHitboxEnabled += HandleSwingStarted;
         _activeHitbox.OnHitDetected += HandleHitDetected;

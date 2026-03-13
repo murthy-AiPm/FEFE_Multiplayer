@@ -3,8 +3,8 @@
  * 2.  Setup Arrow spwan point
  * 3.  Zoom out camera bit or add camera controls
  * 4.  Add higher resolutions - for screen settings
- * 5.  Disable controls on pause menu
- * 6.  Hide player UI on pause menu
+ * 5.  Disable controls on pause menu - done//
+ * 6.  Hide player UI on pause menu - done
  * 7.  Setup Spawn points
  * 8.  Setup Death screen with spawn points
  * 9.  Setup loading screens to hide camera switching
@@ -20,7 +20,7 @@
  * 19. Exit option in all screens
  * 20. Bow draw not syncing
  * 21. Need to understand blendtree sync better
- * 22. Horse not blending well when spam A/D
+ * 22. Horse not blending well when spam A/D - done
  
 Phase 1
 * Build sound library

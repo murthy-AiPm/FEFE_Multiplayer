@@ -443,7 +443,7 @@ public class BearAI : NetworkBehaviour
         int count = Physics.OverlapSphereNonAlloc(
             transform.position, detectionRadius, _detectionBuffer, playerLayer);
 
-        Debug.Log($"[BearAI] overlap count = {count}");
+      //  Debug.Log($"[BearAI] overlap count = {count}");
 
         Transform nearest = null;
         float nearestDist = float.MaxValue;
@@ -457,12 +457,12 @@ public class BearAI : NetworkBehaviour
             var vitals = col.GetComponentInParent<VitalManager>();
             var netObj = col.GetComponentInParent<NetworkObject>();
 
-            Debug.Log(
-                $"[BearAI] collider={col.name}, layer={LayerMask.LayerToName(col.gameObject.layer)}, " +
-                $"receiver={(receiver != null ? receiver.name : "null")}, " +
-                $"vitals={(vitals != null ? vitals.name : "null")}, " +
-                $"netObj={(netObj != null ? netObj.name : "null")}"
-            );
+            //Debug.Log(
+            //    $"[BearAI] collider={col.name}, layer={LayerMask.LayerToName(col.gameObject.layer)}, " +
+            //    $"receiver={(receiver != null ? receiver.name : "null")}, " +
+            //    $"vitals={(vitals != null ? vitals.name : "null")}, " +
+            //    $"netObj={(netObj != null ? netObj.name : "null")}"
+            //);
 
             if (receiver == null) continue;
 

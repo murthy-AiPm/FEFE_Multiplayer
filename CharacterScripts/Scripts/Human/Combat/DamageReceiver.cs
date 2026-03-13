@@ -1,4 +1,5 @@
 using Unity.Netcode;
+using Unity.Cinemachine;
 using UnityEngine;
 
 /// <summary>
@@ -10,9 +11,9 @@ using UnityEngine;
 public class DamageReceiver : NetworkBehaviour
 {
     [Header("Respawn")]
-    [SerializeField] private bool isPlayer = true; // ← add this
+    [SerializeField] private bool isPlayer = true;
     [SerializeField] private Transform spawnPoint;
-    [SerializeField] private float respawnDelay = 3f;
+    [SerializeField] private float corpseVisibleTime = 3f;
 
     [Header("Dependencies")]
     [SerializeField] private VitalManager vitalManager;
@@ -28,18 +29,14 @@ public class DamageReceiver : NetworkBehaviour
     [SerializeField] private float blockStaminaRatio = 0.5f;
 
     [Header("Hit Feedback")]
-    [SerializeField] private float hitStunDuration = 0.2f; // brief speed reduction on hit
-
-    //[Header("Respawn")]
-    //[SerializeField] private Transform spawnPoint; // assign in inspector or find via SpawnManager
-    //[SerializeField] private float respawnDelay = 3f;
+    [SerializeField] private float hitStunDuration = 0.2f;
 
     [Header("Animation")]
     [SerializeField] private RuleAnimancerDriver animancerDriver;
 
     // Events
-    public System.Action<float, Vector3> OnDamageReceived;     // (damage, hitPoint)
-    public System.Action<float, Vector3> OnDamageBlocked;      // (blockedDmg, hitPoint)
+    public System.Action<float, Vector3> OnDamageReceived;
+    public System.Action<float, Vector3> OnDamageBlocked;
     public System.Action OnDeath;
 
     private float _hitStunTimer;
@@ -76,18 +73,11 @@ public class DamageReceiver : NetworkBehaviour
             _hitStunTimer -= Time.deltaTime;
     }
 
-    /// <summary>
-    /// Called locally when HitboxController detects a hit on this receiver.
-    /// Client-side: plays visual/audio feedback immediately.
-    /// Then sends to server for authoritative damage.
-    /// </summary>
     public void OnHitLocal(HitInfo hitInfo)
     {
-        // Skip if invincible (dodge i-frames)
         if (combatController != null && combatController.IsInvincible)
             return;
 
-        // Check if we're blocking
         bool isBlocking = combatController != null &&
                           combatController.State == CombatController.CombatState.Blocking;
 
@@ -99,20 +89,16 @@ public class DamageReceiver : NetworkBehaviour
             attackFromFront = angle < blockAngle * 0.5f;
         }
 
-        // Local feedback (immediate, client-side — feels responsive)
         if (isBlocking && attackFromFront)
         {
-            // Block feedback (sparks, sound, etc.)
             float blockedAmount = hitInfo.GetDamage() * blockDamageReduction;
             OnDamageBlocked?.Invoke(blockedAmount, hitInfo.hitPoint);
         }
         else
         {
-            // Hit feedback (blood, sound, screen shake, etc.)
             OnDamageReceived?.Invoke(hitInfo.GetDamage(), hitInfo.hitPoint);
         }
 
-        // Send to server for authoritative validation
         if (hitInfo.attackerNetObj != null)
         {
             RequestDamageServerRpc(
@@ -134,25 +120,20 @@ public class DamageReceiver : NetworkBehaviour
         bool wasBlocking,
         ServerRpcParams rpcParams = default)
     {
-        // Server validation
-        // 1. Check attacker exists and is in attack state
         if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(attackerNetId, out var attackerObj))
             return;
 
-        // 2. Range check (prevent cheating)
         float dist = Vector3.Distance(attackerObj.transform.position, transform.position);
-        float maxRange = 5f; // generous range for validation (actual hitbox is tighter)
+        float maxRange = 5f;
         if (dist > maxRange)
             return;
 
-        // 3. Calculate final damage
         float finalDamage = rawDamage;
 
         if (wasBlocking)
         {
             finalDamage *= (1f - blockDamageReduction);
 
-            // Stamina cost proportional to raw incoming damage
             if (vitalManager != null)
             {
                 float blockStaminaCost = rawDamage * blockStaminaRatio;
@@ -160,18 +141,13 @@ public class DamageReceiver : NetworkBehaviour
             }
         }
 
-        // 4. Apply damage
         if (vitalManager != null)
-        {
             vitalManager.ApplyDamage("health", finalDamage);
-        }
 
-        // 5. Notify all clients of the hit for effects
         NotifyHitClientRpc(finalDamage, hitPoint, wasBlocking, attackerObj.transform.position);
     }
 
     [ClientRpc]
-
     private void NotifyHitClientRpc(float damage, Vector3 hitPoint, bool wasBlocked, Vector3 attackerPosition)
     {
         _hitStunTimer = hitStunDuration;
@@ -182,24 +158,91 @@ public class DamageReceiver : NetworkBehaviour
         {
             OnDamageReceived?.Invoke(damage, hitPoint);
 
-            // Play hit reaction animation on all clients (owner + remote)
             var driver = GetComponentInChildren<RuleAnimancerDriver>();
             if (driver != null)
                 driver.PlayHitReaction(attackerPosition);
         }
-
-        // Remove the IsOwner early return — owner should also play the reaction
     }
-    private System.Collections.IEnumerator RespawnAfterDelay()
+
+    // ─── Death ───
+
+    private void HandleDeath()
     {
-        yield return new WaitForSeconds(respawnDelay);
+        OnDeath?.Invoke();
+
+        var ballistaOperator = GetComponent<BallistaOperator>();
+        if (ballistaOperator != null && ballistaOperator.IsOperating)
+        {
+            var ballista = ballistaOperator.CurrentBallista;
+            if (ballista != null)
+                ballista.ForceDismount(GetComponent<NetworkObject>().OwnerClientId);
+        }
+
+        NotifyDeathClientRpc();
+
+        if (IsServer && isPlayer)
+            StartCoroutine(HideCorpseAfterDelay());
+    }
+
+    [ClientRpc]
+    private void NotifyDeathClientRpc()
+    {
+        var input = GetComponentInChildren<InputController>();
+        if (input != null) input.enabled = false;
+
+        var tps = GetComponentInChildren<ThirdPersonController>();
+        if (tps != null) tps.enabled = false;
+
+        var combat = GetComponentInChildren<CombatController>();
+        if (combat != null) combat.enabled = false;
+
+        if (animancerDriver != null)
+            animancerDriver.PlayDeath();
+
+        if (IsOwner)
+        {
+            var deathScreen = FindObjectOfType<DeathScreen>();
+            if (deathScreen != null)
+                deathScreen.Show(GetComponent<NetworkObject>());
+        }
+    }
+
+    private System.Collections.IEnumerator HideCorpseAfterDelay()
+    {
+        yield return new WaitForSeconds(corpseVisibleTime);
+        HideCorpseClientRpc();
+    }
+
+    [ClientRpc]
+    private void HideCorpseClientRpc()
+    {
+        foreach (var r in GetComponentsInChildren<Renderer>())
+            r.enabled = false;
+    }
+
+    // ─── Respawn ───
+
+    [ServerRpc(RequireOwnership = false)]
+    public void RequestRespawnServerRpc(int spawnPointIndex)
+    {
+        var points = SpawnPoint.GetAllSpawnPoints();
+
+        Vector3 spawnPos;
+        Quaternion spawnRot;
+
+        if (points != null && spawnPointIndex >= 0 && spawnPointIndex < points.Count)
+        {
+            spawnPos = points[spawnPointIndex].transform.position;
+            spawnRot = points[spawnPointIndex].transform.rotation;
+        }
+        else
+        {
+            spawnPos = SpawnPoint.GetRandomSpawnPos();
+            spawnRot = Quaternion.identity;
+        }
 
         if (vitalManager != null)
             vitalManager.ResetAllVitals();
-
-        // Use the SpawnPoint system instead of the serialized Transform
-        Vector3 spawnPos = SpawnPoint.GetRandomSpawnPos();
-        Quaternion spawnRot = Quaternion.identity;
 
         NotifyRespawnClientRpc(spawnPos, spawnRot);
     }
@@ -207,14 +250,20 @@ public class DamageReceiver : NetworkBehaviour
     [ClientRpc]
     private void NotifyRespawnClientRpc(Vector3 spawnPos, Quaternion spawnRot)
     {
-        // Disable CharacterController before teleporting or it fights the position change
+        foreach (var r in GetComponentsInChildren<Renderer>())
+            r.enabled = true;
+
+        // Cache vcam FOV before any state changes that might reset it
+        CinemachineCamera vcam = GetComponentInChildren<CinemachineCamera>(true);
+        float cachedFOV = vcam != null ? vcam.Lens.FieldOfView : 0f;
+
         var cc = GetComponentInChildren<CharacterController>();
         if (cc != null) cc.enabled = false;
 
         transform.position = spawnPos;
         transform.rotation = spawnRot;
 
-        if (cc != null) cc.enabled = IsOwner; // only owner needs it enabled
+        if (cc != null) cc.enabled = IsOwner;
 
         if (IsOwner)
         {
@@ -230,43 +279,21 @@ public class DamageReceiver : NetworkBehaviour
                 combat.enabled = true;
                 combat.ResetState();
             }
+
+            var deathScreen = FindObjectOfType<DeathScreen>();
+            if (deathScreen != null)
+                deathScreen.Hide();
         }
 
         if (animancerDriver != null)
             animancerDriver.PlayRespawn();
-    }
-    private void HandleDeath()
-    {
-        OnDeath?.Invoke();
-        NotifyDeathClientRpc();
-        // Dismount ballista if operating one
-        var ballistaOperator = GetComponent<BallistaOperator>();
-        if (ballistaOperator != null && ballistaOperator.IsOperating)
+
+        // Restore FOV in case anything reset it
+        if (vcam != null && cachedFOV > 0f)
         {
-            var ballista = ballistaOperator.CurrentBallista;
-            if (ballista != null)
-                ballista.ForceDismount(GetComponent<NetworkObject>().OwnerClientId);
+            var lens = vcam.Lens;
+            lens.FieldOfView = cachedFOV;
+            vcam.Lens = lens;
         }
-
-        if (IsServer && isPlayer)  // ← add isPlayer check
-            StartCoroutine(RespawnAfterDelay());
-    }
-
-    [ClientRpc]
-    private void NotifyDeathClientRpc()
-    {
-        // Disable input and movement so the corpse can't walk
-        var input = GetComponentInChildren<InputController>();
-        if (input != null) input.enabled = false;
-
-        var tps = GetComponentInChildren<ThirdPersonController>();
-        if (tps != null) tps.enabled = false;
-
-        var combat = GetComponentInChildren<CombatController>();
-        if (combat != null) combat.enabled = false;
-
-        // Play death animation on all clients
-        if (animancerDriver != null)
-            animancerDriver.PlayDeath();
     }
 }
