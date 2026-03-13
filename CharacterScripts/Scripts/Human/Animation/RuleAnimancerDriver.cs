@@ -734,6 +734,49 @@ public class RuleAnimancerDriver : MonoBehaviour
         LockAttackUntilEnd(state);
     }
 
+    /// <summary>
+    /// Called on remote clients when the owner starts equipping a weapon.
+    /// Directly plays the correct equip clip on the Action layer, bypassing rule evaluation.
+    /// </summary>
+    public void PlayNetworkedEquip(int slot)
+    {
+        string key = slot switch
+        {
+            1 => "Sword/Equip",
+            2 => "Bow/Equip",
+            _ => null
+        };
+        if (string.IsNullOrEmpty(key)) return;
+        if (!animationSet.TryGet(key, out var transition) || transition == null || transition.Clip == null)
+        {
+            Debug.LogWarning($"[PlayNetworkedEquip] Missing key '{key}' in AnimationSet.");
+            return;
+        }
+        // Apply the rule's mask override (same as TryPlayBestRule would)
+        if (transition.Clip != null && actionLayerMask != null)
+            _actionLayer.SetMask(actionLayerMask);
+        var state = _actionLayer.Play(transition, actionFade);
+        state.Time = 0;
+        LockLayerUntilEnd(AnimLayer.Action, state);
+    }
+
+    /// <summary>
+    /// Called on remote clients when the owner fires a bow draw.
+    /// Directly plays Bow/Draw on the Attack layer, bypassing rule evaluation.
+    /// </summary>
+    public void PlayNetworkedBowDraw()
+    {
+        const string key = "Bow/Draw";
+        if (!animationSet.TryGet(key, out var transition) || transition == null || transition.Clip == null)
+        {
+            Debug.LogWarning($"[PlayNetworkedBowDraw] Missing key '{key}' in AnimationSet.");
+            return;
+        }
+        var state = _attackLayer.Play(transition, attackFade);
+        state.Time = 0;
+        LockAttackUntilEnd(state);
+    }
+
     // ═════════════════════════════════════════════════════
     //  LAYER LOCKING
     // ═════════════════════════════════════════════════════

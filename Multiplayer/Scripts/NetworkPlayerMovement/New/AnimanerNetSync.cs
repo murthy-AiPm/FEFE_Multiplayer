@@ -99,12 +99,24 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
     private readonly NetworkVariable<bool> nvFistCombatMode =
         new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
-    // ---- FIX 1: Bow release edge — sequence counter so a single-frame
-    //             primaryUp is never dropped between 20 Hz ticks. --------
+    // ---- Bow release edge ----
     private readonly NetworkVariable<int> nvBowReleaseSeq =
         new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
     private int _lastSeenBowReleaseSeq;
+
+    // ---- Bow draw edge ----
+    private readonly NetworkVariable<int> nvBowDrawSeq =
+        new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private int _lastSeenBowDrawSeq;
+    private bool _wasBowActive; // rising edge: primaryDown while slot==2
+
+    // ---- Equip edge: seq + which slot is being equipped ----
+    private readonly NetworkVariable<int> nvEquipSeq =
+        new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private readonly NetworkVariable<int> nvEquipSlot =
+        new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private int _lastSeenEquipSeq;
+    private bool _wasEquipping;
 
     // ---- FIX 2: Owner's camera pitch for spine IK on remote puppets. ---
     //             Packed as a short (degrees * 10) to save bandwidth.
@@ -165,6 +177,8 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
             _lastSeenAttackSeq     = nvAttackSeq.Value;
             _lastSeenJumpSeq       = nvJumpSeq.Value;
             _lastSeenBowReleaseSeq = nvBowReleaseSeq.Value;
+            _lastSeenBowDrawSeq = nvBowDrawSeq.Value;
+            _lastSeenEquipSeq   = nvEquipSeq.Value;
         }
     }
 
@@ -186,7 +200,9 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
             ApplyRemoteActionEdge();
             ApplyRemoteAttackEdge();
             ApplyRemoteJumpEdge();
-            ApplyRemoteBowReleaseEdge();  // FIX 1
+            ApplyRemoteBowReleaseEdge();
+            ApplyRemoteBowDrawEdge();
+            ApplyRemoteEquipEdge();
         }
     }
 
@@ -218,16 +234,32 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
 
         if (s.jumpDown) nvJumpSeq.Value++;
 
-        // ── FIX 1: Bow release edge ──────────────────────────────────────
-        // Detect the falling edge of BowAiming (owner just released the draw)
-        // and bump a sequence counter so remotes always see the event even if
-        // the bool flips back to false between two 20 Hz write ticks.
+        // ── Bow release edge ─────────────────────────────────────────────
         if (combatController != null)
         {
             bool isAimingNow = combatController.IsBowAiming;
             if (_wasAiming && !isAimingNow)
                 nvBowReleaseSeq.Value++;
             _wasAiming = isAimingNow;
+
+            // ── Bow draw edge: primaryDown rising while slot==2 ──────────
+            bool bowActiveNow = weaponManager != null && weaponManager.ActiveSlot == 2
+                                && input.Snapshot.primaryDown;
+            if (!_wasBowActive && bowActiveNow)
+                nvBowDrawSeq.Value++;
+            _wasBowActive = bowActiveNow;
+        }
+
+        // ── Equip start edge ─────────────────────────────────────────────
+        if (weaponManager != null)
+        {
+            bool equippingNow = weaponManager.CurrentEquipState == WeaponManager.EquipState.Equipping;
+            if (!_wasEquipping && equippingNow)
+            {
+                nvEquipSlot.Value = weaponManager.PendingSlot;
+                nvEquipSeq.Value++;
+            }
+            _wasEquipping = equippingNow;
         }
 
         // ── FIX 2: Aim pitch ─────────────────────────────────────────────
@@ -245,9 +277,7 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         // ── Combat State ─────────────────────────────────────────────────
         if (weaponManager != null)
         {
-            bool equipping  = weaponManager.CurrentEquipState == WeaponManager.EquipState.Equipping;
             bool holstering = weaponManager.CurrentEquipState == WeaponManager.EquipState.Holstering;
-            if (nvEquipping.Value  != equipping)  nvEquipping.Value  = equipping;
             if (nvHolstering.Value != holstering) nvHolstering.Value = holstering;
         }
 
@@ -298,9 +328,7 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         // ── Combat State to puppets ───────────────────────────────────────
         if (weaponManager != null)
         {
-            if (nvEquipping.Value)
-                weaponManager.SetRemoteEquipState(WeaponManager.EquipState.Equipping);
-            else if (nvHolstering.Value)
+            if (nvHolstering.Value)
                 weaponManager.SetRemoteEquipState(WeaponManager.EquipState.Holstering);
             else
                 weaponManager.SetRemoteEquipState(WeaponManager.EquipState.Idle);
@@ -368,28 +396,40 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         _snapshotBackingField.SetValue(input, snap);
     }
 
-    // ── FIX 1: Bow release edge ───────────────────────────────────────────
-    // When the release sequence ticks, inject a one-frame primaryUp=true into
-    // the remote puppet's snapshot so the Bow/Release rule fires correctly.
     private void ApplyRemoteBowReleaseEdge()
     {
         if (input == null || _snapshotBackingField == null) return;
-
         int seq = nvBowReleaseSeq.Value;
         if (seq == _lastSeenBowReleaseSeq) return;
         _lastSeenBowReleaseSeq = seq;
-
-        // Inject primaryUp for exactly one frame so the rule evaluator sees it
         var snap = new InputSnapshot
         {
             primaryDown = false,
             primaryHeld = false,
-            primaryUp   = true,         // <-- the release edge
+            primaryUp   = true,
             jumpDown    = nvJumpDown.Value,
             jumpHeld    = nvJumpHeld.Value,
             actionHeld  = nvActionHeld.Value,
         };
         _snapshotBackingField.SetValue(input, snap);
+    }
+
+    private void ApplyRemoteBowDrawEdge()
+    {
+        if (animDriver == null) return;
+        int seq = nvBowDrawSeq.Value;
+        if (seq == _lastSeenBowDrawSeq) return;
+        _lastSeenBowDrawSeq = seq;
+        animDriver.PlayNetworkedBowDraw();
+    }
+
+    private void ApplyRemoteEquipEdge()
+    {
+        if (animDriver == null) return;
+        int seq = nvEquipSeq.Value;
+        if (seq == _lastSeenEquipSeq) return;
+        _lastSeenEquipSeq = seq;
+        animDriver.PlayNetworkedEquip(nvEquipSlot.Value);
     }
 
     // ─── Public API for owner ─────────────────────────────────────────────
