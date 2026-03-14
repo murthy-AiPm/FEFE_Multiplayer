@@ -14,6 +14,11 @@ public class OwnerOnlyFreeLook : NetworkBehaviour
     private float _baseGainY;
     private const string PrefGainX = "Gain_X";
 
+    [Header("FOV Cycle")]
+    [SerializeField] private KeyCode fovKey = KeyCode.V;
+    private readonly int[] _fovSteps = { 30, 40, 50 };
+    private int _fovIndex = 1; // default 40
+
     [Tooltip("Optional: GameObjects to only enable for the owner (e.g. input controller)")]
     [SerializeField] private GameObject[] ownerOnlyObjects;
 
@@ -35,6 +40,16 @@ public class OwnerOnlyFreeLook : NetworkBehaviour
     private void OnDisable()
     {
         SettingsMenuUI.OnSensitivityChanged -= ApplyGain;
+    }
+
+    private void Update()
+    {
+        if (!IsOwner) return;
+        if (Input.GetKeyDown(fovKey))
+        {
+            _fovIndex = (_fovIndex + 1) % _fovSteps.Length;
+            vcam.Lens.FieldOfView = _fovSteps[_fovIndex];
+        }
     }
 
     private void ApplyGain(float multiplier)
