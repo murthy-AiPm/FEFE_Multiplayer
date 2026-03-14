@@ -49,6 +49,49 @@ public class PauseMenu : MonoBehaviour
         Cursor.visible = true;
     }
 
+    public void OpenRespawn()
+    {
+        pausePanel.SetActive(false);
+        isPaused = true;
+        IsPaused = true;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        var localPlayer = Unity.Netcode.NetworkManager.Singleton?.LocalClient?.PlayerObject;
+        if (localPlayer == null) return;
+
+        var deathScreen = FindObjectOfType<DeathScreen>();
+        if (deathScreen != null)
+            deathScreen.Show(localPlayer, "Select Spawn Point");
+    }
+
+    public void OnRespawnScreenClosed()
+    {
+        isPaused = false;
+        IsPaused = false;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
+    public void ChangeCharacter()
+    {
+        pausePanel.SetActive(false);
+        isPaused = true;
+        IsPaused = true;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        var charSelectUI = FindObjectOfType<LateJoinCharacterSelectUI>();
+        if (charSelectUI != null) charSelectUI.OpenForCharacterChange();
+    }
+
+    public void OnCharacterSelectClosed()
+    {
+        isPaused = false;
+        IsPaused = false;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
     // Called by Escape and by the Back button in the settings panel
     public void OnSettingsClosed()
     {

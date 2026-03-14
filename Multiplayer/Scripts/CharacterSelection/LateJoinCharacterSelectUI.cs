@@ -279,11 +279,16 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
         if (selectionPanel != null)
             selectionPanel.SetActive(false);
 
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-
         if (selectManager != null)
             selectManager.OnSelectionsChanged -= RefreshFromNetwork;
+
+        var pauseMenu = FindObjectOfType<PauseMenu>();
+        if (pauseMenu != null) pauseMenu.OnCharacterSelectClosed();
+        else
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
     }
 
     private void OnDestroy()

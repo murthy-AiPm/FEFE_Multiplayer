@@ -18,13 +18,18 @@ public class DeathScreen : MonoBehaviour
 
     public void Show(NetworkObject ownerNetObj)
     {
+        Show(ownerNetObj, titleMessage);
+    }
+
+    public void Show(NetworkObject ownerNetObj, string customTitle)
+    {
         _ownerNetObj = ownerNetObj;
 
         if (panel != null)
             panel.SetActive(true);
 
         if (titleText != null)
-            titleText.text = titleMessage;
+            titleText.text = customTitle;
 
         PopulateSpawnButtons();
 
@@ -37,8 +42,13 @@ public class DeathScreen : MonoBehaviour
         if (panel != null)
             panel.SetActive(false);
 
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        var pauseMenu = FindObjectOfType<PauseMenu>();
+        if (pauseMenu != null) pauseMenu.OnRespawnScreenClosed();
+        else
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
     }
 
     private void PopulateSpawnButtons()
