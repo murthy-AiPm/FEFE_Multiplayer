@@ -138,10 +138,13 @@ public class CharacterSpawnHandler : NetworkBehaviour
     {
         if (!IsServer) return;
 
-        // Check if already spawned
+        // Despawn existing player object if present (character change)
         if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client))
         {
-            if (client.PlayerObject != null) return;
+            if (client.PlayerObject != null)
+            {
+                client.PlayerObject.Despawn(true);
+            }
         }
 
         // Get character index from persisted server data
@@ -235,14 +238,11 @@ public class CharacterSpawnHandler : NetworkBehaviour
             return;
         }
 
-        // Check if already spawned
+        // Despawn existing player object if present (character change)
         if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client))
         {
             if (client.PlayerObject != null)
-            {
-                Debug.Log($"[CharacterSpawnHandler] Client {clientId} already has a player object");
-                return;
-            }
+                client.PlayerObject.Despawn(true);
         }
 
         // Store the selection

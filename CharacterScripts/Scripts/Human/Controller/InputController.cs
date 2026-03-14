@@ -28,6 +28,9 @@ public struct InputSnapshot
 
     public bool primaryDown; // edge: pressed this frame
     public bool primaryUp;   // edge: released this frame (optional)
+
+    // Double-tap Space = evade/roll
+    public bool evadeDown;
 }
 
 public class InputController : MonoBehaviour
@@ -108,6 +111,7 @@ public class InputController : MonoBehaviour
         _wasGrounded = onGround;
 
         // 1) Read input ONCE
+        UpdateDoubleTapSpace();
         Snapshot = PauseMenu.IsPaused ? default : ReadSnapshot();
 
         // 2) Apply snapshot into existing flags (compat)
@@ -144,6 +148,8 @@ public class InputController : MonoBehaviour
 
             primaryDown = Input.GetButtonDown("PrimaryAttack"),
             primaryUp = Input.GetButtonUp("PrimaryAttack"),
+
+            evadeDown = _evadeDown,
         };
     }
 
@@ -257,6 +263,28 @@ public class InputController : MonoBehaviour
         {
             isHoverMode = true;
             isFalling = false;
+        }
+    }
+
+    // ─── Double-tap Space detection ───
+    private float _lastSpaceTapTime = -1f;
+    private const float DoubleTapWindow = 0.3f;
+    private bool _evadeDown;
+
+    private void UpdateDoubleTapSpace()
+    {
+        _evadeDown = false;
+        if (Input.GetButtonDown("Jump"))
+        {
+            if (Time.time - _lastSpaceTapTime <= DoubleTapWindow)
+            {
+                _evadeDown = true;
+                _lastSpaceTapTime = -1f; // reset so triple-tap doesn't double-fire
+            }
+            else
+            {
+                _lastSpaceTapTime = Time.time;
+            }
         }
     }
 

@@ -36,13 +36,13 @@ public class HoofCollisionSoundPlayer : MonoBehaviour
         _horseSoundPlayer = GetComponentInParent<HorseSoundPlayer>();
         _mountableEntity = GetComponentInParent<MountableEntity>();
 
-        if (_horseSoundPlayer == null)
-            Debug.LogWarning($"[HoofCollisionSoundPlayer] No HorseSoundPlayer found in parent of {gameObject.name}");
+        //if (_horseSoundPlayer == null)
+        //    Debug.LogWarning($"[HoofCollisionSoundPlayer] No HorseSoundPlayer found in parent of {gameObject.name}");
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log($"[HoofCollision] {gameObject.name} triggered by {other.gameObject.name} layer={other.gameObject.layer}");
+        //Debug.Log($"[HoofCollision] {gameObject.name} triggered by {other.gameObject.name} layer={other.gameObject.layer}");
 
         // Check layer
         if ((groundLayers.value & (1 << other.gameObject.layer)) == 0) return;

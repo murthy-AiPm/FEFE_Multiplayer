@@ -262,17 +262,15 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
         if (statusText != null)
             statusText.text = "Joining...";
 
-        if (selectManager == null) selectManager = CharacterSelectManager.Instance;
+        if (spawnHandler == null) spawnHandler = FindObjectOfType<CharacterSpawnHandler>();
 
-        if (selectManager != null)
+        if (spawnHandler != null)
         {
-            selectManager.TrySelectCharacter(selectedCharacterIndex);
-            selectManager.SetReady(true);
-            selectManager.NotifyReadyToSpawn();
+            spawnHandler.RequestLateJoinSpawn(selectedCharacterIndex);
         }
         else
         {
-            Debug.LogError("[LateJoinCharacterSelectUI] No CharacterSelectManager found!");
+            Debug.LogError("[LateJoinCharacterSelectUI] No CharacterSpawnHandler found!");
         }
     }
 

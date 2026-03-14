@@ -215,13 +215,12 @@ public class CombatController : NetworkBehaviour
         bool inCombat = weaponManager.ActiveSlot != 0 || IsFistCombatMode;
 
         var activeWeaponType = weaponManager.GetActiveWeaponType();
-        if (_input.dodgeDown && inCombat && !IsDodgeStep && activeWeaponType != WeaponType.Bow)
+        if (_input.jumpDown && !_input.evadeDown && inCombat && !IsDodgeStep && activeWeaponType != WeaponType.Bow)
         {
             TryDodgeStep();
             return;
         }
-        // Evade: space  ← THIS IS MISSING
-        if (_input.jumpDown && inCombat && _dodgeCooldownTimer <= 0f)
+        if (_input.evadeDown && inCombat && _dodgeCooldownTimer <= 0f)
         {
             TryDodge();
             return;
