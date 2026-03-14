@@ -6,6 +6,7 @@ public class PauseMenu : MonoBehaviour
 {
     [SerializeField] private GameObject pausePanel;
     [SerializeField] private SettingsMenuUI settingsMenu;
+    [SerializeField] private LateJoinCharacterSelectUI characterSelectUI;
 
     private bool isPaused;
     public static bool IsPaused { get; private set; }
@@ -14,7 +15,12 @@ public class PauseMenu : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            if (settingsMenu.IsOpen) OnSettingsClosed();
+            if (characterSelectUI != null && characterSelectUI.IsOpen)
+            {
+                if (characterSelectUI.IsCharacterChange) characterSelectUI.OnBackClicked();
+                // first join: do nothing
+            }
+            else if (settingsMenu.IsOpen) OnSettingsClosed();
             else if (isPaused) Resume();
             else Pause();
         }
@@ -67,6 +73,7 @@ public class PauseMenu : MonoBehaviour
 
     public void OnRespawnScreenClosed()
     {
+        pausePanel.SetActive(false);
         isPaused = false;
         IsPaused = false;
         Cursor.lockState = CursorLockMode.Locked;
@@ -86,6 +93,7 @@ public class PauseMenu : MonoBehaviour
 
     public void OnCharacterSelectClosed()
     {
+        pausePanel.SetActive(false);
         isPaused = false;
         IsPaused = false;
         Cursor.lockState = CursorLockMode.Locked;

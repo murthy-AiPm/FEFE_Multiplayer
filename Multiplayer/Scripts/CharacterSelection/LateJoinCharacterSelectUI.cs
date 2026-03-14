@@ -25,6 +25,7 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
 
     [Header("UI Elements")]
     [SerializeField] private Button joinButton;
+    [SerializeField] private Button backButton;
     [SerializeField] private TMP_Text statusText;
 
     [Header("Colors")]
@@ -39,6 +40,10 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
     private List<int> takenCharacters = new List<int>();
 
     private int selectedCharacterIndex = -1;
+    private bool _isCharacterChange = false;
+
+    public bool IsOpen => selectionPanel != null && selectionPanel.activeSelf;
+    public bool IsCharacterChange => _isCharacterChange;
 
     private void Start()
     {
@@ -96,6 +101,7 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
     /// </summary>
     public void OpenForCharacterChange()
     {
+        _isCharacterChange = true;
         ShowSelectionUI();
     }
 
@@ -119,6 +125,13 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
             joinButton.onClick.RemoveListener(OnJoinClicked);
             joinButton.onClick.AddListener(OnJoinClicked);
             joinButton.interactable = false;
+        }
+
+        if (backButton != null)
+        {
+            backButton.gameObject.SetActive(_isCharacterChange);
+            backButton.onClick.RemoveAllListeners();
+            backButton.onClick.AddListener(OnBackClicked);
         }
 
         if (statusText != null)
@@ -274,8 +287,16 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
         }
     }
 
+    public void OnBackClicked()
+    {
+        _isCharacterChange = false;
+        OnSpawnSuccess();
+    }
+
     public void OnSpawnSuccess()
     {
+        _isCharacterChange = false;
+
         if (selectionPanel != null)
             selectionPanel.SetActive(false);
 
