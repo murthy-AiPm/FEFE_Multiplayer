@@ -381,7 +381,7 @@ MonoBehaviour:
       useInput: 0
       input: 0
       triggerMode: 1
-      useDirection: 1
+      useDirection: 0
       direction: 0
       useActionId: 0
       actionIdEquals: 0
@@ -984,6 +984,158 @@ MonoBehaviour:
       input: 0
       triggerMode: 0
       useDirection: 1
+      direction: 1
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Bow/Run/Front
+    layer: 0
+    priority: 1000
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Bow/Run/Front
+    all:
+    - useBool: 1
+      boolParam: 19
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 1
+      direction: 1
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 2
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 1
+      direction: 1
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Bow/Run/Back
+    layer: 0
+    priority: 72
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Bow/Run/Back
+    all:
+    - useBool: 1
+      boolParam: 19
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 1
+      direction: 3
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 2
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 1
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Bow/Run/Right
+    layer: 0
+    priority: 100
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Bow/Run/Right
+    all:
+    - useBool: 1
+      boolParam: 19
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 1
+      direction: 4
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 2
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 1
+      useActionId: 0
+      actionIdEquals: 0
+  - name: Bow/Run/Left
+    layer: 0
+    priority: 100
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Bow/Run/Left
+    all:
+    - useBool: 1
+      boolParam: 19
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 1
+      direction: 2
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 2
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
       direction: 1
       useActionId: 0
       actionIdEquals: 0

@@ -5832,7 +5832,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1216628486
+  GlobalObjectIdHash: 1720956946
   InScenePlacedSourceGlobalObjectIdHash: 1720956946
   DeferredDespawnTick: 0
   Ownership: 1
@@ -5909,6 +5909,7 @@ MonoBehaviour:
   vcam: {fileID: 6169671671747164374}
   ownerPriority: 20
   nonOwnerPriority: 0
+  fovKey: 118
   ownerOnlyObjects: []
 --- !u!114 &3282714858678053574
 MonoBehaviour:
@@ -6239,8 +6240,10 @@ MonoBehaviour:
   mode: 0
   baseStepInterval: 0.55
   sprintStepInterval: 0.1
+  crouchStepInterval: 0.7
   minimumSpeed: 0.5
   sprintSpeed: 4
+  crouchSpeed: 2
   raycastDistance: 3
   raycastOffset: {x: 0, y: 0, z: 0}
   footstepCategory: 0

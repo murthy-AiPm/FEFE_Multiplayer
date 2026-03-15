@@ -345,7 +345,7 @@ MonoBehaviour:
       _Clip: {fileID: 7400124, guid: 6844dcb6a866ab34fa96c67e39eab693, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN
-    useRootMotion: 0
+    useRootMotion: 1
   - key: Locomotion/Dodge
     transition:
       _FadeDuration: 0
@@ -701,6 +701,51 @@ MonoBehaviour:
       _Speed: 0.8
       _NormalizedStartTime: NaN
     useRootMotion: 0
+  - key: Bow/Run/Front
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400056, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
+  - key: Bow/Run/Back
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400058, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 1
+  - key: Bow/Run/Left
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400062, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 1
+  - key: Bow/Run/Right
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes:
+        - 0.8
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400060, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
+      _Speed: 0.8
+      _NormalizedStartTime: NaN
+    useRootMotion: 0
   - key: Bow/Aim/Walk/Right
     transition:
       _FadeDuration: 0
@@ -747,38 +792,5 @@ MonoBehaviour:
         _Names: []
       _Clip: {fileID: -203655887218126122, guid: df5c5a521f25de14f85ef2e0908dc744, type: 3}
       _Speed: 0.8
-      _NormalizedStartTime: NaN
-    useRootMotion: 1
-  - key: Bow/Run/Front
-    transition:
-      _FadeDuration: 0
-      _Events:
-        _NormalizedTimes: []
-        _Callbacks: []
-        _Names: []
-      _Clip: {fileID: -203655887218126122, guid: 13c4b8aa553dbe042ad183d1b41f7bca, type: 3}
-      _Speed: NaN
-      _NormalizedStartTime: NaN
-    useRootMotion: 1
-  - key: Bow/Run/Back
-    transition:
-      _FadeDuration: 0
-      _Events:
-        _NormalizedTimes: []
-        _Callbacks: []
-        _Names: []
-      _Clip: {fileID: -203655887218126122, guid: 1ad7e6afea636164dbcf13e544e5cbfb, type: 3}
-      _Speed: NaN
-      _NormalizedStartTime: NaN
-    useRootMotion: 1
-  - key: Bow/Run/Left
-    transition:
-      _FadeDuration: 0
-      _Events:
-        _NormalizedTimes: []
-        _Callbacks: []
-        _Names: []
-      _Clip: {fileID: -203655887218126122, guid: 70fd7fb273132db498c38d7c49a6c4ef, type: 3}
-      _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 1

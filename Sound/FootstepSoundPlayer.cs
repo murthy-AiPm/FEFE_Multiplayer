@@ -31,11 +31,17 @@ public class FootstepSoundPlayer : NetworkBehaviour
     [Tooltip("Interval at sprint speed")]
     [SerializeField] private float sprintStepInterval = 0.3f;
 
+    [Tooltip("Interval when crouching")]
+    [SerializeField] private float crouchStepInterval = 0.7f;
+
     [Tooltip("Minimum speed to trigger footsteps (m/s)")]
     [SerializeField] private float minimumSpeed = 0.5f;
 
     [Tooltip("Speed considered 'sprinting' for interval interpolation")]
     [SerializeField] private float sprintSpeed = 8f;
+
+    [Tooltip("Speed threshold below which crouching interval is used")]
+    [SerializeField] private float crouchSpeed = 2f;
 
     [Header("Surface Detection")]
     [Tooltip("How far down to raycast for surface detection")]
@@ -73,6 +79,7 @@ public class FootstepSoundPlayer : NetworkBehaviour
     private Vector3 _lastPosition;
     private float _currentSpeed;
     private bool _animEventFiredThisFrame;
+    private bool _isCrouching;
     private string _cachedSurfaceType;
     private float _surfaceCacheTimer;
     private const float SURFACE_CACHE_DURATION = 0.2f; // re-check surface every 0.2s
@@ -145,12 +152,12 @@ public class FootstepSoundPlayer : NetworkBehaviour
         }
 
         // Cadence timer
-        _animEventFiredThisFrame = false;
-
         if (mode == FootstepMode.CadenceTimer || mode == FootstepMode.Both)
         {
             UpdateCadenceTimer();
         }
+
+        _animEventFiredThisFrame = false; // reset after cadence timer so Both mode works correctly
     }
 
     // ─── Cadence Timer ───
@@ -181,8 +188,17 @@ public class FootstepSoundPlayer : NetworkBehaviour
 
     private float GetStepInterval()
     {
+        if (_isCrouching) return crouchStepInterval;
         float t = Mathf.InverseLerp(minimumSpeed, sprintSpeed, _currentSpeed);
         return Mathf.Lerp(baseStepInterval, sprintStepInterval, t);
+    }
+
+    /// <summary>
+    /// Call this from your controller when crouch state changes.
+    /// </summary>
+    public void SetCrouching(bool isCrouching)
+    {
+        _isCrouching = isCrouching;
     }
 
     // ─── Animation Event Callback ───
