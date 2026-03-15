@@ -679,16 +679,6 @@ MonoBehaviour:
       direction: 1
       useActionId: 0
       actionIdEquals: 0
-    - useBool: 1
-      boolParam: 2
-      boolValue: 0
-      useInput: 0
-      input: 2
-      triggerMode: 2
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
   - name: Crouch/Walk
     layer: 0
     priority: 32
@@ -1170,7 +1160,7 @@ MonoBehaviour:
   - name: Bow/Aim/Walk/Right
     layer: 0
     priority: 80
-    lockUntilEnd: 1
+    lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 0}
     animationKey: Bow/Aim/Walk/Right
