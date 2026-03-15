@@ -177,9 +177,14 @@ MonoBehaviour:
     transition:
       _FadeDuration: 0
       _Events:
-        _NormalizedTimes: []
+        _NormalizedTimes:
+        - 0.2986593
+        - 0.82043463
+        - NaN
         _Callbacks: []
-        _Names: []
+        _Names:
+        - FootSteps
+        - FootSteps
       _Clip: {fileID: 7400062, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN

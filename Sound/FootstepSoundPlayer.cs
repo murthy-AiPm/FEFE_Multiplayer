@@ -88,7 +88,8 @@ public class FootstepSoundPlayer : NetworkBehaviour
     {
         _characterController = GetComponentInChildren<CharacterController>();
         _rigidbody = GetComponent<Rigidbody>();
-        _eventRelay = GetComponentInChildren<AnimationEventRelay>();
+        _eventRelay = GetComponent<AnimationEventRelay>();
+        if (_eventRelay == null) _eventRelay = GetComponentInChildren<AnimationEventRelay>();
     }
 
     public override void OnNetworkSpawn()
@@ -205,12 +206,18 @@ public class FootstepSoundPlayer : NetworkBehaviour
 
     private void OnAnimFootstep()
     {
+        Debug.Log($"[FootstepSoundPlayer] OnAnimFootstep: mode={mode} speed={_currentSpeed}");
         if (!IsOwner) return;
         _animEventFiredThisFrame = true;
 
-        if (mode == FootstepMode.AnimationEvents || mode == FootstepMode.Both)
+        if (mode == FootstepMode.AnimationEvents)
         {
-            // Only play if actually moving (avoids idle anim footstep events)
+            // In AnimationEvents mode, trust the clip entirely — no speed check
+            PlayFootstep();
+        }
+        else if (mode == FootstepMode.Both)
+        {
+            // In Both mode, still guard against idle anim events firing
             if (_currentSpeed >= minimumSpeed)
                 PlayFootstep();
         }

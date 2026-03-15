@@ -6237,7 +6237,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FootstepSoundPlayer
   ShowTopMostFoldoutHeaderGroup: 1
-  mode: 0
+  mode: 1
   baseStepInterval: 0.55
   sprintStepInterval: 0.1
   crouchStepInterval: 0.7
