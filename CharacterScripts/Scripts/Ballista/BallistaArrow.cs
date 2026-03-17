@@ -21,6 +21,15 @@ public class BallistaArrow : NetworkBehaviour
     private Vector3 _startPosition;
     private bool _hasHit;
     private Collider _collider;
+    private ulong _shooterNetObjId = ulong.MaxValue;
+
+    /// <summary>
+    /// Call on server immediately after instantiating, before Spawn().
+    /// </summary>
+    public void SetShooter(ulong shooterNetObjId)
+    {
+        _shooterNetObjId = shooterNetObjId;
+    }
     private void Awake()
     {
         _collider = GetComponent<Collider>();
@@ -66,10 +75,10 @@ public class BallistaArrow : NetworkBehaviour
         // Ignore other ballista arrows (check self and parent)
         if (other.GetComponentInParent<BallistaArrow>() != null) return;
 
-        // Ignore the shooter (only skip owner check for players, not NPCs like bears)
+        // Ignore the shooter — compare by NetworkObjectId, not OwnerClientId,
+        // so host-fired and client-fired arrows both skip correctly.
         var hitNetObj = other.GetComponentInParent<NetworkObject>();
-        bool isPlayer = hitNetObj != null && other.GetComponentInParent<CombatController>() != null;
-        if (isPlayer && hitNetObj.OwnerClientId == OwnerClientId) return;
+        if (hitNetObj != null && hitNetObj.NetworkObjectId == _shooterNetObjId) return;
         _hasHit = true;
         var rb = GetComponent<Rigidbody>();
         if (rb != null)

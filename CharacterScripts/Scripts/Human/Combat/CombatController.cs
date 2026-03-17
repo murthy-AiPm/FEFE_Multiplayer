@@ -516,6 +516,11 @@ public class CombatController : NetworkBehaviour
         var rb = arrow.GetComponent<Rigidbody>();
         if (rb != null) rb.linearVelocity = fireDir * weapon.arrowSpeed;
 
+        // Tell the arrow who fired it so it can skip self-damage correctly.
+        // Must be set before Spawn() so it's ready when OnTriggerEnter fires.
+        var ballistaArrow = arrow.GetComponent<BallistaArrow>();
+        if (ballistaArrow != null) ballistaArrow.SetShooter(NetworkObjectId);
+
         var netObj = arrow.GetComponent<NetworkObject>();
         if (netObj != null) netObj.Spawn();
     }
