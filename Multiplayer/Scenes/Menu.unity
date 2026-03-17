@@ -1668,6 +1668,10 @@ PrefabInstance:
       value: 0.46259356
       objectReference: {fileID: 0}
     - target: {fileID: 8589337567416711422, guid: 8bf9189251d2ab64fbffce681373f88a, type: 3}
+      propertyPath: hostButton
+      value: 
+      objectReference: {fileID: 565673388299000575}
+    - target: {fileID: 8589337567416711422, guid: 8bf9189251d2ab64fbffce681373f88a, type: 3}
       propertyPath: loadingScreen
       value: 
       objectReference: {fileID: 565673388299000574}
@@ -1706,6 +1710,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LoadingScreen
   loadingPanel: {fileID: 2047173813}
   statusText: {fileID: 1451047171}
+--- !u!114 &565673388299000575 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4436585785032060649, guid: 8bf9189251d2ab64fbffce681373f88a, type: 3}
+  m_PrefabInstance: {fileID: 565673388299000571}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -393,6 +393,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1198747576}
   - component: {fileID: 1198747577}
+  - component: {fileID: 1198747578}
   m_Layer: 0
   m_Name: ApplicationController
   m_TagString: Untagged
@@ -430,6 +431,19 @@ MonoBehaviour:
   enableMultiplayer: 1
   clientPrefab: {fileID: 7034641404458194442, guid: 25cfe8afd0b553b4ebe1427aa4bd28c8, type: 3}
   hostPrefab: {fileID: 7457161090045411162, guid: 84190a648b25312438c561733a4ca652, type: 3}
+--- !u!114 &1198747578
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1198747575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc97ce9e46605254a9f310f4d68eca82, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VersionChecker
+  buildVersion: v0.64
 --- !u!1 &1561024706
 GameObject:
   m_ObjectHideFlags: 0

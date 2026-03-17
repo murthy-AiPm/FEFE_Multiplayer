@@ -47,8 +47,17 @@ public class LobbiesList : MonoBehaviour
                 Destroy(child.gameObject);
             }
 
+            string myVersion = VersionChecker.Instance != null ? VersionChecker.Instance.BuildVersion : "";
+
             foreach (Lobby lobby in lobbies.Results)
             {
+                // Filter out lobbies running a different version — prevents wasting Relay credits on a doomed join
+                if (lobby.Data != null && lobby.Data.TryGetValue("Version", out var lobbyVersion))
+                {
+                    if (!string.Equals(lobbyVersion.Value, myVersion, System.StringComparison.OrdinalIgnoreCase))
+                        continue;
+                }
+
                 LobbyItem lobbyItem = Instantiate(lobbyItemPrefab, lobbyItemParent);
                 lobbyItem.Initialise(this, lobby);
             }
@@ -85,6 +94,20 @@ public class LobbiesList : MonoBehaviour
             else
             {
                 joiningLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobby.Id);
+            }
+
+            // Version check — reject if lobby version doesn't match this build
+            if (joiningLobby.Data.TryGetValue("Version", out var lobbyVersion))
+            {
+                string myVersion = VersionChecker.Instance != null ? VersionChecker.Instance.BuildVersion : "";
+                if (!string.Equals(lobbyVersion.Value, myVersion, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    Debug.LogWarning($"[LobbiesList] Version mismatch: lobby is '{lobbyVersion.Value}', we are '{myVersion}'. Rejecting join.");
+                    // TODO: show a UI message to the player here if desired
+                    isJoining = false;
+                    LoadingScreen.Instance?.Hide();
+                    return;
+                }
             }
 
             string joinCode = joiningLobby.Data["JoinCode"].Value;

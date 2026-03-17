@@ -66,6 +66,11 @@ public class HostGameManager : IDisposable
                     {
                         "JoinCode",
                         new DataObject(DataObject.VisibilityOptions.Public, joinCode)
+                    },
+                    {
+                        "Version",
+                        new DataObject(DataObject.VisibilityOptions.Public,
+                            VersionChecker.Instance != null ? VersionChecker.Instance.BuildVersion : "unknown")
                     }
                 }
             };
