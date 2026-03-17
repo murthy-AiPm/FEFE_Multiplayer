@@ -9246,7 +9246,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterSelectManager
   ShowTopMostFoldoutHeaderGroup: 1
   characterDatabase: {fileID: 11400000, guid: 700c2ee40d706ba47ae34db6115728e1, type: 2}
-  enforceUniqueCharacters: 0
+  enforceUniqueCharacters: 1
 --- !u!1 &1918082184
 GameObject:
   m_ObjectHideFlags: 0

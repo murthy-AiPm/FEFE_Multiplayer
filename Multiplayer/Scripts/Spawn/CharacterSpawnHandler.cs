@@ -76,19 +76,22 @@ public class CharacterSpawnHandler : NetworkBehaviour
     }
 
     /// <summary>
-    /// Check if a character is already taken
+    /// Check if a character is already taken, optionally excluding a specific client (e.g. the one requesting a change).
+    /// Respects CharacterSelectManager.enforceUniqueCharacters — if false, always returns false.
     /// </summary>
-    private bool IsCharacterTaken(int characterIndex)
+    private bool IsCharacterTaken(int characterIndex, ulong excludeClientId = ulong.MaxValue)
     {
+        if (CharacterSelectManager.Instance != null && !CharacterSelectManager.Instance.EnforceUniqueCharacters)
+            return false;
+
         foreach (var kvp in NetworkManager.Singleton.ConnectedClients)
         {
+            if (kvp.Key == excludeClientId) continue;
             if (kvp.Value.PlayerObject != null)
             {
                 int charIndex = CharacterSelectManager.GetPersistedCharacterIndex(kvp.Key);
                 if (charIndex == characterIndex)
-                {
                     return true;
-                }
             }
         }
         return false;
@@ -227,8 +230,8 @@ public class CharacterSpawnHandler : NetworkBehaviour
             return;
         }
 
-        // Check if character is taken
-        if (IsCharacterTaken(characterIndex))
+        // Check if character is taken (exclude the requesting client so they can re-select their own character)
+        if (IsCharacterTaken(characterIndex, clientId))
         {
             Debug.Log($"[CharacterSpawnHandler] Character {characterIndex} is already taken!");
             NotifySpawnFailedClientRpc("That character is already taken! Select another.", new ClientRpcParams
