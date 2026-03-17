@@ -179,6 +179,15 @@ public class DamageReceiver : NetworkBehaviour
                 ballista.ForceDismount(GetComponent<NetworkObject>().OwnerClientId);
         }
 
+        // Force dismount from horse if mounted
+        var mountController = GetComponent<MountController>();
+        if (mountController != null && (mountController.IsMounted || mountController.IsTransitioning))
+        {
+            var mount = mountController.CurrentMount;
+            if (mount != null)
+                mount.ForceServerDismount();
+        }
+
         NotifyDeathClientRpc();
 
         if (IsServer && isPlayer)

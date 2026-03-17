@@ -309,6 +309,45 @@ public class MountableEntity : NetworkBehaviour
     }
 
     /// <summary>
+    /// Called server-side (e.g. on rider death) to force a dismount without requiring
+    /// the rider to be the RPC sender. Bypasses the ownership/sender check.
+    /// </summary>
+    public void ForceServerDismount()
+    {
+        if (!IsServer) return;
+        if (!IsMounted) return;
+
+        if (currentRider == null)
+        {
+            riderId.Value = 0;
+            SetMounted(false);
+            NetworkObject.ChangeOwnership(NetworkManager.ServerClientId);
+            return;
+        }
+
+        MountController mountController = currentRider.GetComponent<MountController>();
+
+        Vector3 dismountPosition = FindSafeDismountPosition();
+
+        // Unparent rider
+        if (mountController != null && mountController.NetworkObject != null)
+            mountController.NetworkObject.TryRemoveParent(true);
+
+        riderId.Value = 0;
+        currentRider = null;
+        SetMounted(false);
+
+        // Return ownership to server
+        NetworkObject.ChangeOwnership(NetworkManager.ServerClientId);
+
+        // Notify the rider client to reset their local state
+        if (mountController != null)
+            mountController.NotifyForceDismountClientRpc(dismountPosition);
+
+        Debug.Log("[MountableEntity] ForceServerDismount complete");
+    }
+
+    /// <summary>
     /// Offline mode: Dismount without networking
     /// </summary>
     public void DismountLocal()

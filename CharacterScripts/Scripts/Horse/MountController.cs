@@ -148,7 +148,13 @@ public class MountController : NetworkBehaviour
     {
         if (mount == null || mount.IsMounted) return;
 
-        if (hitCollider != null) hitCollider.enabled = false;
+        // Keep collider enabled so rider can still be hit by arrows/attacks.
+        // Set as trigger so it doesn't block physics while seated.
+        if (hitCollider != null)
+        {
+            hitCollider.enabled = true;
+            hitCollider.isTrigger = true;
+        }
 
         isTransitioning = true;
         currentMount = mount;
@@ -334,6 +340,46 @@ public class MountController : NetworkBehaviour
         }
 
         Debug.Log($"[MountController] Dismount complete (IsOwner: {IsOwner})");
+    }
+
+    /// <summary>
+    /// Called by MountableEntity.ForceServerDismount to reset local rider state
+    /// (e.g. when the rider dies while mounted).
+    /// </summary>
+    [ClientRpc]
+    public void NotifyForceDismountClientRpc(Vector3 dismountPosition)
+    {
+        // Stop any in-progress coroutines (mount/dismount animations)
+        StopAllCoroutines();
+
+        // Reset local state immediately — no animation
+        isMounted = false;
+        isTransitioning = false;
+        currentMount = null;
+        SyncNetworkState();
+
+        if (IsOwner)
+        {
+            transform.position = dismountPosition;
+
+            if (thirdPersonController != null)
+                thirdPersonController.enabled = true;
+
+            if (characterController != null)
+                characterController.enabled = true;
+
+            if (hitCollider != null)
+            {
+                hitCollider.enabled = true;
+                hitCollider.isTrigger = false;
+            }
+
+            var footsteps = GetComponentInChildren<FootstepSoundPlayer>();
+            if (footsteps != null)
+                footsteps.enabled = true;
+        }
+
+        Debug.Log("[MountController] NotifyForceDismountClientRpc: local state reset");
     }
 
     public MountableEntity GetNearbyMount() => nearbyMount;
