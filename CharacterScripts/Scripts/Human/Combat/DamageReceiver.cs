@@ -231,7 +231,6 @@ public class DamageReceiver : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     public void RequestRespawnServerRpc(int spawnPointIndex)
     {
-        // Cancel the corpse hide timer so it doesn't disable renderers after respawn
         if (_hideCorpseCoroutine != null)
         {
             StopCoroutine(_hideCorpseCoroutine);
@@ -265,6 +264,14 @@ public class DamageReceiver : NetworkBehaviour
     {
         foreach (var r in GetComponentsInChildren<Renderer>())
             r.enabled = true;
+
+        // Force dismount if mounted before teleporting
+        if (IsOwner)
+        {
+            var mountController = GetComponentInChildren<MountController>();
+            if (mountController != null && (mountController.IsMounted || mountController.IsTransitioning))
+                mountController.ForceDismount();
+        }
 
         // Cache vcam FOV before any state changes that might reset it
         CinemachineCamera vcam = GetComponentInChildren<CinemachineCamera>(true);

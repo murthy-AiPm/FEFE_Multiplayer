@@ -13,7 +13,7 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private CharacterDatabase characterDatabase;
-    [SerializeField] private CharacterSpawnHandler spawnHandler; // optional (kept for compatibility)
+    [SerializeField] private CharacterSpawnHandler spawnHandler;
     [SerializeField] private CharacterSelectManager selectManager;
 
     [Header("UI Panel")]
@@ -36,7 +36,6 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
     private List<Button> characterButtons = new List<Button>();
     private List<Image> buttonImages = new List<Image>();
 
-    // When duplicates are allowed, this remains empty and everything is selectable.
     private List<int> takenCharacters = new List<int>();
 
     private int selectedCharacterIndex = -1;
@@ -79,13 +78,11 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
 
     private System.Collections.IEnumerator CheckIfNeedsSelection()
     {
-        // Wait for Netcode to initialize
         yield return new WaitForSeconds(0.5f);
 
         if (NetworkManager.Singleton == null)
             yield break;
 
-        // If local client already has a player object, no need
         ulong localClientId = NetworkManager.Singleton.LocalClientId;
         if (NetworkManager.Singleton.ConnectedClients.TryGetValue(localClientId, out var client))
         {
@@ -97,10 +94,20 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Call this from Pause Menu -> Change Character
+    /// Call this from Pause Menu -> Change Character.
+    /// Blocked while the local player is mounted.
     /// </summary>
     public void OpenForCharacterChange()
     {
+        // Disallow character change while mounted
+        var mountController = FindObjectOfType<MountController>();
+        if (mountController != null && mountController.IsOwner &&
+            (mountController.IsMounted || mountController.IsTransitioning))
+        {
+            Debug.Log("[LateJoinCharacterSelectUI] Cannot change character while mounted.");
+            return;
+        }
+
         _isCharacterChange = true;
         ShowSelectionUI();
     }
@@ -147,7 +154,6 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
 
         takenCharacters.Clear();
 
-        // If unique enforcement is on, compute taken list from synced selections
         if (selectManager != null && selectManager.EnforceUniqueCharacters)
         {
             var all = selectManager.GetAllSelections();
@@ -169,7 +175,6 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
             return;
         }
 
-        // Clear existing
         foreach (Transform child in characterButtonContainer)
             Destroy(child.gameObject);
 
@@ -278,13 +283,9 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
         if (spawnHandler == null) spawnHandler = FindObjectOfType<CharacterSpawnHandler>();
 
         if (spawnHandler != null)
-        {
             spawnHandler.RequestLateJoinSpawn(selectedCharacterIndex);
-        }
         else
-        {
             Debug.LogError("[LateJoinCharacterSelectUI] No CharacterSpawnHandler found!");
-        }
     }
 
     public void OnBackClicked()
@@ -320,31 +321,23 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
         if (selectManager != null)
             selectManager.OnSelectionsChanged -= RefreshFromNetwork;
     }
-    // Compatibility: CharacterSpawnHandler may still call this
+
     public void SetTakenCharacters(int[] taken)
     {
         if (takenCharacters == null) takenCharacters = new List<int>();
         takenCharacters.Clear();
-
-        if (taken != null)
-            takenCharacters.AddRange(taken);
-
+        if (taken != null) takenCharacters.AddRange(taken);
         UpdateButtonStates();
     }
 
-    // Also accept List<int> (handy elsewhere)
     public void SetTakenCharacters(List<int> taken)
     {
         if (takenCharacters == null) takenCharacters = new List<int>();
         takenCharacters.Clear();
-
-        if (taken != null)
-            takenCharacters.AddRange(taken);
-
+        if (taken != null) takenCharacters.AddRange(taken);
         UpdateButtonStates();
     }
 
-    // Compatibility: CharacterSpawnHandler may still call this
     public void OnSpawnFailed(string reason = "Spawn failed")
     {
         if (statusText != null)
@@ -353,9 +346,7 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
         if (joinButton != null)
             joinButton.interactable = true;
 
-        // Keep selection panel open so user can try again
         if (selectionPanel != null)
             selectionPanel.SetActive(true);
     }
-
 }

@@ -20,7 +20,7 @@ public class BallistaController : NetworkBehaviour
     [Header("Transforms")]
     [SerializeField] private Transform ballistaBase;    // rotates horizontally
     [SerializeField] private Transform barrel;          // pitches vertically
-    [SerializeField] private Transform firePoint;       // arrow spawn point
+    [SerializeField] private Transform firePoint;       // arrow spawn point//
 
     [Header("Rotation Limits")]
     [Tooltip("Total horizontal rotation allowed in degrees. 360 = full rotation. Set lower to restrict arc.")]

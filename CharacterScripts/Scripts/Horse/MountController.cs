@@ -60,9 +60,6 @@ public class MountController : NetworkBehaviour
     private float holdTimer;
     private MountableEntity nearbyMount;
 
-    // Public read-only properties for AnimationContext
-    // Online mode: read from NetworkVariables (synced)
-    // Offline mode: read from local state
     public bool IsMounted => IsSpawned ? netIsMounted.Value : isMounted;
     public bool IsTransitioning => IsSpawned ? netIsTransitioning.Value : isTransitioning;
     public MountableEntity CurrentMount => currentMount;
@@ -83,18 +80,9 @@ public class MountController : NetworkBehaviour
     {
         if (!IsOwner) return;
 
-        // Detect nearby mounts
         DetectNearbyMount();
-
-        // Handle mount/dismount input
         HandleMountInput();
-
-
     }
-
-    // REMOVED: LateUpdate manual positioning
-    // Unity's parenting system automatically keeps humanoid at correct position relative to horse
-    // Manual positioning was causing NetworkTransform jitter
 
     private void DetectNearbyMount()
     {
@@ -104,7 +92,6 @@ public class MountController : NetworkBehaviour
             return;
         }
 
-        // Find nearest mount within radius
         Collider[] colliders = Physics.OverlapSphere(transform.position, detectionRadius, mountLayer);
 
         MountableEntity closest = null;
@@ -132,19 +119,14 @@ public class MountController : NetworkBehaviour
 
         if (isMounted)
         {
-            // Dismount logic (instant press)
             if (Input.GetKeyDown(mountKey))
-            {
                 RequestDismount();
-            }
         }
         else if (nearbyMount != null && !isTransitioning)
         {
-            // Mount logic (hold E)
             if (holdingKey)
             {
                 holdTimer += Time.deltaTime;
-
                 if (holdTimer >= holdDuration)
                 {
                     holdTimer = 0f;
@@ -166,29 +148,18 @@ public class MountController : NetworkBehaviour
     {
         if (mount == null || mount.IsMounted) return;
 
-        // Disable hit collider immediately
-       //gzf var hitCollider = GetComponentInChildren<CapsuleCollider>();
         if (hitCollider != null) hitCollider.enabled = false;
 
-        // Update local state
         isTransitioning = true;
         currentMount = mount;
-
-        // IMMEDIATELY sync NetworkVariable so remotes see transitioning state
         SyncNetworkState();
 
-        // Check if we're in online or offline mode
         bool isOnline = NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
 
         if (isOnline)
-        {
-            // Online mode: Request mount from server
             mount.RequestMountServerRpc(NetworkManager.Singleton.LocalClientId);
-        }
         else
         {
-            // Offline mode: Mount directly
-           
             mount.MountLocal(gameObject, 0);
             StartCoroutine(PlayMountTransition());
         }
@@ -198,24 +169,15 @@ public class MountController : NetworkBehaviour
     {
         if (currentMount == null) return;
 
-        // Update local state
         isTransitioning = true;
-
-        // IMMEDIATELY sync NetworkVariable
         SyncNetworkState();
 
-        // Check if we're in online or offline mode
         bool isOnline = NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
 
         if (isOnline)
-        {
-            // Online mode: Request dismount from server
             currentMount.RequestDismountServerRpc();
-        }
         else
         {
-            // Offline mode: Dismount directly
-
             Vector3 dismountPos = currentMount.transform.position + currentMount.transform.right * -1.5f;
             currentMount.DismountLocal();
             StartCoroutine(PlayDismountTransition(dismountPos));
@@ -223,9 +185,32 @@ public class MountController : NetworkBehaviour
     }
 
     /// <summary>
-    /// Syncs local state to NetworkVariables (owner only).
-    /// Call this EVERY time isMounted or isTransitioning changes.
+    /// Force-dismount immediately with no animation — used on death/respawn.
     /// </summary>
+    public void ForceDismount()
+    {
+        if (!isMounted && !isTransitioning) return;
+
+        // Stop any in-progress mount/dismount coroutines
+        StopAllCoroutines();
+
+        if (currentMount != null)
+        {
+            bool isOnline = NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
+            if (isOnline)
+                currentMount.RequestDismountServerRpc();
+            else
+                currentMount.DismountLocal();
+        }
+
+        // Immediately reset state without animation
+        Vector3 dismountPos = currentMount != null
+            ? currentMount.transform.position + currentMount.transform.right * -1.5f
+            : transform.position;
+
+        FinishDismount(dismountPos);
+    }
+
     private void SyncNetworkState()
     {
         if (!IsOwner || !IsSpawned) return;
@@ -234,13 +219,9 @@ public class MountController : NetworkBehaviour
         netIsTransitioning.Value = isTransitioning;
     }
 
-    /// <summary>
-    /// Called by server via ClientRpc when mount is approved.
-    /// </summary>
     [ClientRpc]
     public void CompleteMountClientRpc(ulong mountNetworkObjectId)
     {
-        // Find the mount NetworkObject
         if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(mountNetworkObjectId, out NetworkObject mountNetObj))
         {
             Debug.LogError($"[MountController] Could not find mount NetworkObject {mountNetworkObjectId}");
@@ -263,42 +244,23 @@ public class MountController : NetworkBehaviour
 
     private IEnumerator PlayMountTransition()
     {
-        // Play mounting animation (handled by RuleAnimancerDriver via IsTransitioning)
         yield return new WaitForSeconds(mountAnimationDuration);
-
-        // Complete mount
         FinishMount();
     }
 
     private void FinishMount()
     {
-        // Update local state
         isMounted = true;
         isTransitioning = false;
-
-        // Sync to network (owner only)
         SyncNetworkState();
 
-        // IMPORTANT:
-        // - In ONLINE mode, the SERVER performs NetworkObject parenting (TrySetParent) in MountableEntity.
-        //   That replication is what makes EVERY client see the rider attached.
-        // - Here, the OWNER only snaps to the saddle + disables their local movement.
-        // - In OFFLINE mode (not spawned), we fall back to local Transform parenting.
         if (IsOwner)
         {
             if (!IsSpawned)
-            {
-                // Offline fallback
-                Transform horseRoot = currentMount.transform;
-                transform.SetParent(horseRoot);
-            }
+                transform.SetParent(currentMount.transform);
 
-            // Snap to saddle (owner-authority transforms need this locally).
             if (currentMount != null && currentMount.SaddlePoint != null)
                 transform.SetPositionAndRotation(currentMount.SaddlePoint.position, currentMount.SaddlePoint.rotation);
-
-            // Disable humanoid movement (owner only)
-
 
             if (thirdPersonController != null)
                 thirdPersonController.enabled = false;
@@ -306,11 +268,9 @@ public class MountController : NetworkBehaviour
             if (characterController != null)
                 characterController.enabled = false;
 
-            // Instantly holster weapon on mount
             if (weaponManager != null && weaponManager.ActiveSlot != 0)
                 weaponManager.InstantEquip(0);
 
-            // Stop player footstep sounds
             var footsteps = GetComponentInChildren<FootstepSoundPlayer>();
             if (footsteps != null)
                 footsteps.enabled = false;
@@ -319,9 +279,6 @@ public class MountController : NetworkBehaviour
         Debug.Log($"[MountController] Mount complete (IsOwner: {IsOwner})");
     }
 
-    /// <summary>
-    /// Called by server via ClientRpc when dismount is approved.
-    /// </summary>
     [ClientRpc]
     public void CompleteDismountClientRpc(Vector3 dismountPosition)
     {
@@ -330,35 +287,23 @@ public class MountController : NetworkBehaviour
 
     private IEnumerator PlayDismountTransition(Vector3 targetPosition)
     {
-        // Play dismounting animation
         yield return new WaitForSeconds(dismountAnimationDuration);
-
-        // Complete dismount
         FinishDismount(targetPosition);
     }
 
     private void FinishDismount(Vector3 position)
     {
-        // Update local state
         isMounted = false;
         isTransitioning = false;
-
-        // Sync to network (owner only)
         SyncNetworkState();
 
-        // In ONLINE mode, the SERVER removes the parent (TryRemoveParent) in MountableEntity.
-        // Owner still needs to move themselves to the dismount position if you use owner-authority transforms.
         if (IsOwner)
         {
             if (!IsSpawned)
-            {
-                // Offline fallback
                 transform.SetParent(null);
-            }
 
             transform.position = position;
 
-            // Zero horse input so it doesn't keep sprinting after dismount
             if (currentMount != null)
             {
                 var horseController = currentMount.GetComponentInChildren<DragonGroundController>();
@@ -367,23 +312,21 @@ public class MountController : NetworkBehaviour
                     horseController.StopGradually();
             }
 
-            // Instantly holster if mounted combat is disabled
             if (weaponManager != null && combatController != null && !combatController.allowMountedCombat)
             {
                 if (weaponManager.ActiveSlot != 0)
                     weaponManager.InstantEquip(0);
             }
 
-            // Re-enable humanoid movement
             if (thirdPersonController != null)
                 thirdPersonController.enabled = true;
 
-            // Re-enable player footstep sounds
             var footsteps = GetComponentInChildren<FootstepSoundPlayer>();
             if (footsteps != null)
                 footsteps.enabled = true;
-           // var hitCollider = GetComponentInChildren<CapsuleCollider>();
+
             if (hitCollider != null) hitCollider.isTrigger = false;
+
             if (characterController != null)
                 characterController.enabled = true;
 
@@ -393,23 +336,9 @@ public class MountController : NetworkBehaviour
         Debug.Log($"[MountController] Dismount complete (IsOwner: {IsOwner})");
     }
 
-    /// <summary>
-    /// For UI: returns nearby mount if player is close enough to mount.
-    /// </summary>
-    public MountableEntity GetNearbyMount()
-    {
-        return nearbyMount;
-    }
+    public MountableEntity GetNearbyMount() => nearbyMount;
+    public float GetMountHoldProgress() => holdTimer / holdDuration;
 
-    /// <summary>
-    /// For UI: returns mount hold progress (0-1).
-    /// </summary>
-    public float GetMountHoldProgress()
-    {
-        return holdTimer / holdDuration;
-    }
-
-    // Debug visualization
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;
