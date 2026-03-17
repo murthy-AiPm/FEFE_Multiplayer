@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
@@ -8,7 +9,6 @@ public class LobbiesList : MonoBehaviour
 {
     [SerializeField] private Transform lobbyItemParent;
     [SerializeField] private LobbyItem lobbyItemPrefab;
-
     private bool isJoining;
     private bool isRefreshing;
 
@@ -67,6 +67,8 @@ public class LobbiesList : MonoBehaviour
 
         isJoining = true;
 
+        LoadingScreen.Instance?.Show("Joining lobby...");
+
         try
         {
             Lobby joiningLobby;
@@ -88,10 +90,15 @@ public class LobbiesList : MonoBehaviour
             string joinCode = joiningLobby.Data["JoinCode"].Value;
 
             await ClientSingleton.Instance.GameManager.StartClientAsync(joinCode);
+
+            // If connection failed, hide so player can try another lobby
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
+                LoadingScreen.Instance?.Hide();
         }
         catch (LobbyServiceException e)
         {
             Debug.Log(e);
+            LoadingScreen.Instance?.Hide();
         }
 
         isJoining = false;
