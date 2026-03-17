@@ -17,9 +17,17 @@ public class HumanoidController : ThirdPersonController
     float oldAngle;
     int layerMask = 1 << 9;
     
+    private float _defaultJumpHeight;
+
     private void OnEnable()
     {
         playerController.inputController.isCombatMode = false;
+    }
+
+    protected override void Awake()
+    {
+        base.Awake();
+        _defaultJumpHeight = jumpHeight;
     }
     protected override void Update()
     {
@@ -134,13 +142,14 @@ public class HumanoidController : ThirdPersonController
             speed = combatSpeed;
             jumpHeight = 0;
         }
-        //else if (!playerController.inputController.isCombatMode)
-        //    jumpHeight = 2;
-
-        else if (playerController.inputController.isCrouch)
-            speed = crouchSpeed;
         else
-            speed = walkSpeed;
+        {
+            jumpHeight = _defaultJumpHeight;
+            if (playerController.inputController.isCrouch)
+                speed = crouchSpeed;
+            else
+                speed = walkSpeed;
+        }
     }
 
     protected override void Walk()
