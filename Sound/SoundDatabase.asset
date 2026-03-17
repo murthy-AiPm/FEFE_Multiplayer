@@ -513,8 +513,43 @@ MonoBehaviour:
     pitch: {x: 1.1703576, y: 1.2}
   - surfaceType: Horse_Default_footstep
     footstepClips:
-    - {fileID: 8300000, guid: 682430ebd9801a24f86161063b674c25, type: 3}
-    volume: {x: 0.15745574, y: 0.2984813}
+    - {fileID: 8300000, guid: 429adddfb3d6d2a4e8c13e0a2f40b76c, type: 3}
+    - {fileID: 8300000, guid: 98401dd29e1efa94897fccbcdbbfb4fe, type: 3}
+    - {fileID: 8300000, guid: 03b64312c7327cf4d8c6470c11ada2cc, type: 3}
+    - {fileID: 8300000, guid: 85b31250787b9444ca7cfd5dbe5b5213, type: 3}
+    - {fileID: 8300000, guid: dfa744ed557414c4294620721748e5ef, type: 3}
+    - {fileID: 8300000, guid: 932b2c2dbf0cfb34c9ee27ef74157fca, type: 3}
+    - {fileID: 8300000, guid: 7e690b37fff157e46aaa10cf7c3da3b7, type: 3}
+    - {fileID: 8300000, guid: 7686fc229a855604285930fa9825fc80, type: 3}
+    - {fileID: 8300000, guid: 753fa33b7f6f1fb4f9962beea1e0e1a3, type: 3}
+    - {fileID: 8300000, guid: b7976d94497e0704880155be20ae1cd5, type: 3}
+    - {fileID: 8300000, guid: 8c9e775650d72cd4dafef8df3e41ca3a, type: 3}
+    - {fileID: 8300000, guid: 7b9b1014b79cc624abec6bb90af9546f, type: 3}
+    - {fileID: 8300000, guid: 5321754c01b8bd146b30ca1a8ce7935b, type: 3}
+    - {fileID: 8300000, guid: cd6ade4f009dd5646a7ca7e2cc34d183, type: 3}
+    - {fileID: 8300000, guid: d825daea6cea15b49a494e59725ed953, type: 3}
+    - {fileID: 8300000, guid: f7ba8c470cde8e544835e860b425437e, type: 3}
+    - {fileID: 8300000, guid: a00e40d2041783147a209a154f6aba73, type: 3}
+    - {fileID: 8300000, guid: b544d4a915775084d83f709b4c366f71, type: 3}
+    - {fileID: 8300000, guid: 770547ee27389df4f85870773736fb0d, type: 3}
+    - {fileID: 8300000, guid: 6923a68f499c92e4389c04f2c24bac10, type: 3}
+    - {fileID: 8300000, guid: e2cee1912f7293b4fa97f930da81dbba, type: 3}
+    - {fileID: 8300000, guid: 790dee39a0b86d54ca33745be4416f01, type: 3}
+    - {fileID: 8300000, guid: 527f470d55fb9d64b9b62f668bf15b40, type: 3}
+    - {fileID: 8300000, guid: b117c648ac1bb28438b7a2961f009d5e, type: 3}
+    - {fileID: 8300000, guid: 90c75845db92afd47b8fa2a128939abd, type: 3}
+    - {fileID: 8300000, guid: 991fcf8d631399c4994fd86c4f2539ae, type: 3}
+    - {fileID: 8300000, guid: 438794473535a0f46ada7618aa585e64, type: 3}
+    - {fileID: 8300000, guid: 27d0f56580cd159488f5115435791baf, type: 3}
+    - {fileID: 8300000, guid: 6cc4b6a0eec4fb34183909193aae376e, type: 3}
+    - {fileID: 8300000, guid: 116198bd54a43de4dbbf6167c5c36324, type: 3}
+    - {fileID: 8300000, guid: 088e926104051f141b2d63c6fcc65ef5, type: 3}
+    - {fileID: 8300000, guid: 1426e99602f38e448825544ac6dcdb2f, type: 3}
+    - {fileID: 8300000, guid: 354e81fe34569bb4e8aba25377d2be98, type: 3}
+    - {fileID: 8300000, guid: 79e3e677bf089e341a95c641cec92edf, type: 3}
+    - {fileID: 8300000, guid: cc484c57ae0de9f44b64c753adea4fc0, type: 3}
+    - {fileID: 8300000, guid: fedc14980efc3a6418194bcd294d4452, type: 3}
+    volume: {x: 0, y: 0.14102554}
     pitch: {x: 0.8, y: 0.8928202}
   impactSounds:
   - soundName: Metal-Wood

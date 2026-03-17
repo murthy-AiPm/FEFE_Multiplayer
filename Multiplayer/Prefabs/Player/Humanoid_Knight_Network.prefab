@@ -31,6 +31,7 @@ Transform:
   m_Children:
   - {fileID: 8600544260192196041}
   - {fileID: 1268547357413203382}
+  - {fileID: 4722124723620555419}
   m_Father: {fileID: 1218925387297013232}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &123180684737307336
@@ -456,6 +457,7 @@ Transform:
   - {fileID: 4189235946015774729}
   - {fileID: 3112467824920119735}
   - {fileID: 1236728200163124725}
+  - {fileID: 8057133391030810322}
   m_Father: {fileID: 5598750284503526687}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &961042770055941522
@@ -2089,6 +2091,37 @@ Transform:
   - {fileID: 7059569283974001836}
   m_Father: {fileID: 4994707821207835603}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3555575424065699838
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4722124723620555419}
+  m_Layer: 6
+  m_Name: HipHolster
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4722124723620555419
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3555575424065699838}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.00041918448, y: -0.0008667854, z: 0.36154023, w: 0.932356}
+  m_LocalPosition: {x: 0, y: 0, z: -0.13}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1741043452631814887}
+  m_LocalEulerAnglesHint: {x: 0.081, y: -0.075, z: 42.39}
 --- !u!1 &3618567678173273399
 GameObject:
   m_ObjectHideFlags: 0
@@ -2843,6 +2876,37 @@ Transform:
   - {fileID: 2886731905421471559}
   m_Father: {fileID: 8540542777516182130}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &4956672320049104485
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8057133391030810322}
+  m_Layer: 6
+  m_Name: BowHolster
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8057133391030810322
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4956672320049104485}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.38532704, y: 0.57783985, z: 0.6566564, w: 0.293984}
+  m_LocalPosition: {x: 0.422, y: 0.25, z: 0.013}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8540542777516182130}
+  m_LocalEulerAnglesHint: {x: -80.212, y: -78.033, z: 200.387}
 --- !u!1 &5021497277280427453
 GameObject:
   m_ObjectHideFlags: 0
@@ -3879,7 +3943,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6450013997866560284}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.06292834, y: 0.9327943, z: 0.20044757, w: -0.2928406}
+  m_LocalRotation: {x: 0.06292836, y: 0.9327943, z: 0.20044762, w: -0.2928406}
   m_LocalPosition: {x: 1.193222, y: 0.46931458, z: 1.7131042}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -6059,8 +6123,8 @@ MonoBehaviour:
   loadout: {fileID: 11400000, guid: 2b5d1c2772db3a949ac1046709a1880d, type: 2}
   rightHandAttach: {fileID: 1379066709997379217}
   leftHandAttach: {fileID: 7963919577528222514}
-  backHolster: {fileID: 0}
-  hipHolster: {fileID: 1741043452631814887}
+  backHolster: {fileID: 8057133391030810322}
+  hipHolster: {fileID: 4722124723620555419}
   shieldBackHolster: {fileID: 0}
   animancerDriver: {fileID: 2683264340040594894}
   fallbackTransitionTime: 0.5
