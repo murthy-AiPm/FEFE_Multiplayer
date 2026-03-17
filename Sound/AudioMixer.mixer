@@ -100,11 +100,11 @@ AudioMixerController:
   m_UpdateMode: 0
   m_ExposedParameters:
   - guid: bf705afb1ab236848bd301653a6f811e
-    name: AmbientVoume
+    name: AmbientVolume
   - guid: 8dfebd60fae9f594e9505c19ea8d6c44
     name: CombatVolume
   - guid: 6763b513921f4194ea0babf46f56e6cf
-    name: FootstepsVoume
+    name: FootstepsVolume
   - guid: 0be3257a0a861e241bc91d76e737d183
     name: LoudVolume
   - guid: 3919db01265d37141834c8a593bc87be
@@ -203,7 +203,7 @@ AudioMixerGroupController:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: FootSteps
+  m_Name: FootstepsVolume
   m_AudioMixer: {fileID: 24100000}
   m_GroupID: d8425153bb789af448353cfdb32c2ee4
   m_Children: []

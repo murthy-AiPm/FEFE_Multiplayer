@@ -67,6 +67,8 @@ public class HorseSoundPlayer : NetworkBehaviour
     private string _cachedSurfaceType;
     private float _surfaceCacheTimer;
     private bool _wasMounted;
+    private float _lastFootstepTime;
+    private const float FOOTSTEP_DEDUP_WINDOW = 0.05f;
 
     private void Awake()
     {
@@ -206,10 +208,9 @@ public class HorseSoundPlayer : NetworkBehaviour
     {
         if (footstepMode != FootstepMode.AnimationEvents) return;
         if (ProximitySoundManager.Instance == null) return;
+        if (Time.time - _lastFootstepTime < FOOTSTEP_DEDUP_WINDOW) return;
+        _lastFootstepTime = Time.time;
         string surface = _cachedSurfaceType ?? "Grass";
-        // Play locally only — ProximitySoundManager.PlayFootstep routes through RPCs
-        // which causes double-play on host. Each client plays independently based on
-        // observed animation, so no networking needed here.
         ProximitySoundManager.Instance.PlayFootstepDirect(surface, transform.position, hoofbeatCategory, "Horse");
     }
 

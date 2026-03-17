@@ -49,9 +49,14 @@ public class SettingsMenuUI : MonoBehaviour
     {
         BuildResolutionList();
         LoadAndApplySavedSettings();
-        LoadAndApplyVolumes();
         LoadAndApplySensitivity();
         if (panel != null) panel.SetActive(false);
+    }
+
+    private void Start()
+    {
+        // Mixer params can't be set before mixer is initialized — defer to Start
+        LoadAndApplyVolumes();
     }
 
     // ═══════════════════════════════════════════════════════

@@ -307,7 +307,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   isPlayer: 0
   spawnPoint: {fileID: 192358126975598443}
-  respawnDelay: 3
+  corpseVisibleTime: 3
   vitalManager: {fileID: 6124247818986976737}
   combatController: {fileID: 0}
   weaponManager: {fileID: 0}

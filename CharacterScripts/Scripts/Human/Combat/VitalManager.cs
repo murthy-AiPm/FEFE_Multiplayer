@@ -176,7 +176,7 @@ public class VitalManager : NetworkBehaviour
     /// <summary>
     /// Consume stamina (attacks, dodge, sprint). Server only.
     /// Returns true if there was enough stamina.
-    /// </summary>
+    /// </summary>//
     public bool TryConsumeStamina(float amount)
     {
         var stamina = GetVital("stamina");

@@ -204,7 +204,7 @@ public class DamageReceiver : NetworkBehaviour
         if (animancerDriver != null)
             animancerDriver.PlayDeath();
 
-        if (IsOwner)
+        if (IsOwner && isPlayer)
         {
             var deathScreen = FindObjectOfType<DeathScreen>();
             if (deathScreen != null)
