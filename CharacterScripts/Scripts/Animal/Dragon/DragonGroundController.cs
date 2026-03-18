@@ -9,7 +9,12 @@ public class DragonGroundController : AnimalGroundController
     [Header("Dragon Flight")]
     [SerializeField] private DragonFlightController flightController;
 
+    [Header("Dragon Fake Gravity")]
+    [SerializeField] private float dragonFakeGravity = 20f;
+    [SerializeField] private float dragonMaxFallSpeed = 40f;
+
     private float _jumpGaitSpeed;
+    private float _dragonFallVelocity;
 
     protected override void Awake()
     {
@@ -33,6 +38,27 @@ public class DragonGroundController : AnimalGroundController
         // Hold GaitSpeed during jump so blend tree shows correct jump clip.
         if (IsPlayingJump)
             GaitSpeed = _jumpGaitSpeed;
+    }
+
+    protected override void OnFixedGroundUpdate()
+    {
+        if (flightController == null || rb == null || groundingSystem == null) return;
+
+        bool inFlight = flightController.IsFlying ||
+                        flightController.IsHoverMode ||
+                        flightController.IsGliding ||
+                        flightController.IsDiving;
+
+        if (!inFlight && !groundingSystem.IsGrounded && !IsPlayingJump)
+        {
+            _dragonFallVelocity += dragonFakeGravity * Time.fixedDeltaTime;
+            _dragonFallVelocity  = Mathf.Min(_dragonFallVelocity, dragonMaxFallSpeed);
+            rb.MovePosition(rb.position + Vector3.down * _dragonFallVelocity * Time.fixedDeltaTime);
+        }
+        else
+        {
+            _dragonFallVelocity = 0f;
+        }
     }
 
     protected override void OnLanded()

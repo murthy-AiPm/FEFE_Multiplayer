@@ -209,6 +209,8 @@ public class AnimalGroundController : NetworkBehaviour
         }
         if (!ignoreOwnershipForTesting && !IsOwner) return;
 
+        OnFixedGroundUpdate();
+
         // Takeoff - lift dragon up
         if (isTakingOff)
         {
@@ -228,6 +230,8 @@ public class AnimalGroundController : NetworkBehaviour
         // Normal ground movement
         HandleGroundMovement();
     }
+
+    protected virtual void OnFixedGroundUpdate() { }
     private void UpdateFallAnimParams()
     {
         if (animator == null || groundingSystem == null) return;
