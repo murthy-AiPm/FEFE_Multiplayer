@@ -109,7 +109,7 @@ public class AnimalGroundController : NetworkBehaviour
     public float ForwardSpeed { get; private set; }
     public float TurnSpeed { get; private set; }
     public float TurnAngle { get; private set; }   // -1 left .. +1 right
-    public float GaitSpeed { get; private set; }   // 0 walk, 1 trot, 2 sprint
+    public float GaitSpeed { get; protected set; }   // 0 walk, 1 trot, 2 sprint
     public bool IsTrotMode { get; private set; }   // Caps Lock toggle
 
     protected virtual void Awake()
@@ -480,6 +480,7 @@ public class AnimalGroundController : NetworkBehaviour
     /// Called when takeoff animation completes. Override in subclasses to hand off to a flight controller.
     /// </summary>
     protected virtual void OnTakeoffRequested() { }
+    protected virtual void OnLanded() { }
 
     /// <summary>
     /// Called when a jump animation is triggered. Override in subclasses to play jump sounds.
@@ -495,6 +496,7 @@ public class AnimalGroundController : NetworkBehaviour
         isActive = true;
         _ignoreInput = false;
         ClearState();
+        OnLanded();
 
         // Kill leftover velocity from fall
         if (rb != null)

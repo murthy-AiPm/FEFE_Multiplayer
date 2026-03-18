@@ -2823,7 +2823,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5981019831443505375}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.47185794, y: 0, z: 0, w: 0.8816746}
+  m_LocalRotation: {x: 0.47185796, y: -0, z: -0, w: 0.8816746}
   m_LocalPosition: {x: 0, y: 3, z: -2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -4314,7 +4314,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8637463985270368911}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.065109886, y: 0.6506982, z: 0.056155775, w: 0.7544529}
+  m_LocalRotation: {x: -0.06510989, y: 0.65069824, z: 0.056155786, w: 0.7544528}
   m_LocalPosition: {x: -9.7453, y: -1.7132568, z: -1.447052}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -4826,10 +4826,10 @@ GameObject:
   - component: {fileID: 6911377320127465881}
   - component: {fileID: 8585177505333529245}
   - component: {fileID: 1088980159674376588}
-  - component: {fileID: 1496499137168891431}
-  - component: {fileID: 7382788177299959524}
   - component: {fileID: -59105043204523034}
   - component: {fileID: -2672269656071739201}
+  - component: {fileID: -1625138427473786608}
+  - component: {fileID: -1836003133199254669}
   m_Layer: 3
   m_Name: DragonPlayer_Network
   m_TagString: Untagged
@@ -4947,7 +4947,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DragonAnimatorController
   ShowTopMostFoldoutHeaderGroup: 1
   groundController: {fileID: 3534620481540292934}
-  groundingSystem: {fileID: 1496499137168891431}
+  groundingSystem: {fileID: 0}
   animator: {fileID: 8804854363994131359}
   flightController: {fileID: 358013097769894201}
 --- !u!114 &3534620481540292934
@@ -4966,8 +4966,8 @@ MonoBehaviour:
   ignoreOwnershipForTesting: 0
   debugRespawnPoint: {fileID: 0}
   debugRespawnKey: 117
-  groundingSystem: {fileID: 1496499137168891431}
-  groundAlignment: {fileID: 7382788177299959524}
+  groundingSystem: {fileID: 0}
+  groundAlignment: {fileID: 0}
   animator: {fileID: 8804854363994131359}
   rb: {fileID: 4213641409919773835}
   cam: {fileID: 0}
@@ -4996,7 +4996,7 @@ MonoBehaviour:
   trotTurnRate: 120
   sprintTurnRate: 160
   useRootMotion: 1
-  useFakeGravity: 1
+  useFakeGravity: 0
   fakeGravity: 20
   maxFallSpeed: 30
   cliffFallPush: 2
@@ -5070,7 +5070,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DragonCinemachineModeSwitcher
   flight: {fileID: 358013097769894201}
-  grounding: {fileID: 1496499137168891431}
+  grounding: {fileID: 0}
   groundCam: {fileID: 6588417174001191475}
   flightCam: {fileID: 9036942650903576649}
   diveCam: {fileID: 267100468536283623}
@@ -5091,7 +5091,7 @@ MonoBehaviour:
   isFlying: 0
   isGliding: 0
   isDiving: 0
-  groundingSystem: {fileID: 1496499137168891431}
+  groundingSystem: {fileID: 0}
   isGroundedDebug: 1
   isFallingDebug: 0
   frontPawsGroundedDebug: 1
@@ -5149,66 +5149,6 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
---- !u!114 &1496499137168891431
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9190477138144183562}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b280c23c83c99594d817837f13d67820, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DragonGroundingSystem
-  leftHand: {fileID: 6049790313362373418}
-  rightHand: {fileID: 7464351476158240357}
-  leftFoot: {fileID: 7262133624121052353}
-  rightFoot: {fileID: 4349441873428885122}
-  _debugIsGrounded: 0
-  _debugIsFalling: 0
-  _debugIsOnCliff: 0
-  _debugFrontPawsGrounded: 0
-  _debugIsLanding: 0
-  raycastDistance: 1.5
-  raycastOriginOffset: 0.2
-  groundMask:
-    serializedVersion: 2
-    m_Bits: 1073741879
-  groundedConfirmTime: 0.08
-  cliffThreshold: 3
---- !u!114 &7382788177299959524
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9190477138144183562}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3156cdcf500e343439d2dd2fa8d90b70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DragonGroundAlignment
-  ShowTopMostFoldoutHeaderGroup: 1
-  groundingSystem: {fileID: 1496499137168891431}
-  groundController: {fileID: 3534620481540292934}
-  dragonRoot: {fileID: 8226214588110307267}
-  alignmentSpeed: 8
-  maxSlopeAngle: 60
-  minSlopeThreshold: 2
-  enableHeightAdjustment: 1
-  targetBodyHeight: 0.3
-  heightAdjustSpeed: 10
-  maxHeightAdjustPerFrame: 0.15
-  onlyAdjustWhenGrounded: 1
-  heightDeadZone: 0.02
-  normalLerpSpeed: 1
-  basenormalLerpSpeed: 2
-  yawSmoothSpeed: 2
-  baseyawSmoothSpeed: 2
-  speedturnmodifier: 5
-  showDebugNormals: 0
-  showDebugHeight: 0
 --- !u!114 &-59105043204523034
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5249,3 +5189,63 @@ MonoBehaviour:
   UseRigidBodyForMotion: 0
   AutoUpdateKinematicState: 1
   AutoSetKinematicOnDespawn: 1
+--- !u!114 &-1625138427473786608
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e78f5c2169229e448b32aac0a9724d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DragonGroundingSystem
+  leftHand: {fileID: 6049790313362373418}
+  rightHand: {fileID: 7464351476158240357}
+  leftFoot: {fileID: 7262133624121052353}
+  rightFoot: {fileID: 4349441873428885122}
+  _debugIsGrounded: 0
+  _debugIsFalling: 0
+  _debugIsOnCliff: 0
+  _debugFrontPawsGrounded: 0
+  _debugIsLanding: 0
+  raycastDistance: 2
+  raycastOriginOffset: 0.5
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 1
+  groundedConfirmTime: 0.02
+  cliffThreshold: 3
+--- !u!114 &-1836003133199254669
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40c541b35105be340b77f16494f50873, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DragonGroundAlignment
+  ShowTopMostFoldoutHeaderGroup: 1
+  groundingSystem: {fileID: -1625138427473786608}
+  groundController: {fileID: 3534620481540292934}
+  dragonRoot: {fileID: 8226214588110307267}
+  alignmentSpeed: 8
+  maxSlopeAngle: 60
+  minSlopeThreshold: 2
+  enableHeightAdjustment: 1
+  targetBodyHeight: 0.3
+  heightAdjustSpeed: 10
+  maxHeightAdjustPerFrame: 0.15
+  onlyAdjustWhenGrounded: 1
+  heightDeadZone: 0.02
+  normalLerpSpeed: 1
+  basenormalLerpSpeed: 2
+  yawSmoothSpeed: 2
+  baseyawSmoothSpeed: 2
+  speedturnmodifier: 5
+  showDebugNormals: 0
+  showDebugHeight: 0

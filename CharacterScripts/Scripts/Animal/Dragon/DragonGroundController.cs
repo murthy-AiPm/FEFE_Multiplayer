@@ -9,6 +9,8 @@ public class DragonGroundController : AnimalGroundController
     [Header("Dragon Flight")]
     [SerializeField] private DragonFlightController flightController;
 
+    private float _jumpGaitSpeed;
+
     protected override void Awake()
     {
         base.Awake();
@@ -21,6 +23,17 @@ public class DragonGroundController : AnimalGroundController
     /// Called by AnimalGroundController when the takeoff animation completes.
     /// Hands off control to the dragon flight controller.
     /// </summary>
+    protected override void OnJumpTriggered()
+    {
+        _jumpGaitSpeed = GaitSpeed;
+    }
+
+    protected override void OnLanded()
+    {
+        GaitSpeed      = _jumpGaitSpeed;
+        _jumpGaitSpeed = 0f;
+    }
+
     protected override void OnTakeoffRequested()
     {
         if (flightController != null)
