@@ -34,7 +34,7 @@ MonoBehaviour:
     category: 0
     clips:
     - {fileID: 8300000, guid: 68c1c6ee9ddcd0341a672e9f7ecbbef0, type: 3}
-    volume: {x: 0.8, y: 1}
+    volume: {x: 0.20683235, y: 0.4068323}
     pitch: {x: 0.95, y: 1.05}
     overrideDistance: 0
     customMinDistance: 0
@@ -491,7 +491,7 @@ MonoBehaviour:
     footstepClips:
     - {fileID: 8300000, guid: e291157425cb7ec49aa1dd2adcdbe5f5, type: 3}
     - {fileID: 8300000, guid: 4a46c32b0e15cf34a954c0dd09277117, type: 3}
-    volume: {x: 0.59897804, y: 0.798978}
+    volume: {x: 0.1859347, y: 0.38593456}
     pitch: {x: 1.1703576, y: 1.2}
   - surfaceType: Soil
     footstepClips:
@@ -557,7 +557,7 @@ MonoBehaviour:
     targetMaterial: Wood
     impactClips:
     - {fileID: 8300000, guid: b9e0576551c735c428fdd3988f8fc093, type: 3}
-    volume: {x: 0.7, y: 1}
+    volume: {x: 0.84619886, y: 1}
     pitch: {x: 0.9, y: 1.1}
   - soundName: Metal-Flesh
     attackerMaterial: Metal

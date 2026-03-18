@@ -4,7 +4,7 @@ using Unity.Cinemachine;
 public class DragonCinemachineModeSwitcher : MonoBehaviour
 {
     [SerializeField] private DragonFlightController flight;
-    [SerializeField] private DragonGroundingSystem grounding;
+    [SerializeField] private AnimalGroundingSystem grounding;
     [SerializeField] private CinemachineCamera groundCam;
     [SerializeField] private CinemachineCamera flightCam;
     [SerializeField] private CinemachineCamera diveCam;
@@ -12,7 +12,7 @@ public class DragonCinemachineModeSwitcher : MonoBehaviour
     private void Awake()
     {
         if (!flight) flight = GetComponentInParent<DragonFlightController>();
-        if (!grounding) grounding = GetComponentInParent<DragonGroundingSystem>();
+        if (!grounding) grounding = GetComponentInParent<AnimalGroundingSystem>();
     }
 
     private void LateUpdate()

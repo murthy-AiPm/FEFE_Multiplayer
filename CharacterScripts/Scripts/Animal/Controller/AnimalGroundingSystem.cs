@@ -8,7 +8,7 @@ using UnityEngine;
 /// 
 /// IMPROVED: Added raycastOriginOffset to start raycasts higher (better for horses)
 /// </summary>
-public class DragonGroundingSystem : MonoBehaviour
+public class AnimalGroundingSystem : MonoBehaviour
 {
     /// <summary>
     /// Contains all 4 paw raycast hits. Used by DragonGroundAlignment for slope calculation.

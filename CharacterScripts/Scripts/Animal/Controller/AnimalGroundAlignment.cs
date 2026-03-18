@@ -7,11 +7,11 @@ using Unity.Netcode;
 /// NETWORK FIX: Reduced height adjustment aggressiveness to prevent jitter with NetworkTransform
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
-public class DragonGroundAlignment : NetworkBehaviour
+public class AnimalGroundAlignment : NetworkBehaviour
 {
     [Header("References")]
-    [SerializeField] private DragonGroundingSystem groundingSystem;
-    [SerializeField] private DragonGroundController groundController;
+    [SerializeField] private AnimalGroundingSystem groundingSystem;
+    [SerializeField] private AnimalGroundController groundController;
     [SerializeField] private Transform dragonRoot;
 
     [Header("Alignment Settings")]
@@ -57,10 +57,10 @@ public class DragonGroundAlignment : NetworkBehaviour
         rb = GetComponent<Rigidbody>();
 
         if (groundingSystem == null)
-            groundingSystem = GetComponent<DragonGroundingSystem>();
+            groundingSystem = GetComponent<AnimalGroundingSystem>();
 
         if (groundController == null)
-            groundController = GetComponent<DragonGroundController>();
+            groundController = GetComponent<AnimalGroundController>();
 
         if (dragonRoot == null)
             dragonRoot = transform;

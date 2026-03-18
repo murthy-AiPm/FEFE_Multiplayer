@@ -312,7 +312,7 @@ public class MountController : NetworkBehaviour
 
             if (currentMount != null)
             {
-                var horseController = currentMount.GetComponentInChildren<DragonGroundController>();
+                var horseController = currentMount.GetComponentInChildren<AnimalGroundController>();
                 Debug.Log($"[MountController] horseController found: {horseController != null} on {currentMount.name}");
                 if (horseController != null)
                     horseController.StopGradually();

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class DragonFlightStateInspector : MonoBehaviour
+public class AnimalStateInspector : MonoBehaviour
 {
     [SerializeField] private DragonFlightController flight;
 
@@ -11,13 +11,13 @@ public class DragonFlightStateInspector : MonoBehaviour
     [SerializeField] private bool isDiving;
 
     [Header("GROUNDING DEBUG")]
-    [SerializeField] private DragonGroundingSystem groundingSystem;
+    [SerializeField] private AnimalGroundingSystem groundingSystem;
     [SerializeField] private bool isGroundedDebug;
     [SerializeField] private bool isFallingDebug;
     [SerializeField] private bool frontPawsGroundedDebug;
 
     [Header("GROUND STATE DEBUG")]
-    [SerializeField] private DragonGroundController groundController;
+    [SerializeField] private AnimalGroundController groundController;
     [SerializeField] private bool isWalkingDebug;
     [SerializeField] private bool isRunningDebug;
 
@@ -35,9 +35,9 @@ public class DragonFlightStateInspector : MonoBehaviour
         if (flight == null)
             flight = GetComponent<DragonFlightController>();
         if (groundingSystem == null)
-            groundingSystem = GetComponent<DragonGroundingSystem>();
+            groundingSystem = GetComponent<AnimalGroundingSystem>();
         if (groundController == null)
-            groundController = GetComponent<DragonGroundController>();
+            groundController = GetComponent<AnimalGroundController>();
     }
 
     private void Update()

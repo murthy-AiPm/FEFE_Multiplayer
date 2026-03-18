@@ -17,7 +17,7 @@ public class MountableEntity : NetworkBehaviour
     [SerializeField] private LayerMask riderLayer = ~0;
 
     [Header("References")]
-    [SerializeField] private DragonGroundController groundController;
+    [SerializeField] private AnimalGroundController groundController;
 
     [Header("Motion Detection (for remote animation)")]
     [Tooltip("If groundController isn't available or its walk/run flags aren't networked, we estimate motion from transform delta.")]
@@ -84,7 +84,7 @@ public class MountableEntity : NetworkBehaviour
         if (_rb != null)
             _rb.constraints = RigidbodyConstraints.FreezeRotation;
         if (groundController == null)
-            groundController = GetComponent<DragonGroundController>();
+            groundController = GetComponent<AnimalGroundController>();
 
         _lastPos = transform.position;
     }
@@ -292,7 +292,7 @@ public class MountableEntity : NetworkBehaviour
         currentRider = null;
         SetMounted(false);
         // Sync horse yaw before returning ownership
-        var alignment = GetComponent<DragonGroundAlignment>();
+        var alignment = GetComponent<AnimalGroundAlignment>();
         if (alignment != null)
         {
             float currentYaw = transform.eulerAngles.y;
@@ -430,7 +430,7 @@ public class MountableEntity : NetworkBehaviour
     [ClientRpc]
     private void SyncYawClientRpc(float yaw)
     {
-        var alignment = GetComponent<DragonGroundAlignment>();
+        var alignment = GetComponent<AnimalGroundAlignment>();
         if (alignment != null)
             alignment.SetYawImmediate(yaw);
     }

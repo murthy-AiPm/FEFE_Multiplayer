@@ -23,7 +23,7 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private bool useRigidbodyMovement = true;
 
     [Header("References")]
-    [SerializeField] private DragonGroundingSystem groundingSystem;
+    [SerializeField] private AnimalGroundingSystem groundingSystem;
 
     [Header("Input")]
     [SerializeField] private string horizontalAxis = "Horizontal";
@@ -133,7 +133,7 @@ public class DragonFlightController : NetworkBehaviour
     private void Awake()
     {
         if (groundingSystem == null)
-            groundingSystem = GetComponentInChildren<DragonGroundingSystem>();
+            groundingSystem = GetComponentInChildren<AnimalGroundingSystem>();
 
         if (rb == null) rb = GetComponent<Rigidbody>();
 

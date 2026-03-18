@@ -11,8 +11,8 @@ public class MountInputController : NetworkBehaviour
 {
     [Header("References")]
     [SerializeField] private MountableEntity mountableEntity;
-    [SerializeField] private DragonGroundController groundController;
-    [SerializeField] private DragonAnimatorController animatorController;
+    [SerializeField] private AnimalGroundController groundController;
+    [SerializeField] private AnimalAnimatorController animatorController;
 
     [Header("Settings")]
     [Tooltip("Should horse have AI movement when not mounted? (Not implemented yet)")]
@@ -23,9 +23,9 @@ public class MountInputController : NetworkBehaviour
         if (mountableEntity == null)
             mountableEntity = GetComponent<MountableEntity>();
         if (groundController == null)
-            groundController = GetComponent<DragonGroundController>();
+            groundController = GetComponent<AnimalGroundController>();
         if (animatorController == null)
-            animatorController = GetComponentInChildren<DragonAnimatorController>();
+            animatorController = GetComponentInChildren<AnimalAnimatorController>();
     }
 
     public override void OnNetworkSpawn()

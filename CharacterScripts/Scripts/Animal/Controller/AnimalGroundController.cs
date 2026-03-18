@@ -9,7 +9,7 @@ using Unity.Netcode;
 /// - Movement is slope-projected (moves along ground plane, not horizontally)
 /// - No direct rb.MoveRotation() calls
 /// </summary>
-public class DragonGroundController : NetworkBehaviour
+public class AnimalGroundController : NetworkBehaviour
 {
     [Header("Testing")]
     [SerializeField] private bool ignoreOwnershipForTesting = false;
@@ -19,12 +19,11 @@ public class DragonGroundController : NetworkBehaviour
     [SerializeField] private KeyCode debugRespawnKey = KeyCode.U;
 
     [Header("References")]
-    [SerializeField] private DragonGroundingSystem groundingSystem;
-    [SerializeField] private DragonGroundAlignment groundAlignment;
-    [SerializeField] private DragonFlightController flightController;
+    [SerializeField] protected AnimalGroundingSystem groundingSystem;
+    [SerializeField] protected AnimalGroundAlignment groundAlignment;
     [SerializeField] protected Animator animator;
-    [SerializeField] private Rigidbody rb;
-    [SerializeField] private Transform cam;
+    [SerializeField] protected Rigidbody rb;
+    [SerializeField] protected Transform cam;
 
     [Header("Input")]
     [SerializeField] private string forwardAxis = "Vertical";
@@ -116,11 +115,9 @@ public class DragonGroundController : NetworkBehaviour
     protected virtual void Awake()
     {
         if (groundingSystem == null)
-            groundingSystem = GetComponent<DragonGroundingSystem>();
+            groundingSystem = GetComponent<AnimalGroundingSystem>();
         if (groundAlignment == null)
-            groundAlignment = GetComponent<DragonGroundAlignment>();
-        if (flightController == null)
-            flightController = GetComponentInParent<DragonFlightController>();
+            groundAlignment = GetComponent<AnimalGroundAlignment>();
         if (animator == null)
             animator = GetComponent<Animator>();
         if (rb == null)
@@ -361,7 +358,7 @@ public class DragonGroundController : NetworkBehaviour
             TriggerJumpAnimation();
         }
 
-        // Takeoff (C) - lifts dragon up to hover
+        // Takeoff (C) - lifts animal up (subclass handles flight handoff)
         if (Input.GetKey(takeoffKey) && groundingSystem.IsGrounded)
         {
             TriggerTakeoff();
@@ -394,7 +391,7 @@ public class DragonGroundController : NetworkBehaviour
         IsPlayingJump = true;
         //stateTimer = 0f;
         JumpForwardServerRpc();
-        GetComponent<HorseSoundPlayer>()?.OnJump();
+        OnJumpTriggered();
     }
 
     [ServerRpc]
@@ -463,7 +460,7 @@ public class DragonGroundController : NetworkBehaviour
     {
         stateTimer += Time.deltaTime;
 
-        // After JumpUp animation duration, transition to hover
+        // After JumpUp animation duration, hand off to flight (subclass)
         if (stateTimer >= jumpUpAnimationDuration)
         {
             isTakingOff = false;
@@ -475,9 +472,19 @@ public class DragonGroundController : NetworkBehaviour
                 animator.applyRootMotion = false;
 
             groundingSystem.ResetFallingState();
-            flightController.RequestHover();
+            OnTakeoffRequested();
         }
     }
+
+    /// <summary>
+    /// Called when takeoff animation completes. Override in subclasses to hand off to a flight controller.
+    /// </summary>
+    protected virtual void OnTakeoffRequested() { }
+
+    /// <summary>
+    /// Called when a jump animation is triggered. Override in subclasses to play jump sounds.
+    /// </summary>
+    protected virtual void OnJumpTriggered() { }
 
     // ═══════════════════════════════════════════════════════════════
     // STATE MANAGEMENT

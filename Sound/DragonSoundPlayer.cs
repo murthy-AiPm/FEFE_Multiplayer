@@ -17,7 +17,7 @@ public class DragonSoundPlayer : NetworkBehaviour
 {
     [Header("References (auto-found if null)")]
     [SerializeField] private DragonFlightController flightController;
-    [SerializeField] private DragonGroundController groundController;
+    [SerializeField] private AnimalGroundController groundController;
 
     [Header("Wing Flap")]
     [Tooltip("Sound name in database for wing flap")]
@@ -59,7 +59,7 @@ public class DragonSoundPlayer : NetworkBehaviour
     private void Awake()
     {
         if (flightController == null) flightController = GetComponent<DragonFlightController>();
-        if (groundController == null) groundController = GetComponent<DragonGroundController>();
+        if (groundController == null) groundController = GetComponent<AnimalGroundController>();
     }
 
     private void Update()

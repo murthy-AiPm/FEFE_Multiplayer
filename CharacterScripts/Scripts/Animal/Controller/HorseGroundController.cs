@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class HorseGroundController : DragonGroundController
+public class HorseGroundController : AnimalGroundController
 {
     protected override void Awake()
     {
@@ -8,6 +8,11 @@ public class HorseGroundController : DragonGroundController
         useRootMotion = true;
         if (animator != null)
             animator.applyRootMotion = false;
+    }
+
+    protected override void OnJumpTriggered()
+    {
+        GetComponent<HorseSoundPlayer>()?.OnJump();
     }
     //[Header("Horse Gravity")]
     //[SerializeField] private float fakeGravity = 20f;

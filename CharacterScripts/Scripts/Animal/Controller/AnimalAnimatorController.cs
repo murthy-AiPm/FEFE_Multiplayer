@@ -2,34 +2,25 @@ using UnityEngine;
 using Unity.Netcode;
 
 /// <summary>
-/// Single script that drives ALL dragon animator parameters and syncs them over the network.
-/// Owner writes state from FlightController + GroundController into NetworkVariables.
+/// Base animator controller for all animals. Drives ground animator parameters and syncs them over the network.
+/// Owner writes ground state from GroundController into NetworkVariables.
 /// All clients (including owner) read NetworkVariables and apply to local Animator.
-/// Triggers (JumpForward) are handled separately via ServerRpc in DragonGroundController.
-/// 
+/// Subclasses (e.g. DragonAnimatorController) extend this with flight or species-specific params.
+///
 /// OPTIMIZATIONS:
 /// - Throttled updates: 20Hz instead of 60Hz (reduces network traffic by 66%)
 /// - Change detection: Only sends NetworkVariable updates when values actually change
 /// - Float epsilon: Only updates floats if change > 0.01 (prevents micro-changes)
 /// </summary>
 [RequireComponent(typeof(Animator))]
-public class DragonAnimatorController : NetworkBehaviour
+public class AnimalAnimatorController : NetworkBehaviour
 {
     [Header("References")]
-    [SerializeField] private DragonFlightController flightController;
-    [SerializeField] private DragonGroundController groundController;
-    [SerializeField] private DragonGroundingSystem groundingSystem;
-    [SerializeField] private Animator animator;
+    [SerializeField] protected AnimalGroundController groundController;
+    [SerializeField] protected AnimalGroundingSystem groundingSystem;
+    [SerializeField] protected Animator animator;
 
     // ─── Animator Parameter Hashes ───────────────────────
-
-    // Flight
-    private int isHoveringHash;
-    private int isFlyingHash;
-    private int isGlidingHash;
-    private int isDivingHash;
-    private int airSpeedHash;
-    private int verticalSpeedHash;
 
     // Shared
     private int isGroundedHash;
@@ -47,20 +38,6 @@ public class DragonAnimatorController : NetworkBehaviour
     private int gaitSpeedHash;
 
     // ─── NetworkVariables ────────────────────────────────
-
-    // Flight
-    private NetworkVariable<bool> netIsHovering = new NetworkVariable<bool>(
-        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<bool> netIsFlying = new NetworkVariable<bool>(
-        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<bool> netIsGliding = new NetworkVariable<bool>(
-        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<bool> netIsDiving = new NetworkVariable<bool>(
-        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<float> netAirSpeed = new NetworkVariable<float>(
-        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<float> netVerticalSpeed = new NetworkVariable<float>(
-        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     // Shared
     private NetworkVariable<bool> netIsGrounded = new NetworkVariable<bool>(
@@ -93,24 +70,14 @@ public class DragonAnimatorController : NetworkBehaviour
     private float nextNetworkUpdateTime;
     private const float FLOAT_EPSILON = 0.01f; // Only update floats if change > this
 
-    private void Awake()
+    protected virtual void Awake()
     {
         if (animator == null)
             animator = GetComponent<Animator>();
-        if (flightController == null)
-            flightController = GetComponentInParent<DragonFlightController>();
         if (groundController == null)
-            groundController = GetComponentInParent<DragonGroundController>();
+            groundController = GetComponentInParent<AnimalGroundController>();
         if (groundingSystem == null)
-            groundingSystem = GetComponentInParent<DragonGroundingSystem>();
-
-        // Cache hashes - Flight
-        isHoveringHash = Animator.StringToHash("IsHovering");
-        isFlyingHash = Animator.StringToHash("IsFlying");
-        isGlidingHash = Animator.StringToHash("IsGliding");
-        isDivingHash = Animator.StringToHash("IsDiving");
-        airSpeedHash = Animator.StringToHash("AirSpeed");
-        verticalSpeedHash = Animator.StringToHash("VerticalSpeed");
+            groundingSystem = GetComponentInParent<AnimalGroundingSystem>();
 
         // Cache hashes - Shared
         isGroundedHash = Animator.StringToHash("IsGrounded");
@@ -128,7 +95,7 @@ public class DragonAnimatorController : NetworkBehaviour
         gaitSpeedHash = Animator.StringToHash("GaitSpeed");
     }
 
-    private void LateUpdate()
+    protected virtual void LateUpdate()
     {
         if (animator == null) return;
 
@@ -156,14 +123,6 @@ public class DragonAnimatorController : NetworkBehaviour
         animator.SetBool(isGroundedHash, netIsGrounded.Value);
         animator.SetFloat(forwardSpeedHash, netForwardSpeed.Value);
 
-        // Flight
-        animator.SetBool(isHoveringHash, netIsHovering.Value);
-        animator.SetBool(isFlyingHash, netIsFlying.Value);
-        animator.SetBool(isGlidingHash, netIsGliding.Value);
-        animator.SetBool(isDivingHash, netIsDiving.Value);
-        animator.SetFloat(airSpeedHash, netAirSpeed.Value);
-        animator.SetFloat(verticalSpeedHash, netVerticalSpeed.Value);
-
         // Ground
         animator.SetBool(isWalkingHash, netIsWalking.Value);
         animator.SetBool(isRunningHash, netIsRunning.Value);
@@ -187,8 +146,9 @@ public class DragonAnimatorController : NetworkBehaviour
     /// <summary>
     /// Only update NetworkVariables when values actually change.
     /// This prevents flooding the network with redundant updates.
+    /// Subclasses should call base.UpdateNetworkVariables() then add their own.
     /// </summary>
-    private void UpdateNetworkVariables()
+    protected virtual void UpdateNetworkVariables()
     {
         // Shared
         if (groundingSystem != null)
@@ -196,39 +156,6 @@ public class DragonAnimatorController : NetworkBehaviour
             bool isGrounded = groundingSystem.IsGrounded;
             if (netIsGrounded.Value != isGrounded)
                 netIsGrounded.Value = isGrounded;
-        }
-
-        // Flight
-        if (flightController != null)
-        {
-            if (netIsHovering.Value != flightController.IsHoverMode)
-                netIsHovering.Value = flightController.IsHoverMode;
-
-            if (netIsFlying.Value != flightController.IsFlying)
-                netIsFlying.Value = flightController.IsFlying;
-
-            if (netIsGliding.Value != flightController.IsGliding)
-                netIsGliding.Value = flightController.IsGliding;
-
-            if (netIsDiving.Value != flightController.IsDiving)
-                netIsDiving.Value = flightController.IsDiving;
-
-            // Only update floats if change is significant
-            float airSpeed = flightController.AirSpeed;
-            if (Mathf.Abs(netAirSpeed.Value - airSpeed) > FLOAT_EPSILON)
-                netAirSpeed.Value = airSpeed;
-
-            float vertSpeed = flightController.Velocity.y;
-            if (Mathf.Abs(netVerticalSpeed.Value - vertSpeed) > FLOAT_EPSILON)
-                netVerticalSpeed.Value = vertSpeed;
-
-            // ForwardSpeed: use flight velocity when airborne
-            if (groundingSystem != null && !groundingSystem.IsGrounded)
-            {
-                float fwdSpeed = Vector3.Dot(flightController.Velocity, transform.forward);
-                if (Mathf.Abs(netForwardSpeed.Value - fwdSpeed) > FLOAT_EPSILON)
-                    netForwardSpeed.Value = fwdSpeed;
-            }
         }
 
         // Ground
