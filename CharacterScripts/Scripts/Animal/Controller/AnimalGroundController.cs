@@ -95,6 +95,7 @@ public class AnimalGroundController : NetworkBehaviour
     private bool isPlayingJump;  // Jump animation playing (still grounded)
     private bool isTakingOff;    // Lifting up to hover
     private float stateTimer;
+    private float _lostGroundTimer; // prevents isActive flipping on single-frame grounding gaps
 
     // Cached ground normal for slope movement
     private Vector3 currentGroundNormal = Vector3.up;
@@ -164,18 +165,28 @@ public class AnimalGroundController : NetworkBehaviour
             return;
         }
 
-        // Normal grounded state
+        // Normal grounded state — use a small grace period before marking ungrounded
+        // to prevent OnBecameGrounded firing repeatedly during root motion paw bouncing.
         if (groundingSystem.IsGrounded)
         {
-            if (!isActive) OnBecameGrounded();
-            isActive = true;
+            _lostGroundTimer = 0f;
+            if (!isActive)
+            {
+                OnBecameGrounded();
+                isActive = true;
+            }
         }
         else
         {
-            isActive = false;
+            _lostGroundTimer += Time.deltaTime;
+            if (_lostGroundTimer > 0.1f)
+                isActive = false;
         }
         UpdateFallAnimParams();
+        OnGroundUpdate();
     }
+
+    protected virtual void OnGroundUpdate() { }
 
     private void FixedUpdate()
     {
@@ -205,7 +216,7 @@ public class AnimalGroundController : NetworkBehaviour
             return;
         }
 
-        // Jump animation playing - root motion handles movement
+        // Jump animation playing - root motion handles movement, GaitSpeed held by subclass
         if (isPlayingJump) return;
 
         // Not active - do nothing
@@ -498,8 +509,9 @@ public class AnimalGroundController : NetworkBehaviour
         ClearState();
         OnLanded();
 
-        // Kill leftover velocity from fall
-        if (rb != null)
+        // Only kill velocity when NOT using root motion.
+        // Root motion drives velocity itself — zeroing it here kills the landing momentum.
+        if (rb != null && !useRootMotion)
         {
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;

@@ -28,10 +28,17 @@ public class DragonGroundController : AnimalGroundController
         _jumpGaitSpeed = GaitSpeed;
     }
 
+    protected override void OnGroundUpdate()
+    {
+        // Hold GaitSpeed during jump so blend tree shows correct jump clip.
+        if (IsPlayingJump)
+            GaitSpeed = _jumpGaitSpeed;
+    }
+
     protected override void OnLanded()
     {
-        GaitSpeed      = _jumpGaitSpeed;
-        _jumpGaitSpeed = 0f;
+        // ClearState zeroed GaitSpeed — restore it so MoveTowards can decay gradually.
+        GaitSpeed = _jumpGaitSpeed;
     }
 
     protected override void OnTakeoffRequested()
