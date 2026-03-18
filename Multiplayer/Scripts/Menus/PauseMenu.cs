@@ -15,10 +15,18 @@ public class PauseMenu : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            if (characterSelectUI != null && characterSelectUI.IsOpen)
+            var deathScreen = FindObjectOfType<DeathScreen>();
+            bool deathScreenOpen = deathScreen != null && deathScreen.IsOpen;
+
+            if (deathScreenOpen)
+            {
+                // Close death screen and return to pause panel
+                deathScreen.Hide();
+                pausePanel.SetActive(true);
+            }
+            else if (characterSelectUI != null && characterSelectUI.IsOpen)
             {
                 if (characterSelectUI.IsCharacterChange) characterSelectUI.OnBackClicked();
-                // first join: do nothing
             }
             else if (settingsMenu.IsOpen) OnSettingsClosed();
             else if (isPaused) Resume();
@@ -63,12 +71,12 @@ public class PauseMenu : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        var localPlayer = Unity.Netcode.NetworkManager.Singleton?.LocalClient?.PlayerObject;
+        var localPlayer = NetworkManager.Singleton?.LocalClient?.PlayerObject;
         if (localPlayer == null) return;
 
         var deathScreen = FindObjectOfType<DeathScreen>();
         if (deathScreen != null)
-            deathScreen.Show(localPlayer, "Select Spawn Point");
+            deathScreen.Show(localPlayer);
     }
 
     public void OnRespawnScreenClosed()
@@ -100,7 +108,6 @@ public class PauseMenu : MonoBehaviour
         Cursor.visible = false;
     }
 
-    // Called by Escape and by the Back button in the settings panel
     public void OnSettingsClosed()
     {
         settingsMenu.Close();
@@ -109,64 +116,45 @@ public class PauseMenu : MonoBehaviour
 
     public void BackToMainMenu()
     {
-        Resume(); // optional: hide UI / unlock cursor states you want
-
+        Resume();
         StartCoroutine(LeaveSessionAndLoadMenu());
     }
-
-
 
     private System.Collections.IEnumerator LeaveSessionAndLoadMenu()
     {
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost)
-        {
             HostSingleton.Instance.GameManager.ShutDown();
-        }
 
         if (ClientSingleton.Instance != null && ClientSingleton.Instance.GameManager != null)
-        {
             ClientSingleton.Instance.GameManager.Disconnect();
-        }
 
-        // Let NGO process shutdown/despawns
         yield return null;
         yield return null;
 
-        /// Cleanup leftover NetworkObjects ONLY in the active scene (don't kill DontDestroyOnLoad stuff)
         var activeScene = SceneManager.GetActiveScene();
 
         Unity.Netcode.NetworkObject[] netObjects =
 #if UNITY_2023_1_OR_NEWER
-    FindObjectsByType<Unity.Netcode.NetworkObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-#else//
-    Resources.FindObjectsOfTypeAll<Unity.Netcode.NetworkObject>();
+            FindObjectsByType<Unity.Netcode.NetworkObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+#else
+            Resources.FindObjectsOfTypeAll<Unity.Netcode.NetworkObject>();
 #endif
 
         foreach (var no in netObjects)
         {
             if (no == null) continue;
-
-            // Only destroy objects that belong to the ACTIVE scene
             if (no.gameObject.scene != activeScene) continue;
-
-            // Extra safety: never destroy the NetworkManager object if it has NetworkObject
             if (no.GetComponent<Unity.Netcode.NetworkManager>() != null) continue;
-
             Destroy(no.gameObject);
         }
-
-
 
         yield return null;
 
         SceneManager.LoadScene("MainMenu");
     }
 
-
     public void ExitGame()
     {
-        //.timeScale = 1f;
-
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else

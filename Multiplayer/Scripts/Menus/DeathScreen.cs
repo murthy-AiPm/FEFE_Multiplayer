@@ -16,12 +16,9 @@ public class DeathScreen : MonoBehaviour
 
     private NetworkObject _ownerNetObj;
 
-    public void Show(NetworkObject ownerNetObj)
-    {
-        Show(ownerNetObj, titleMessage);
-    }
+    public bool IsOpen => panel != null && panel.activeSelf;
 
-    public void Show(NetworkObject ownerNetObj, string customTitle)
+    public void Show(NetworkObject ownerNetObj)
     {
         _ownerNetObj = ownerNetObj;
 
@@ -29,7 +26,7 @@ public class DeathScreen : MonoBehaviour
             panel.SetActive(true);
 
         if (titleText != null)
-            titleText.text = customTitle;
+            titleText.text = titleMessage;
 
         PopulateSpawnButtons();
 
@@ -42,8 +39,10 @@ public class DeathScreen : MonoBehaviour
         if (panel != null)
             panel.SetActive(false);
 
+        // Reset pause state so the game doesn't stay locked after respawn
         var pauseMenu = FindObjectOfType<PauseMenu>();
-        if (pauseMenu != null) pauseMenu.OnRespawnScreenClosed();
+        if (pauseMenu != null)
+            pauseMenu.Resume();
         else
         {
             Cursor.lockState = CursorLockMode.Locked;
