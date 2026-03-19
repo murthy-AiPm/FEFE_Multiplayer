@@ -13,6 +13,14 @@ public class DragonGroundController : AnimalGroundController
     [SerializeField] private float dragonFakeGravity = 20f;
     [SerializeField] private float dragonMaxFallSpeed = 40f;
 
+    [Header("Ground Detection (Fake Gravity)")]
+    [Tooltip("Raycast origin for detecting ground below. Set to a bone or empty transform on the dragon.")]
+    [SerializeField] private Transform groundCheckOrigin;
+    [Tooltip("How far down to raycast. Must exceed peak jump height but stay short enough to allow cliff free-fall.")]
+    [SerializeField] private float groundCheckDistance = 8f;
+    [Tooltip("Layers that count as solid ground for the gravity check.")]
+    [SerializeField] private LayerMask groundCheckMask = ~0;
+
     private float _jumpGaitSpeed;
     private float _dragonFallVelocity;
     private bool  _isSwimming;
@@ -50,8 +58,8 @@ public class DragonGroundController : AnimalGroundController
                         flightController.IsGliding ||
                         flightController.IsDiving;
 
-        bool rootMotionActive = rb.linearVelocity.sqrMagnitude > 0.1f;
-        if (!inFlight && !groundingSystem.IsGrounded && !IsPlayingJump && !_isSwimming && !rootMotionActive)
+        bool groundExistsBelow = GroundExistsBelow();
+        if (!inFlight && !groundingSystem.IsGrounded && !_isSwimming && !groundExistsBelow)
         {
             _dragonFallVelocity += dragonFakeGravity * Time.fixedDeltaTime;
             _dragonFallVelocity  = Mathf.Min(_dragonFallVelocity, dragonMaxFallSpeed);
@@ -72,6 +80,16 @@ public class DragonGroundController : AnimalGroundController
     public void SetSwimming(bool swimming) => _isSwimming = swimming;
 
     protected override bool CanMoveWhileInactive() => _isSwimming;
+
+    /// <summary>
+    /// Single raycast straight down from groundCheckOrigin.
+    /// Returns true if solid ground is within groundCheckDistance.
+    /// </summary>
+    private bool GroundExistsBelow()
+    {
+        if (groundCheckOrigin == null) return false;
+        return Physics.Raycast(groundCheckOrigin.position, Vector3.down, groundCheckDistance, groundCheckMask);
+    }
 
     protected override void OnTakeoffRequested()
     {

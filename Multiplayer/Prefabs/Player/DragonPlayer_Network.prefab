@@ -4969,8 +4969,8 @@ MonoBehaviour:
   ignoreOwnershipForTesting: 0
   debugRespawnPoint: {fileID: 0}
   debugRespawnKey: 117
-  groundingSystem: {fileID: 0}
-  groundAlignment: {fileID: 0}
+  groundingSystem: {fileID: -1625138427473786608}
+  groundAlignment: {fileID: -1836003133199254669}
   animator: {fileID: 8804854363994131359}
   rb: {fileID: 4213641409919773835}
   cam: {fileID: 0}
@@ -5006,6 +5006,11 @@ MonoBehaviour:
   flightController: {fileID: 358013097769894201}
   dragonFakeGravity: 20
   dragonMaxFallSpeed: 40
+  groundCheckOrigin: {fileID: 3086120407189549482}
+  groundCheckDistance: 1
+  groundCheckMask:
+    serializedVersion: 2
+    m_Bits: 1
 --- !u!114 &358013097769894201
 MonoBehaviour:
   m_ObjectHideFlags: 0
