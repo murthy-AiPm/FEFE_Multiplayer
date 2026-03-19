@@ -19,8 +19,10 @@ public class AnimalSwimSystem : MonoBehaviour
     [SerializeField] private float surfaceRaycastUpOffset = 2f;
     [Tooltip("Total raycast distance downward to find water surface")]
     [SerializeField] private float surfaceRaycastDistance = 6f;
-    [Tooltip("Dragon body Y must be this far below surface to count as InWater")]
+    [Tooltip("Body must be this far below surface to enter swimming")]
     [SerializeField] private float waterEntryDepthThreshold = 0.3f;
+    [Tooltip("Body must be this far ABOVE surface before swimming exits (negative = above surface)")]
+    [SerializeField] private float waterExitDepthThreshold  = -0.5f;
     [Tooltip("Dragon is near surface when within this distance above/below")]
     [SerializeField] private float nearSurfaceThreshold = 1.5f;
 
@@ -34,13 +36,13 @@ public class AnimalSwimSystem : MonoBehaviour
     // Internal state
     private bool  _inWaterVolume;
     private bool  _flightActive;
+    private bool  _isInWaterState; // latched with hysteresis
     private float _waterSurfaceY;
     private float _submersionDepth;
 
     // ── Public state ──────────────────────────────────────────────
-    /// <summary>True when inside a water trigger volume and not in flight.</summary>
-    public bool IsInWater      => _inWaterVolume && !_flightActive &&
-                                   _submersionDepth >= waterEntryDepthThreshold;
+    /// <summary>True when sufficiently submerged. Uses hysteresis to prevent flickering.</summary>
+    public bool IsInWater      => _isInWaterState;
     /// <summary>True when body centre is within nearSurfaceThreshold of the water surface.</summary>
     public bool IsNearSurface  => _inWaterVolume && Mathf.Abs(_submersionDepth) <= nearSurfaceThreshold;
     /// <summary>World Y of the detected water surface. Valid only when InWaterVolume.</summary>
@@ -70,7 +72,31 @@ public class AnimalSwimSystem : MonoBehaviour
         }
 
         UpdateSurface();
+        UpdateIsInWaterState();
         UpdateDebug();
+    }
+
+    // ── Hysteresis ────────────────────────────────────────────────
+    private void UpdateIsInWaterState()
+    {
+        if (_flightActive || !_inWaterVolume)
+        {
+            _isInWaterState = false;
+            return;
+        }
+
+        if (!_isInWaterState)
+        {
+            // Not yet swimming — enter when sufficiently submerged
+            if (_submersionDepth >= waterEntryDepthThreshold)
+                _isInWaterState = true;
+        }
+        else
+        {
+            // Already swimming — only exit when clearly above surface
+            if (_submersionDepth < waterExitDepthThreshold)
+                _isInWaterState = false;
+        }
     }
 
     // ── Water surface raycast ─────────────────────────────────────
@@ -102,6 +128,7 @@ public class AnimalSwimSystem : MonoBehaviour
         if (other.CompareTag(waterTag))
         {
             _inWaterVolume   = false;
+            _isInWaterState  = false;
             _submersionDepth = 0f;
             _waterSurfaceY   = 0f;
         }
