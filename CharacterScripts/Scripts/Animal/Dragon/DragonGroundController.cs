@@ -50,7 +50,8 @@ public class DragonGroundController : AnimalGroundController
                         flightController.IsGliding ||
                         flightController.IsDiving;
 
-        if (!inFlight && !groundingSystem.IsGrounded && !IsPlayingJump && !_isSwimming)
+        bool rootMotionActive = rb.linearVelocity.sqrMagnitude > 0.1f;
+        if (!inFlight && !groundingSystem.IsGrounded && !IsPlayingJump && !_isSwimming && !rootMotionActive)
         {
             _dragonFallVelocity += dragonFakeGravity * Time.fixedDeltaTime;
             _dragonFallVelocity  = Mathf.Min(_dragonFallVelocity, dragonMaxFallSpeed);
