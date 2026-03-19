@@ -4953,6 +4953,7 @@ MonoBehaviour:
   groundingSystem: {fileID: 0}
   animator: {fileID: 8804854363994131359}
   flightController: {fileID: 358013097769894201}
+  swimController: {fileID: 0}
 --- !u!114 &3534620481540292934
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5005,9 +5006,9 @@ MonoBehaviour:
   cliffFallPush: 2
   flightController: {fileID: 358013097769894201}
   dragonFakeGravity: 20
-  dragonMaxFallSpeed: 40
+  dragonMaxFallSpeed: 10
   groundCheckOrigin: {fileID: 3086120407189549482}
-  groundCheckDistance: 1
+  groundCheckDistance: 0.5
   groundCheckMask:
     serializedVersion: 2
     m_Bits: 1

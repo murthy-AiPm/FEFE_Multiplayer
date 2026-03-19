@@ -84,12 +84,16 @@ public class DragonGroundController : AnimalGroundController
     /// <summary>
     /// Single raycast straight down from groundCheckOrigin.
     /// Returns true if solid ground is within groundCheckDistance.
+    /// Used by both fake gravity (this class) and free-fall animation (base class via HasGroundBelow).
     /// </summary>
     private bool GroundExistsBelow()
     {
         if (groundCheckOrigin == null) return false;
         return Physics.Raycast(groundCheckOrigin.position, Vector3.down, groundCheckDistance, groundCheckMask);
     }
+
+    protected override bool HasGroundBelow() => GroundExistsBelow();
+    protected override bool IsSwimmingActive() => _isSwimming;
 
     protected override void OnTakeoffRequested()
     {

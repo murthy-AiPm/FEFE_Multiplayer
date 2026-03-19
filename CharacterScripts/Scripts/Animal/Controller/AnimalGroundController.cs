@@ -129,7 +129,7 @@ public class AnimalGroundController : NetworkBehaviour
 
         jumpForwardHash = Animator.StringToHash("JumpForward");
         jumpUpHash = Animator.StringToHash("JumpUp");
-        isFreeFallingHash = Animator.StringToHash("IsFreeFalling");
+        isFreeFallingHash = Animator.StringToHash("IsFalling");
         isOnCliffHash = Animator.StringToHash("IsOnCliff");
         isLandingHash = Animator.StringToHash("IsLanding");
 
@@ -236,7 +236,7 @@ public class AnimalGroundController : NetworkBehaviour
     private void UpdateFallAnimParams()
     {
         if (animator == null || groundingSystem == null) return;
-        bool falling = groundingSystem.IsFalling && !isPlayingJump && !groundingSystem.IsOnCliff;
+        bool falling = groundingSystem.IsFalling && !isPlayingJump && !groundingSystem.IsOnCliff && !HasGroundBelow() && !IsSwimmingActive();
         bool onCliff = groundingSystem.IsOnCliff && !isPlayingJump;
         bool landing = groundingSystem.IsLanding && !isPlayingJump;
 
@@ -498,6 +498,20 @@ public class AnimalGroundController : NetworkBehaviour
     protected virtual void OnTakeoffRequested() { }
     protected virtual void OnLanded() { }
     protected virtual bool CanMoveWhileInactive() => false;
+
+    /// <summary>
+    /// Override in subclasses that have a ground-detection raycast.
+    /// Returns true if solid ground exists below the animal (independent of paw grounding).
+    /// Base returns false — meaning free-fall animation is not suppressed by default.
+    /// </summary>
+    protected virtual bool HasGroundBelow() => false;
+
+    /// <summary>
+    /// Override in subclasses that have a swim controller.
+    /// Returns true if the animal is currently swimming.
+    /// Base returns false.
+    /// </summary>
+    protected virtual bool IsSwimmingActive() => false;
 
     /// <summary>
     /// Called when a jump animation is triggered. Override in subclasses to play jump sounds.

@@ -13,6 +13,9 @@ public class DragonAnimatorController : AnimalAnimatorController
     [Header("Dragon Flight References")]
     [SerializeField] private DragonFlightController flightController;
 
+    [Header("Dragon Swim References")]
+    [SerializeField] private DragonSwimController swimController;
+
     // ─── Animator Parameter Hashes (Flight) ──────────────
 
     private int isHoveringHash;
@@ -21,6 +24,13 @@ public class DragonAnimatorController : AnimalAnimatorController
     private int isDivingHash;
     private int airSpeedHash;
     private int verticalSpeedHash;
+
+    // ─── Animator Parameter Hashes (Swim) ────────────────
+
+    private int isSwimmingHash;
+    private int swimSpeedHash;
+    private int swimTurnHash;
+    private int swimVerticalHash;
 
     // ─── NetworkVariables (Flight) ────────────────────────
 
@@ -37,6 +47,17 @@ public class DragonAnimatorController : AnimalAnimatorController
     private NetworkVariable<float> netVerticalSpeed = new NetworkVariable<float>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
+    // ─── NetworkVariables (Swim) ──────────────────────────
+
+    private NetworkVariable<bool> netIsSwimming = new NetworkVariable<bool>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<float> netSwimSpeed = new NetworkVariable<float>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<float> netSwimTurn = new NetworkVariable<float>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<float> netSwimVertical = new NetworkVariable<float>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
     private const float FLOAT_EPSILON = 0.01f;
 
     protected override void Awake()
@@ -45,6 +66,8 @@ public class DragonAnimatorController : AnimalAnimatorController
 
         if (flightController == null)
             flightController = GetComponentInParent<DragonFlightController>();
+        if (swimController == null)
+            swimController = GetComponentInParent<DragonSwimController>();
 
         // Cache flight hashes
         isHoveringHash    = Animator.StringToHash("IsHovering");
@@ -53,6 +76,12 @@ public class DragonAnimatorController : AnimalAnimatorController
         isDivingHash      = Animator.StringToHash("IsDiving");
         airSpeedHash      = Animator.StringToHash("AirSpeed");
         verticalSpeedHash = Animator.StringToHash("VerticalSpeed");
+
+        // Cache swim hashes
+        isSwimmingHash   = Animator.StringToHash("IsSwimming");
+        swimSpeedHash    = Animator.StringToHash("SwimSpeed");
+        swimTurnHash     = Animator.StringToHash("SwimTurn");
+        swimVerticalHash = Animator.StringToHash("SwimVertical");
     }
 
     protected override void LateUpdate()
@@ -69,6 +98,12 @@ public class DragonAnimatorController : AnimalAnimatorController
         animator.SetBool(isDivingHash,      netIsDiving.Value);
         animator.SetFloat(airSpeedHash,     netAirSpeed.Value);
         animator.SetFloat(verticalSpeedHash, netVerticalSpeed.Value);
+
+        // Swim params
+        animator.SetBool(isSwimmingHash,      netIsSwimming.Value);
+        animator.SetFloat(swimSpeedHash,      netSwimSpeed.Value);
+        animator.SetFloat(swimTurnHash,       netSwimTurn.Value);
+        animator.SetFloat(swimVerticalHash,   netSwimVertical.Value);
     }
 
     protected override void UpdateNetworkVariables()
@@ -99,6 +134,26 @@ public class DragonAnimatorController : AnimalAnimatorController
         float vertSpeed = flightController.Velocity.y;
         if (Mathf.Abs(netVerticalSpeed.Value - vertSpeed) > FLOAT_EPSILON)
             netVerticalSpeed.Value = vertSpeed;
+
+        // Swim variables
+        if (swimController != null)
+        {
+            if (netIsSwimming.Value != swimController.IsSwimming)
+                netIsSwimming.Value = swimController.IsSwimming;
+
+            // Read current animator values set by DragonSwimController on owner
+            float swimSpeed = animator.GetFloat(swimSpeedHash);
+            if (Mathf.Abs(netSwimSpeed.Value - swimSpeed) > FLOAT_EPSILON)
+                netSwimSpeed.Value = swimSpeed;
+
+            float swimTurn = animator.GetFloat(swimTurnHash);
+            if (Mathf.Abs(netSwimTurn.Value - swimTurn) > FLOAT_EPSILON)
+                netSwimTurn.Value = swimTurn;
+
+            float swimVertical = animator.GetFloat(swimVerticalHash);
+            if (Mathf.Abs(netSwimVertical.Value - swimVertical) > FLOAT_EPSILON)
+                netSwimVertical.Value = swimVertical;
+        }
 
         // ForwardSpeed from flight velocity when airborne (overrides base ground value)
         if (groundingSystem != null && !groundingSystem.IsGrounded)
