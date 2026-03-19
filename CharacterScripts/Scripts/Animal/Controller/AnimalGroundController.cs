@@ -70,6 +70,7 @@ public class AnimalGroundController : NetworkBehaviour
     [SerializeField] protected bool useRootMotion = false;
     public bool UseRootMotion => useRootMotion;
 
+
     [Header("Fake Gravity (for horse)")]
     [SerializeField] private bool useFakeGravity = false;
     [SerializeField] private float fakeGravity = 20f;

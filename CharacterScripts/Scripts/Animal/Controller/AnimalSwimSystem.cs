@@ -7,7 +7,7 @@ using UnityEngine;
 ///
 /// Public state consumed by swim controllers (e.g. DragonSwimController).
 /// Flight exclusion: call SetFlightActive(true) to pause detection when airborne.
-/// </summary>
+/// </summary>//
 public class AnimalSwimSystem : MonoBehaviour
 {
     [Header("Water Detection")]

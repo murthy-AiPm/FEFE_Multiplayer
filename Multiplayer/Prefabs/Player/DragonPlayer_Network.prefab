@@ -4908,9 +4908,9 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 0
   m_IsKinematic: 0
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_Constraints: 112
-  m_CollisionDetection: 0
+  m_CollisionDetection: 2
 --- !u!114 &-5407344593502133865
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5274,6 +5274,7 @@ MonoBehaviour:
   surfaceRaycastUpOffset: 2
   surfaceRaycastDistance: 6
   waterEntryDepthThreshold: 0.3
+  waterExitDepthThreshold: -0.5
   nearSurfaceThreshold: 1.5
   _debugInVolume: 0
   _debugIsInWater: 0
