@@ -4830,6 +4830,8 @@ GameObject:
   - component: {fileID: -2672269656071739201}
   - component: {fileID: -1625138427473786608}
   - component: {fileID: -1836003133199254669}
+  - component: {fileID: -660038134078556429}
+  - component: {fileID: 5974085032444721806}
   m_Layer: 3
   m_Name: DragonPlayer_Network
   m_TagString: Untagged
@@ -5001,6 +5003,8 @@ MonoBehaviour:
   maxFallSpeed: 30
   cliffFallPush: 2
   flightController: {fileID: 358013097769894201}
+  dragonFakeGravity: 20
+  dragonMaxFallSpeed: 40
 --- !u!114 &358013097769894201
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5014,9 +5018,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DragonFlightController
   ShowTopMostFoldoutHeaderGroup: 1
-  rb: {fileID: 0}
+  rb: {fileID: 4213641409919773835}
   useRigidbodyMovement: 0
-  groundingSystem: {fileID: 0}
+  groundingSystem: {fileID: -1625138427473786608}
   horizontalAxis: Horizontal
   verticalAxis: Vertical
   hoverAxis: Hover
@@ -5249,3 +5253,59 @@ MonoBehaviour:
   speedturnmodifier: 5
   showDebugNormals: 0
   showDebugHeight: 0
+--- !u!114 &-660038134078556429
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ece8bfccf3fefd74984f1a1d89e00947, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AnimalSwimSystem
+  waterTag: Water
+  waterLayer:
+    serializedVersion: 2
+    m_Bits: 16
+  bodyCentre: {fileID: 5688100995211649117}
+  surfaceRaycastUpOffset: 2
+  surfaceRaycastDistance: 6
+  waterEntryDepthThreshold: 0.3
+  nearSurfaceThreshold: 1.5
+  _debugInVolume: 0
+  _debugIsInWater: 0
+  _debugIsNearSurface: 0
+  _debugSubmersionDepth: 0
+  _debugWaterSurfaceY: 0
+--- !u!114 &5974085032444721806
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cf8ead590741964c96843e3175255dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DragonSwimController
+  ShowTopMostFoldoutHeaderGroup: 1
+  groundController: {fileID: 3534620481540292934}
+  flightController: {fileID: 358013097769894201}
+  swimSystem: {fileID: -660038134078556429}
+  animator: {fileID: 8804854363994131359}
+  rb: {fileID: 4213641409919773835}
+  forwardAxis: Vertical
+  horizontalAxis: Horizontal
+  swimUpKey: 32
+  swimDownKey: 306
+  sprintKey: 304
+  swimSpeedSmoothing: 3
+  swimTurnSmoothing: 4
+  swimVerticalSmoothing: 3
+  verticalSpeed: 4
+  maxPitchAngle: 40
+  pitchSmoothing: 3
+  surfaceBuoyancy: 2
