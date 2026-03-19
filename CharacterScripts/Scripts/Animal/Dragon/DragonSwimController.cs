@@ -22,6 +22,7 @@ public class DragonSwimController : NetworkBehaviour
     [SerializeField] private AnimalSwimSystem       swimSystem;
     [SerializeField] private Animator               animator;
     [SerializeField] private Rigidbody              rb;
+    [SerializeField] private Transform              cam;
 
     [Header("Input")]
     [SerializeField] private string  forwardAxis    = "Vertical";
@@ -64,6 +65,7 @@ public class DragonSwimController : NetworkBehaviour
         if (flightController == null) flightController = GetComponentInParent<DragonFlightController>();
         if (animator         == null) animator         = GetComponentInParent<Animator>();
         if (rb               == null) rb               = GetComponentInParent<Rigidbody>();
+        if (cam              == null) cam              = Camera.main?.transform;
 
         isSwimmingHash   = Animator.StringToHash("IsSwimming");
         swimSpeedHash    = Animator.StringToHash("SwimSpeed");
@@ -136,7 +138,15 @@ public class DragonSwimController : NetworkBehaviour
             targetSpeed = sprint ? 1f : 0.5f;
 
         _swimSpeed = Mathf.MoveTowards(_swimSpeed, targetSpeed, swimSpeedSmoothing * Time.deltaTime);
-        _swimTurn  = Mathf.MoveTowards(_swimTurn,  Mathf.Clamp(horizontal, -1f, 1f), swimTurnSmoothing * Time.deltaTime);
+
+        // SwimTurn driven by camera/dragon yaw delta — only when moving, same as ground TurnAngle
+        float targetTurn = 0f;
+        if (vertical > 0.1f && cam != null && rb != null)
+        {
+            float angleDelta = Mathf.DeltaAngle(rb.rotation.eulerAngles.y, cam.eulerAngles.y);
+            targetTurn = Mathf.Clamp(angleDelta / 30f, -1f, 1f);
+        }
+        _swimTurn = Mathf.Lerp(_swimTurn, targetTurn, swimTurnSmoothing * Time.deltaTime);
 
         float targetVertical = 0f;
         if (Input.GetKey(swimUpKey))   targetVertical =  1f;
