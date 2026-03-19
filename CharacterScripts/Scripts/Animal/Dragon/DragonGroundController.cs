@@ -15,6 +15,7 @@ public class DragonGroundController : AnimalGroundController
 
     private float _jumpGaitSpeed;
     private float _dragonFallVelocity;
+    private bool  _isSwimming;
 
     protected override void Awake()
     {
@@ -49,7 +50,7 @@ public class DragonGroundController : AnimalGroundController
                         flightController.IsGliding ||
                         flightController.IsDiving;
 
-        if (!inFlight && !groundingSystem.IsGrounded && !IsPlayingJump)
+        if (!inFlight && !groundingSystem.IsGrounded && !IsPlayingJump && !_isSwimming)
         {
             _dragonFallVelocity += dragonFakeGravity * Time.fixedDeltaTime;
             _dragonFallVelocity  = Mathf.Min(_dragonFallVelocity, dragonMaxFallSpeed);
@@ -66,6 +67,10 @@ public class DragonGroundController : AnimalGroundController
         // ClearState zeroed GaitSpeed — restore it so MoveTowards can decay gradually.
         GaitSpeed = _jumpGaitSpeed;
     }
+
+    public void SetSwimming(bool swimming) => _isSwimming = swimming;
+
+    protected override bool CanMoveWhileInactive() => _isSwimming;
 
     protected override void OnTakeoffRequested()
     {

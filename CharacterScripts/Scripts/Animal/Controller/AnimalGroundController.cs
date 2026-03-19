@@ -221,8 +221,8 @@ public class AnimalGroundController : NetworkBehaviour
         // Jump animation playing - root motion handles movement, GaitSpeed held by subclass
         if (isPlayingJump) return;
 
-        // Not active - do nothing
-        if (!isActive) return;
+        // Not active - do nothing (unless subclass overrides)
+        if (!isActive && !CanMoveWhileInactive()) return;
 
         // Update cached ground normal
         UpdateGroundNormal();
@@ -496,6 +496,7 @@ public class AnimalGroundController : NetworkBehaviour
     /// </summary>
     protected virtual void OnTakeoffRequested() { }
     protected virtual void OnLanded() { }
+    protected virtual bool CanMoveWhileInactive() => false;
 
     /// <summary>
     /// Called when a jump animation is triggered. Override in subclasses to play jump sounds.

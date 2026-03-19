@@ -32,8 +32,8 @@ public class AnimalSwimSystem : MonoBehaviour
     [SerializeField] private float _debugWaterSurfaceY;
 
     // Internal state
-    private bool _inWaterVolume;
-    private bool _flightActive;
+    private bool  _inWaterVolume;
+    private bool  _flightActive;
     private float _waterSurfaceY;
     private float _submersionDepth;
 
@@ -84,13 +84,10 @@ public class AnimalSwimSystem : MonoBehaviour
             waterLayer, QueryTriggerInteraction.Collide))
         {
             _waterSurfaceY   = hit.point.y;
-            _submersionDepth = _waterSurfaceY - bodyCentre.position.y;
         }
-        else
-        {
-            // Fallback: no surface hit, keep last known or use body position
-            _submersionDepth = 0f;
-        }
+        // If raycast misses (dragon is deep underwater), keep last known surface Y.
+        // Never reset submersion when inside the water volume.
+        _submersionDepth = _waterSurfaceY - bodyCentre.position.y;
     }
 
     // ── Trigger detection ─────────────────────────────────────────
