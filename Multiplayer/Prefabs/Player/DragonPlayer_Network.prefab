@@ -4999,6 +4999,7 @@ MonoBehaviour:
   walkTurnRate: 90
   trotTurnRate: 120
   sprintTurnRate: 160
+  airTurnRate: 120
   useRootMotion: 1
   useFakeGravity: 0
   fakeGravity: 20
