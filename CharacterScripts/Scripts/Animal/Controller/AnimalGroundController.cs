@@ -66,6 +66,10 @@ public class AnimalGroundController : NetworkBehaviour
     [SerializeField] private float trotTurnRate = 120f;
     [SerializeField] private float sprintTurnRate = 160f;
 
+    [Header("Air Steering")]
+    [Tooltip("Turn rate (deg/sec) when airborne (jump or free fall).")]
+    [SerializeField] private float airTurnRate = 120f;
+
     [Header("Root Motion")]
     [SerializeField] protected bool useRootMotion = false;
     public bool UseRootMotion => useRootMotion;
@@ -95,6 +99,7 @@ public class AnimalGroundController : NetworkBehaviour
     private float _cappedYaw;  // yaw that moves toward targetAngle at a capped rate
     private bool isPlayingJump;  // Jump animation playing (still grounded)
     private bool isTakingOff;    // Lifting up to hover
+    private bool _isAirSteering; // Player is steering mid-air (jump or free fall)
     private float stateTimer;
     private float _lostGroundTimer; // prevents isActive flipping on single-frame grounding gaps
 
@@ -162,8 +167,15 @@ public class AnimalGroundController : NetworkBehaviour
         // Jump animation playing (still grounded, just animating)
         if (isPlayingJump)
         {
+            HandleAirSteering();
             HandleJumpAnimation();
             return;
+        }
+
+        // Free fall — allow air steering
+        if (!isActive && !IsSwimmingActive())
+        {
+            HandleAirSteering();
         }
 
         // Normal grounded state — use a small grace period before marking ungrounded
@@ -435,6 +447,36 @@ public class AnimalGroundController : NetworkBehaviour
     }
 
     // ═══════════════════════════════════════════════════════════════
+    // AIR STEERING - rotate dragon mid-jump or during free fall
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Reads WASD + camera direction and steers the dragon while airborne.
+    /// Only rotates — no horizontal movement added.
+    /// </summary>
+    private void HandleAirSteering()
+    {
+        if (_ignoreInput || cam == null || rb == null) return;
+
+        float vertical   = Input.GetAxisRaw(forwardAxis);
+        float horizontal = Input.GetAxisRaw(strafeAxis);
+        Vector2 input = new Vector2(horizontal, vertical);
+        bool hasInput = input.magnitude > 0.1f;
+
+        _isAirSteering = hasInput;
+
+        if (!hasInput) return;
+
+        Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
+        float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + cam.eulerAngles.y;
+
+        _cappedYaw = Mathf.MoveTowardsAngle(_cappedYaw, targetAngle, airTurnRate * Time.deltaTime);
+
+        if (groundAlignment != null)
+            groundAlignment.UpdateTargetYaw(_cappedYaw);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // TAKEOFF (C) - lifts dragon up until raycasts miss, then hover
     // ═══════════════════════════════════════════════════════════════
 
@@ -577,7 +619,20 @@ public class AnimalGroundController : NetworkBehaviour
             if (useRootMotion)
             {
                 if (animator.deltaPosition.sqrMagnitude > 0.00001f)
-                    rb.linearVelocity = animator.deltaPosition / Time.deltaTime;
+                {
+                    Vector3 delta = animator.deltaPosition;
+
+                    // If player is steering mid-air, redirect root motion to match current facing
+                    if (_isAirSteering && isPlayingJump)
+                    {
+                        float speed = delta.magnitude;
+                        Vector3 forward = rb.rotation * Vector3.forward;
+                        delta = forward * speed;
+                        delta.y = animator.deltaPosition.y; // preserve vertical from animation
+                    }
+
+                    rb.linearVelocity = delta / Time.deltaTime;
+                }
                 else
                     rb.linearVelocity = Vector3.zero;
             }
