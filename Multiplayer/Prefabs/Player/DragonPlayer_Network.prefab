@@ -786,14 +786,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1712461836808213696}
   serializedVersion: 2
-  m_LocalRotation: {x: -4.9221552e-14, y: -0.0000008085817, z: 0.29152784, w: 0.95656234}
+  m_LocalRotation: {x: -0.033573292, y: -0.010232725, z: 0.29134825, w: 0.95597297}
   m_LocalPosition: {x: -0.3457602, y: -0.00022850036, z: -6.321352e-10}
   m_LocalScale: {x: 1.0000001, y: 1.0000001, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 142127849840715812}
   m_Father: {fileID: 7041529955691784601}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -3.338, y: -2.246, z: 33.964}
 --- !u!1 &1819010203809213384
 GameObject:
   m_ObjectHideFlags: 0
@@ -4833,6 +4833,7 @@ GameObject:
   - component: {fileID: -660038134078556429}
   - component: {fileID: 5974085032444721806}
   - component: {fileID: 1376780217212887459}
+  - component: {fileID: -7800844257033982807}
   m_Layer: 3
   m_Name: DragonPlayer_Network
   m_TagString: Untagged
@@ -5342,3 +5343,37 @@ CapsuleCollider:
   m_Height: 4.01
   m_Direction: 2
   m_Center: {x: 0, y: 1.28, z: 0.34}
+--- !u!114 &-7800844257033982807
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 332d1e9748674954b8d784ac79d03929, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DragonCombatController
+  ShowTopMostFoldoutHeaderGroup: 1
+  animator: {fileID: 8804854363994131359}
+  groundController: {fileID: 3534620481540292934}
+  rb: {fileID: 4213641409919773835}
+  cam: {fileID: 0}
+  spineBone: {fileID: 6834720352492521363}
+  spine1Bone: {fileID: 8123714689142491674}
+  spine2Bone: {fileID: 5688100995211649117}
+  neck1Bone: {fileID: 7040834288271894113}
+  maxTwistAngle: 60
+  twistSpeed: 180
+  twistReturnSpeed: 120
+  spineWeight: 0.2
+  spine1Weight: 0.3
+  spine2Weight: 0.5
+  maxHeadAngle: 80
+  headTurnSpeed: 200
+  headReturnSpeed: 150
+  stationaryThreshold: 0.1
+  meleeKey: 323
+  aimKey: 324
+  attackModeKey: 49
