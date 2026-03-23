@@ -1,7 +1,7 @@
 using UnityEngine;
 using Unity.Netcode;
 
-/// <summary>
+// <summary>
 /// Dragon combat controller. Handles:
 /// - Press 1: toggle Attack Mode (plays AttackMode idle anim, enables head tracking)
 /// - Head tracking: Neck1 bone follows camera yaw automatically while in Attack Mode

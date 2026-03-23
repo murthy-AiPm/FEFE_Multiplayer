@@ -353,8 +353,9 @@ public class AnimalGroundController : NetworkBehaviour
             float currentYaw = rb.rotation.eulerAngles.y;
             float angleDelta = Mathf.DeltaAngle(currentYaw, _cappedYaw);
             float targetTurnAngle = Mathf.Clamp(angleDelta / 30f, -1f, 1f);
-            TurnAngle = Mathf.SmoothDamp(TurnAngle, targetTurnAngle,
-                ref _turnAngleVel, 1f / turnAngleSmoothing);
+            TurnAngle = Mathf.Clamp(
+                Mathf.SmoothDamp(TurnAngle, targetTurnAngle, ref _turnAngleVel, 1f / turnAngleSmoothing),
+                -1f, 1f);
             IsTurningLeft = angleDelta < -turnHeadAngle;
             IsTurningRight = angleDelta > turnHeadAngle;
             TurnSpeed = Mathf.Abs(angleDelta) / 180f;
@@ -368,7 +369,9 @@ public class AnimalGroundController : NetworkBehaviour
             // Gradually track current facing so TurnAngle decays smoothly instead of snapping
             float currentYaw = rb.rotation.eulerAngles.y;
             _cappedYaw = Mathf.MoveTowardsAngle(_cappedYaw, currentYaw, walkTurnRate * Time.fixedDeltaTime);
-            TurnAngle = Mathf.SmoothDamp(TurnAngle, 0f, ref _turnAngleVel, 1f / turnAngleSmoothing);
+            TurnAngle = Mathf.Clamp(
+                Mathf.SmoothDamp(TurnAngle, 0f, ref _turnAngleVel, 1f / turnAngleSmoothing),
+                -1f, 1f);
 
             IsTurningLeft = false;
             IsTurningRight = false;
