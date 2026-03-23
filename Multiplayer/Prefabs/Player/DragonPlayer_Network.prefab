@@ -25,14 +25,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 114944311331313315}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.0000034134437, y: 0.000003448738, z: -0.7079509, w: 0.70626163}
+  m_LocalRotation: {x: 0, y: 0, z: -0.7083707, w: 0.7058407}
   m_LocalPosition: {x: 0.069152065, y: 0.19837244, z: -0.000001310114}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8123714689142491674}
   m_Father: {fileID: 6801981938820597609}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: -90.205}
 --- !u!136 &2216290764441614848
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1114,7 +1114,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2712177563776144295}
   serializedVersion: 2
-  m_LocalRotation: {x: -1.364242e-12, y: -1.4122037e-13, z: -1.9265877e-25, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.4321611, y: -0.00034423827, z: -9.557698e-10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -3392,7 +3392,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7256931635852848265}
   serializedVersion: 2
-  m_LocalRotation: {x: -1.364242e-12, y: -1.4033219e-13, z: -1.9144708e-25, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.43216112, y: -0.00034408568, z: -9.546056e-10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -5367,9 +5367,9 @@ MonoBehaviour:
   maxTwistAngle: 60
   twistSpeed: 180
   twistReturnSpeed: 120
-  spineWeight: 0.2
-  spine1Weight: 0.3
-  spine2Weight: 0.5
+  spineWeight: 1
+  spine1Weight: 0
+  spine2Weight: 0
   maxHeadAngle: 80
   headTurnSpeed: 200
   headReturnSpeed: 150

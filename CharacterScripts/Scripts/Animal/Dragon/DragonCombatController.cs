@@ -128,8 +128,9 @@ public class DragonCombatController : NetworkBehaviour
         HandleAttackModeToggle();
         HandleAimInput();
         HandleAttackInput();
-        UpdateTwistAngle();
-        UpdateHeadAngle();
+        bool isStationary = groundController == null || groundController.GaitSpeed <= stationaryThreshold;
+        UpdateTwistAngle(isStationary);
+        UpdateHeadAngle(isStationary);
         SyncToNetwork();
     }
 
@@ -181,10 +182,10 @@ public class DragonCombatController : NetworkBehaviour
     private void HandleAimInput()
     {
         // Right-click aim is suppressed in attack mode
+        // Do NOT touch _targetTwistAngle here — UpdateTwistAngle owns it in attack mode
         if (_isAttackMode)
         {
             _isAiming = false;
-            _targetTwistAngle = 0f;
             return;
         }
 
@@ -219,18 +220,23 @@ public class DragonCombatController : NetworkBehaviour
     // TWIST
     // ═══════════════════════════════════════════════════════════════
 
-    private void UpdateTwistAngle()
+    private void UpdateTwistAngle(bool isStationary)
     {
+        if (!isStationary)
+        {
+            // Moving — return spine to zero, blend tree handles body direction
+            _targetTwistAngle = 0f;
+            _currentTwistAngle = Mathf.MoveTowards(_currentTwistAngle, 0f, twistReturnSpeed * Time.deltaTime);
+            return;
+        }
+
         // During melee attack in attack mode, spine chases the captured attack angle (not head)
         if (_isAttackMode && animator != null &&
             animator.GetCurrentAnimatorStateInfo(0).IsTag("MeleeAttack"))
         {
             _targetTwistAngle = _attackTwistAngle;
         }
-        else if (!_isAiming)
-        {
-            _targetTwistAngle = 0f;
-        }
+        // Spine holds its angle after attack — no auto-return to zero
 
         float speed = (_isAiming || (_isAttackMode && animator != null &&
             animator.GetCurrentAnimatorStateInfo(0).IsTag("MeleeAttack")))
@@ -242,20 +248,36 @@ public class DragonCombatController : NetworkBehaviour
     {
         if (Mathf.Abs(twistAngle) < 0.01f) return;
 
+        // Rotate around world Y (yaw only) by pre-multiplying in world space:
+        // worldRot = Quaternion.AngleAxis(angle, Vector3.up) * bone.rotation
+        // then convert back to local via parent.inverseRotation
+        Quaternion yaw = Quaternion.AngleAxis(-twistAngle, Vector3.up);
+
         if (spineBone != null)
-            spineBone.localRotation  *= Quaternion.AngleAxis(twistAngle * spineWeight,  Vector3.up);
+            spineBone.rotation = Quaternion.Slerp(spineBone.rotation,
+                yaw * spineBone.rotation, spineWeight);
         if (spine1Bone != null)
-            spine1Bone.localRotation *= Quaternion.AngleAxis(twistAngle * spine1Weight, Vector3.up);
+            spine1Bone.rotation = Quaternion.Slerp(spine1Bone.rotation,
+                yaw * spine1Bone.rotation, spine1Weight);
         if (spine2Bone != null)
-            spine2Bone.localRotation *= Quaternion.AngleAxis(twistAngle * spine2Weight, Vector3.up);
+            spine2Bone.rotation = Quaternion.Slerp(spine2Bone.rotation,
+                yaw * spine2Bone.rotation, spine2Weight);
     }
 
     // ═══════════════════════════════════════════════════════════════
     // HEAD TRACKING
     // ═══════════════════════════════════════════════════════════════
 
-    private void UpdateHeadAngle()
+    private void UpdateHeadAngle(bool isStationary)
     {
+        if (!isStationary)
+        {
+            // Moving — return head to zero, blend tree handles body direction
+            _targetHeadAngle = 0f;
+            _currentHeadAngle = Mathf.MoveTowards(_currentHeadAngle, 0f, headReturnSpeed * Time.deltaTime);
+            return;
+        }
+
         bool isMeleeActive = _isAttackMode && animator != null &&
             animator.GetCurrentAnimatorStateInfo(0).IsTag("MeleeAttack");
 
@@ -285,7 +307,8 @@ public class DragonCombatController : NetworkBehaviour
         if (neck1Bone == null) return;
         if (Mathf.Abs(headAngle) < 0.01f) return;
 
-        neck1Bone.localRotation *= Quaternion.AngleAxis(headAngle, Vector3.up);
+        Quaternion yaw = Quaternion.AngleAxis(-headAngle, Vector3.up);
+        neck1Bone.rotation = yaw * neck1Bone.rotation;
     }
 
     // ═══════════════════════════════════════════════════════════════
