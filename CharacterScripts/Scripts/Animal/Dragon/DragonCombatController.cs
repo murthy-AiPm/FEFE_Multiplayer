@@ -291,7 +291,9 @@ public class DragonCombatController : NetworkBehaviour
             float cameraYaw = cam.eulerAngles.y;
             float bodyYaw   = rb.rotation.eulerAngles.y;
             float delta     = Mathf.DeltaAngle(cameraYaw, bodyYaw);
-            _targetHeadAngle = Mathf.Clamp(delta, -maxHeadAngle, maxHeadAngle);
+            // Subtract spine twist so head doesn't double up — total rotation = camera direction
+            float compensated = delta - _currentTwistAngle;
+            _targetHeadAngle = Mathf.Clamp(compensated, -maxHeadAngle, maxHeadAngle);
         }
         else
         {
