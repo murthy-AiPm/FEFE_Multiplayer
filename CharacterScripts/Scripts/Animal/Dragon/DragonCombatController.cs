@@ -40,6 +40,15 @@ public class DragonCombatController : NetworkBehaviour
     [Header("Head Bone (for head tracking)")]
     [SerializeField] private Transform neck1Bone;
 
+    [Header("Jaw Bone (procedural mouth open for fire breath)")]
+    [SerializeField] private Transform jawBone;
+    [Tooltip("Jaw local Z rotation when closed.")]
+    [SerializeField] private float jawClosedZ = -106.534f;
+    [Tooltip("Jaw local Z rotation when fully open.")]
+    [SerializeField] private float jawOpenZ = -125f;
+    [Tooltip("How fast the jaw opens/closes (deg/sec).")]
+    [SerializeField] private float jawSpeed = 300f;
+
     [Header("Upper Body Twist (Melee Only)")]
     [SerializeField] private float maxTwistAngle = 60f;
     [SerializeField] private float twistSpeed = 180f;
@@ -85,6 +94,7 @@ public class DragonCombatController : NetworkBehaviour
 
     // ─── Fire Breath State ───────────────────────────────
     private bool _isBreathingFire;
+    private float _currentJawZ;
 
     // ─── Attack Twist (captured at melee fire, independent of head) ─
     private float _attackTwistAngle;
@@ -127,6 +137,8 @@ public class DragonCombatController : NetworkBehaviour
         meleeAttackHash      = Animator.StringToHash("MeleeAttack");
         attackModeHash       = Animator.StringToHash("AttackMode");
         isBreathingFireHash  = Animator.StringToHash("IsBreathingFire");
+
+        _currentJawZ = jawClosedZ;
     }
 
     private void Update()
@@ -150,6 +162,7 @@ public class DragonCombatController : NetworkBehaviour
 
         ApplySpineTwist(twist);
         ApplyHeadTurn(headYaw, headPitch);
+        ApplyJaw();
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -375,6 +388,22 @@ public class DragonCombatController : NetworkBehaviour
             Quaternion pitch = Quaternion.AngleAxis(headPitch, pitchAxis);
             neck1Bone.rotation = pitch * neck1Bone.rotation;
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // JAW (procedural mouth open for fire breath)
+    // ═══════════════════════════════════════════════════════════════
+
+    private void ApplyJaw()
+    {
+        if (jawBone == null) return;
+
+        float targetZ = _isBreathingFire ? jawOpenZ : jawClosedZ;
+        _currentJawZ = Mathf.MoveTowards(_currentJawZ, targetZ, jawSpeed * Time.deltaTime);
+
+        Vector3 euler = jawBone.localEulerAngles;
+        euler.z = _currentJawZ;
+        jawBone.localEulerAngles = euler;
     }
 
     // ═══════════════════════════════════════════════════════════════

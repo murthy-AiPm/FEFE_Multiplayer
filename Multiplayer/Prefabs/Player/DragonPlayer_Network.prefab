@@ -243,14 +243,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 172170623101716287}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.0000010654131, y: 0.000003483918, z: -0.80143076, w: 0.59808755}
+  m_LocalRotation: {x: 0, y: 0, z: -0.79863554, w: 0.60181504}
   m_LocalPosition: {x: 0.101320796, y: 0.1026033, z: 0.0000012999348}
   m_LocalScale: {x: 1.0000002, y: 1.0000002, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8878089055965475809}
   m_Father: {fileID: 2510481586615107530}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: -106}
 --- !u!1 &202038060695960028
 GameObject:
   m_ObjectHideFlags: 0
@@ -5436,6 +5436,10 @@ MonoBehaviour:
   spine1Bone: {fileID: 8123714689142491674}
   spine2Bone: {fileID: 5688100995211649117}
   neck1Bone: {fileID: 7040834288271894113}
+  jawBone: {fileID: 4324119989276610389}
+  jawClosedZ: -106
+  jawOpenZ: -125
+  jawSpeed: 300
   maxTwistAngle: 60
   twistSpeed: 180
   twistReturnSpeed: 120
