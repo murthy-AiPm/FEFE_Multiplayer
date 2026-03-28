@@ -37,8 +37,19 @@ public class DragonCombatController : NetworkBehaviour
     [SerializeField] private Transform spine1Bone;
     [SerializeField] private Transform spine2Bone;
 
-    [Header("Head Bone (for head tracking)")]
+    [Header("Neck Bones (for head tracking — Neck closest to body, Neck4 closest to head)")]
+    [SerializeField] private Transform neckBone;
     [SerializeField] private Transform neck1Bone;
+    [SerializeField] private Transform neck2Bone;
+    [SerializeField] private Transform neck3Bone;
+    [SerializeField] private Transform neck4Bone;
+
+    [Header("Neck Yaw Weights (should sum to ~1)")]
+    [SerializeField] private float neckYawWeight  = 0.05f;
+    [SerializeField] private float neck1YawWeight = 0.10f;
+    [SerializeField] private float neck2YawWeight = 0.20f;
+    [SerializeField] private float neck3YawWeight = 0.30f;
+    [SerializeField] private float neck4YawWeight = 0.35f;
 
     [Header("Jaw Bone (procedural mouth open for fire breath)")]
     [SerializeField] private Transform jawBone;
@@ -365,29 +376,38 @@ public class DragonCombatController : NetworkBehaviour
 
     private void ApplyHeadTurn(float headYaw, float headPitch)
     {
-        if (neck1Bone == null) return;
-
         bool hasYaw   = Mathf.Abs(headYaw)   > 0.01f;
         bool hasPitch = Mathf.Abs(headPitch)  > 0.01f;
 
         if (!hasYaw && !hasPitch) return;
 
-        // Step 1: Apply yaw around world up
+        // Step 1: Distribute yaw across all neck bones for a natural curve
         if (hasYaw)
         {
-            Quaternion yaw = Quaternion.AngleAxis(-headYaw, Vector3.up);
-            neck1Bone.rotation = yaw * neck1Bone.rotation;
+            ApplyNeckYaw(neckBone,  headYaw, neckYawWeight);
+            ApplyNeckYaw(neck1Bone, headYaw, neck1YawWeight);
+            ApplyNeckYaw(neck2Bone, headYaw, neck2YawWeight);
+            ApplyNeckYaw(neck3Bone, headYaw, neck3YawWeight);
+            ApplyNeckYaw(neck4Bone, headYaw, neck4YawWeight);
         }
 
-        // Step 2: Apply pitch around the rigidbody's right axis
-        // Using rb.rotation gives us the dragon body's true right direction,
-        // independent of bone orientation quirks
-        if (hasPitch && rb != null)
+        // Step 2: Apply pitch to Neck3 only (head-end bone)
+        // Start from the body's right axis (which works twist-free), then rotate
+        // it by the head yaw so pitch stays relative to where the head is pointing
+        if (hasPitch && rb != null && neck3Bone != null)
         {
-            Vector3 pitchAxis = rb.rotation * Vector3.right;
+            Quaternion yawRotation = Quaternion.AngleAxis(-headYaw, Vector3.up);
+            Vector3 pitchAxis = yawRotation * (rb.rotation * Vector3.right);
             Quaternion pitch = Quaternion.AngleAxis(headPitch, pitchAxis);
-            neck1Bone.rotation = pitch * neck1Bone.rotation;
+            neck3Bone.rotation = pitch * neck3Bone.rotation;
         }
+    }
+
+    private void ApplyNeckYaw(Transform bone, float headYaw, float weight)
+    {
+        if (bone == null) return;
+        Quaternion yaw = Quaternion.AngleAxis(-headYaw * weight, Vector3.up);
+        bone.rotation = yaw * bone.rotation;
     }
 
     // ═══════════════════════════════════════════════════════════════

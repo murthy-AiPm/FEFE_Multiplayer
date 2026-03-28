@@ -5435,9 +5435,18 @@ MonoBehaviour:
   spineBone: {fileID: 6834720352492521363}
   spine1Bone: {fileID: 8123714689142491674}
   spine2Bone: {fileID: 5688100995211649117}
-  neck1Bone: {fileID: 7040834288271894113}
+  neckBone: {fileID: 7041529955691784601}
+  neck1Bone: {fileID: 1662348704302100748}
+  neck2Bone: {fileID: 142127849840715812}
+  neck3Bone: {fileID: 7040834288271894113}
+  neck4Bone: {fileID: 4736920305905838227}
+  neckYawWeight: 0.3
+  neck1YawWeight: 0.3
+  neck2YawWeight: 0.3
+  neck3YawWeight: 0.3
+  neck4YawWeight: 0.35
   jawBone: {fileID: 4324119989276610389}
-  jawClosedZ: -106
+  jawClosedZ: -90
   jawOpenZ: -125
   jawSpeed: 300
   maxTwistAngle: 60
