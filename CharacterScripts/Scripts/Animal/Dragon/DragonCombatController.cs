@@ -1,21 +1,27 @@
 using UnityEngine;
 using Unity.Netcode;
-
-// <summary>
+//
+/// <summary>
 /// Dragon combat controller. Handles:
-/// - Press 1: toggle Attack Mode (plays AttackMode idle anim, enables head tracking)
-/// - Head tracking: Neck1 bone follows camera yaw automatically while in Attack Mode
-/// - Left click: melee attack (stationary only)
-/// - Right click hold: upper body spine twist toward camera (disabled in Attack Mode)
+/// - Press 1: toggle Melee Attack Mode (attack idle, head yaw tracking, left-click melee)
+/// - Press 2: toggle Fire Breath Mode (attack idle, head yaw+pitch tracking, hold left-click to breathe fire)
+/// - Modes are mutually exclusive; pressing the active mode's key toggles it off.
 ///
-/// Upper body twist is applied procedurally in LateUpdate() after the Animator,
-/// distributed across Spine → Spine1 → Spine2 for a natural curve.
-/// Head tracking is applied to Neck1 bone only.
+/// Melee mode:
+/// - Head (Neck1) tracks camera yaw while stationary
+/// - Left-click: triggers melee attack, spine twists to camera direction during attack
+///
+/// Fire Breath mode:
+/// - Head (Neck1) tracks camera yaw AND pitch while stationary
+/// - Hold left-click: continuous fire breath (IsBreathingFire animator bool)
+/// - No spine twist — neck alone handles aiming
 ///
 /// Network sync:
 /// - Spine twist angle: NetworkVariable (float), 20Hz
-/// - Head angle: NetworkVariable (float), 20Hz
-/// - Attack mode: NetworkVariable (bool)
+/// - Head yaw angle: NetworkVariable (float), 20Hz
+/// - Head pitch angle: NetworkVariable (float), 20Hz
+/// - Attack mode: NetworkVariable (int) — 0=none, 1=melee, 2=firebreath
+/// - IsBreathingFire: NetworkVariable (bool)
 /// - Melee attack: ServerRpc → ClientRpc trigger
 /// </summary>
 public class DragonCombatController : NetworkBehaviour
@@ -26,76 +32,77 @@ public class DragonCombatController : NetworkBehaviour
     [SerializeField] private Rigidbody rb;
     [SerializeField] private Transform cam;
 
-    [Header("Spine Bones (for upper body twist)")]
-    [Tooltip("Lowest spine bone in the twist chain (gets least rotation).")]
+    [Header("Spine Bones (for melee upper body twist)")]
     [SerializeField] private Transform spineBone;
-    [Tooltip("Middle spine bone.")]
     [SerializeField] private Transform spine1Bone;
-    [Tooltip("Upper spine bone (gets most rotation).")]
     [SerializeField] private Transform spine2Bone;
 
     [Header("Head Bone (for head tracking)")]
-    [Tooltip("Neck1 bone — the head-level bone that follows camera yaw in Attack Mode.")]
     [SerializeField] private Transform neck1Bone;
 
-    [Header("Upper Body Twist")]
-    [Tooltip("Maximum twist angle in degrees (each direction).")]
+    [Header("Upper Body Twist (Melee Only)")]
     [SerializeField] private float maxTwistAngle = 60f;
-    [Tooltip("How fast the twist catches up to the target angle (deg/sec).")]
     [SerializeField] private float twistSpeed = 180f;
-    [Tooltip("How fast the twist returns to center on release (deg/sec).")]
     [SerializeField] private float twistReturnSpeed = 120f;
-    [Tooltip("Rotation weight for Spine bone (lowest). All three should sum to ~1.")]
     [SerializeField] private float spineWeight = 0.2f;
-    [Tooltip("Rotation weight for Spine1 bone (middle).")]
     [SerializeField] private float spine1Weight = 0.3f;
-    [Tooltip("Rotation weight for Spine2 bone (upper, gets most).")]
     [SerializeField] private float spine2Weight = 0.5f;
 
     [Header("Head Tracking")]
-    [Tooltip("Maximum head turn angle in degrees (each direction).")]
     [SerializeField] private float maxHeadAngle = 80f;
-    [Tooltip("How fast the head turns toward the camera (deg/sec).")]
+    [SerializeField] private float maxHeadPitch = 45f;
     [SerializeField] private float headTurnSpeed = 200f;
-    [Tooltip("How fast the head returns to center when exiting Attack Mode (deg/sec).")]
     [SerializeField] private float headReturnSpeed = 150f;
+    [Tooltip("Pitch offset to correct for bone rest pose. Positive = tilt head up.")]
+    [SerializeField] private float headPitchOffset = 0f;
 
     [Header("Melee Attack")]
-    [Tooltip("GaitSpeed must be below this to allow melee attack.")]
     [SerializeField] private float stationaryThreshold = 0.1f;
 
     [Header("Input")]
-    [SerializeField] private KeyCode meleeKey = KeyCode.Mouse0;
-    [SerializeField] private KeyCode aimKey = KeyCode.Mouse1;
-    [SerializeField] private KeyCode attackModeKey = KeyCode.Alpha1;
+    [SerializeField] private KeyCode primaryKey = KeyCode.Mouse0;
+    [SerializeField] private KeyCode meleeModeKey = KeyCode.Alpha1;
+    [SerializeField] private KeyCode fireBreathModeKey = KeyCode.Alpha2;
 
     // ─── Animator Hashes ─────────────────────────────────
     private int meleeAttackHash;
     private int attackModeHash;
+    private int isBreathingFireHash;
 
-    // ─── Twist State ─────────────────────────────────────
+    // ─── Twist State (melee only) ────────────────────────
     private float _currentTwistAngle;
     private float _targetTwistAngle;
-    private bool _isAiming;
 
     // ─── Head State ──────────────────────────────────────
-    private float _currentHeadAngle;
-    private float _targetHeadAngle;
+    private float _currentHeadYaw;
+    private float _targetHeadYaw;
+    private float _currentHeadPitch;
+    private float _targetHeadPitch;
 
     // ─── Attack Mode State ───────────────────────────────
-    private bool _isAttackMode;
+    // 0 = none, 1 = melee, 2 = fire breath
+    private int _attackMode;
 
-    // ─── Attack Twist (captured at attack fire, independent of head) ─
+    // ─── Fire Breath State ───────────────────────────────
+    private bool _isBreathingFire;
+
+    // ─── Attack Twist (captured at melee fire, independent of head) ─
     private float _attackTwistAngle;
 
     // ─── Network ─────────────────────────────────────────
     private NetworkVariable<float> netTwistAngle = new NetworkVariable<float>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
-    private NetworkVariable<float> netHeadAngle = new NetworkVariable<float>(
+    private NetworkVariable<float> netHeadYaw = new NetworkVariable<float>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
-    private NetworkVariable<bool> netIsAttackMode = new NetworkVariable<bool>(
+    private NetworkVariable<float> netHeadPitch = new NetworkVariable<float>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    private NetworkVariable<int> netAttackMode = new NetworkVariable<int>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    private NetworkVariable<bool> netIsBreathingFire = new NetworkVariable<bool>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     private const float NETWORK_UPDATE_INTERVAL = 0.05f; // 20Hz
@@ -117,8 +124,9 @@ public class DragonCombatController : NetworkBehaviour
         if (cam == null)
             cam = Camera.main?.transform;
 
-        meleeAttackHash = Animator.StringToHash("MeleeAttack");
-        attackModeHash  = Animator.StringToHash("AttackMode");
+        meleeAttackHash      = Animator.StringToHash("MeleeAttack");
+        attackModeHash       = Animator.StringToHash("AttackMode");
+        isBreathingFireHash  = Animator.StringToHash("IsBreathingFire");
     }
 
     private void Update()
@@ -126,22 +134,22 @@ public class DragonCombatController : NetworkBehaviour
         if (!IsOwner) return;
 
         HandleAttackModeToggle();
-        HandleAimInput();
-        HandleAttackInput();
+        HandleCombatInput();
         bool isStationary = groundController == null || groundController.GaitSpeed <= stationaryThreshold;
         UpdateTwistAngle(isStationary);
-        UpdateHeadAngle(isStationary);
+        UpdateHeadAngles(isStationary);
         SyncToNetwork();
     }
 
     private void LateUpdate()
     {
         // Owner uses local values; remotes use NetworkVariables
-        float twist = IsOwner ? _currentTwistAngle : netTwistAngle.Value;
-        float head  = IsOwner ? _currentHeadAngle  : netHeadAngle.Value;
+        float twist    = IsOwner ? _currentTwistAngle : netTwistAngle.Value;
+        float headYaw  = IsOwner ? _currentHeadYaw    : netHeadYaw.Value;
+        float headPitch = IsOwner ? _currentHeadPitch  : netHeadPitch.Value;
 
         ApplySpineTwist(twist);
-        ApplyHeadTurn(head);
+        ApplyHeadTurn(headYaw, headPitch);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -150,96 +158,111 @@ public class DragonCombatController : NetworkBehaviour
 
     private void HandleAttackModeToggle()
     {
-        if (!Input.GetKeyDown(attackModeKey)) return;
+        int newMode = _attackMode;
 
-        _isAttackMode = !_isAttackMode;
+        if (Input.GetKeyDown(meleeModeKey))
+            newMode = (_attackMode == 1) ? 0 : 1;
+        else if (Input.GetKeyDown(fireBreathModeKey))
+            newMode = (_attackMode == 2) ? 0 : 2;
 
-        // If exiting attack mode, cancel any aiming too
-        if (!_isAttackMode)
-            _isAiming = false;
+        if (newMode == _attackMode) return;
 
-        SetAttackModeServerRpc(_isAttackMode);
+        // Clean up previous mode
+        if (_attackMode == 2 && _isBreathingFire)
+        {
+            _isBreathingFire = false;
+            SetBreathingFireServerRpc(false);
+        }
+
+        _attackMode = newMode;
+        SetAttackModeServerRpc(_attackMode);
     }
 
     [ServerRpc]
-    private void SetAttackModeServerRpc(bool value)
+    private void SetAttackModeServerRpc(int value)
     {
-        netIsAttackMode.Value = value;
+        netAttackMode.Value = value;
         SetAttackModeClientRpc(value);
     }
 
     [ClientRpc]
-    private void SetAttackModeClientRpc(bool value)
+    private void SetAttackModeClientRpc(int value)
     {
         if (animator != null)
-            animator.SetBool(attackModeHash, value);
+            animator.SetInteger(attackModeHash, value);
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // INPUT
+    // COMBAT INPUT
     // ═══════════════════════════════════════════════════════════════
 
-    private void HandleAimInput()
+    private void HandleCombatInput()
     {
-        // Right-click aim is suppressed in attack mode
-        // Do NOT touch _targetTwistAngle here — UpdateTwistAngle owns it in attack mode
-        if (_isAttackMode)
+        if (_attackMode == 1)
         {
-            _isAiming = false;
-            return;
+            // Melee mode: left-click triggers melee attack
+            if (Input.GetKeyDown(primaryKey) && CanMeleeAttack())
+                TriggerMeleeAttack();
         }
-
-        _isAiming = Input.GetKey(aimKey);
-
-        if (_isAiming && cam != null && rb != null)
+        else if (_attackMode == 2)
         {
-            float cameraYaw = cam.eulerAngles.y;
-            float bodyYaw   = rb.rotation.eulerAngles.y;
-            float delta     = Mathf.DeltaAngle(cameraYaw, bodyYaw);
-            _targetTwistAngle = Mathf.Clamp(delta, -maxTwistAngle, maxTwistAngle);
-        }
-        else
-        {
-            _targetTwistAngle = 0f;
+            // Fire breath mode: hold left-click for continuous fire
+            bool wantFire = Input.GetKey(primaryKey) && IsStationary();
+            if (wantFire != _isBreathingFire)
+            {
+                _isBreathingFire = wantFire;
+                SetBreathingFireServerRpc(_isBreathingFire);
+            }
         }
     }
 
-    private void HandleAttackInput()
-    {
-        if (Input.GetKeyDown(meleeKey) && CanAttack())
-            TriggerMeleeAttack();
-    }
-
-    private bool CanAttack()
+    private bool CanMeleeAttack()
     {
         if (groundController == null) return false;
         return groundController.GaitSpeed <= stationaryThreshold;
     }
 
+    private bool IsStationary()
+    {
+        return groundController == null || groundController.GaitSpeed <= stationaryThreshold;
+    }
+
+    [ServerRpc]
+    private void SetBreathingFireServerRpc(bool value)
+    {
+        netIsBreathingFire.Value = value;
+        SetBreathingFireClientRpc(value);
+    }
+
+    [ClientRpc]
+    private void SetBreathingFireClientRpc(bool value)
+    {
+        if (animator != null)
+            animator.SetBool(isBreathingFireHash, value);
+    }
+
     // ═══════════════════════════════════════════════════════════════
-    // TWIST
+    // SPINE TWIST (Melee mode only)
     // ═══════════════════════════════════════════════════════════════
 
     private void UpdateTwistAngle(bool isStationary)
     {
-        if (!isStationary)
+        if (!isStationary || _attackMode != 1)
         {
-            // Moving — return spine to zero, blend tree handles body direction
+            // Not stationary or not in melee mode — return spine to zero
             _targetTwistAngle = 0f;
             _currentTwistAngle = Mathf.MoveTowards(_currentTwistAngle, 0f, twistReturnSpeed * Time.deltaTime);
             return;
         }
 
-        // During melee attack in attack mode, spine chases the captured attack angle (not head)
-        if (_isAttackMode && animator != null &&
-            animator.GetCurrentAnimatorStateInfo(0).IsTag("MeleeAttack"))
+        // During melee attack animation, spine chases the captured attack angle
+        if (animator != null && animator.GetCurrentAnimatorStateInfo(0).IsTag("MeleeAttack"))
         {
             _targetTwistAngle = _attackTwistAngle;
         }
         // Spine holds its angle after attack — no auto-return to zero
 
-        float speed = (_isAiming || (_isAttackMode && animator != null &&
-            animator.GetCurrentAnimatorStateInfo(0).IsTag("MeleeAttack")))
+        float speed = (animator != null && animator.GetCurrentAnimatorStateInfo(0).IsTag("MeleeAttack"))
             ? twistSpeed : twistReturnSpeed;
         _currentTwistAngle = Mathf.MoveTowards(_currentTwistAngle, _targetTwistAngle, speed * Time.deltaTime);
     }
@@ -248,9 +271,6 @@ public class DragonCombatController : NetworkBehaviour
     {
         if (Mathf.Abs(twistAngle) < 0.01f) return;
 
-        // Rotate around world Y (yaw only) by pre-multiplying in world space:
-        // worldRot = Quaternion.AngleAxis(angle, Vector3.up) * bone.rotation
-        // then convert back to local via parent.inverseRotation
         Quaternion yaw = Quaternion.AngleAxis(-twistAngle, Vector3.up);
 
         if (spineBone != null)
@@ -268,49 +288,93 @@ public class DragonCombatController : NetworkBehaviour
     // HEAD TRACKING
     // ═══════════════════════════════════════════════════════════════
 
-    private void UpdateHeadAngle(bool isStationary)
+    private void UpdateHeadAngles(bool isStationary)
     {
-        if (!isStationary)
+        // ── YAW ──
+        if (!isStationary || _attackMode == 0)
         {
-            // Moving — return head to zero, blend tree handles body direction
-            _targetHeadAngle = 0f;
-            _currentHeadAngle = Mathf.MoveTowards(_currentHeadAngle, 0f, headReturnSpeed * Time.deltaTime);
-            return;
+            // Moving or no attack mode — return head to zero
+            _targetHeadYaw = 0f;
+            _currentHeadYaw = Mathf.MoveTowards(_currentHeadYaw, 0f, headReturnSpeed * Time.deltaTime);
+        }
+        else if (_attackMode == 1)
+        {
+            // Melee mode — yaw only
+            bool isMeleeActive = animator != null &&
+                animator.GetCurrentAnimatorStateInfo(0).IsTag("MeleeAttack");
+
+            if (isMeleeActive)
+            {
+                _targetHeadYaw = 0f;
+            }
+            else if (cam != null && rb != null)
+            {
+                float cameraYaw = cam.eulerAngles.y;
+                float bodyYaw   = rb.rotation.eulerAngles.y;
+                float delta     = Mathf.DeltaAngle(cameraYaw, bodyYaw);
+                float compensated = delta - _currentTwistAngle;
+                _targetHeadYaw = Mathf.Clamp(compensated, -maxHeadAngle, maxHeadAngle);
+            }
+
+            float yawSpeed = headTurnSpeed;
+            _currentHeadYaw = Mathf.MoveTowards(_currentHeadYaw, _targetHeadYaw, yawSpeed * Time.deltaTime);
+        }
+        else if (_attackMode == 2)
+        {
+            // Fire breath mode — yaw tracks camera
+            if (cam != null && rb != null)
+            {
+                float cameraYaw = cam.eulerAngles.y;
+                float bodyYaw   = rb.rotation.eulerAngles.y;
+                float delta     = Mathf.DeltaAngle(cameraYaw, bodyYaw);
+                _targetHeadYaw = Mathf.Clamp(delta, -maxHeadAngle, maxHeadAngle);
+            }
+
+            _currentHeadYaw = Mathf.MoveTowards(_currentHeadYaw, _targetHeadYaw, headTurnSpeed * Time.deltaTime);
         }
 
-        bool isMeleeActive = _isAttackMode && animator != null &&
-            animator.GetCurrentAnimatorStateInfo(0).IsTag("MeleeAttack");
-
-        if (isMeleeActive)
+        // ── PITCH (fire breath mode only) ──
+        if (_attackMode == 2 && isStationary && cam != null)
         {
-            // Head goes to zero during attack — spine handles the directional swing independently
-            _targetHeadAngle = 0f;
-        }
-        else if (_isAttackMode && cam != null && rb != null)
-        {
-            float cameraYaw = cam.eulerAngles.y;
-            float bodyYaw   = rb.rotation.eulerAngles.y;
-            float delta     = Mathf.DeltaAngle(cameraYaw, bodyYaw);
-            // Subtract spine twist so head doesn't double up — total rotation = camera direction
-            float compensated = delta - _currentTwistAngle;
-            _targetHeadAngle = Mathf.Clamp(compensated, -maxHeadAngle, maxHeadAngle);
+            float cameraPitch = cam.eulerAngles.x;
+            if (cameraPitch > 180f) cameraPitch -= 360f;
+            // Camera pitch: positive = looking down, negative = looking up
+            // Head should match: positive pitch = head down, negative = head up
+            _targetHeadPitch = Mathf.Clamp(cameraPitch + headPitchOffset, -maxHeadPitch, maxHeadPitch);
+            _currentHeadPitch = Mathf.MoveTowards(_currentHeadPitch, _targetHeadPitch, headTurnSpeed * Time.deltaTime);
         }
         else
         {
-            _targetHeadAngle = 0f;
+            _targetHeadPitch = 0f;
+            _currentHeadPitch = Mathf.MoveTowards(_currentHeadPitch, 0f, headReturnSpeed * Time.deltaTime);
         }
-
-        float speed = _isAttackMode ? headTurnSpeed : headReturnSpeed;
-        _currentHeadAngle = Mathf.MoveTowards(_currentHeadAngle, _targetHeadAngle, speed * Time.deltaTime);
     }
 
-    private void ApplyHeadTurn(float headAngle)
+    private void ApplyHeadTurn(float headYaw, float headPitch)
     {
         if (neck1Bone == null) return;
-        if (Mathf.Abs(headAngle) < 0.01f) return;
 
-        Quaternion yaw = Quaternion.AngleAxis(-headAngle, Vector3.up);
-        neck1Bone.rotation = yaw * neck1Bone.rotation;
+        bool hasYaw   = Mathf.Abs(headYaw)   > 0.01f;
+        bool hasPitch = Mathf.Abs(headPitch)  > 0.01f;
+
+        if (!hasYaw && !hasPitch) return;
+
+        // Step 1: Apply yaw around world up
+        if (hasYaw)
+        {
+            Quaternion yaw = Quaternion.AngleAxis(-headYaw, Vector3.up);
+            neck1Bone.rotation = yaw * neck1Bone.rotation;
+        }
+
+        // Step 2: Apply pitch around the rigidbody's right axis
+        // Using rb.rotation gives us the dragon body's true right direction,
+        // independent of bone orientation quirks
+        if (hasPitch && rb != null)
+        {
+            Vector3 pitchAxis = rb.rotation * Vector3.right;
+            Quaternion pitch = Quaternion.AngleAxis(headPitch, pitchAxis);
+            neck1Bone.rotation = pitch * neck1Bone.rotation;
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -358,19 +422,27 @@ public class DragonCombatController : NetworkBehaviour
         if (_currentTwistAngle == 0f && netTwistAngle.Value != 0f)
             netTwistAngle.Value = 0f;
 
-        // Head
-        if (Mathf.Abs(netHeadAngle.Value - _currentHeadAngle) > FLOAT_EPSILON)
-            netHeadAngle.Value = _currentHeadAngle;
-        if (_currentHeadAngle == 0f && netHeadAngle.Value != 0f)
-            netHeadAngle.Value = 0f;
+        // Head yaw
+        if (Mathf.Abs(netHeadYaw.Value - _currentHeadYaw) > FLOAT_EPSILON)
+            netHeadYaw.Value = _currentHeadYaw;
+        if (_currentHeadYaw == 0f && netHeadYaw.Value != 0f)
+            netHeadYaw.Value = 0f;
+
+        // Head pitch
+        if (Mathf.Abs(netHeadPitch.Value - _currentHeadPitch) > FLOAT_EPSILON)
+            netHeadPitch.Value = _currentHeadPitch;
+        if (_currentHeadPitch == 0f && netHeadPitch.Value != 0f)
+            netHeadPitch.Value = 0f;
     }
 
     // ═══════════════════════════════════════════════════════════════
     // PUBLIC STATE
     // ═══════════════════════════════════════════════════════════════
 
-    public bool IsAiming      => _isAiming;
-    public bool IsAttackMode  => _isAttackMode;
-    public float TwistAngle   => _currentTwistAngle;
-    public float HeadAngle    => _currentHeadAngle;
+    /// <summary>0=none, 1=melee, 2=firebreath</summary>
+    public int AttackMode      => _attackMode;
+    public bool IsBreathingFire => _isBreathingFire;
+    public float TwistAngle    => _currentTwistAngle;
+    public float HeadYaw       => _currentHeadYaw;
+    public float HeadPitch     => _currentHeadPitch;
 }
