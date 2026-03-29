@@ -463,7 +463,8 @@ public class DragonCombatController : NetworkBehaviour
     {
         if (jawBone == null) return;
 
-        float targetZ = _isBreathingFire ? jawOpenZ : jawClosedZ;
+        bool breathing = IsOwner ? _isBreathingFire : netIsBreathingFire.Value;
+        float targetZ = breathing ? jawOpenZ : jawClosedZ;
         _currentJawZ = Mathf.MoveTowards(_currentJawZ, targetZ, jawSpeed * Time.deltaTime);
 
         Vector3 euler = jawBone.localEulerAngles;
