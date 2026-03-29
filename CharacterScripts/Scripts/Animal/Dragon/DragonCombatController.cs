@@ -51,6 +51,23 @@ public class DragonCombatController : NetworkBehaviour
     [SerializeField] private float neck3YawWeight = 0.30f;
     [SerializeField] private float neck4YawWeight = 0.35f;
 
+    [Header("Fire Breath VFX")]
+    [Tooltip("VFX prefab to instantiate when breathing fire (particle system).")]
+    [SerializeField] private GameObject fireBreathVFXPrefab;
+    [Tooltip("Where to spawn the fire breath VFX (e.g. mouth bone).")]
+    [SerializeField] private Transform fireBreathSpawnPoint;
+
+    [Header("Melee Attack VFX")]
+    [Tooltip("VFX prefab to instantiate on melee attack.")]
+    [SerializeField] private GameObject meleeAttackVFXPrefab;
+    [Tooltip("Where to spawn the melee VFX.")]
+    [SerializeField] private Transform meleeAttackSpawnPoint;
+
+    [Header("Sound")]
+    [SerializeField] private DragonSoundPlayer soundPlayer;
+    [Tooltip("Melee attack type for sound: claw, bite, or tail.")]
+    [SerializeField] private string meleeAttackSoundType = "claw";
+
     [Header("Jaw Bone (procedural mouth open for fire breath)")]
     [SerializeField] private Transform jawBone;
     [Tooltip("Jaw local Z rotation when closed.")]
@@ -106,6 +123,7 @@ public class DragonCombatController : NetworkBehaviour
     // ─── Fire Breath State ───────────────────────────────
     private bool _isBreathingFire;
     private float _currentJawZ;
+    private GameObject _activeFireBreathInstance;
 
     // ─── Attack Twist (captured at melee fire, independent of head) ─
     private float _attackTwistAngle;
@@ -263,6 +281,33 @@ public class DragonCombatController : NetworkBehaviour
     {
         if (animator != null)
             animator.SetBool(isBreathingFireHash, value);
+
+        // VFX: spawn / destroy fire breath particle effect on ALL clients
+        if (value)
+        {
+            if (fireBreathVFXPrefab != null && _activeFireBreathInstance == null)
+            {
+                Transform parent = fireBreathSpawnPoint != null ? fireBreathSpawnPoint : transform;
+                _activeFireBreathInstance = Instantiate(fireBreathVFXPrefab, parent.position, parent.rotation, parent);
+            }
+        }
+        else
+        {
+            if (_activeFireBreathInstance != null)
+            {
+                Destroy(_activeFireBreathInstance);
+                _activeFireBreathInstance = null;
+            }
+        }
+
+        // SFX: fire breath start/end through DragonSoundPlayer
+        if (soundPlayer != null)
+        {
+            if (value)
+                soundPlayer.OnFireBreathStart();
+            else
+                soundPlayer.OnFireBreathEnd();
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -454,6 +499,18 @@ public class DragonCombatController : NetworkBehaviour
     {
         if (animator != null)
             animator.SetTrigger(meleeAttackHash);
+
+        // VFX: spawn melee effect on ALL clients
+        if (meleeAttackVFXPrefab != null)
+        {
+            Transform parent = meleeAttackSpawnPoint != null ? meleeAttackSpawnPoint : transform;
+            GameObject fx = Instantiate(meleeAttackVFXPrefab, parent.position, parent.rotation, parent);
+            Destroy(fx, 3f);
+        }
+
+        // SFX: melee attack sound through DragonSoundPlayer
+        if (soundPlayer != null)
+            soundPlayer.OnMeleeAttack(meleeAttackSoundType);
     }
 
     // ═══════════════════════════════════════════════════════════════
