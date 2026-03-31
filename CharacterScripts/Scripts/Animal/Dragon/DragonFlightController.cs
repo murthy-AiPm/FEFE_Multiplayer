@@ -40,6 +40,8 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private float thrustMax = 1f;
     [Tooltip("Smoothing for Yaw (TurnAngle). Higher = faster response.")]
     [SerializeField] private float yawSmoothing = 5f;
+    [Tooltip("Invert pitch for root motion flight (mouse back = pitch up).")]
+    [SerializeField] private bool invertFlightPitch = false;
     [Tooltip("How much mouse Y movement changes pitch target.")]
     [SerializeField] private float pitchMouseSensitivity = 2f;
     [Tooltip("How fast pitch smoothly moves to target value (per second).")]
@@ -235,6 +237,7 @@ public class DragonFlightController : NetworkBehaviour
 
         yaw = smoothedYaw = transform.eulerAngles.y;
         pitch = smoothedPitch = 0f;
+
         // Set FlightMode animator param
         if (animator != null)
             animator.SetBool(flightModeHash, true);
@@ -540,7 +543,7 @@ public class DragonFlightController : NetworkBehaviour
 
         float horizontal = Input.GetAxisRaw(horizontalAxis); // A/D → Yaw
         float mouseY = Input.GetAxisRaw("Mouse Y");         // Mouse Y → Pitch
-        float ySign = invertY ? 1f : -1f;
+        float pitchSign = invertFlightPitch ? -1f : 1f;
 
         // ── Thrust (throttle-style: W/S set target, smooth lerp to it) ──
         if (Input.GetKeyDown(KeyCode.W))
@@ -557,7 +560,7 @@ public class DragonFlightController : NetworkBehaviour
             _rmYaw = 0f;
 
         // ── Pitch (throttle-style: mouse Y accumulates, holds on stop) ──
-        _rmPitchTarget = Mathf.Clamp(_rmPitchTarget + mouseY * ySign * pitchMouseSensitivity * dt, -1f, 1f);
+        _rmPitchTarget = Mathf.Clamp(_rmPitchTarget + mouseY * pitchSign * pitchMouseSensitivity * dt, -1f, 1f);
         _rmPitch = Mathf.MoveTowards(_rmPitch, _rmPitchTarget, pitchSmoothSpeed * dt);
 
         // Tell ground systems to hand off to flight
