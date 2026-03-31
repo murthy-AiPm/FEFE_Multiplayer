@@ -92,8 +92,28 @@ public class DragonGroundController : AnimalGroundController
         return Physics.Raycast(groundCheckOrigin.position, Vector3.down, groundCheckDistance, groundCheckMask);
     }
 
-    protected override bool HasGroundBelow() => GroundExistsBelow();
+    protected override bool HasGroundBelow()
+    {
+        // During flight, the dragon is intentionally airborne — not falling
+        if (flightController != null &&
+            (flightController.IsFlying || flightController.IsHoverMode ||
+             flightController.IsGliding || flightController.IsDiving))
+            return true;
+
+        return GroundExistsBelow();
+    }
     protected override bool IsSwimmingActive() => _isSwimming;
+
+    /// <summary>
+    /// Called by DragonFlightController to set animator params
+    /// during flight when using root motion blend trees.
+    /// </summary>
+    public void SetFlightAnimParams(float thrust, float yaw, float pitch)
+    {
+        GaitSpeed = thrust;
+        TurnAngle = yaw;
+        // Pitch can be read directly from the flight controller by the animator controller
+    }
 
     protected override void OnTakeoffRequested()
     {

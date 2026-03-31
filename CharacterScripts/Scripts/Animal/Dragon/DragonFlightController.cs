@@ -6,7 +6,6 @@ using Unity.Netcode;
 /// - Flapping (W held + stamina > 0): Active flight, consumes stamina
 /// - Glide (no W or stamina depleted): Passive descent, regenerates stamina
 /// - Hover (Space toggle): Holds altitude, free stamina
-/// - Dive (V hold): Fast descent, ignores stamina
 /// 
 /// Pitch modifiers (±45°):
 /// - Flapping up = more stamina drain
@@ -24,13 +23,24 @@ public class DragonFlightController : NetworkBehaviour
 
     [Header("References")]
     [SerializeField] private AnimalGroundingSystem groundingSystem;
+    [SerializeField] private DragonGroundController groundController;
+    [SerializeField] private Animator animator;
+
+    [Header("Root Motion Flight")]
+    [Tooltip("When enabled, Thrust/Yaw/Pitch drive blend trees and root motion handles movement. Old controls disabled.")]
+    [SerializeField] private bool useFlightRootMotion = false;
+    [Tooltip("How fast Thrust (GaitSpeed) ramps up/down.")]
+    [SerializeField] private float thrustSmoothSpeed = 2f;
+    [Tooltip("Smoothing for Yaw (TurnAngle). Higher = faster response.")]
+    [SerializeField] private float yawSmoothing = 5f;
+    [Tooltip("Smoothing for Pitch. Higher = faster response.")]
+    [SerializeField] private float pitchSmoothing = 5f;
 
     [Header("Input")]
     [SerializeField] private string horizontalAxis = "Horizontal";
     [SerializeField] private string verticalAxis = "Vertical";
     [SerializeField] private string hoverAxis = "Hover";
     [SerializeField] private KeyCode toggleHoverKey = KeyCode.Space;
-    [SerializeField] private KeyCode diveKey = KeyCode.V;
 
     [Header("Look / Turn")]
     [SerializeField] private bool invertY = false;
@@ -74,14 +84,6 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private float pitchAirSpeedBoost = 3f;
     [SerializeField] private float pitchMaxAngle = 45f;
 
-    [Header("Dive (Hold V)")]
-    [SerializeField] private float diveTargetSpeed = 55f;
-    [SerializeField] private float diveAccel = 18f;
-    [SerializeField] private float divePitchMin = -85f;
-    [SerializeField] private float divePitchMax = -45f;
-    [SerializeField] private float diveYawRate = 55f;
-    [SerializeField] private float divePitchRate = 45f;
-
     [Header("Roll / Bank")]
     [SerializeField] private float rollAngle = 45f;
     [SerializeField] private float rollSmoothTime = 0.15f;
@@ -94,7 +96,7 @@ public class DragonFlightController : NetworkBehaviour
     public bool IsFlying => isFlapping;
     public bool IsFlapping => isFlapping;
     public bool IsGliding => isGliding;
-    public bool IsDiving => isDiving;
+    public bool IsDiving => false;
     public bool IsGrounded => groundingSystem != null && groundingSystem.IsGrounded;
     public float AirSpeed => airSpeed;
     public float Stamina => stamina;
@@ -109,7 +111,6 @@ public class DragonFlightController : NetworkBehaviour
     private bool isHoverMode;
     private bool isFlapping;
     private bool isGliding;
-    private bool isDiving;
     private bool staminaDepleted;
 
     private float stamina;
@@ -127,6 +128,16 @@ public class DragonFlightController : NetworkBehaviour
     private float currentRollAngle;
     private float rollVel;
 
+    // Root motion flight state
+    private float _rmThrust;
+    private float _rmYaw;
+    private float _rmYawVel;
+    private float _rmPitch;
+    private float _rmPitchVel;
+
+    // Public for animator controller to read
+    public float FlightPitch => _rmPitch;
+
     private Vector3 currentVelocity;
     private Vector3 lastPosition;
 
@@ -134,6 +145,10 @@ public class DragonFlightController : NetworkBehaviour
     {
         if (groundingSystem == null)
             groundingSystem = GetComponentInChildren<AnimalGroundingSystem>();
+        if (groundController == null)
+            groundController = GetComponent<DragonGroundController>();
+        if (animator == null)
+            animator = GetComponentInParent<Animator>();
 
         if (rb == null) rb = GetComponent<Rigidbody>();
 
@@ -166,10 +181,19 @@ public class DragonFlightController : NetworkBehaviour
         if (!isActive) return;
         if (!IsOwner) return;
 
-        ReadInput();
-        UpdateRotation(Time.deltaTime);
-        UpdateStaminaAndMovement(Time.deltaTime);
-        UpdateUI();
+        if (useFlightRootMotion)
+        {
+            ReadInput();
+            UpdateRootMotionFlight(Time.deltaTime);
+            UpdateUI();
+        }
+        else
+        {
+            ReadInput();
+            UpdateRotation(Time.deltaTime);
+            UpdateStaminaAndMovement(Time.deltaTime);
+            UpdateUI();
+        }
 
         currentVelocity = rb != null ? rb.linearVelocity : (transform.position - lastPosition) / Mathf.Max(Time.deltaTime, 0.0001f);
         lastPosition = transform.position;
@@ -215,7 +239,7 @@ public class DragonFlightController : NetworkBehaviour
             }
         }
 
-        isDiving = Input.GetKey(diveKey);
+
     }
 
     // ─── Rotation ────────────────────────────────────────
@@ -227,23 +251,6 @@ public class DragonFlightController : NetworkBehaviour
         float ySign = invertY ? 1f : -1f;
         float ad = Input.GetAxisRaw(horizontalAxis);
 
-        if (isDiving)
-        {
-            float desiredYawDelta = (mx * flightMouseSensitivityX + ad * flightKeyYawSpeed) * dt;
-            float desiredPitchDelta = (my * flightMouseSensitivityY * ySign) * dt;
-
-            desiredYawDelta = Mathf.Clamp(desiredYawDelta, -diveYawRate * dt, diveYawRate * dt);
-            desiredPitchDelta = Mathf.Clamp(desiredPitchDelta, -divePitchRate * dt, divePitchRate * dt);
-
-            yaw += desiredYawDelta;
-            pitch += desiredPitchDelta;
-
-            pitch = Mathf.Clamp(pitch, divePitchMin, divePitchMax);
-
-            smoothedYaw = Mathf.SmoothDampAngle(smoothedYaw, yaw, ref yawVel, Mathf.Max(0.01f, rotationSmoothTime * 0.6f));
-            smoothedPitch = Mathf.SmoothDamp(smoothedPitch, pitch, ref pitchVel, Mathf.Max(0.01f, rotationSmoothTime * 0.6f));
-        }
-        else
         {
             bool hoverLook = isHoverMode;
 
@@ -277,7 +284,7 @@ public class DragonFlightController : NetworkBehaviour
         }
 
         float turnForBank = Mathf.Clamp(mx + ad, -1f, 1f);
-        float bankStrength = isDiving ? 1.1f : (isHoverMode ? 0.35f : 1f);
+        float bankStrength = isHoverMode ? 0.35f : 1f;
         float targetRoll = -turnForBank * rollAngle * bankStrength;
         currentRollAngle = Mathf.SmoothDamp(currentRollAngle, targetRoll, ref rollVel, rollSmoothTime);
 
@@ -292,20 +299,6 @@ public class DragonFlightController : NetworkBehaviour
         float hoverInput = Input.GetAxisRaw(hoverAxis);
 
         bool wantsFlap = forwardInput > 0.05f;
-
-        // ─── Dive Mode (ignores stamina) ─────────────────
-        if (isDiving)
-        {
-            isHoverMode = false;
-            hoverRequested = false;
-            isFlapping = false;
-            isGliding = false;
-
-            airSpeed = Mathf.MoveTowards(airSpeed, diveTargetSpeed, diveAccel * dt);
-            ApplyMovement(transform.forward * airSpeed * dt);
-            ApplyMovement(Vector3.down * (diveAccel * 0.5f) * dt);
-            return;
-        }
 
         // ─── Hover Mode (free stamina) ───────────────────
         if (wantsFlap)
@@ -459,6 +452,58 @@ public class DragonFlightController : NetworkBehaviour
         flightStats.SetMinAirSpeed(glideMinAirSpeed);
         flightStats.SetMaxStamina(maxStamina);
         flightStats.SetMinStamina(0);
+    }
+
+    // ─── Root Motion Flight ─────────────────────────────
+
+    private void UpdateRootMotionFlight(float dt)
+    {
+        if (groundController == null) return;
+
+        float vertical = Input.GetAxisRaw(verticalAxis);   // W/S → Thrust
+        float horizontal = Input.GetAxisRaw(horizontalAxis); // A/D → Yaw
+        float mouseY = Input.GetAxisRaw("Mouse Y");         // Mouse Y → Pitch
+        float ySign = invertY ? 1f : -1f;
+
+        // ── Thrust (maps to GaitSpeed) ──
+        // W = positive thrust, S = negative (or brake)
+        float targetThrust = Mathf.Clamp(vertical, -1f, 1f);
+        _rmThrust = Mathf.MoveTowards(_rmThrust, targetThrust, thrustSmoothSpeed * dt);
+
+        // ── Yaw (maps to TurnAngle) ──
+        float targetYaw = Mathf.Clamp(horizontal, -1f, 1f);
+        _rmYaw = Mathf.Clamp(
+            Mathf.SmoothDamp(_rmYaw, targetYaw, ref _rmYawVel, 1f / yawSmoothing),
+            -1f, 1f);
+
+        // ── Pitch ──
+        float targetPitch = Mathf.Clamp(mouseY * ySign, -1f, 1f);
+        _rmPitch = Mathf.Clamp(
+            Mathf.SmoothDamp(_rmPitch, targetPitch, ref _rmPitchVel, 1f / pitchSmoothing),
+            -1f, 1f);
+
+        // Push Thrust and Yaw to ground controller → animator reads GaitSpeed and TurnAngle
+        groundController.SetFlightAnimParams(_rmThrust, _rmYaw, _rmPitch);
+
+        // Enable root motion on animator
+        if (animator != null)
+            animator.applyRootMotion = true;
+
+        // Update hover toggle (Space still works)
+        if (Input.GetKeyDown(toggleHoverKey))
+        {
+            hoverRequested = !hoverRequested;
+            if (hoverRequested && rb != null)
+            {
+                Vector3 v = rb.linearVelocity;
+                v.y = 0f;
+                rb.linearVelocity = v;
+            }
+        }
+
+        isHoverMode = hoverRequested && Mathf.Abs(vertical) < 0.05f;
+        isFlapping = vertical > 0.05f;
+        isGliding = !isHoverMode && !isFlapping;
     }
 
     private static float NormalizePitch(float xDegrees)

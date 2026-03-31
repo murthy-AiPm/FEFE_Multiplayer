@@ -115,7 +115,7 @@ public class AnimalGroundController : NetworkBehaviour
     public bool IsTurningRight { get; private set; }
     public float ForwardSpeed { get; private set; }
     public float TurnSpeed { get; private set; }
-    public float TurnAngle { get; private set; }   // -1 left .. +1 right
+    public float TurnAngle { get; protected set; }   // -1 left .. +1 right
     public float GaitSpeed { get; protected set; }   // 0 walk, 1 trot, 2 sprint
     public bool IsTrotMode { get; private set; }   // Caps Lock toggle
 

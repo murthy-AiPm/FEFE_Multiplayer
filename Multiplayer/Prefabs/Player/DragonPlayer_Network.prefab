@@ -4977,7 +4977,7 @@ Animator:
   m_GameObject: {fileID: 9190477138144183562}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: e127a9a1479186149aa6f16e8745b8de, type: 3}
-  m_Controller: {fileID: 9100000, guid: 74d0c3d93ea746e45a91189d00afe876, type: 2}
+  m_Controller: {fileID: 9100000, guid: 113a21685d995fe41a3da2f20bc0dd16, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -5138,7 +5138,6 @@ MonoBehaviour:
   verticalAxis: Vertical
   hoverAxis: Hover
   toggleHoverKey: 304
-  diveKey: 118
   invertY: 0
   rotationSmoothTime: 0.25
   flightMouseSensitivityX: 60
@@ -5165,12 +5164,6 @@ MonoBehaviour:
   pitchStaminaDrainMultiplier: 1.5
   pitchAirSpeedBoost: 3
   pitchMaxAngle: 60
-  diveTargetSpeed: 55
-  diveAccel: 18
-  divePitchMin: 85
-  divePitchMax: 45
-  diveYawRate: 55
-  divePitchRate: 45
   rollAngle: 45
   rollSmoothTime: 0.4
   flightStats: {fileID: 0}
