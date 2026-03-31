@@ -24,6 +24,7 @@ public class DragonAnimatorController : AnimalAnimatorController
     private int isDivingHash;
     private int airSpeedHash;
     private int verticalSpeedHash;
+    private int flightPitchHash;
 
     // ─── Animator Parameter Hashes (Swim) ────────────────
 
@@ -76,6 +77,7 @@ public class DragonAnimatorController : AnimalAnimatorController
         isDivingHash      = Animator.StringToHash("IsDiving");
         airSpeedHash      = Animator.StringToHash("AirSpeed");
         verticalSpeedHash = Animator.StringToHash("VerticalSpeed");
+        flightPitchHash   = Animator.StringToHash("Pitch");
 
         // Cache swim hashes
         isSwimmingHash   = Animator.StringToHash("IsSwimming");
@@ -98,6 +100,15 @@ public class DragonAnimatorController : AnimalAnimatorController
         animator.SetBool(isDivingHash,      netIsDiving.Value);
         animator.SetFloat(airSpeedHash,     netAirSpeed.Value);
         animator.SetFloat(verticalSpeedHash, netVerticalSpeed.Value);
+
+        // Flight Pitch — owner reads directly, remotes use NetworkVariable
+        if (flightController != null)
+        {
+            if (IsOwner)
+                animator.SetFloat(flightPitchHash, flightController.FlightPitch);
+            else
+                animator.SetFloat(flightPitchHash, netVerticalSpeed.Value);
+        }
 
         // Swim params
         animator.SetBool(isSwimmingHash,      netIsSwimming.Value);

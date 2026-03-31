@@ -24,6 +24,17 @@ public class DragonGroundController : AnimalGroundController
     private float _jumpGaitSpeed;
     private float _dragonFallVelocity;
     private bool  _isSwimming;
+    private bool  _flightRootMotionActive;
+
+    /// <summary>
+    /// Set by DragonFlightController to prevent ground OnAnimatorMove
+    /// from interfering with flight root motion.
+    /// </summary>
+    public bool FlightRootMotionActive
+    {
+        get => _flightRootMotionActive;
+        set => _flightRootMotionActive = value;
+    }
 
     protected override void Awake()
     {
@@ -103,6 +114,28 @@ public class DragonGroundController : AnimalGroundController
         return GroundExistsBelow();
     }
     protected override bool IsSwimmingActive() => _isSwimming;
+
+    protected override void OnAnimatorMove()
+    {
+        // When flight root motion is active, let the animator's root motion
+        // drive the rigidbody directly — skip the ground controller's logic entirely
+        if (_flightRootMotionActive)
+        {
+            if (animator == null || rb == null) return;
+            if (!IsOwner) return;
+
+            // Apply animator root motion directly to rigidbody
+            if (animator.deltaPosition.sqrMagnitude > 0.00001f)
+                rb.linearVelocity = animator.deltaPosition / Time.deltaTime;
+            else
+                rb.linearVelocity = Vector3.zero;
+
+            rb.MoveRotation(rb.rotation * animator.deltaRotation);
+            return;
+        }
+
+        base.OnAnimatorMove();
+    }
 
     /// <summary>
     /// Called by DragonFlightController to set animator params

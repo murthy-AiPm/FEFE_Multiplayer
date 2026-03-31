@@ -24,17 +24,26 @@ public class DragonFlightController : NetworkBehaviour
     [Header("References")]
     [SerializeField] private AnimalGroundingSystem groundingSystem;
     [SerializeField] private DragonGroundController groundController;
+    [SerializeField] private AnimalGroundAlignment groundAlignment;
     [SerializeField] private Animator animator;
 
     [Header("Root Motion Flight")]
     [Tooltip("When enabled, Thrust/Yaw/Pitch drive blend trees and root motion handles movement. Old controls disabled.")]
     [SerializeField] private bool useFlightRootMotion = false;
-    [Tooltip("How fast Thrust (GaitSpeed) ramps up/down.")]
+    [Tooltip("How much Thrust changes per key press.")]
+    [SerializeField] private float thrustIncrement = 0.25f;
+    [Tooltip("How fast thrust smoothly moves to target value (per second).")]
     [SerializeField] private float thrustSmoothSpeed = 2f;
+    [Tooltip("Min thrust value.")]
+    [SerializeField] private float thrustMin = -1f;
+    [Tooltip("Max thrust value.")]
+    [SerializeField] private float thrustMax = 1f;
     [Tooltip("Smoothing for Yaw (TurnAngle). Higher = faster response.")]
     [SerializeField] private float yawSmoothing = 5f;
-    [Tooltip("Smoothing for Pitch. Higher = faster response.")]
-    [SerializeField] private float pitchSmoothing = 5f;
+    [Tooltip("How much mouse Y movement changes pitch target.")]
+    [SerializeField] private float pitchMouseSensitivity = 2f;
+    [Tooltip("How fast pitch smoothly moves to target value (per second).")]
+    [SerializeField] private float pitchSmoothSpeed = 3f;
 
     [Header("Input")]
     [SerializeField] private string horizontalAxis = "Horizontal";
@@ -130,10 +139,15 @@ public class DragonFlightController : NetworkBehaviour
 
     // Root motion flight state
     private float _rmThrust;
+    private float _rmThrustTarget;
     private float _rmYaw;
-    private float _rmYawVel;
     private float _rmPitch;
-    private float _rmPitchVel;
+    private float _rmPitchTarget;
+
+    // Animator hashes for root motion flight
+    private int thrustHash;
+    private int yawHash;
+    private int pitchHash;
 
     // Public for animator controller to read
     public float FlightPitch => _rmPitch;
@@ -147,10 +161,16 @@ public class DragonFlightController : NetworkBehaviour
             groundingSystem = GetComponentInChildren<AnimalGroundingSystem>();
         if (groundController == null)
             groundController = GetComponent<DragonGroundController>();
+        if (groundAlignment == null)
+            groundAlignment = GetComponent<AnimalGroundAlignment>();
         if (animator == null)
             animator = GetComponentInParent<Animator>();
 
         if (rb == null) rb = GetComponent<Rigidbody>();
+
+        thrustHash = Animator.StringToHash("Thrust");
+        yawHash    = Animator.StringToHash("Yaw");
+        pitchHash  = Animator.StringToHash("Pitch");
 
         isActive = false;
         isHoverMode = false;
@@ -176,6 +196,15 @@ public class DragonFlightController : NetworkBehaviour
             hoverRequested = false;
             isFlapping = false;
             isGliding = false;
+
+            // Clear flight root motion flags so ground systems resume normal behavior
+            if (groundController != null)
+                groundController.FlightRootMotionActive = false;
+            if (groundAlignment != null)
+            {
+                groundAlignment.SuspendAlignment = false;
+                groundAlignment.SetYawImmediate(transform.eulerAngles.y);
+            }
         }
 
         if (!isActive) return;
@@ -460,34 +489,42 @@ public class DragonFlightController : NetworkBehaviour
     {
         if (groundController == null) return;
 
-        float vertical = Input.GetAxisRaw(verticalAxis);   // W/S → Thrust
         float horizontal = Input.GetAxisRaw(horizontalAxis); // A/D → Yaw
         float mouseY = Input.GetAxisRaw("Mouse Y");         // Mouse Y → Pitch
         float ySign = invertY ? 1f : -1f;
 
-        // ── Thrust (maps to GaitSpeed) ──
-        // W = positive thrust, S = negative (or brake)
-        float targetThrust = Mathf.Clamp(vertical, -1f, 1f);
-        _rmThrust = Mathf.MoveTowards(_rmThrust, targetThrust, thrustSmoothSpeed * dt);
+        // ── Thrust (throttle-style: W/S set target, smooth lerp to it) ──
+        if (Input.GetKeyDown(KeyCode.W))
+            _rmThrustTarget = Mathf.Clamp(_rmThrustTarget + thrustIncrement, thrustMin, thrustMax);
+        if (Input.GetKeyDown(KeyCode.S))
+            _rmThrustTarget = Mathf.Clamp(_rmThrustTarget - thrustIncrement, thrustMin, thrustMax);
+        _rmThrust = Mathf.MoveTowards(_rmThrust, _rmThrustTarget, thrustSmoothSpeed * dt);
 
-        // ── Yaw (maps to TurnAngle) ──
+        // ── Yaw ──
         float targetYaw = Mathf.Clamp(horizontal, -1f, 1f);
-        _rmYaw = Mathf.Clamp(
-            Mathf.SmoothDamp(_rmYaw, targetYaw, ref _rmYawVel, 1f / yawSmoothing),
-            -1f, 1f);
+        _rmYaw = Mathf.MoveTowards(_rmYaw, targetYaw, yawSmoothing * dt);
+        // Snap to zero in dead zone to prevent flicker
+        if (Mathf.Abs(targetYaw) < 0.01f && Mathf.Abs(_rmYaw) < 0.02f)
+            _rmYaw = 0f;
 
-        // ── Pitch ──
-        float targetPitch = Mathf.Clamp(mouseY * ySign, -1f, 1f);
-        _rmPitch = Mathf.Clamp(
-            Mathf.SmoothDamp(_rmPitch, targetPitch, ref _rmPitchVel, 1f / pitchSmoothing),
-            -1f, 1f);
+        // ── Pitch (throttle-style: mouse Y accumulates, holds on stop) ──
+        _rmPitchTarget = Mathf.Clamp(_rmPitchTarget + mouseY * ySign * pitchMouseSensitivity * dt, -1f, 1f);
+        _rmPitch = Mathf.MoveTowards(_rmPitch, _rmPitchTarget, pitchSmoothSpeed * dt);
 
-        // Push Thrust and Yaw to ground controller → animator reads GaitSpeed and TurnAngle
-        groundController.SetFlightAnimParams(_rmThrust, _rmYaw, _rmPitch);
+        // Tell ground systems to hand off to flight
+        if (groundController != null)
+            groundController.FlightRootMotionActive = true;
+        if (groundAlignment != null)
+            groundAlignment.SuspendAlignment = true;
 
-        // Enable root motion on animator
+        // Write directly to animator with flight-specific parameter names
         if (animator != null)
+        {
+            animator.SetFloat(thrustHash, _rmThrust);
+            animator.SetFloat(yawHash, _rmYaw);
+            animator.SetFloat(pitchHash, _rmPitch);
             animator.applyRootMotion = true;
+        }
 
         // Update hover toggle (Space still works)
         if (Input.GetKeyDown(toggleHoverKey))
@@ -501,8 +538,8 @@ public class DragonFlightController : NetworkBehaviour
             }
         }
 
-        isHoverMode = hoverRequested && Mathf.Abs(vertical) < 0.05f;
-        isFlapping = vertical > 0.05f;
+        isHoverMode = hoverRequested && _rmThrust < 0.05f;
+        isFlapping = _rmThrust > 0.05f;
         isGliding = !isHoverMode && !isFlapping;
     }
 

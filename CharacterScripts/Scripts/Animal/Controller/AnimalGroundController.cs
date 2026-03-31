@@ -599,7 +599,7 @@ public class AnimalGroundController : NetworkBehaviour
     /// </summary>
     private Vector3 _pendingRootMotion;
 
-    private void OnAnimatorMove()
+    protected virtual void OnAnimatorMove()
     {
         if (animator == null || rb == null) return;
         if (!IsOwner) return;

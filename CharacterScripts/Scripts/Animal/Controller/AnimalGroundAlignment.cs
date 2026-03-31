@@ -52,6 +52,12 @@ public class AnimalGroundAlignment : NetworkBehaviour
     private float currentYaw;
     private Vector3 smoothedUp = Vector3.up;
 
+    /// <summary>
+    /// When true, alignment is fully suspended (no rotation, no height adjustment).
+    /// Set by flight controller during root motion flight.
+    /// </summary>
+    public bool SuspendAlignment { get; set; }
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -73,6 +79,7 @@ public class AnimalGroundAlignment : NetworkBehaviour
     {
         if (!IsOwner) return;
         if (groundingSystem == null || dragonRoot == null) return;
+        if (SuspendAlignment) return;
 
         bool isGrounded = groundingSystem.IsGrounded;
 
