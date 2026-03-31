@@ -29,7 +29,7 @@ public class AnimalGroundController : NetworkBehaviour
     [SerializeField] private string forwardAxis = "Vertical";
     [SerializeField] private string strafeAxis = "Horizontal";
     [SerializeField] private KeyCode jumpKey = KeyCode.Space;
-    [SerializeField] private KeyCode takeoffKey = KeyCode.C;
+    private KeyCode takeoffKey = KeyCode.C;
     [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift;
 
     [Header("Takeoff")]

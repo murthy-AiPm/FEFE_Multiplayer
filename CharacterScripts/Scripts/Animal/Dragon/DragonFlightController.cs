@@ -101,6 +101,7 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private FlightStats flightStats;
 
     // Public read-only state
+    public bool IsFlightMode => isActive;
     public bool IsHoverMode => isHoverMode;
     public bool IsFlying => isFlapping;
     public bool IsFlapping => isFlapping;
@@ -148,6 +149,8 @@ public class DragonFlightController : NetworkBehaviour
     private int thrustHash;
     private int yawHash;
     private int pitchHash;
+    private int flightModeHash;
+    private KeyCode exitFlightKey = KeyCode.C;
 
     // Public for animator controller to read
     public float FlightPitch => _rmPitch;
@@ -168,9 +171,10 @@ public class DragonFlightController : NetworkBehaviour
 
         if (rb == null) rb = GetComponent<Rigidbody>();
 
-        thrustHash = Animator.StringToHash("Thrust");
-        yawHash    = Animator.StringToHash("Yaw");
-        pitchHash  = Animator.StringToHash("Pitch");
+        thrustHash     = Animator.StringToHash("Thrust");
+        yawHash        = Animator.StringToHash("Yaw");
+        pitchHash      = Animator.StringToHash("Pitch");
+        flightModeHash = Animator.StringToHash("FlightMode");
 
         isActive = false;
         isHoverMode = false;
@@ -189,26 +193,17 @@ public class DragonFlightController : NetworkBehaviour
     private void Update()
     {
 
-        if (groundingSystem.IsGrounded && isActive)
-        {
-            isActive = false;
-            isHoverMode = false;
-            hoverRequested = false;
-            isFlapping = false;
-            isGliding = false;
-
-            // Clear flight root motion flags so ground systems resume normal behavior
-            if (groundController != null)
-                groundController.FlightRootMotionActive = false;
-            if (groundAlignment != null)
-            {
-                groundAlignment.SuspendAlignment = false;
-                groundAlignment.SetYawImmediate(transform.eulerAngles.y);
-            }
-        }
+        // FlightMode is the authority — only exit via C key press, never via grounded check
 
         if (!isActive) return;
         if (!IsOwner) return;
+
+        // Check for exit flight (C while flying)
+        if (Input.GetKeyDown(exitFlightKey))
+        {
+            ExitFlight();
+            return;
+        }
 
         if (useFlightRootMotion)
         {
@@ -240,6 +235,9 @@ public class DragonFlightController : NetworkBehaviour
 
         yaw = smoothedYaw = transform.eulerAngles.y;
         pitch = smoothedPitch = 0f;
+        // Set FlightMode animator param
+        if (animator != null)
+            animator.SetBool(flightModeHash, true);
     }
 
     public void RequestGlide()
@@ -250,6 +248,57 @@ public class DragonFlightController : NetworkBehaviour
 
         yaw = smoothedYaw = transform.eulerAngles.y;
         pitch = smoothedPitch = NormalizePitch(transform.eulerAngles.x);
+
+        // Set FlightMode animator param
+        if (animator != null)
+            animator.SetBool(flightModeHash, true);
+    }
+
+    /// <summary>
+    /// Exit flight mode. Dragon will fall to ground via gravity.
+    /// Called when pressing C while flying.
+    /// </summary>
+    private void ExitFlight()
+    {
+        isActive = false;
+        isHoverMode = false;
+        hoverRequested = false;
+        isFlapping = false;
+        isGliding = false;
+        airSpeed = 0f;
+
+        // Reset root motion flight params
+        _rmThrust = 0f;
+        _rmThrustTarget = 0f;
+        _rmYaw = 0f;
+        _rmPitch = 0f;
+        _rmPitchTarget = 0f;
+
+        // Clear animator flight params
+        if (animator != null)
+        {
+            animator.SetBool(flightModeHash, false);
+            animator.SetFloat(thrustHash, 0f);
+            animator.SetFloat(yawHash, 0f);
+            animator.SetFloat(pitchHash, 0f);
+            animator.applyRootMotion = true;
+        }
+
+        // Clear ground system flags
+        if (groundController != null)
+            groundController.FlightRootMotionActive = false;
+        if (groundAlignment != null)
+        {
+            groundAlignment.SuspendAlignment = false;
+            groundAlignment.SetYawImmediate(transform.eulerAngles.y);
+        }
+
+        // Kill velocity so dragon drops cleanly
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
     }
 
     // ─── Input ───────────────────────────────────────────
