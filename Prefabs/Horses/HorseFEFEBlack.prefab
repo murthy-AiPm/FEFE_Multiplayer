@@ -31232,7 +31232,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3098386633
+  GlobalObjectIdHash: 1715256093
   InScenePlacedSourceGlobalObjectIdHash: 1715256093
   DeferredDespawnTick: 0
   Ownership: 1
@@ -31263,14 +31263,12 @@ MonoBehaviour:
   debugRespawnKey: 117
   groundingSystem: {fileID: 4857141069560035070}
   groundAlignment: {fileID: 6971074442495450458}
-  flightController: {fileID: 0}
   animator: {fileID: 5488037014714902245}
   rb: {fileID: 2668714384057089674}
   cam: {fileID: 0}
   forwardAxis: Vertical
   strafeAxis: Horizontal
   jumpKey: 32
-  takeoffKey: 99
   sprintKey: 304
   takeoffLiftSpeed: 8
   jumpUpAnimationDuration: 0.8
@@ -31291,6 +31289,7 @@ MonoBehaviour:
   walkTurnRate: 120
   trotTurnRate: 150
   sprintTurnRate: 180
+  airTurnRate: 120
   useRootMotion: 1
   useFakeGravity: 1
   fakeGravity: 20
@@ -31462,7 +31461,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DragonAnimatorController
   ShowTopMostFoldoutHeaderGroup: 1
-  flightController: {fileID: 0}
   groundController: {fileID: 1170777050549110245}
   groundingSystem: {fileID: 4857141069560035070}
   animator: {fileID: 5488037014714902245}

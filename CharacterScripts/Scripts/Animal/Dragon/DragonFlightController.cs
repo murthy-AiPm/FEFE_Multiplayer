@@ -26,6 +26,7 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private DragonGroundController groundController;
     [SerializeField] private AnimalGroundAlignment groundAlignment;
     [SerializeField] private Animator animator;
+    [SerializeField] private Transform cam;
 
     [Header("Root Motion Flight")]
     [Tooltip("When enabled, Thrust/Yaw/Pitch drive blend trees and root motion handles movement. Old controls disabled.")]
@@ -53,6 +54,7 @@ public class DragonFlightController : NetworkBehaviour
 
     [Header("Look / Turn")]
     [SerializeField] private bool invertY = false;
+    [SerializeField] private KeyCode pauseInputKey = KeyCode.P;
     [SerializeField] private float rotationSmoothTime = 0.08f;
 
     [Header("Look / Turn - Flight")]
@@ -144,6 +146,7 @@ public class DragonFlightController : NetworkBehaviour
     private float _rmYaw;
     private float _rmPitch;
     private float _rmPitchTarget;
+    private bool _inputPaused;
 
     // Animator hashes for root motion flight
     private int thrustHash;
@@ -168,6 +171,8 @@ public class DragonFlightController : NetworkBehaviour
             groundAlignment = GetComponent<AnimalGroundAlignment>();
         if (animator == null)
             animator = GetComponentInParent<Animator>();
+        if (cam == null)
+            cam = Camera.main?.transform;
 
         if (rb == null) rb = GetComponent<Rigidbody>();
 
@@ -539,9 +544,14 @@ public class DragonFlightController : NetworkBehaviour
     {
         if (groundController == null) return;
 
+        if (Input.GetKeyDown(pauseInputKey))
+        {
+            _inputPaused = !_inputPaused;
+            animator.speed = _inputPaused ? 0f : 1f;
+        }
+        if (_inputPaused) return;
+
         float horizontal = Input.GetAxisRaw(horizontalAxis); // A/D → Yaw
-        float mouseY = Input.GetAxisRaw("Mouse Y");         // Mouse Y → Pitch
-        float ySign = invertY ? 1f : -1f;
 
         // ── Thrust (throttle-style: W/S set target, smooth lerp to it) ──
         if (Input.GetKeyDown(KeyCode.W))
@@ -557,8 +567,15 @@ public class DragonFlightController : NetworkBehaviour
         if (Mathf.Abs(targetYaw) < 0.01f && Mathf.Abs(_rmYaw) < 0.02f)
             _rmYaw = 0f;
 
-        // ── Pitch (throttle-style: mouse Y accumulates, holds on stop) ──
-        _rmPitchTarget = Mathf.Clamp(_rmPitchTarget + mouseY * ySign * pitchMouseSensitivity * dt, -1f, 1f);
+        // ── Pitch (driven from camera angle — dragon follows where camera looks) ──
+        if (cam != null)
+        {
+            float camPitch = cam.eulerAngles.x;
+            if (camPitch > 180f) camPitch -= 360f;
+            // Normalize camera pitch to -1..1 range using the flight pitch clamp as the max angle
+            float pitchSign = invertY ? 1f : -1f;
+            _rmPitchTarget = Mathf.Clamp(pitchSign * camPitch / flightPitchClamp, -1f, 1f);
+        }
         _rmPitch = Mathf.MoveTowards(_rmPitch, _rmPitchTarget, pitchSmoothSpeed * dt);
 
         // Tell ground systems to hand off to flight
