@@ -1,7 +1,7 @@
 using UnityEngine;
 using Unity.Netcode;
 
-/// <summary>
+/// <summary>//
 /// Dragon animator controller. Extends AnimalAnimatorController with flight
 /// NetworkVariables and Animator parameter sync driven by DragonFlightController.
 /// 
