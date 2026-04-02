@@ -348,7 +348,18 @@ public class BearAI : NetworkBehaviour
             return;
         }
 
-        // In attack range — but only commit if there's room
+        // Re-evaluate target if current one is overwhelmed and a better one is nearby
+        if (_detectionTimer <= 0f)
+        {
+            Transform betterTarget = FindLessContestedTarget();
+            if (betterTarget != null && betterTarget != currentTarget)
+            {
+                UnregisterAttacker();
+                currentTarget = betterTarget;
+            }
+        }
+
+        // In attack range — register immediately so count blocks others this frame
         if (distToTarget <= attackRange && attackCooldownTimer <= 0f)
         {
             if (IsCrowded())
@@ -357,6 +368,7 @@ public class BearAI : NetworkBehaviour
                 agent.ResetPath();
                 return;
             }
+            RegisterAttacker();
             SetState(BearState.Attack);
             return;
         }
@@ -459,7 +471,6 @@ public class BearAI : NetworkBehaviour
                 break;
 
             case BearState.Attack:
-                RegisterAttacker();
                 stateTimer = attackDuration;
                 agent.ResetPath();
                 animator.SetTrigger(attackHash);
@@ -525,6 +536,51 @@ public class BearAI : NetworkBehaviour
         return c >= maxAttackersPerTarget;
     }
 
+    /// <summary>
+    /// If current target is at or over the attacker cap, find a living target in range
+    /// with fewer attackers. Returns null if no better target exists.
+    /// </summary>
+    private Transform FindLessContestedTarget()
+    {
+        // Only bother switching if current target is already overwhelmed
+        _attackerCounts.TryGetValue(currentTarget, out int currentCount);
+        if (currentCount < maxAttackersPerTarget) return null;
+
+        int count = Physics.OverlapSphereNonAlloc(
+            transform.position, detectionRadius, _detectionBuffer, playerLayer);
+
+        Transform best     = null;
+        int       bestCount = int.MaxValue;
+
+        for (int i = 0; i < count; i++)
+        {
+            var col = _detectionBuffer[i];
+            if (col == null) continue;
+
+            var receiver = col.GetComponentInParent<DamageReceiver>();
+            if (receiver == null) continue;
+
+            Transform t = receiver.transform;
+            if (t == currentTarget) continue;
+
+            var vitals = col.GetComponentInParent<VitalManager>();
+            if (vitals != null)
+            {
+                var health = vitals.GetVital("health");
+                if (health != null && health.Current <= 0f) continue;
+            }
+
+            _attackerCounts.TryGetValue(t, out int c);
+            if (c < bestCount)
+            {
+                bestCount = c;
+                best      = t;
+            }
+        }
+
+        return best;
+    }
+
     // ─── Hitbox ───
 
     private void EnableBiteHitbox()
@@ -584,17 +640,10 @@ public class BearAI : NetworkBehaviour
 
         if (candidates.Count == 0) return null;
 
-        // Already chasing someone — just keep nearest alive candidate
+        // Already chasing — target switching is handled in UpdateChase, just validate still alive
         if (currentTarget != null)
         {
-            Transform nearest    = null;
-            float     nearestDist = float.MaxValue;
-            foreach (var t in candidates)
-            {
-                float d = Vector3.Distance(transform.position, t.position);
-                if (d < nearestDist) { nearestDist = d; nearest = t; }
-            }
-            return nearest;
+            return candidates.Contains(currentTarget) ? currentTarget : candidates[0];
         }
 
         // First pick — prefer least-contested target so zombies spread across clients
