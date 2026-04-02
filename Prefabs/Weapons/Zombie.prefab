@@ -2282,7 +2282,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3112532756
+  GlobalObjectIdHash: 1650904498
   InScenePlacedSourceGlobalObjectIdHash: 3821608182
   DeferredDespawnTick: 0
   Ownership: 1
@@ -2453,7 +2453,7 @@ MonoBehaviour:
   hitboxEnableDelay: 0.3
   hitboxActiveDuration: 1
   maxAttackersPerTarget: 4
-  orbitRadius: 2.5
+  crowdCheckRadius: 0.17
   collidersToDisableOnDeath:
   - {fileID: 2670392110671107575}
   vitalManager: {fileID: 796216624645616193}

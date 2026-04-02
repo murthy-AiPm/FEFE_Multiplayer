@@ -3,7 +3,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
 
-/// <summary>
+/// <summary>////
 /// Simple bear AI with leash-based behavior.
 /// Server-authoritative: AI logic only runs on server.
 /// Animations synced via NetworkAnimator.
@@ -68,11 +68,17 @@ public class BearAI : NetworkBehaviour
     [Tooltip("How long hitbox stays active")]
     [SerializeField] private float hitboxActiveDuration = 0.3f;
 
-    [Header("Surround")]
-    [Tooltip("Max enemies that can orbit a single target")]
+    [Header("Crowd Control")]
+    [Tooltip("Max enemies allowed in melee range of a single target before others wait")]
     [SerializeField] private int maxAttackersPerTarget = 4;
-    [Tooltip("Distance from target centre to orbit slot — tweak per enemy size")]
-    [SerializeField] private float orbitRadius = 2.5f;
+    [Tooltip("Radius around this zombie checked for other zombies when deciding to attack")]
+    [SerializeField] private float crowdCheckRadius = 1.5f;
+
+    [Header("Separation")]
+    [Tooltip("Radius to scan for neighbouring zombies to push away from")]
+    [SerializeField] private float separationRadius = 1.2f;
+    [Tooltip("How strongly this zombie pushes away from neighbours — tune alongside NavMeshAgent radius")]
+    [SerializeField] private float separationStrength = 2f;
 
     [Header("Death")]
     [Tooltip("Colliders to disable when this enemy dies (drag the CapsuleCollider etc. here)")]
@@ -101,13 +107,16 @@ public class BearAI : NetworkBehaviour
     private bool hitboxActive;
     private Transform currentTarget;
 
-    // Detection cache
-    private Collider[] _detectionBuffer = new Collider[10];
+    // Detection / separation cache
+    private Collider[] _detectionBuffer  = new Collider[10];
+    private Collider[] _separationBuffer = new Collider[8];
     private float _detectionInterval = 0.25f;
     private float _detectionTimer;
 
-    // Surround
-    private bool _slotRegistered;
+    // Crowd control — server-only static tracker (target → attacker count)
+    private static readonly Dictionary<Transform, int> _attackerCounts =
+        new Dictionary<Transform, int>();
+    private bool _registeredAsAttacker;
 
     public override void OnNetworkSpawn()
     {
@@ -138,6 +147,8 @@ public class BearAI : NetworkBehaviour
         {
             agent.updatePosition = false;
             agent.updateRotation = false;
+            // Randomise avoidance priority so RVO works properly across many agents
+            agent.avoidancePriority = Random.Range(20, 80);
         }
 
         // Listen for death
@@ -218,7 +229,8 @@ public class BearAI : NetworkBehaviour
     }
 
     /// <summary>
-    /// Root motion: apply animation movement to NavMeshAgent position.
+    /// Root motion: apply animation movement to NavMeshAgent position,
+    /// then apply a gentle separation nudge to prevent zombie overlap.
     /// </summary>
     private void OnAnimatorMove()
     {
@@ -228,6 +240,33 @@ public class BearAI : NetworkBehaviour
         // Apply root motion delta to agent
         Vector3 rootPosition = animator.rootPosition;
         rootPosition.y = agent.nextPosition.y; // Keep NavMesh Y to avoid floating
+
+        // Separation: push away from nearby zombies
+        Vector3 separation = Vector3.zero;
+        int neighbourCount = Physics.OverlapSphereNonAlloc(
+            rootPosition, separationRadius, _separationBuffer);
+        for (int i = 0; i < neighbourCount; i++)
+        {
+            var col = _separationBuffer[i];
+            if (col == null || col.transform == transform) continue;
+            if (col.GetComponentInParent<BearAI>() == null) continue;
+
+            Vector3 away = rootPosition - col.transform.position;
+            away.y = 0f;
+            float dist = away.magnitude;
+            if (dist < 0.001f)
+            {
+                // Exact overlap — push in a random horizontal direction
+                away = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
+                dist = 1f;
+            }
+            // Stronger push the closer they are
+            separation += (away / dist) * (1f - dist / separationRadius);
+        }
+
+        if (separation != Vector3.zero)
+            rootPosition += separation * (separationStrength * Time.deltaTime);
+
         agent.nextPosition = rootPosition;
         transform.position = rootPosition;
     }
@@ -291,7 +330,7 @@ public class BearAI : NetworkBehaviour
         // Target lost or dead
         if (currentTarget == null || !IsTargetAlive(currentTarget))
         {
-            ReleaseSlot();
+            UnregisterAttacker();
             currentTarget = null;
             SetState(BearState.Return);
             return;
@@ -303,39 +342,27 @@ public class BearAI : NetworkBehaviour
         // Leash check — too far from home
         if (distToHome > leashRadius)
         {
-            ReleaseSlot();
+            UnregisterAttacker();
             currentTarget = null;
             SetState(BearState.Return);
             return;
         }
 
-        // Ensure we have a slot; try to claim one if not yet assigned
-        if (!_slotRegistered)
+        // In attack range — but only commit if there's room
+        if (distToTarget <= attackRange && attackCooldownTimer <= 0f)
         {
-            _slotRegistered = EnemySurroundCoordinator.Register(
-                currentTarget, transform, maxAttackersPerTarget);
-            // If full, stay put and wait — don't advance toward the target
-            if (!_slotRegistered)
+            if (IsCrowded())
             {
+                // Too many zombies already swinging — hold position and wait
                 agent.ResetPath();
                 return;
             }
-        }
-
-        // Path to our assigned orbit slot instead of the target's feet
-        Vector3 slotPos = EnemySurroundCoordinator.GetSlotPosition(
-            currentTarget, transform, orbitRadius, maxAttackersPerTarget);
-
-        float distToSlot = Vector3.Distance(transform.position, slotPos);
-
-        // In attack range of slot (close enough to the target)
-        if (distToTarget <= attackRange && attackCooldownTimer <= 0f)
-        {
             SetState(BearState.Attack);
             return;
         }
 
-        agent.SetDestination(slotPos);
+        // Chase normally — NavMesh RVO handles separation during movement
+        agent.SetDestination(currentTarget.position);
         agent.speed = runSpeed;
         RotateToward(currentTarget.position - transform.position);
     }
@@ -365,16 +392,19 @@ public class BearAI : NetworkBehaviour
                 if (dist <= attackRange)
                     SetState(BearState.Attack); // Attack again
                 else if (dist <= leashRadius)
+                {
+                    UnregisterAttacker();
                     SetState(BearState.Chase);
+                }
                 else
                 {
-                    ReleaseSlot();
+                    UnregisterAttacker();
                     SetState(BearState.Return);
                 }
             }
             else
             {
-                ReleaseSlot();
+                UnregisterAttacker();
                 currentTarget = null;
                 SetState(BearState.Return);
             }
@@ -429,6 +459,7 @@ public class BearAI : NetworkBehaviour
                 break;
 
             case BearState.Attack:
+                RegisterAttacker();
                 stateTimer = attackDuration;
                 agent.ResetPath();
                 animator.SetTrigger(attackHash);
@@ -442,7 +473,7 @@ public class BearAI : NetworkBehaviour
                 break;
 
             case BearState.Dead:
-                ReleaseSlot();
+                UnregisterAttacker();
                 agent.ResetPath();
                 agent.enabled = false;
                 animator.SetBool(deadHash, true);
@@ -462,15 +493,36 @@ public class BearAI : NetworkBehaviour
             if (col != null) col.enabled = false;
     }
 
-    // ─── Slot ───
+    // ─── Crowd Control ───
 
-    private void ReleaseSlot()
+    private void RegisterAttacker()
     {
-        if (_slotRegistered && currentTarget != null)
+        if (_registeredAsAttacker || currentTarget == null) return;
+        _attackerCounts.TryGetValue(currentTarget, out int c);
+        _attackerCounts[currentTarget] = c + 1;
+        _registeredAsAttacker = true;
+    }
+
+    private void UnregisterAttacker()
+    {
+        if (!_registeredAsAttacker || currentTarget == null) return;
+        if (_attackerCounts.TryGetValue(currentTarget, out int c))
         {
-            EnemySurroundCoordinator.Unregister(currentTarget, transform);
-            _slotRegistered = false;
+            int next = c - 1;
+            if (next <= 0) _attackerCounts.Remove(currentTarget);
+            else           _attackerCounts[currentTarget] = next;
         }
+        _registeredAsAttacker = false;
+    }
+
+    /// <summary>
+    /// Returns true if too many enemies are already actively attacking the current target.
+    /// </summary>
+    private bool IsCrowded()
+    {
+        if (currentTarget == null) return false;
+        _attackerCounts.TryGetValue(currentTarget, out int c);
+        return c >= maxAttackersPerTarget;
     }
 
     // ─── Hitbox ───
@@ -545,18 +597,21 @@ public class BearAI : NetworkBehaviour
             return nearest;
         }
 
-        // First pick — use coordinator to choose least-contested target
-        Transform picked = EnemySurroundCoordinator.FindLeastContestedTarget(
-            candidates, maxAttackersPerTarget);
+        // First pick — prefer least-contested target so zombies spread across clients
+        Transform picked    = null;
+        int       bestCount = int.MaxValue;
+        float     bestDist  = float.MaxValue;
 
-        // Fallback: all targets full — pick nearest anyway (will wait for slot in UpdateChase)
-        if (picked == null)
+        foreach (var t in candidates)
         {
-            float nearestDist = float.MaxValue;
-            foreach (var t in candidates)
+            _attackerCounts.TryGetValue(t, out int c);
+            float d = Vector3.Distance(transform.position, t.position);
+            // Prefer fewest attackers; break ties by distance
+            if (c < bestCount || (c == bestCount && d < bestDist))
             {
-                float d = Vector3.Distance(transform.position, t.position);
-                if (d < nearestDist) { nearestDist = d; picked = t; }
+                bestCount = c;
+                bestDist  = d;
+                picked    = t;
             }
         }
 
