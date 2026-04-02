@@ -983,7 +983,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6054378023783407502}
   - {fileID: 6801981938820597609}
   - {fileID: 1021994510393925314}
   m_Father: {fileID: 3086120407189549482}
@@ -1016,8 +1015,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2560130988734915919}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.22975297, y: 1.1748623e-14, z: -4.7540546e-15, w: 0.973249}
-  m_LocalPosition: {x: 1.039978, y: 5.398773, z: -8.600006}
+  m_LocalRotation: {x: 0.122183256, y: -0.000000033070357, z: 0.000000004071147, w: 0.9925076}
+  m_LocalPosition: {x: -0.08001709, y: 8.158775, z: -10.869995}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1080,7 +1079,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineOrbitalFollow
   TargetOffset: {x: 0, y: 0, z: 0}
   TrackerSettings:
-    BindingMode: 4
+    BindingMode: 1
     PositionDamping: {x: 0, y: 0, z: 0}
     AngularDampingMode: 0
     RotationDamping: {x: 1, y: 1, z: 1}
@@ -1092,7 +1091,7 @@ MonoBehaviour:
       Radius: 2
       Height: 4
     Center:
-      Radius: 4
+      Radius: 8
       Height: 2
     Bottom:
       Radius: 2.5
@@ -1103,7 +1102,7 @@ MonoBehaviour:
     Value: 0
     Center: 0
     Range: {x: -45, y: 45}
-    Wrap: 1
+    Wrap: 0
     Recentering:
       Enabled: 0
       Wait: 1
@@ -2931,6 +2930,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6054378023783407502}
+  - component: {fileID: 6368945704413495509}
+  - component: {fileID: 4503589656177183525}
   m_Layer: 12
   m_Name: FlightFollow
   m_TagString: Untagged
@@ -2946,13 +2947,69 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5542695949420376264}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.50000036, y: -0.49999964, z: -0.49999964, w: 0.50000036}
-  m_LocalPosition: {x: 4.6, y: -1.04, z: 1.78}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.08001709, y: 6.1587753, z: -2.869995}
+  m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 3423531768416006098}
+  m_Father: {fileID: 8226214588110307267}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &6368945704413495509
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5542695949420376264}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 8f486325923f5214da474124dcae5a44, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &4503589656177183525
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5542695949420376264}
+  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &5931412905496939859
 GameObject:
   m_ObjectHideFlags: 0
@@ -5084,6 +5141,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 6054378023783407502}
   - {fileID: 3086120407189549482}
   - {fileID: 3634620291182841034}
   - {fileID: 4541233829028466081}
@@ -5275,7 +5333,7 @@ MonoBehaviour:
   verticalAxis: Vertical
   hoverAxis: Hover
   toggleHoverKey: 304
-  invertY: 1
+  invertY: 0
   pauseInputKey: 112
   rotationSmoothTime: 0.25
   flightMouseSensitivityX: 60

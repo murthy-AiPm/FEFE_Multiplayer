@@ -68,6 +68,16 @@ public class BearAI : NetworkBehaviour
     [Tooltip("How long hitbox stays active")]
     [SerializeField] private float hitboxActiveDuration = 0.3f;
 
+    [Header("Surround")]
+    [Tooltip("Max enemies that can orbit a single target")]
+    [SerializeField] private int maxAttackersPerTarget = 4;
+    [Tooltip("Distance from target centre to orbit slot — tweak per enemy size")]
+    [SerializeField] private float orbitRadius = 2.5f;
+
+    [Header("Death")]
+    [Tooltip("Colliders to disable when this enemy dies (drag the CapsuleCollider etc. here)")]
+    [SerializeField] private Collider[] collidersToDisableOnDeath;
+
     [Header("References")]
     [SerializeField] private VitalManager vitalManager;
     [SerializeField] private Animator animator;
@@ -95,6 +105,9 @@ public class BearAI : NetworkBehaviour
     private Collider[] _detectionBuffer = new Collider[10];
     private float _detectionInterval = 0.25f;
     private float _detectionTimer;
+
+    // Surround
+    private bool _slotRegistered;
 
     public override void OnNetworkSpawn()
     {
@@ -278,31 +291,51 @@ public class BearAI : NetworkBehaviour
         // Target lost or dead
         if (currentTarget == null || !IsTargetAlive(currentTarget))
         {
+            ReleaseSlot();
             currentTarget = null;
             SetState(BearState.Return);
             return;
         }
 
         float distToTarget = Vector3.Distance(transform.position, currentTarget.position);
-        float distToHome = Vector3.Distance(transform.position, homePosition);
+        float distToHome   = Vector3.Distance(transform.position, homePosition);
 
         // Leash check — too far from home
         if (distToHome > leashRadius)
         {
+            ReleaseSlot();
             currentTarget = null;
             SetState(BearState.Return);
             return;
         }
 
-        // In attack range
+        // Ensure we have a slot; try to claim one if not yet assigned
+        if (!_slotRegistered)
+        {
+            _slotRegistered = EnemySurroundCoordinator.Register(
+                currentTarget, transform, maxAttackersPerTarget);
+            // If full, stay put and wait — don't advance toward the target
+            if (!_slotRegistered)
+            {
+                agent.ResetPath();
+                return;
+            }
+        }
+
+        // Path to our assigned orbit slot instead of the target's feet
+        Vector3 slotPos = EnemySurroundCoordinator.GetSlotPosition(
+            currentTarget, transform, orbitRadius, maxAttackersPerTarget);
+
+        float distToSlot = Vector3.Distance(transform.position, slotPos);
+
+        // In attack range of slot (close enough to the target)
         if (distToTarget <= attackRange && attackCooldownTimer <= 0f)
         {
             SetState(BearState.Attack);
             return;
         }
 
-        // Chase
-        agent.SetDestination(currentTarget.position);
+        agent.SetDestination(slotPos);
         agent.speed = runSpeed;
         RotateToward(currentTarget.position - transform.position);
     }
@@ -334,10 +367,14 @@ public class BearAI : NetworkBehaviour
                 else if (dist <= leashRadius)
                     SetState(BearState.Chase);
                 else
+                {
+                    ReleaseSlot();
                     SetState(BearState.Return);
+                }
             }
             else
             {
+                ReleaseSlot();
                 currentTarget = null;
                 SetState(BearState.Return);
             }
@@ -405,12 +442,34 @@ public class BearAI : NetworkBehaviour
                 break;
 
             case BearState.Dead:
+                ReleaseSlot();
                 agent.ResetPath();
                 agent.enabled = false;
                 animator.SetBool(deadHash, true);
                 DisableBiteHitbox();
                 animalSoundPlayer?.PlayDeathSound();
+                DisableCollidersClientRpc();
                 break;
+        }
+    }
+
+    // ─── Colliders ───
+
+    [ClientRpc]
+    private void DisableCollidersClientRpc()
+    {
+        foreach (var col in collidersToDisableOnDeath)
+            if (col != null) col.enabled = false;
+    }
+
+    // ─── Slot ───
+
+    private void ReleaseSlot()
+    {
+        if (_slotRegistered && currentTarget != null)
+        {
+            EnemySurroundCoordinator.Unregister(currentTarget, transform);
+            _slotRegistered = false;
         }
     }
 
@@ -435,6 +494,10 @@ public class BearAI : NetworkBehaviour
 
     // ─── Detection ───
 
+    /// <summary>
+    /// On first detection, returns the least-contested living player within range.
+    /// On subsequent calls (already chasing), returns nearest living player as before.
+    /// </summary>
     private Transform FindNearestPlayer()
     {
         if (_detectionTimer > 0f) return currentTarget;
@@ -443,10 +506,8 @@ public class BearAI : NetworkBehaviour
         int count = Physics.OverlapSphereNonAlloc(
             transform.position, detectionRadius, _detectionBuffer, playerLayer);
 
-      //  Debug.Log($"[BearAI] overlap count = {count}");
-
-        Transform nearest = null;
-        float nearestDist = float.MaxValue;
+        // Collect all valid candidates
+        var candidates = new List<Transform>();
 
         for (int i = 0; i < count; i++)
         {
@@ -454,38 +515,52 @@ public class BearAI : NetworkBehaviour
             if (col == null) continue;
 
             var receiver = col.GetComponentInParent<DamageReceiver>();
-            var vitals = col.GetComponentInParent<VitalManager>();
-            var netObj = col.GetComponentInParent<NetworkObject>();
-
-            //Debug.Log(
-            //    $"[BearAI] collider={col.name}, layer={LayerMask.LayerToName(col.gameObject.layer)}, " +
-            //    $"receiver={(receiver != null ? receiver.name : "null")}, " +
-            //    $"vitals={(vitals != null ? vitals.name : "null")}, " +
-            //    $"netObj={(netObj != null ? netObj.name : "null")}"
-            //);
-
             if (receiver == null) continue;
 
             Transform targetRoot = receiver.transform;
 
+            var vitals = col.GetComponentInParent<VitalManager>();
             if (vitals != null)
             {
                 var health = vitals.GetVital("health");
                 if (health != null && health.Current <= 0f) continue;
             }
 
-            float dist = Vector3.Distance(transform.position, targetRoot.position);
-            if (dist < nearestDist)
+            if (!candidates.Contains(targetRoot))
+                candidates.Add(targetRoot);
+        }
+
+        if (candidates.Count == 0) return null;
+
+        // Already chasing someone — just keep nearest alive candidate
+        if (currentTarget != null)
+        {
+            Transform nearest    = null;
+            float     nearestDist = float.MaxValue;
+            foreach (var t in candidates)
             {
-                nearestDist = dist;
-                nearest = targetRoot;
+                float d = Vector3.Distance(transform.position, t.position);
+                if (d < nearestDist) { nearestDist = d; nearest = t; }
+            }
+            return nearest;
+        }
+
+        // First pick — use coordinator to choose least-contested target
+        Transform picked = EnemySurroundCoordinator.FindLeastContestedTarget(
+            candidates, maxAttackersPerTarget);
+
+        // Fallback: all targets full — pick nearest anyway (will wait for slot in UpdateChase)
+        if (picked == null)
+        {
+            float nearestDist = float.MaxValue;
+            foreach (var t in candidates)
+            {
+                float d = Vector3.Distance(transform.position, t.position);
+                if (d < nearestDist) { nearestDist = d; picked = t; }
             }
         }
 
-        if (nearest != null)
-            Debug.Log($"[BearAI] selected target = {nearest.name}");
-
-        return nearest;
+        return picked;
     }
 
     private bool IsTargetAlive(Transform target)

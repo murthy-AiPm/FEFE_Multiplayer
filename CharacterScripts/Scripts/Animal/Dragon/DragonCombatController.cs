@@ -316,7 +316,7 @@ public class DragonCombatController : NetworkBehaviour
 
     private void UpdateTwistAngle(bool isStationary)
     {
-        if (!isStationary || _attackMode != 1)
+        if (!isStationary || _attackMode == 0)
         {
             // Not stationary or not in melee mode — return spine to zero
             _targetTwistAngle = 0f;
@@ -390,13 +390,14 @@ public class DragonCombatController : NetworkBehaviour
         }
         else if (_attackMode == 2)
         {
-            // Fire breath mode — yaw tracks camera
+            // Fire breath mode — yaw tracks camera, compensated for spine twist
             if (cam != null && rb != null)
             {
                 float cameraYaw = cam.eulerAngles.y;
                 float bodyYaw   = rb.rotation.eulerAngles.y;
                 float delta     = Mathf.DeltaAngle(cameraYaw, bodyYaw);
-                _targetHeadYaw = Mathf.Clamp(delta, -maxHeadAngle, maxHeadAngle);
+                float compensated = delta - _currentTwistAngle;
+                _targetHeadYaw = Mathf.Clamp(compensated, -maxHeadAngle, maxHeadAngle);
             }
 
             _currentHeadYaw = Mathf.MoveTowards(_currentHeadYaw, _targetHeadYaw, headTurnSpeed * Time.deltaTime);
