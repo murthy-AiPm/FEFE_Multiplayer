@@ -348,6 +348,16 @@ MonoBehaviour:
   biteHitbox: {fileID: 6387743574187067218}
   hitboxEnableDelay: 0.3
   hitboxActiveDuration: 1
+  maxAttackersPerTarget: 4
+  crowdCheckRadius: 1.5
+  separationRadius: 1.2
+  separationStrength: 2
+  gravityStrength: 20
+  groundCheckDistance: 0.4
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 1
+  collidersToDisableOnDeath: []
   vitalManager: {fileID: 6124247818986976737}
   animator: {fileID: 5119333705707283841}
   agent: {fileID: 1212467679657730948}

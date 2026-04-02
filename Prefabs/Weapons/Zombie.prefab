@@ -2282,7 +2282,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3360870820
+  GlobalObjectIdHash: 2218462179
   InScenePlacedSourceGlobalObjectIdHash: 3821608182
   DeferredDespawnTick: 0
   Ownership: 1
@@ -2456,6 +2456,11 @@ MonoBehaviour:
   crowdCheckRadius: 0.17
   separationRadius: 1.2
   separationStrength: 2
+  gravityStrength: 20
+  groundCheckDistance: 0.4
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 1
   collidersToDisableOnDeath:
   - {fileID: 2670392110671107575}
   vitalManager: {fileID: 796216624645616193}

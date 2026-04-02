@@ -80,6 +80,14 @@ public class BearAI : NetworkBehaviour
     [Tooltip("How strongly this zombie pushes away from neighbours — tune alongside NavMeshAgent radius")]
     [SerializeField] private float separationStrength = 2f;
 
+    [Header("Gravity")]
+    [Tooltip("Downward acceleration when airborne — match to your world scale")]
+    [SerializeField] private float gravityStrength = 20f;
+    [Tooltip("Ray cast distance downward to detect ground")]
+    [SerializeField] private float groundCheckDistance = 0.4f;
+    [Tooltip("Layer mask for ground — should include terrain and any solid floor layers")]
+    [SerializeField] private LayerMask groundLayer;
+
     [Header("Death")]
     [Tooltip("Colliders to disable when this enemy dies (drag the CapsuleCollider etc. here)")]
     [SerializeField] private Collider[] collidersToDisableOnDeath;
@@ -112,6 +120,9 @@ public class BearAI : NetworkBehaviour
     private Collider[] _separationBuffer = new Collider[8];
     private float _detectionInterval = 0.25f;
     private float _detectionTimer;
+
+    // Gravity
+    private float _verticalVelocity;
 
     // Crowd control — server-only static tracker (target → attacker count)
     private static readonly Dictionary<Transform, int> _attackerCounts =
@@ -230,7 +241,7 @@ public class BearAI : NetworkBehaviour
 
     /// <summary>
     /// Root motion: apply animation movement to NavMeshAgent position,
-    /// then apply a gentle separation nudge to prevent zombie overlap.
+    /// then apply separation nudge and manual gravity.
     /// </summary>
     private void OnAnimatorMove()
     {
@@ -239,9 +250,30 @@ public class BearAI : NetworkBehaviour
 
         // Apply root motion delta to agent
         Vector3 rootPosition = animator.rootPosition;
-        rootPosition.y = agent.nextPosition.y; // Keep NavMesh Y to avoid floating
 
-        // Separation: push away from nearby zombies
+        // ── Gravity ──────────────────────────────────────────────
+        // Cast downward from hip height (0.5 up) to avoid starting inside ground
+        Vector3 rayOrigin = rootPosition + Vector3.up * 0.5f;
+        bool grounded = Physics.Raycast(
+            rayOrigin, Vector3.down,
+            out RaycastHit groundHit,
+            groundCheckDistance + 0.5f,
+            groundLayer);
+
+        if (grounded)
+        {
+            // Snap to ground surface and reset fall velocity
+            rootPosition.y  = groundHit.point.y;
+            _verticalVelocity = 0f;
+        }
+        else
+        {
+            // Accumulate downward velocity and apply it
+            _verticalVelocity  -= gravityStrength * Time.deltaTime;
+            rootPosition.y     += _verticalVelocity * Time.deltaTime;
+        }
+
+        // ── Separation ───────────────────────────────────────────
         Vector3 separation = Vector3.zero;
         int neighbourCount = Physics.OverlapSphereNonAlloc(
             rootPosition, separationRadius, _separationBuffer);
@@ -256,19 +288,17 @@ public class BearAI : NetworkBehaviour
             float dist = away.magnitude;
             if (dist < 0.001f)
             {
-                // Exact overlap — push in a random horizontal direction
                 away = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
                 dist = 1f;
             }
-            // Stronger push the closer they are
             separation += (away / dist) * (1f - dist / separationRadius);
         }
 
         if (separation != Vector3.zero)
             rootPosition += separation * (separationStrength * Time.deltaTime);
 
-        agent.nextPosition = rootPosition;
-        transform.position = rootPosition;
+        agent.nextPosition    = rootPosition;
+        transform.position    = rootPosition;
     }
 
     // ─── State Updates ───
