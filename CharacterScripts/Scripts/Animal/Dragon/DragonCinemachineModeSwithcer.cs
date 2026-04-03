@@ -1,7 +1,8 @@
 using UnityEngine;
 using Unity.Cinemachine;
+using Unity.Netcode;
 
-public class DragonCinemachineModeSwitcher : MonoBehaviour
+public class DragonCinemachineModeSwitcher : NetworkBehaviour
 {
     [SerializeField] private DragonFlightController flight;
     [SerializeField] private AnimalGroundingSystem grounding;
@@ -9,14 +10,51 @@ public class DragonCinemachineModeSwitcher : MonoBehaviour
     [SerializeField] private CinemachineCamera flightCam;
     [SerializeField] private CinemachineCamera diveCam;
 
+    [Header("Priority")]
+    [SerializeField] private int ownerActivePriority = 15;
+    [SerializeField] private int ownerInactivePriority = 5;
+    [SerializeField] private int nonOwnerPriority = 0;
+
     private void Awake()
     {
         if (!flight) flight = GetComponentInParent<DragonFlightController>();
         if (!grounding) grounding = GetComponentInParent<AnimalGroundingSystem>();
+
+        // Disable all cameras until ownership is resolved
+        SetCamerasEnabled(false);
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        ApplyOwnership(IsOwner);
+    }
+
+    public override void OnGainedOwnership() => ApplyOwnership(true);
+    public override void OnLostOwnership() => ApplyOwnership(false);
+
+    private void ApplyOwnership(bool owner)
+    {
+        if (!owner)
+        {
+            // Non-owner: disable all cameras so they don't steal the client's view
+            SetCamerasEnabled(false);
+            return;
+        }
+
+        // Owner: enable cameras
+        SetCamerasEnabled(true);
+    }
+
+    private void SetCamerasEnabled(bool enabled)
+    {
+        if (groundCam) { groundCam.gameObject.SetActive(enabled); groundCam.Priority = enabled ? ownerActivePriority : nonOwnerPriority; }
+        if (flightCam) { flightCam.gameObject.SetActive(enabled); flightCam.Priority = enabled ? ownerInactivePriority : nonOwnerPriority; }
+        if (diveCam) { diveCam.gameObject.SetActive(enabled); diveCam.Priority = enabled ? ownerInactivePriority : nonOwnerPriority; }
     }
 
     private void LateUpdate()
     {
+        if (!IsOwner) return;
         if (!flight || !grounding || !groundCam || !flightCam || !diveCam) return;
 
         bool isGrounded = grounding.IsGrounded;

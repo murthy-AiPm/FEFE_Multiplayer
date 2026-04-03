@@ -443,7 +443,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc97ce9e46605254a9f310f4d68eca82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VersionChecker
-  buildVersion: v0.63
+  buildVersion: v0.64
 --- !u!1 &1561024706
 GameObject:
   m_ObjectHideFlags: 0

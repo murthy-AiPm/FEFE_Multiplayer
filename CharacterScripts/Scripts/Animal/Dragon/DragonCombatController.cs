@@ -217,6 +217,7 @@ public class DragonCombatController : NetworkBehaviour
         }
 
         _attackMode = newMode;
+        netAttackMode.Value = newMode; // Owner writes directly
         SetAttackModeServerRpc(_attackMode);
     }
 
@@ -253,6 +254,7 @@ public class DragonCombatController : NetworkBehaviour
             if (wantFire != _isBreathingFire)
             {
                 _isBreathingFire = wantFire;
+                netIsBreathingFire.Value = wantFire; // Owner writes directly
                 SetBreathingFireServerRpc(_isBreathingFire);
             }
         }

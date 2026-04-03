@@ -1,12 +1,12 @@
 using UnityEngine;
 using Unity.Netcode;
 
-/// <summary>//
-/// Dragon animator controller. Extends AnimalAnimatorController with flight
-/// NetworkVariables and Animator parameter sync driven by DragonFlightController.
+/// <summary>
+/// Dragon animator controller. Extends AnimalAnimatorController with flight,
+/// swim, and root motion flight NetworkVariables and Animator parameter sync.
 /// 
 /// Ground params are fully handled by the base class.
-/// This class only adds flight state on top.
+/// This class adds flight state, swim state, and root motion flight params on top.
 /// </summary>
 public class DragonAnimatorController : AnimalAnimatorController
 {
@@ -24,6 +24,9 @@ public class DragonAnimatorController : AnimalAnimatorController
     private int isDivingHash;
     private int airSpeedHash;
     private int verticalSpeedHash;
+    private int flightModeHash;
+    private int thrustHash;
+    private int yawHash;
     private int flightPitchHash;
 
     // ─── Animator Parameter Hashes (Swim) ────────────────
@@ -46,6 +49,17 @@ public class DragonAnimatorController : AnimalAnimatorController
     private NetworkVariable<float> netAirSpeed = new NetworkVariable<float>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<float> netVerticalSpeed = new NetworkVariable<float>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    // ─── NetworkVariables (Root Motion Flight) ────────────
+
+    private NetworkVariable<bool> netFlightMode = new NetworkVariable<bool>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<float> netFlightThrust = new NetworkVariable<float>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<float> netFlightYaw = new NetworkVariable<float>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<float> netFlightPitch = new NetworkVariable<float>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     // ─── NetworkVariables (Swim) ──────────────────────────
@@ -77,6 +91,9 @@ public class DragonAnimatorController : AnimalAnimatorController
         isDivingHash      = Animator.StringToHash("IsDiving");
         airSpeedHash      = Animator.StringToHash("AirSpeed");
         verticalSpeedHash = Animator.StringToHash("VerticalSpeed");
+        flightModeHash    = Animator.StringToHash("FlightMode");
+        thrustHash        = Animator.StringToHash("Thrust");
+        yawHash           = Animator.StringToHash("Yaw");
         flightPitchHash   = Animator.StringToHash("Pitch");
 
         // Cache swim hashes
@@ -93,7 +110,7 @@ public class DragonAnimatorController : AnimalAnimatorController
 
         if (animator == null) return;
 
-        // Apply flight params to Animator (read from NetworkVariables, same as base pattern)
+        // ─── Flight state bools ──────────────────────────
         animator.SetBool(isHoveringHash,    netIsHovering.Value);
         animator.SetBool(isFlyingHash,      netIsFlying.Value);
         animator.SetBool(isGlidingHash,     netIsGliding.Value);
@@ -101,16 +118,27 @@ public class DragonAnimatorController : AnimalAnimatorController
         animator.SetFloat(airSpeedHash,     netAirSpeed.Value);
         animator.SetFloat(verticalSpeedHash, netVerticalSpeed.Value);
 
-        // Flight Pitch — owner reads directly, remotes use NetworkVariable
-        if (flightController != null)
+        // ─── Root motion flight params (Thrust, Yaw, Pitch, FlightMode) ──
+        if (IsOwner)
         {
-            if (IsOwner)
+            // Owner: flight controller writes Thrust/Yaw/Pitch directly to animator in its own Update,
+            // but FlightMode and Pitch also need to be set here for consistency
+            if (flightController != null)
+            {
+                animator.SetBool(flightModeHash, flightController.IsFlightMode);
                 animator.SetFloat(flightPitchHash, flightController.FlightPitch);
-            else
-                animator.SetFloat(flightPitchHash, netVerticalSpeed.Value);
+            }
+        }
+        else
+        {
+            // Remotes: read all flight root motion params from NetworkVariables
+            animator.SetBool(flightModeHash, netFlightMode.Value);
+            animator.SetFloat(thrustHash, netFlightThrust.Value);
+            animator.SetFloat(yawHash, netFlightYaw.Value);
+            animator.SetFloat(flightPitchHash, netFlightPitch.Value);
         }
 
-        // Swim params
+        // ─── Swim params ─────────────────────────────────
         animator.SetBool(isSwimmingHash,      netIsSwimming.Value);
         animator.SetFloat(swimSpeedHash,      netSwimSpeed.Value);
         animator.SetFloat(swimTurnHash,       netSwimTurn.Value);
@@ -124,7 +152,7 @@ public class DragonAnimatorController : AnimalAnimatorController
 
         if (flightController == null) return;
 
-        // Flight bools
+        // ─── Flight state bools ──────────────────────────
         if (netIsHovering.Value != flightController.IsHoverMode)
             netIsHovering.Value = flightController.IsHoverMode;
 
@@ -137,7 +165,6 @@ public class DragonAnimatorController : AnimalAnimatorController
         if (netIsDiving.Value != flightController.IsDiving)
             netIsDiving.Value = flightController.IsDiving;
 
-        // Flight floats
         float airSpeed = flightController.AirSpeed;
         if (Mathf.Abs(netAirSpeed.Value - airSpeed) > FLOAT_EPSILON)
             netAirSpeed.Value = airSpeed;
@@ -146,13 +173,35 @@ public class DragonAnimatorController : AnimalAnimatorController
         if (Mathf.Abs(netVerticalSpeed.Value - vertSpeed) > FLOAT_EPSILON)
             netVerticalSpeed.Value = vertSpeed;
 
-        // Swim variables
+        // ─── Root motion flight params ───────────────────
+        if (netFlightMode.Value != flightController.IsFlightMode)
+            netFlightMode.Value = flightController.IsFlightMode;
+
+        // Read Thrust/Yaw/Pitch from what the owner wrote to the animator
+        float thrust = animator.GetFloat(thrustHash);
+        if (Mathf.Abs(netFlightThrust.Value - thrust) > FLOAT_EPSILON)
+            netFlightThrust.Value = thrust;
+        if (thrust == 0f && netFlightThrust.Value != 0f)
+            netFlightThrust.Value = 0f;
+
+        float flightYaw = animator.GetFloat(yawHash);
+        if (Mathf.Abs(netFlightYaw.Value - flightYaw) > FLOAT_EPSILON)
+            netFlightYaw.Value = flightYaw;
+        if (flightYaw == 0f && netFlightYaw.Value != 0f)
+            netFlightYaw.Value = 0f;
+
+        float flightPitch = flightController.FlightPitch;
+        if (Mathf.Abs(netFlightPitch.Value - flightPitch) > FLOAT_EPSILON)
+            netFlightPitch.Value = flightPitch;
+        if (flightPitch == 0f && netFlightPitch.Value != 0f)
+            netFlightPitch.Value = 0f;
+
+        // ─── Swim variables ──────────────────────────────
         if (swimController != null)
         {
             if (netIsSwimming.Value != swimController.IsSwimming)
                 netIsSwimming.Value = swimController.IsSwimming;
 
-            // Read current animator values set by DragonSwimController on owner
             float swimSpeed = animator.GetFloat(swimSpeedHash);
             if (Mathf.Abs(netSwimSpeed.Value - swimSpeed) > FLOAT_EPSILON)
                 netSwimSpeed.Value = swimSpeed;
@@ -170,8 +219,6 @@ public class DragonAnimatorController : AnimalAnimatorController
         if (groundingSystem != null && !groundingSystem.IsGrounded)
         {
             float fwdSpeed = Vector3.Dot(flightController.Velocity, transform.forward);
-            // netForwardSpeed is private in base — dragon writes to Animator directly when airborne
-            // Base class handles ForwardSpeed for ground; we override the Animator param here
             if (animator != null)
                 animator.SetFloat(Animator.StringToHash("ForwardSpeed"), fwdSpeed);
         }
