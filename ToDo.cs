@@ -30,7 +30,7 @@ Phase 1
 * Buil AI foundation
 
 ═══════════════════════════════════════════════════════════════
- 1st-April-2026 — Dragon Combat + Flight System Session
+ 2nd-April-2026 — Dragon Combat + Flight System Session
 ═══════════════════════════════════════════════════════════════
 
 COMBAT SYSTEM — COMPLETED:
@@ -43,16 +43,15 @@ COMBAT SYSTEM — COMPLETED:
  * Head pitch offset (Inspector field) to correct for bone rest pose
  * Spine twist compensation — head yaw subtracts current spine twist so they don't double up
  * Procedural jaw open/close — jawBone Z rotation driven by code (closed: -106.534, open: -125), no animation needed
- * Jaw synced over network via netIsBreathingFire NetworkVariable
  * Fire breath VFX — prefab instantiated/destroyed on all clients via ClientRpc (fireBreathVFXPrefab)
  * Fire breath SFX — routed through DragonSoundPlayer (OnFireBreathStart/OnFireBreathEnd)
  * Melee VFX/SFX — spawned on all clients via MeleeAttackClientRpc, sound via DragonSoundPlayer.OnMeleeAttack
  * Right-click spine aim fully disabled for dragon
  * TurnAngle SmoothDamp clamped to ±1 in AnimalGroundController (overshoot fix)
 
-FLIGHT SYSTEM — ROOT MOTION BLEND TREE (IN PROGRESS):
+FLIGHT SYSTEM — ROOT MOTION BLEND TREE:
  * Added useFlightRootMotion toggle on DragonFlightController — when ON, new blend tree system; when OFF, old mouse-heavy controls
- * Three animator parameters: Thrust, Yaw, Pitch (all -1 to 1 range, written directly by flight controller)
+ * Three animator parameters: Thrust, Yaw, Pitch (all -1 to 1 range, written directly to animator by flight controller)
  * Thrust: throttle-style — W taps increment by thrustIncrement (0.25 default), S decrements, value sticks on release, smooth lerp to target
  * Yaw: A/D driven, MoveTowards with dead zone snap to zero to prevent flicker
  * Pitch: driven from camera angle (cam.eulerAngles.x) — dragon follows where Cinemachine camera looks, normalized to -1..1 via flightPitchClamp
@@ -63,22 +62,43 @@ FLIGHT SYSTEM — ROOT MOTION BLEND TREE (IN PROGRESS):
  * Dive functionality removed entirely (IsDiving always returns false)
  * Takeoff key hardcoded to C (removed from Inspector to avoid confusion with sprint/LeftShift)
 
- FLIGHT ARCHITECTURE CHANGES:
+FLIGHT ARCHITECTURE CHANGES:
  * AnimalGroundController.OnAnimatorMove changed from private to protected virtual
- * DragonGroundController overrides OnAnimatorMove — when FlightRootMotionActive is true, applies animator root motion directly (position + rotation), skips all ground logic
+ * DragonGroundController overrides OnAnimatorMove — when FlightRootMotionActive is true, applies animator root motion directly (position via rb.linearVelocity + rotation via rb.MoveRotation), skips all ground logic
  * DragonGroundController.FlightRootMotionActive flag — set by flight controller during root motion flight
  * AnimalGroundAlignment.SuspendAlignment flag — when true, FixedUpdate bails out entirely (no rotation, no height adjustment)
  * Flight controller sets both flags on entry, clears both + calls SetYawImmediate on exit
  * AnimalGroundController.TurnAngle changed from private set to protected set
- * DragonGroundController.SetFlightAnimParams(thrust, yaw, pitch) — public method for flight controller (currently unused since flight writes directly to animator)
+ * DragonGroundController.SetFlightAnimParams(thrust, yaw, pitch) — public method (currently unused since flight writes directly to animator)
+
+NETWORK SYNC — COMPLETED:
+ * AttackMode (int) — owner writes NetworkVariable directly + ServerRpc/ClientRpc for animator
+ * IsBreathingFire (bool) — owner writes NetworkVariable directly + ServerRpc/ClientRpc for animator/VFX/SFX
+ * Head yaw, head pitch, spine twist — NetworkVariables at 20Hz
+ * MeleeAttack — ServerRpc → ClientRpc trigger
+ * VFX/SFX fire on ClientRpc so all clients see/hear effects
+ * Jaw reads netIsBreathingFire on remote clients — FIXED: owner now writes NetworkVariable directly (Owner write permission was preventing ServerRpc from writing)
+ * Flight params (FlightMode, Thrust, Yaw, Pitch) — synced via DragonAnimatorController NetworkVariables
+   - Owner: flight controller writes to animator directly, DragonAnimatorController reads from animator and pushes to NetworkVariables at 20Hz
+   - Remotes: DragonAnimatorController reads NetworkVariables and sets animator params
+ * Flight state bools (IsHovering, IsFlying, IsGliding) — synced via existing NetworkVariables
+ * Swim params (IsSwimming, SwimSpeed, SwimTurn, SwimVertical) — synced via existing NetworkVariables
+ * CRITICAL FIX: NetworkVariables with Owner write permission cannot be written from ServerRpc (runs on server, not owner). Owner must write directly. Applied to netIsBreathingFire and netAttackMode.
+
+CINEMACHINE / CAMERA — FIXED:
+ * DragonCinemachineModeSwitcher changed from MonoBehaviour to NetworkBehaviour
+ * Non-owner dragon cameras disabled (SetActive false, priority 0) via OnNetworkSpawn
+ * Prevents client camera from switching to host's dragon
+ * Same pattern as existing OwnerOnlyFreeLook for human characters
 
 KEY FILES:
  * DragonCombatController.cs — combat modes, head tracking, spine twist, jaw, fire breath VFX/SFX
  * DragonFlightController.cs — flight modes, root motion blend tree params, takeoff/landing
- * DragonGroundController.cs — FlightRootMotionActive flag, OnAnimatorMove override, HasGroundBelow flight check
+ * DragonGroundController.cs — FlightRootMotionActive flag, OnAnimatorMove override, HasGroundBelow flight check, SetFlightAnimParams
  * AnimalGroundController.cs — base class, OnAnimatorMove now virtual, TurnAngle now protected set
  * AnimalGroundAlignment.cs — SuspendAlignment flag
- * DragonAnimatorController.cs — writes Pitch to animator from flightController.FlightPitch
+ * DragonAnimatorController.cs — syncs all flight/swim/combat params over network, writes Pitch/Thrust/Yaw/FlightMode to animator for remotes
+ * DragonCinemachineModeSwitcher.cs — now NetworkBehaviour, owner-only camera activation
  * DragonSoundPlayer.cs — fire breath start/loop/end sounds, melee attack sounds
 
 BONE AXIS NOTES:
@@ -87,22 +107,16 @@ BONE AXIS NOTES:
  * Yaw: world Vector3.up works across all neck bones
  * Jaw: local Z rotation (-106.534 closed, -125 open)
 
-NETWORK SYNC:
- * AttackMode (int) — NetworkVariable + ServerRpc/ClientRpc
- * IsBreathingFire (bool) — NetworkVariable + ServerRpc/ClientRpc
- * Head yaw, head pitch, spine twist — NetworkVariables at 20Hz
- * MeleeAttack — ServerRpc → ClientRpc trigger
- * VFX/SFX fire on ClientRpc so all clients see/hear effects
- * Jaw reads netIsBreathingFire on remote clients
- * Flight params (Thrust, Yaw, Pitch, FlightMode) — NOT YET NETWORKED for root motion flight
-
 OUTSTANDING / NEXT:
- * Ground-to-flight transition: dragon clips into ground during jump→hover transition. Needs either:
-   - Better jump animation with enough root motion lift
-   - Or a small takeoffLiftSpeed value during the jump animation timer
+ * Ground-to-flight transition: dragon clips into ground during jump→hover. Needs either better jump animation with root motion lift, or small takeoffLiftSpeed during jump timer
  * Flight blend tree tuning — need more animation clips mapped to blend tree positions
- * Fire breath while walking/flying — design question still open
- * Network sync for root motion flight params (Thrust, Yaw, Pitch)
+ * Fire breath while walking/flying — design question still open (see options A/B/C below)
  * TurnAngle animator parameter occasionally flickers (-2.8 seen) — may be blend tree internal damping
- * IsFalling should be false during FlightMode (HasGroundBelow override handles this but needs verification)
+ * Fire breath animation mask — has neck pitch + jaw open baked together. Long term: create Avatar Mask that includes jaw but excludes neck bones, so animation opens mouth without fighting procedural head tracking
+
+DESIGN QUESTIONS:
+ * Fire breath while walking:
+   A) Allow fire breath at walk only (not trot/sprint) — less conflict with blend tree
+   B) Allow at all gaits — need to dampen neck yaw contribution so it doesn't fight locomotion
+   C) Lock body rotation to camera while breathing fire during movement — dragon walks in aim direction
  */

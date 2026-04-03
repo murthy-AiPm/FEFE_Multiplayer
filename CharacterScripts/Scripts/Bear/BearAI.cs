@@ -3,7 +3,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
 
-/// <summary>////
+/// <summary>//
 /// Simple bear AI with leash-based behavior.
 /// Server-authoritative: AI logic only runs on server.
 /// Animations synced via NetworkAnimator.
@@ -249,6 +249,8 @@ public class BearAI : NetworkBehaviour
         if (!IsServer) return;
 
         // Apply root motion delta to agent
+        // Set agent speed very high so it never clamps root motion
+        agent.speed = 100f;
         Vector3 rootPosition = animator.rootPosition;
 
         // ── Gravity ──────────────────────────────────────────────
@@ -323,7 +325,6 @@ public class BearAI : NetworkBehaviour
             if (wanderPoint != Vector3.zero)
             {
                 agent.SetDestination(wanderPoint);
-                agent.speed = walkSpeed;
                 SetState(BearState.Wander);
             }
             else
@@ -404,8 +405,8 @@ public class BearAI : NetworkBehaviour
         }
 
         // Chase normally — NavMesh RVO handles separation during movement
+        // Don't set agent.speed — root motion drives actual movement speed
         agent.SetDestination(currentTarget.position);
-        agent.speed = runSpeed;
         RotateToward(currentTarget.position - transform.position);
     }
 
@@ -469,7 +470,6 @@ public class BearAI : NetworkBehaviour
         }
 
         agent.SetDestination(homePosition);
-        agent.speed = walkSpeed;
         RotateToward(agent.desiredVelocity);
 
         // Arrived home
@@ -510,7 +510,6 @@ public class BearAI : NetworkBehaviour
                 break;
 
             case BearState.Return:
-                agent.speed = walkSpeed;
                 break;
 
             case BearState.Dead:
@@ -749,6 +748,15 @@ public class BearAI : NetworkBehaviour
     private void OnDrawGizmosSelected()
     {
         if (!showGizmos) return;
+
+        // Ground raycast gizmo
+        Vector3 rayOrigin = transform.position + Vector3.up * 0.5f;
+        float rayLength   = groundCheckDistance + 0.5f;
+        bool rayHit = Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, rayLength, groundLayer);
+        Gizmos.color = rayHit ? Color.green : Color.red;
+        Gizmos.DrawLine(rayOrigin, rayOrigin + Vector3.down * rayLength);
+        if (rayHit)
+            Gizmos.DrawWireSphere(hit.point, 0.1f);
 
         Vector3 center = Application.isPlaying ? homePosition : transform.position;
 
