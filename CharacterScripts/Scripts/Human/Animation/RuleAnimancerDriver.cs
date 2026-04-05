@@ -962,10 +962,14 @@ public class RuleAnimancerDriver : MonoBehaviour
             if (c.direction == Direction4.Any) return true;
 
             var d = ctx.DirString;
-            if (c.direction == Direction4.W && d != "W") return false;
-            if (c.direction == Direction4.A && d != "A") return false;
-            if (c.direction == Direction4.S && d != "S") return false;
-            if (c.direction == Direction4.D && d != "D") return false;
+            if (c.direction == Direction4.W  && d != "W")  return false;
+            if (c.direction == Direction4.A  && d != "A")  return false;
+            if (c.direction == Direction4.S  && d != "S")  return false;
+            if (c.direction == Direction4.D  && d != "D")  return false;
+            if (c.direction == Direction4.WA && d != "WA") return false;
+            if (c.direction == Direction4.WD && d != "WD") return false;
+            if (c.direction == Direction4.SA && d != "SA") return false;
+            if (c.direction == Direction4.SD && d != "SD") return false;
         }
 
         if (c.useActionId)

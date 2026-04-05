@@ -1,7 +1,7 @@
 using UnityEngine;
 using Unity.Netcode;
 
-/// <summary>
+/// <summary>//
 /// Dragon combat controller. Handles:
 /// - Press 1: toggle Melee Attack Mode (attack idle, head yaw tracking, left-click melee)
 /// - Press 2: toggle Fire Breath Mode (attack idle, head yaw+pitch tracking, hold left-click to breathe fire)

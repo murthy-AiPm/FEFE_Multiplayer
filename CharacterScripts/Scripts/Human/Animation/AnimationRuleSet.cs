@@ -56,7 +56,11 @@ public enum Direction4
     W,
     A,
     S,
-    D
+    D,
+    WA,  // diagonal forward-left
+    WD,  // diagonal forward-right
+    SA,  // diagonal back-left
+    SD   // diagonal back-right
 }
 
 [Serializable]

@@ -163,6 +163,12 @@ public class InputController : MonoBehaviour
 
         // Direction string compatibility
         directions = GetDirectionString(s.move);
+        
+        // Debug: log direction when in combat mode and moving
+        if (isCombatMode && isMoving)
+        {
+            Debug.Log($"[Input] Combat Move - Raw: ({s.move.x:F2}, {s.move.y:F2}), Direction: {directions}");
+        }
 
         // Branch per character
         ApplyHumanFromSnapshot(s);
@@ -292,6 +298,21 @@ public class InputController : MonoBehaviour
     {
         if (move.sqrMagnitude < 0.001f) return "None";
 
+        // Threshold for detecting diagonal vs single-axis input
+        float threshold = 0.3f;
+        
+        bool hasForward = move.y > threshold;
+        bool hasBack = move.y < -threshold;
+        bool hasLeft = move.x < -threshold;
+        bool hasRight = move.x > threshold;
+
+        // Diagonal combinations
+        if (hasForward && hasLeft) return "WA";
+        if (hasForward && hasRight) return "WD";
+        if (hasBack && hasLeft) return "SA";
+        if (hasBack && hasRight) return "SD";
+
+        // Single axis
         if (Mathf.Abs(move.y) >= Mathf.Abs(move.x))
             return move.y > 0 ? "W" : "S";
         else

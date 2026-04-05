@@ -162,6 +162,50 @@ MonoBehaviour:
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 1
+  - key: Sword/Strafe/Back/Right
+    transition:
+      _FadeDuration: 0.15
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400066, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 1
+  - key: Sword/Strafe/Back/Left
+    transition:
+      _FadeDuration: 0.15
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400068, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 1
+  - key: Sword/Strafe/Front/Left
+    transition:
+      _FadeDuration: 0.15
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400064, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 1
+  - key: Sword/Strafe/Front/Right
+    transition:
+      _FadeDuration: 0.15
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 7400070, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 1
   - key: Sword/Run
     transition:
       _FadeDuration: 0

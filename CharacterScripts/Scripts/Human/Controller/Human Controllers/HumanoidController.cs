@@ -155,15 +155,21 @@ public class HumanoidController : ThirdPersonController
     protected override void Walk()
     {
         CameraCalculations(out float targetAngle, out float angle);
-        Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward * speed;
 
         if (playerController.inputController.isCombatMode)
         {
             if (isMoving)
             {
-                // Face camera direction, strafe movement
+                // Face camera direction
                 transform.rotation = Quaternion.Euler(0f, cam.eulerAngles.y, 0f);
-                controller.Move(moveDir * speed * speedModifier * Time.deltaTime);
+                
+                // Strafe movement: move relative to character's facing (camera direction)
+                // Use raw input to determine strafe direction
+                Vector3 forward = transform.forward;
+                Vector3 right = transform.right;
+                Vector3 strafeDir = (forward * input.move.y + right * input.move.x).normalized;
+                
+                controller.Move(strafeDir * speed * speedModifier * Time.deltaTime);
             }
             else if (combatController != null && combatController.IsBlocking)
             {
@@ -175,6 +181,7 @@ public class HumanoidController : ThirdPersonController
         else if (isMoving)
         {
             // Normal locomotion — face movement direction
+            Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward * speed;
             transform.rotation = Quaternion.Euler(0f, angle, 0f);
             if (!isobstacle)
                 controller.Move(moveDir.normalized * speed * speedModifier * Time.deltaTime);
