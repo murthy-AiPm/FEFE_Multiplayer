@@ -126,6 +126,11 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
     // Public accessor so RuleAnimancerDriver can read it without reflection
     public float RemoteAimPitch => nvAimPitch.Value;
 
+    // ---- Combat locomotion blend tree sync ----
+    private readonly NetworkVariable<Vector2> nvMoveInput =
+        new(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    [SerializeField] private CombatLocomotionMixer combatMixer;
+
     // Reflection to set InputController.Snapshot
     private FieldInfo _snapshotBackingField;
 
@@ -153,6 +158,7 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         if (!animDriver) animDriver = GetComponentInChildren<RuleAnimancerDriver>(true);
         if (!weaponManager) weaponManager = GetComponentInChildren<WeaponManager>(true);
         if (!combatController) combatController = GetComponentInChildren<CombatController>(true);
+        if (!combatMixer) combatMixer = GetComponentInChildren<CombatLocomotionMixer>(true);
     }
 
     private void CacheSnapshotSetter()
@@ -299,6 +305,14 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
             if (nvBowAiming.Value     != combatController.IsBowAiming)     nvBowAiming.Value     = combatController.IsBowAiming;
             if (nvFistCombatMode.Value != combatController.IsFistCombatMode) nvFistCombatMode.Value = combatController.IsFistCombatMode;
         }
+
+        // ── Combat locomotion blend tree: sync raw move input ─────────────
+        if (input != null)
+        {
+            var move = input.Snapshot.move;
+            if (Vector2.SqrMagnitude(nvMoveInput.Value - move) > 0.001f)
+                nvMoveInput.Value = move;
+        }
     }
 
     private void ApplyToRemoteHolders()
@@ -354,6 +368,10 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
                 nvFistCombatMode.Value
             );
         }
+
+        // ── Feed synced move input to remote mixer ──
+        if (combatMixer != null)
+            combatMixer.SetRemoteParameter(nvMoveInput.Value);
     }
 
     private void ApplyRemoteActionEdge()

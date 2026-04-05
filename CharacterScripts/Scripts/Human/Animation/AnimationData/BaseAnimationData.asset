@@ -169,7 +169,7 @@ MonoBehaviour:
         _NormalizedTimes: []
         _Callbacks: []
         _Names: []
-      _Clip: {fileID: 7400066, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
+      _Clip: {fileID: 7400032, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 1
@@ -180,7 +180,7 @@ MonoBehaviour:
         _NormalizedTimes: []
         _Callbacks: []
         _Names: []
-      _Clip: {fileID: 7400068, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
+      _Clip: {fileID: 7400034, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 1
@@ -191,7 +191,7 @@ MonoBehaviour:
         _NormalizedTimes: []
         _Callbacks: []
         _Names: []
-      _Clip: {fileID: 7400064, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
+      _Clip: {fileID: 7400028, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 1
@@ -202,7 +202,7 @@ MonoBehaviour:
         _NormalizedTimes: []
         _Callbacks: []
         _Names: []
-      _Clip: {fileID: 7400070, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
+      _Clip: {fileID: 7400030, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 1
@@ -230,6 +230,70 @@ MonoBehaviour:
         - FootSteps
         - FootSteps
       _Clip: {fileID: 7400062, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 1
+  - key: Sword/Run/Back/Left
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes:
+        - 0.2986593
+        - 0.82043463
+        - NaN
+        _Callbacks: []
+        _Names:
+        - FootSteps
+        - FootSteps
+      _Clip: {fileID: 7400068, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 1
+  - key: Sword/Run/Front/Left
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes:
+        - 0.2986593
+        - 0.82043463
+        - NaN
+        _Callbacks: []
+        _Names:
+        - FootSteps
+        - FootSteps
+      _Clip: {fileID: 7400064, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 1
+  - key: Sword/Run/Front/Right
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes:
+        - 0.2986593
+        - 0.82043463
+        - NaN
+        _Callbacks: []
+        _Names:
+        - FootSteps
+        - FootSteps
+      _Clip: {fileID: 7400070, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 1
+  - key: Sword/Run/Back/Right
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes:
+        - 0.2986593
+        - 0.82043463
+        - NaN
+        _Callbacks: []
+        _Names:
+        - FootSteps
+        - FootSteps
+      _Clip: {fileID: 7400066, guid: 971c05bc2782d6a4ab995452aa8af824, type: 3}
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 1

@@ -64,6 +64,10 @@ public class RuleAnimancerDriver : MonoBehaviour
     [SerializeField] private CombatController combatController;
     [SerializeField] private WeaponManager weaponManager;
 
+    [Header("Blend Tree Locomotion (optional)")]
+    [Tooltip("When assigned, sword combat locomotion uses a 2D blend tree instead of directional rules.")]
+    [SerializeField] private CombatLocomotionMixer combatMixer;
+
     [Header("Witcher-Style Attack Settings")]
     [SerializeField] private float doubleClickWindow = 0.25f;
     [SerializeField] private float comboHoldThreshold = 0.12f;
@@ -139,6 +143,10 @@ public class RuleAnimancerDriver : MonoBehaviour
         if (weaponManager == null) weaponManager = GetComponentInParent<WeaponManager>();
 
         SetupLayers();
+
+        // Initialize blend tree mixer if assigned
+        if (combatMixer == null) combatMixer = GetComponentInChildren<CombatLocomotionMixer>(true);
+        if (combatMixer != null) combatMixer.Initialize(_animancer);
     }
 
     /// <summary>
@@ -305,7 +313,25 @@ public class RuleAnimancerDriver : MonoBehaviour
             }
         }
 
-        TryPlayBestRule(ctx, AnimLayer.Base);
+        // ── Blend tree locomotion: if the mixer wants control, it drives Base ──
+        bool mixerActive = false;
+        if (combatMixer != null && combatMixer.WantsControl(
+                ctx.ActiveWeaponSlot, ctx.Moving, ctx.Dodging,
+                ctx.Blocking, ctx.BowDrawing, ctx.BowAiming, ctx.IsMounted))
+        {
+            combatMixer.UpdateAndPlay(_baseLayer, ctx.snapshot.move, ctx.Modified, ctx.ActiveWeaponSlot);
+            _rootMotionActive = false;
+            if (_animator != null) _animator.applyRootMotion = false;
+            mixerActive = true;
+        }
+        else
+        {
+            // Mixer lost control — reset so it fades in clean next time
+            if (combatMixer != null) combatMixer.ResetActiveState();
+        }
+
+        if (!mixerActive)
+            TryPlayBestRule(ctx, AnimLayer.Base);
 
         if (_actionId != 0 && !IsLayerLocked(AnimLayer.Action))
             _actionId = 0;

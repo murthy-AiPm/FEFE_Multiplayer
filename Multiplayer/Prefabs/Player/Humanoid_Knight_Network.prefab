@@ -5631,6 +5631,7 @@ GameObject:
   - component: {fileID: 4694551369967776946}
   - component: {fileID: 5960731366256184571}
   - component: {fileID: 1685920396762890958}
+  - component: {fileID: -7552329350069882304}
   m_Layer: 6
   m_Name: Humanoid_Knight_Network
   m_TagString: Player
@@ -5757,6 +5758,7 @@ MonoBehaviour:
   allowRootMotion: 1
   combatController: {fileID: 929657025235045054}
   weaponManager: {fileID: 4819312757928810008}
+  combatMixer: {fileID: 0}
   doubleClickWindow: 0.25
   comboHoldThreshold: 0.08
   defaultWeaponName: Sword
@@ -6039,6 +6041,7 @@ MonoBehaviour:
   animDriver: {fileID: 2683264340040594894}
   weaponManager: {fileID: 0}
   combatController: {fileID: 0}
+  combatMixer: {fileID: 0}
 --- !u!114 &3220517450429524996
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6342,6 +6345,39 @@ MonoBehaviour:
   saturationMax: 1
   valueMin: 0.7
   valueMax: 1
+--- !u!114 &-7552329350069882304
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8837511929152388741}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a61b6a9e6f84154ab03f4ebb76ebec2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CombatLocomotionMixer
+  animationSet: {fileID: 11400000, guid: ffafb136e5921c3499cb268eacfef62a, type: 2}
+  weaponProfiles:
+  - weaponSlot: 1
+    walkFwd: Sword/Walk/Fwd
+    walkBack: Sword/Strafe/Back
+    walkLeft: Sword/Strafe/Left
+    walkRight: Sword/Strafe/Right
+    walkFwdLeft: Sword/Strafe/Front/Left
+    walkFwdRight: Sword/Strafe/Front/Right
+    walkBackLeft: Sword/Strafe/Back/Left
+    walkBackRight: Sword/Strafe/Back/Right
+    runFwd: Sword/Run
+    runBack: Sword/Run/Back
+    runLeft: Sword/Run/Left
+    runRight: Sword/Run/Right
+    runFwdLeft: Sword/Run/Front/Left
+    runFwdRight: Sword/Run/Front/Right
+    runBackLeft: Sword/Run/Back/Left
+    runBackRight: Sword/Run/Back/Right
+  fadeDuration: 0.15
+  parameterSmoothTime: 0.1
 --- !u!1 &8848191647751171253
 GameObject:
   m_ObjectHideFlags: 0
