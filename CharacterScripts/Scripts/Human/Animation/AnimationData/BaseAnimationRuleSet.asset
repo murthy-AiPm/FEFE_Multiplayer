@@ -247,7 +247,7 @@ MonoBehaviour:
       actionIdEquals: 0
   - name: Sword/Block/Move
     layer: 1
-    priority: 55
+    priority: 56
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
     maskOverride: {fileID: 31900000, guid: 3a2d7cf35bb085f49b3c782112c0e731, type: 2}
