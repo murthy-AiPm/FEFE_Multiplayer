@@ -170,11 +170,12 @@ public class CombatLocomotionMixer : MonoBehaviour
     /// </summary>
     public bool WantsControl(int activeWeaponSlot, bool isMoving, bool isDodging,
                              bool isBlocking, bool isBowDrawing, bool isBowAiming,
-                             bool isMounted)
+                             bool isMounted, bool isDodgeStep)
     {
         if (!_initialized) return false;
         if (!isMoving) return false;
-        if (isDodging || isBlocking || isBowDrawing || isBowAiming) return false;
+        if (isDodging || isBowDrawing || isBowAiming) return false;
+        if (isDodgeStep) return false;
         if (isMounted) return false;
 
         // Check if we have a mixer for this weapon slot

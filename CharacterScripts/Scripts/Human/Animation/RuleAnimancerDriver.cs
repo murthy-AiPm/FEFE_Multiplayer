@@ -317,7 +317,7 @@ public class RuleAnimancerDriver : MonoBehaviour
         bool mixerActive = false;
         if (combatMixer != null && combatMixer.WantsControl(
                 ctx.ActiveWeaponSlot, ctx.Moving, ctx.Dodging,
-                ctx.Blocking, ctx.BowDrawing, ctx.BowAiming, ctx.IsMounted))
+                ctx.Blocking, ctx.BowDrawing, ctx.BowAiming, ctx.IsMounted, ctx.IsDodgeStep))
         {
             combatMixer.UpdateAndPlay(_baseLayer, ctx.snapshot.move, ctx.Modified, ctx.ActiveWeaponSlot);
             _rootMotionActive = false;
