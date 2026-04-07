@@ -5122,6 +5122,8 @@ GameObject:
   - component: {fileID: 1376780217212887459}
   - component: {fileID: -7800844257033982807}
   - component: {fileID: -2926760166734874171}
+  - component: {fileID: 7203970312165627060}
+  - component: {fileID: -7962891897276758031}
   m_Layer: 3
   m_Name: DragonPlayer_Network
   m_TagString: Untagged
@@ -5710,3 +5712,45 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RespawnController
   ShowTopMostFoldoutHeaderGroup: 1
   corpseVisibleTime: 3
+--- !u!114 &7203970312165627060
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f438eab24bfb64340981d2b63af8e7de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageReceiver
+  ShowTopMostFoldoutHeaderGroup: 1
+  isPlayer: 1
+  vitalManager: {fileID: -7962891897276758031}
+  combatController: {fileID: 0}
+  weaponManager: {fileID: 0}
+  blockDamageReduction: 0
+  blockAngle: 0
+  blockStaminaRatio: 0
+  hitStunDuration: 0.2
+  animancerDriver: {fileID: 0}
+--- !u!114 &-7962891897276758031
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd8d92b02f30b3346875d23f84b4a130, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VitalManager
+  ShowTopMostFoldoutHeaderGroup: 1
+  vitalDefinitions:
+  - {fileID: 11400000, guid: 0892d54e46a64254cb46d9d23dbe5f88, type: 2}
+  - {fileID: 11400000, guid: 495d4bd1698c00c46b5c031ad0a733b0, type: 2}
+  tpsController: {fileID: 0}
+  animalGroundingSystem: {fileID: -1625138427473786608}
+  debugHealth: 0
+  debugStamina: 0

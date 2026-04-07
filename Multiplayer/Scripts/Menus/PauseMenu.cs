@@ -82,6 +82,14 @@ public class PauseMenu : MonoBehaviour
             return;
         }
 
+        // Disallow respawn while dragon is in flight
+        var flightController = FindObjectOfType<DragonFlightController>();
+        if (flightController != null && flightController.IsOwner && flightController.IsFlightMode)
+        {
+            Debug.Log("[PauseMenu] Cannot respawn while in flight.");
+            return;
+        }
+
         pausePanel.SetActive(false);
         isPaused = true;
         IsPaused = true;

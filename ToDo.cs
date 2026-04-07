@@ -117,6 +117,13 @@ OUTSTANDING / NEXT:
  * TurnAngle animator parameter occasionally flickers (-2.8 seen) — may be blend tree internal damping
  * Fire breath animation mask — has neck pitch + jaw open baked together. Long term: create Avatar Mask that includes jaw but excludes neck bones, so animation opens mouth without fighting procedural head tracking
 
+DRAGON TODO:
+ * Death animations — directional death hits (front, back, left, right)
+ * Smoother transition from ground to air and air to ground
+ * Minimum flight height / terrain clipping guard — prevent dragon from flying through terrain
+ * Cliff fall animation
+ * Dragon sounds (footsteps, roars, wing flaps, impacts, ambient)
+
 DESIGN QUESTIONS:
  * Fire breath while walking:
    A) Allow fire breath at walk only (not trot/sprint) — less conflict with blend tree

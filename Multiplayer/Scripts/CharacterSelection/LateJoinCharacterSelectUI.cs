@@ -116,6 +116,14 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
             return;
         }
 
+        // Disallow character change while dragon is in flight
+        var flightController = FindObjectOfType<DragonFlightController>();
+        if (flightController != null && flightController.IsOwner && flightController.IsFlightMode)
+        {
+            Debug.Log("[LateJoinCharacterSelectUI] Cannot change character while in flight.");
+            return;
+        }
+
         _isCharacterChange = true;
         ShowSelectionUI();
     }

@@ -19,7 +19,10 @@ public class VitalManager : NetworkBehaviour
     [SerializeField] private VitalDefinition[] vitalDefinitions;
 
     [Header("Dependencies")]
-    [SerializeField] private ThirdPersonController tpsController; // for grounded check
+    [Tooltip("Optional — used for grounded check on stamina regen. Leave empty for animals.")]
+    [SerializeField] private ThirdPersonController tpsController;
+    [Tooltip("Optional — used for grounded check on animals (dragon, horse). Leave empty for humans.")]
+    [SerializeField] private AnimalGroundingSystem animalGroundingSystem;
 
     [Header("Debug (read only)")]
     [SerializeField] private float debugHealth;
@@ -115,7 +118,8 @@ public class VitalManager : NetworkBehaviour
     {
         if (!IsServer || !IsSpawned) return;
 
-        bool isGrounded = tpsController != null && tpsController.isgrounded;
+        bool isGrounded = (tpsController != null && tpsController.isgrounded)
+                      || (animalGroundingSystem != null && animalGroundingSystem.IsGrounded);
 
         // Tick regen on server
         for (int i = 0; i < _vitalsList.Count; i++)

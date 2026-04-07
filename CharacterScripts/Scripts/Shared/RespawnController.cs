@@ -138,6 +138,9 @@ public class RespawnController : NetworkBehaviour
             var animalGround = GetComponentInChildren<AnimalGroundController>();
             if (animalGround != null) animalGround.enabled = true;
 
+            var flightController = GetComponentInChildren<DragonFlightController>();
+            if (flightController != null) flightController.enabled = true;
+
             // Close death screen
             var deathScreen = FindObjectOfType<DeathScreen>();
             if (deathScreen != null)

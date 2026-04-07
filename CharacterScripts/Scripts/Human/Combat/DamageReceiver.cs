@@ -197,6 +197,7 @@ public class DamageReceiver : NetworkBehaviour
     [ClientRpc]
     private void NotifyDeathClientRpc()
     {
+        // Human controllers
         var input = GetComponentInChildren<InputController>();
         if (input != null) input.enabled = false;
 
@@ -205,6 +206,13 @@ public class DamageReceiver : NetworkBehaviour
 
         var combat = GetComponentInChildren<CombatController>();
         if (combat != null) combat.enabled = false;
+
+        // Dragon/animal controllers
+        var animalGround = GetComponentInChildren<AnimalGroundController>();
+        if (animalGround != null) animalGround.enabled = false;
+
+        var flightController = GetComponentInChildren<DragonFlightController>();
+        if (flightController != null) flightController.enabled = false;
 
         if (animancerDriver != null)
             animancerDriver.PlayDeath();
