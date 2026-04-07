@@ -28,15 +28,18 @@ public class DamageReceiver : NetworkBehaviour
     [Header("Hit Feedback")]
     [SerializeField] private float hitStunDuration = 0.2f;
 
-    [Header("Animation")]
-    [SerializeField] private RuleAnimancerDriver animancerDriver;
-
     // Events
     public System.Action<float, Vector3> OnDamageReceived;
     public System.Action<float, Vector3> OnDamageBlocked;
     public System.Action OnDeath;
 
+    /// <summary>Fired on all clients when a hit lands (not blocked). Subscriber plays hit reaction animation.</summary>
+    public System.Action<Vector3> OnPlayHitAnimation;
+    /// <summary>Fired on all clients when character dies. Subscriber plays death animation. Vector3 = last attacker position.</summary>
+    public System.Action<Vector3> OnPlayDeathAnimation;
+
     private float _hitStunTimer;
+    private Vector3 _lastAttackerPosition;
 
     public bool IsHitStunned => _hitStunTimer > 0f;
 
@@ -45,7 +48,6 @@ public class DamageReceiver : NetworkBehaviour
         if (vitalManager == null) vitalManager = GetComponentInParent<VitalManager>();
         if (combatController == null) combatController = GetComponentInParent<CombatController>();
         if (weaponManager == null) weaponManager = GetComponentInParent<WeaponManager>();
-        if (animancerDriver == null) animancerDriver = GetComponentInChildren<RuleAnimancerDriver>();
     }
 
     public override void OnNetworkSpawn()
@@ -149,15 +151,14 @@ public class DamageReceiver : NetworkBehaviour
     {
         _hitStunTimer = hitStunDuration;
 
+        _lastAttackerPosition = attackerPosition;
+
         if (wasBlocked)
             OnDamageBlocked?.Invoke(damage, hitPoint);
         else
         {
             OnDamageReceived?.Invoke(damage, hitPoint);
-
-            var driver = GetComponentInChildren<RuleAnimancerDriver>();
-            if (driver != null)
-                driver.PlayHitReaction(attackerPosition);
+            OnPlayHitAnimation?.Invoke(attackerPosition);
         }
     }
 
@@ -214,8 +215,7 @@ public class DamageReceiver : NetworkBehaviour
         var flightController = GetComponentInChildren<DragonFlightController>();
         if (flightController != null) flightController.enabled = false;
 
-        if (animancerDriver != null)
-            animancerDriver.PlayDeath();
+        OnPlayDeathAnimation?.Invoke(_lastAttackerPosition);
 
         if (IsOwner && isPlayer)
         {

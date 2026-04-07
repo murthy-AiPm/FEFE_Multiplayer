@@ -129,4 +129,38 @@ DESIGN QUESTIONS:
    A) Allow fire breath at walk only (not trot/sprint) — less conflict with blend tree
    B) Allow at all gaits — need to dampen neck yaw contribution so it doesn't fight locomotion
    C) Lock body rotation to camera while breathing fire during movement — dragon walks in aim direction
+
+═══════════════════════════════════════════════════════════════
+ 7th-April-2026 — Dragon Hit/Death Animation System
+═══════════════════════════════════════════════════════════════
+
+COMPLETED:
+ * DamageReceiver refactored to be character-agnostic — animation calls routed through events
+   (OnPlayHitAnimation, OnPlayDeathAnimation) instead of hardcoded RuleAnimancerDriver calls
+ * HumanDamageAnimator.cs created — bridges DamageReceiver events to RuleAnimancerDriver for human prefab
+ * DragonDamageAnimator.cs created — bridges DamageReceiver events to Mecanim Animator for dragon prefab
+ * Hit direction computed from attacker position in dragon-local space (FB/LR, snapped to dominant axis)
+ * Death direction uses raw localDir.x for 1D blend tree interpolation across -1, -0.5, 0.5, 1
+ * GotHit auto-resets after hitResetDelay (Inspector-tweakable)
+ * ResetDeathState() method for respawn
+ * Debug keypad testing added to DragonDamageAnimator (toggle via debugKeypadTesting bool)
+
+KEY FILES:
+ * DamageReceiver.cs — now character-agnostic, uses OnPlayHitAnimation / OnPlayDeathAnimation events
+ * HumanDamageAnimator.cs — CharacterScripts/Scripts/Human/Combat/ — human bridge
+ * DragonDamageAnimator.cs — CharacterScripts/Scripts/Animal/Dragon/ — dragon bridge
+
+PREFAB SETUP REQUIRED:
+ * Add HumanDamageAnimator component to human prefab
+ * Add DragonDamageAnimator component to dragon prefab
+ * Dragon Animator Controller params: GotHit (Bool), HitFB (Float), HitLR (Float), IsDead (Bool), DeathLR (Float)
+ * Transition: locomotion → hit blend tree (GotHit == true)
+ * Transition: Any State → death blend tree (IsDead == true)
+
+TODO — REMOVE BEFORE SHIPPING:
+ * DragonDamageAnimator.debugKeypadTesting — keypad debug input for testing hit/death anims
+   Hit: Numpad 8=front, 2=back, 4=left, 6=right
+   Death: Numpad 7=LR-1, 1=LR-0.5, 3=LR+0.5, 9=LR+1
+   Reset death: Numpad 5
+
  */

@@ -5168,6 +5168,7 @@ GameObject:
   - component: {fileID: -2926760166734874171}
   - component: {fileID: 7203970312165627060}
   - component: {fileID: -7962891897276758031}
+  - component: {fileID: -2412709369278423379}
   m_Layer: 3
   m_Name: DragonPlayer_Network
   m_TagString: Untagged
@@ -5777,7 +5778,6 @@ MonoBehaviour:
   blockAngle: 0
   blockStaminaRatio: 0
   hitStunDuration: 0.2
-  animancerDriver: {fileID: 0}
 --- !u!114 &-7962891897276758031
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5798,3 +5798,21 @@ MonoBehaviour:
   animalGroundingSystem: {fileID: -1625138427473786608}
   debugHealth: 0
   debugStamina: 0
+--- !u!114 &-2412709369278423379
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97cacd3e97b211e4ba90fa01e108aa7e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DragonDamageAnimator
+  ShowTopMostFoldoutHeaderGroup: 1
+  damageReceiver: {fileID: 7203970312165627060}
+  animator: {fileID: 8804854363994131359}
+  hitResetDelay: 0.8
+  debugLogging: 1
+  debugKeypadTesting: 1

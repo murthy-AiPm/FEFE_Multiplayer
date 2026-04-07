@@ -5633,6 +5633,7 @@ GameObject:
   - component: {fileID: 1685920396762890958}
   - component: {fileID: -7552329350069882304}
   - component: {fileID: 2104147845960171010}
+  - component: {fileID: 8012761472847845033}
   m_Layer: 6
   m_Name: Humanoid_Knight_Network
   m_TagString: Player
@@ -6107,6 +6108,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 0892d54e46a64254cb46d9d23dbe5f88, type: 2}
   - {fileID: 11400000, guid: 495d4bd1698c00c46b5c031ad0a733b0, type: 2}
   tpsController: {fileID: 834153548958768503}
+  animalGroundingSystem: {fileID: 0}
   debugHealth: 0
   debugStamina: 0
 --- !u!114 &4819312757928810008
@@ -6187,7 +6189,6 @@ MonoBehaviour:
   blockAngle: 120
   blockStaminaRatio: 0.5
   hitStunDuration: 0.2
-  animancerDriver: {fileID: 2683264340040594894}
 --- !u!114 &6257174079470732274
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6416,6 +6417,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RespawnController
   ShowTopMostFoldoutHeaderGroup: 1
   corpseVisibleTime: 3
+--- !u!114 &8012761472847845033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8837511929152388741}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e9dc181a6fe5d745bec55333de9bd59, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HumanDamageAnimator
+  ShowTopMostFoldoutHeaderGroup: 1
+  damageReceiver: {fileID: 6854998894812114630}
+  animancerDriver: {fileID: 2683264340040594894}
 --- !u!1 &8848191647751171253
 GameObject:
   m_ObjectHideFlags: 0
