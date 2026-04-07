@@ -41,6 +41,7 @@ public class RandomIdleAnimator : MonoBehaviour
 
     // ─── State ───
     private int[] _paramHashes;
+    private bool[] _paramExists;
     private float[] _currentWeights;
     private float[] _targetWeights;
     private int _activeIndex = 0;
@@ -56,11 +57,15 @@ public class RandomIdleAnimator : MonoBehaviour
 
         int total = variantCount + 1;
         _paramHashes = new int[total];
+        _paramExists = new bool[total];
         _currentWeights = new float[total];
         _targetWeights = new float[total];
 
         for (int i = 0; i < total; i++)
+        {
             _paramHashes[i] = Animator.StringToHash(paramPrefix + i);
+            _paramExists[i] = HasParameter(_paramHashes[i]);
+        }
 
         SetTargetIdle(0);
         // Initialize weights immediately (no lerp on start)
@@ -147,7 +152,20 @@ public class RandomIdleAnimator : MonoBehaviour
     private void ApplyWeights()
     {
         for (int i = 0; i < _paramHashes.Length; i++)
-            animator.SetFloat(_paramHashes[i], _currentWeights[i]);
+        {
+            if (_paramExists[i])
+                animator.SetFloat(_paramHashes[i], _currentWeights[i]);
+        }
+    }
+
+    private bool HasParameter(int hash)
+    {
+        foreach (var p in animator.parameters)
+        {
+            if (p.nameHash == hash)
+                return true;
+        }
+        return false;
     }
 
     private void ResetTimer()

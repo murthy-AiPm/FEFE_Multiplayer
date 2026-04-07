@@ -127,15 +127,33 @@ public class CombatController : NetworkBehaviour
     {
         _characterController = GetComponent<CharacterController>();
     }
+    // ─── Debug: auto-attack toggle (press O) ───
+    private bool _debugAutoAttack;
+
     private void Update()
     {
         if (!IsOwner || !IsSpawned) return;
         if (State == CombatState.Dead) return;
+
+        // Debug auto-attack toggle
+        if (UnityEngine.Input.GetKeyDown(KeyCode.O))
+        {
+            _debugAutoAttack = !_debugAutoAttack;
+            Debug.Log($"[CombatController] Auto-attack: {_debugAutoAttack}");
+        }
         // Skip combat when mounted (unless allowed)
         bool isMounted = mountController != null && mountController.IsMounted;
         if (isMounted && !allowMountedCombat) return;
 
         _input = playerController.inputController.Snapshot;
+
+        // Debug: inject fake primaryDown when auto-attack is on and attack layer isn't locked
+        if (_debugAutoAttack && animancerDriver != null && !animancerDriver.IsLocked)
+        {
+            _input.primaryDown = true;
+            // Write back so RuleAnimancerDriver also sees it
+            playerController.inputController.InjectPrimaryDown();
+        }
 
         UpdateTimers();
         ProcessWeaponSwapInput();

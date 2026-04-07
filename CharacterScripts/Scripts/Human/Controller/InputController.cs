@@ -72,6 +72,14 @@ public class InputController : MonoBehaviour
     // NEW: snapshot output
     public InputSnapshot Snapshot { get; private set; }
 
+    /// <summary>Debug only: inject a fake primaryDown for auto-attack testing.</summary>
+    public void InjectPrimaryDown()
+    {
+        var s = Snapshot;
+        s.primaryDown = true;
+        Snapshot = s;
+    }
+
     // Cached refs
     private HumanoidColliderManger _humanoidCollider;
     private WeaponManager _weaponManager;

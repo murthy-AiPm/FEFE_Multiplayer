@@ -287,7 +287,7 @@ public class ProximitySoundManager : NetworkBehaviour
         if (mixerGroup != null) source.outputAudioMixerGroup = mixerGroup;
         source.spatialBlend = 1f;
         source.loop = false;
-        Debug.Log($"[ProximitySoundManager] PlayClipRaw: clip={clip.name} vol={volume:F2} pitch={pitch:F2} pos={position} category={category}");
+        //Debug.Log($"[ProximitySoundManager] PlayClipRaw: clip={clip.name} vol={volume:F2} pitch={pitch:F2} pos={position} category={category}");
         source.Play();
         float adjustedLength = clip.length / Mathf.Max(pitch, 0.1f);
         StartCoroutine(FadeOutAndReturn(source, volume, adjustedLength));

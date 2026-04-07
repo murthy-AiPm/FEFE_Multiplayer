@@ -263,6 +263,10 @@ public class RuleAnimancerDriver : MonoBehaviour
         // 1) Hit reaction playing → skip all rule evaluation (hit owns Base)
         if (_isPlayingHitReaction)
             return;
+
+        // DEBUG: log when attack layer is stuck locked
+        if (IsLayerLocked(AnimLayer.Attack) && ctx.snapshot.primaryDown)
+            Debug.Log($"[LateUpdate] Attack layer LOCKED while primaryDown, lockedState={_lockedState.GetValueOrDefault(AnimLayer.Attack)?.Clip?.name ?? "null"}");
         // Bow aim spine rotation
         // For the local owner: use Camera.main pitch directly.
         // For remote puppets: use the synced RemoteAimPitch from the owner.
@@ -534,13 +538,17 @@ public class RuleAnimancerDriver : MonoBehaviour
 
         // Stamina check
         if (combatController != null && !combatController.CanAttack())
+        {
+            if (down) Debug.Log($"[HandleWitcherAttacks] BLOCKED by CanAttack, state={combatController.State}");
             return false;
+        }
       
         // If currently attacking, buffer the click for combo continuation
         if (IsLayerLocked(AnimLayer.Attack))
         {
             if (down)
             {
+                Debug.Log($"[HandleWitcherAttacks] BLOCKED by Attack lock, buffering click");
                 _attack.bufferedClick = true;
                 _attack.bufferedHeavy = ctx.Modified;
             }
@@ -550,6 +558,7 @@ public class RuleAnimancerDriver : MonoBehaviour
         // Not attacking — start a new attack on click
         if (down)
         {
+            Debug.Log($"[HandleWitcherAttacks] STARTING attack, isDead={_isDead}, hitReaction={_isPlayingHitReaction}");
             bool heavy = ctx.Modified;
             SnapRotationToCamera(); // Face camera direction on each attack
             return StartSequentialAttack(ctx, heavy);
@@ -883,8 +892,13 @@ public class RuleAnimancerDriver : MonoBehaviour
         _isLocked[AnimLayer.Attack] = true;
         _lockedState[AnimLayer.Attack] = state;
 
+        state.Events.SetShouldNotModifyReason(null);
         state.Events.OnEnd = () =>
         {
+            // Null out OnEnd first to prevent re-firing on looping clips
+            state.Events.SetShouldNotModifyReason(null);
+            state.Events.OnEnd = null;
+
             if (activeHitbox != null)
                 activeHitbox.DisableHitbox();
 
@@ -937,8 +951,13 @@ public class RuleAnimancerDriver : MonoBehaviour
         _isLocked[layer] = true;
         _lockedState[layer] = state;
 
+        state.Events.SetShouldNotModifyReason(null);
         state.Events.OnEnd = () =>
         {
+            // Null out OnEnd first to prevent re-firing on looping clips
+            state.Events.SetShouldNotModifyReason(null);
+            state.Events.OnEnd = null;
+
             _isLocked[layer] = false;
             _lockedState[layer] = null;
 
@@ -975,6 +994,24 @@ public class RuleAnimancerDriver : MonoBehaviour
 
         if (_lockedState.TryGetValue(layer, out var state) && state != null)
         {
+            // Safety: if the clip has played past its full length (looping clip),
+            // force-unlock — the OnEnd callback should have fired but didn't
+            if (state.IsPlaying && state.Time >= state.Length)
+            {
+                // Manually run cleanup that OnEnd should have done
+                if (layer == AnimLayer.Attack)
+                {
+                    if (activeHitbox != null) activeHitbox.DisableHitbox();
+                    _attackLayer.SetMask(attackLayerMask);
+                    _attackLayer.StartFade(0, layerFadeOutDuration);
+                    _attack.ResetAll();
+                    DisableRootMotion();
+                }
+                _isLocked[layer] = false;
+                _lockedState[layer] = null;
+                return false;
+            }
+
             if (state.IsPlaying)
                 return true;
         }
@@ -1113,6 +1150,10 @@ public class RuleAnimancerDriver : MonoBehaviour
             return;
         }
 
+        // Cancel any in-progress attack so the Attack layer doesn't stay locked
+        if (IsLayerLocked(AnimLayer.Attack))
+            CancelCurrentAttack();
+
         // Stop any existing hit reaction coroutine
         StopCoroutine(nameof(HitReactionRoutine));
 
@@ -1139,6 +1180,9 @@ public class RuleAnimancerDriver : MonoBehaviour
         float savedActionWeight = _actionLayer.Weight;
         bool actionWasLocked = IsLayerLocked(AnimLayer.Action);
         _actionLayer.StartFade(0f, 0.05f);
+
+        // ── Suppress Attack layer (attack was already cancelled above) ──
+        _attackLayer.StartFade(0f, 0.05f);
 
         // ── Force-unlock Base so the hit can override any ongoing Base lock ──
         _isLocked[AnimLayer.Base] = false;
@@ -1223,10 +1267,12 @@ public class RuleAnimancerDriver : MonoBehaviour
         state.Time = 0f;
 
         // Freeze on last frame when done
+        state.Events.SetShouldNotModifyReason(null);
         state.Events.OnEnd = () =>
         {
             state.Time = transition.Clip.length;
             state.Speed = 0f;
+            state.Events.OnEnd = null;
         };
     }
 
