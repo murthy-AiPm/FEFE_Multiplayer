@@ -2282,7 +2282,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 76862295
+  GlobalObjectIdHash: 3112532756
   InScenePlacedSourceGlobalObjectIdHash: 3821608182
   DeferredDespawnTick: 0
   Ownership: 1
@@ -2394,6 +2394,7 @@ MonoBehaviour:
   vitalDefinitions:
   - {fileID: 11400000, guid: 77fc1794327b1b449ac1fac6823eaa83, type: 2}
   tpsController: {fileID: 0}
+  animalGroundingSystem: {fileID: 0}
   debugHealth: 0
   debugStamina: 0
 --- !u!114 &3199055610490735062
@@ -2410,8 +2411,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DamageReceiver
   ShowTopMostFoldoutHeaderGroup: 1
   isPlayer: 0
-  spawnPoint: {fileID: 4235937870506157875}
-  corpseVisibleTime: 3
   vitalManager: {fileID: 796216624645616193}
   combatController: {fileID: 0}
   weaponManager: {fileID: 0}
@@ -2483,7 +2482,7 @@ CapsuleCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2

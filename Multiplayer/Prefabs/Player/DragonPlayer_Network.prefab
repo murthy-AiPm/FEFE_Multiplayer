@@ -1522,6 +1522,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7548757821673491252}
+  - component: {fileID: 7775736959076007057}
   m_Layer: 12
   m_Name: Wing L02
   m_TagString: Untagged
@@ -1548,6 +1549,27 @@ Transform:
   - {fileID: 2366816166107529910}
   m_Father: {fileID: 75585899002368969}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &7775736959076007057
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3090446477578504490}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 3, y: 0.3, z: 4}
+  m_Center: {x: -1, y: -0.5, z: -1.5}
 --- !u!1 &3119396858633905749
 GameObject:
   m_ObjectHideFlags: 0
@@ -2245,6 +2267,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8397877593476129180}
+  - component: {fileID: 4227514282872529538}
   m_Layer: 12
   m_Name: Wing R02
   m_TagString: Untagged
@@ -2271,6 +2294,27 @@ Transform:
   - {fileID: 1364074301440649845}
   m_Father: {fileID: 9060622205348278352}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &4227514282872529538
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4551708238541384946}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 3, y: 0.3, z: 4}
+  m_Center: {x: -1, y: -0.5, z: 1.5}
 --- !u!1 &4700324621708818297
 GameObject:
   m_ObjectHideFlags: 0
