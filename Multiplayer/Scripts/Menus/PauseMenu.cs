@@ -65,6 +65,23 @@ public class PauseMenu : MonoBehaviour
 
     public void OpenRespawn()
     {
+        // Disallow respawn while mounted
+        var mountController = FindObjectOfType<MountController>();
+        if (mountController != null && mountController.IsOwner &&
+            (mountController.IsMounted || mountController.IsTransitioning))
+        {
+            Debug.Log("[PauseMenu] Cannot respawn while mounted.");
+            return;
+        }
+
+        // Disallow respawn while operating a ballista
+        var ballistaOperator = FindObjectOfType<BallistaOperator>();
+        if (ballistaOperator != null && ballistaOperator.IsOwner && ballistaOperator.IsOperating)
+        {
+            Debug.Log("[PauseMenu] Cannot respawn while operating ballista.");
+            return;
+        }
+
         pausePanel.SetActive(false);
         isPaused = true;
         IsPaused = true;

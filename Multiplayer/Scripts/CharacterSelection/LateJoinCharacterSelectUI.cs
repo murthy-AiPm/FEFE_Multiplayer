@@ -108,6 +108,14 @@ public class LateJoinCharacterSelectUI : MonoBehaviour
             return;
         }
 
+        // Disallow character change while operating a ballista
+        var ballistaOperator = FindObjectOfType<BallistaOperator>();
+        if (ballistaOperator != null && ballistaOperator.IsOwner && ballistaOperator.IsOperating)
+        {
+            Debug.Log("[LateJoinCharacterSelectUI] Cannot change character while operating ballista.");
+            return;
+        }
+
         _isCharacterChange = true;
         ShowSelectionUI();
     }

@@ -37,6 +37,9 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
     private readonly NetworkVariable<bool> nvFreeFall =
         new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
+    private readonly NetworkVariable<bool> nvCrouch =
+        new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
     private readonly NetworkVariable<FixedString32Bytes> nvDirections =
         new(new FixedString32Bytes("None"), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
@@ -197,17 +200,25 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
 
         if (IsOwner)
         {
-            // Bow draw edge: checked every frame so a one-frame primaryDown is never missed
-            if (input != null && weaponManager != null && weaponManager.ActiveSlot == 2)
+            // Edge-triggered inputs: checked every frame so one-frame edges are never missed
+            if (input != null)
             {
-                bool bowActiveNow = input.Snapshot.primaryDown;
-                if (!_wasBowActive && bowActiveNow)
-                    nvBowDrawSeq.Value++;
-                _wasBowActive = bowActiveNow;
-            }
-            else
-            {
-                _wasBowActive = false;
+                // Jump edge
+                if (input.Snapshot.jumpDown)
+                    nvJumpSeq.Value++;
+
+                // Bow draw edge
+                if (weaponManager != null && weaponManager.ActiveSlot == 2)
+                {
+                    bool bowActiveNow = input.Snapshot.primaryDown;
+                    if (!_wasBowActive && bowActiveNow)
+                        nvBowDrawSeq.Value++;
+                    _wasBowActive = bowActiveNow;
+                }
+                else
+                {
+                    _wasBowActive = false;
+                }
             }
 
             if (Time.time >= nextNetworkUpdateTime)
@@ -243,6 +254,8 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         if (nvGrounded.Value   != tps.isgrounded)          nvGrounded.Value        = tps.isgrounded;
         if (nvFreeFall.Value   != tps.isfreeFall)          nvFreeFall.Value        = tps.isfreeFall;
 
+        if (nvCrouch.Value     != input.isCrouch)           nvCrouch.Value          = input.isCrouch;
+
         var dirStr = new FixedString32Bytes(string.IsNullOrEmpty(input.directions) ? "None" : input.directions);
         if (!nvDirections.Value.Equals(dirStr)) nvDirections.Value = dirStr;
 
@@ -254,7 +267,7 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         if (nvJumpHeld.Value    != s.jumpHeld)     nvJumpHeld.Value    = s.jumpHeld;
         if (nvActionHeld.Value  != s.actionHeld)   nvActionHeld.Value  = s.actionHeld;
 
-        if (s.jumpDown) nvJumpSeq.Value++;
+        // Jump seq increment moved to Update() to avoid missing one-frame edges
 
         // ── Bow release edge ─────────────────────────────────────────────
         if (combatController != null)
@@ -329,6 +342,7 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
             input.isSecondaryAttack = nvSecondaryHeld.Value;
             input.isHoverMode      = nvHoverMode.Value;
             input.isSheating       = nvSheathing.Value;
+            input.isCrouch         = nvCrouch.Value;
 
             input.directions = nvDirections.Value.ToString();
 

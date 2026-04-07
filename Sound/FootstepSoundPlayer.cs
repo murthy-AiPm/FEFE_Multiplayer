@@ -206,7 +206,7 @@ public class FootstepSoundPlayer : NetworkBehaviour
 
     private void OnAnimFootstep()
     {
-        Debug.Log($"[FootstepSoundPlayer] OnAnimFootstep: mode={mode} speed={_currentSpeed}");
+        //Debug.Log($"[FootstepSoundPlayer] OnAnimFootstep: mode={mode} speed={_currentSpeed}");
         if (!IsOwner) return;
         _animEventFiredThisFrame = true;
 
