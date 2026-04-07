@@ -165,10 +165,10 @@ public class InputController : MonoBehaviour
         directions = GetDirectionString(s.move);
         
         // Debug: log direction when in combat mode and moving
-        if (isCombatMode && isMoving)
-        {
-            Debug.Log($"[Input] Combat Move - Raw: ({s.move.x:F2}, {s.move.y:F2}), Direction: {directions}");
-        }
+        //if (isCombatMode && isMoving)
+        //{
+        //    Debug.Log($"[Input] Combat Move - Raw: ({s.move.x:F2}, {s.move.y:F2}), Direction: {directions}");
+        //}
 
         // Branch per character
         ApplyHumanFromSnapshot(s);
