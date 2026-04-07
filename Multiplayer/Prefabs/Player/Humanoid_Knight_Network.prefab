@@ -5632,6 +5632,7 @@ GameObject:
   - component: {fileID: 5960731366256184571}
   - component: {fileID: 1685920396762890958}
   - component: {fileID: -7552329350069882304}
+  - component: {fileID: 2104147845960171010}
   m_Layer: 6
   m_Name: Humanoid_Knight_Network
   m_TagString: Player
@@ -6179,8 +6180,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DamageReceiver
   ShowTopMostFoldoutHeaderGroup: 1
   isPlayer: 1
-  spawnPoint: {fileID: 0}
-  corpseVisibleTime: 3
   vitalManager: {fileID: 1702300467690810362}
   combatController: {fileID: 929657025235045054}
   weaponManager: {fileID: 4819312757928810008}
@@ -6222,6 +6221,7 @@ MonoBehaviour:
   thirdPersonController: {fileID: 834153548958768503}
   combatController: {fileID: 929657025235045054}
   inputController: {fileID: 1001088175776627155}
+  weaponManager: {fileID: 0}
   vcam: {fileID: 6169671671747164374}
   camCube: {fileID: 3897897725061523244}
   ballistaCube: {fileID: 295204663757305073}
@@ -6402,6 +6402,20 @@ MonoBehaviour:
   fadeDuration: 0.25
   parameterSmoothTime: 0.1
   dodgeFadeDuration: 0.08
+--- !u!114 &2104147845960171010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8837511929152388741}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a119e151a8ecca249b9a9a14e2047045, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RespawnController
+  ShowTopMostFoldoutHeaderGroup: 1
+  corpseVisibleTime: 3
 --- !u!1 &8848191647751171253
 GameObject:
   m_ObjectHideFlags: 0

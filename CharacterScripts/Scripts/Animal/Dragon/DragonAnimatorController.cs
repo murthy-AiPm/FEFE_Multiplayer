@@ -110,6 +110,14 @@ public class DragonAnimatorController : AnimalAnimatorController
 
         if (animator == null) return;
 
+        // Zero out flight root motion params when in flight
+        if (flightController != null && flightController.IsFlightMode)
+        {
+            animator.SetFloat(thrustHash, 0f);
+            animator.SetFloat(yawHash, 0f);
+            animator.SetFloat(flightPitchHash, 0f);
+        }
+
         // ─── Flight state bools ──────────────────────────
         animator.SetBool(isHoveringHash,    netIsHovering.Value);
         animator.SetBool(isFlyingHash,      netIsFlying.Value);

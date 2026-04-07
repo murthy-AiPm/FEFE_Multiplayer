@@ -202,6 +202,7 @@ public class DragonFlightController : NetworkBehaviour
 
         if (!isActive) return;
         if (!IsOwner) return;
+        if (PauseMenu.IsPaused) return;
 
         // Check for exit flight (C while flying)
         if (Input.GetKeyDown(exitFlightKey))

@@ -5121,6 +5121,7 @@ GameObject:
   - component: {fileID: 5974085032444721806}
   - component: {fileID: 1376780217212887459}
   - component: {fileID: -7800844257033982807}
+  - component: {fileID: -2926760166734874171}
   m_Layer: 3
   m_Name: DragonPlayer_Network
   m_TagString: Untagged
@@ -5695,3 +5696,17 @@ MonoBehaviour:
   primaryKey: 323
   meleeModeKey: 49
   fireBreathModeKey: 50
+--- !u!114 &-2926760166734874171
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a119e151a8ecca249b9a9a14e2047045, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RespawnController
+  ShowTopMostFoldoutHeaderGroup: 1
+  corpseVisibleTime: 3

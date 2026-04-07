@@ -94,8 +94,8 @@ public class DeathScreen : MonoBehaviour
     {
         if (_ownerNetObj == null) return;
 
-        var dmgReceiver = _ownerNetObj.GetComponent<DamageReceiver>();
-        if (dmgReceiver != null)
-            dmgReceiver.RequestRespawnServerRpc(spawnPointIndex);
+        var respawnController = _ownerNetObj.GetComponent<RespawnController>();
+        if (respawnController != null)
+            respawnController.RequestRespawnServerRpc(spawnPointIndex);
     }
 }

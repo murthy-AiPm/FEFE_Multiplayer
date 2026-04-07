@@ -1,5 +1,4 @@
 using Unity.Netcode;
-using Unity.Cinemachine;
 using UnityEngine;
 
 /// <summary>
@@ -12,8 +11,6 @@ public class DamageReceiver : NetworkBehaviour
 {
     [Header("Respawn")]
     [SerializeField] private bool isPlayer = true;
-    [SerializeField] private Transform spawnPoint;
-    [SerializeField] private float corpseVisibleTime = 3f;
 
     [Header("Dependencies")]
     [SerializeField] private VitalManager vitalManager;
@@ -40,7 +37,6 @@ public class DamageReceiver : NetworkBehaviour
     public System.Action OnDeath;
 
     private float _hitStunTimer;
-    private Coroutine _hideCorpseCoroutine;
 
     public bool IsHitStunned => _hitStunTimer > 0f;
 
@@ -192,9 +188,9 @@ public class DamageReceiver : NetworkBehaviour
 
         if (IsServer && isPlayer)
         {
-            if (_hideCorpseCoroutine != null)
-                StopCoroutine(_hideCorpseCoroutine);
-            _hideCorpseCoroutine = StartCoroutine(HideCorpseAfterDelay());
+            var respawnController = GetComponent<RespawnController>();
+            if (respawnController != null)
+                respawnController.StartCorpseTimer();
         }
     }
 
@@ -221,108 +217,4 @@ public class DamageReceiver : NetworkBehaviour
         }
     }
 
-    private System.Collections.IEnumerator HideCorpseAfterDelay()
-    {
-        yield return new WaitForSeconds(corpseVisibleTime);
-        HideCorpseClientRpc();
-        _hideCorpseCoroutine = null;
-    }
-
-    [ClientRpc]
-    private void HideCorpseClientRpc()
-    {
-        foreach (var r in GetComponentsInChildren<Renderer>())
-            r.enabled = false;
-    }
-
-    // ─── Respawn ───
-
-    [ServerRpc(RequireOwnership = false)]
-    public void RequestRespawnServerRpc(int spawnPointIndex)
-    {
-        if (_hideCorpseCoroutine != null)
-        {
-            StopCoroutine(_hideCorpseCoroutine);
-            _hideCorpseCoroutine = null;
-        }
-
-        var points = SpawnPoint.GetAllSpawnPoints();
-
-        Vector3 spawnPos;
-        Quaternion spawnRot;
-
-        if (points != null && spawnPointIndex >= 0 && spawnPointIndex < points.Count)
-        {
-            spawnPos = points[spawnPointIndex].transform.position;
-            spawnRot = points[spawnPointIndex].transform.rotation;
-        }
-        else
-        {
-            spawnPos = SpawnPoint.GetRandomSpawnPos();
-            spawnRot = Quaternion.identity;
-        }
-
-        if (vitalManager != null)
-            vitalManager.ResetAllVitals();
-
-        NotifyRespawnClientRpc(spawnPos, spawnRot);
-    }
-
-    [ClientRpc]
-    private void NotifyRespawnClientRpc(Vector3 spawnPos, Quaternion spawnRot)
-    {
-        foreach (var r in GetComponentsInChildren<Renderer>())
-            r.enabled = true;
-
-        // Force dismount if mounted before teleporting
-        if (IsOwner)
-        {
-            var mountController = GetComponentInChildren<MountController>();
-            if (mountController != null && (mountController.IsMounted || mountController.IsTransitioning))
-                mountController.ForceDismount();
-        }
-
-        // Cache vcam FOV before any state changes that might reset it
-        CinemachineCamera vcam = GetComponentInChildren<CinemachineCamera>(true);
-        float cachedFOV = vcam != null ? vcam.Lens.FieldOfView : 0f;
-
-        var cc = GetComponentInChildren<CharacterController>();
-        if (cc != null) cc.enabled = false;
-
-        transform.position = spawnPos;
-        transform.rotation = spawnRot;
-
-        if (cc != null) cc.enabled = IsOwner;
-
-        if (IsOwner)
-        {
-            var input = GetComponentInChildren<InputController>();
-            if (input != null) input.enabled = true;
-
-            var tps = GetComponentInChildren<ThirdPersonController>();
-            if (tps != null) tps.enabled = true;
-
-            var combat = GetComponentInChildren<CombatController>();
-            if (combat != null)
-            {
-                combat.enabled = true;
-                combat.ResetState();
-            }
-
-            var deathScreen = FindObjectOfType<DeathScreen>();
-            if (deathScreen != null)
-                deathScreen.Hide();
-        }
-
-        if (animancerDriver != null)
-            animancerDriver.PlayRespawn();
-
-        // Restore FOV in case anything reset it
-        if (vcam != null && cachedFOV > 0f)
-        {
-            var lens = vcam.Lens;
-            lens.FieldOfView = cachedFOV;
-            vcam.Lens = lens;
-        }
-    }
 }
