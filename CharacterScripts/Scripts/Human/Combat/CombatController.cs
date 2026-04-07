@@ -78,6 +78,7 @@ public class CombatController : NetworkBehaviour
     public CombatState State { get; private set; } = CombatState.None;
     public bool IsInvincible { get; private set; }
     public bool IsDodging => State == CombatState.Dodging;
+    public float DodgeDuration => dodgeDuration;
     public bool IsDodgeStep { get; private set; }
 
     public bool IsBlocking => State == CombatState.Blocking;
@@ -216,8 +217,9 @@ public class CombatController : NetworkBehaviour
 
         var activeWeaponType = weaponManager.GetActiveWeaponType();
 
-        // Dodge: space in combat mode
-        if (_input.jumpDown && inCombat && _dodgeCooldownTimer <= 0f && activeWeaponType != WeaponType.Bow)
+        // Dodge: space in combat mode (block while dodge animation is still playing)
+        if (_input.jumpDown && inCombat && _dodgeCooldownTimer <= 0f && activeWeaponType != WeaponType.Bow
+            && (animancerDriver == null || !animancerDriver.IsDodgeMixerActive))
         {
             TryDodge();
             return;
@@ -262,7 +264,7 @@ public class CombatController : NetworkBehaviour
 
     private void TryDodge()
     {
-        //Debug.Log($"[TryDodge] stamina check: {vitalManager != null}");
+
         if (vitalManager != null)
         {
             var stamina = vitalManager.GetVital("stamina");

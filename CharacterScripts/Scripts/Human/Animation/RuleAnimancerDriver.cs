@@ -103,7 +103,7 @@ public class RuleAnimancerDriver : MonoBehaviour
     // Root motion
     private bool _rootMotionActive = false;
 
-    // Dodge mixer one-shot tracking (keyed off CombatController state, no separate timer)
+    // Dodge mixer one-shot tracking
     private bool _dodgeMixerStartedThisDodge;
     private bool _dodgeStepMixerStartedThisStep;
 
@@ -321,12 +321,11 @@ public class RuleAnimancerDriver : MonoBehaviour
         }
 
         // ── Dodge / Dodge Step via blend tree mixer (one-shot) ──
-        // Single source of truth: CombatController.IsDodging / IsDodgeStep.
-        // No separate timer — the "started" flag stays true for the entire
-        // duration of the combat state, blocking re-triggers and base-layer rules.
+        // Play once when dodge starts, block base rules while CombatController says we're dodging.
         if (combatMixer != null)
         {
-            // Clear flags when CombatController exits dodge/dodgestep state
+            // Reset flags when CombatController exits dodge/dodgestep,
+            // so the next press can trigger again.
             if (_dodgeMixerStartedThisDodge && !ctx.Dodging)
             {
                 _dodgeMixerStartedThisDodge = false;
@@ -338,7 +337,7 @@ public class RuleAnimancerDriver : MonoBehaviour
                 DisableRootMotion();
             }
 
-            // While dodge/dodgestep mixer owns base layer, block all base evaluation
+            // Block base layer while dodge/dodgestep is active
             if (_dodgeMixerStartedThisDodge || _dodgeStepMixerStartedThisStep)
                 return;
 
@@ -389,8 +388,7 @@ public class RuleAnimancerDriver : MonoBehaviour
 
         if (!mixerActive)
         {
-            // Skip rule-based dodge/dodgestep when the mixer handles them
-            // (prevents old Dodge/* rules from playing a second dodge after mixer finishes)
+            // Skip rule-based dodge/dodgestep while the mixer owns them
             bool skipRuleBase = combatMixer != null &&
                 ((ctx.Dodging && combatMixer.HasDodgeMixer) ||
                  (ctx.IsDodgeStep && combatMixer.HasDodgeStepMixer));

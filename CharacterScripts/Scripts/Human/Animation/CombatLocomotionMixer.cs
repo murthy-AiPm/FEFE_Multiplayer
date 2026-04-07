@@ -286,6 +286,27 @@ public class CombatLocomotionMixer : MonoBehaviour
     }
 
     /// <summary>
+    /// Returns the duration of the clip with the highest blend weight in the mixer,
+    /// i.e. the clip most relevant to the current direction.
+    /// </summary>
+    public static float GetDominantClipDuration(CartesianMixerState mixer)
+    {
+        if (mixer == null) return 0f;
+        float maxWeight = -1f;
+        float duration = 0f;
+        for (int i = 0; i < mixer.ChildCount; i++)
+        {
+            var child = mixer.GetChild(i);
+            if (child != null && child.Weight > maxWeight)
+            {
+                maxWeight = child.Weight;
+                duration = child.Length;
+            }
+        }
+        return duration;
+    }
+
+    /// <summary>
     /// Returns the longest clip duration in a mixer (used for lockUntilEnd timing).
     /// </summary>
     public static float GetMixerDuration(CartesianMixerState mixer)

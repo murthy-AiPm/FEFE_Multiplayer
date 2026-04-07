@@ -6157,7 +6157,7 @@ MonoBehaviour:
   allowMountedCombat: 0
   mountController: {fileID: 390209779912540638}
   dodgeSpeed: 8
-  dodgeDuration: 0.23
+  dodgeDuration: 0.5
   dodgeStaminaCost: 15
   dodgeCooldown: 0.3
   iFrameDuration: 0.25
