@@ -42,6 +42,9 @@ public class ThirdPersonController : MonoBehaviour
     [SerializeField] private float jumpGraceTime = 0.12f;
     private float _jumpGraceUntil;
 
+    // Cached combat controller for dodge-step jump suppression
+    private CombatController _combatController;
+
 
     //private bool onGround;
 
@@ -63,12 +66,13 @@ public class ThirdPersonController : MonoBehaviour
     protected virtual void Awake()
     {
         cam = Camera.main.transform;
-        // Cache CharacterController once
         if (controller == null )
             controller = GetComponentInChildren<CharacterController>();
 
         if (controller == null)
             controller = GetComponentInChildren<CharacterController>();
+
+        _combatController = GetComponentInChildren<CombatController>();
     }
     protected virtual void Start()
     {
@@ -165,6 +169,13 @@ public class ThirdPersonController : MonoBehaviour
 
     protected virtual void Jump()
     {
+        // Don't jump during dodge step or dodge — jump key is consumed by CombatController
+        if (playerController != null && playerController.inputController != null)
+        {
+            var combat = playerController.GetComponentInChildren<CombatController>();
+            if (combat != null && (combat.IsDodging || combat.IsDodgeStep))
+                return;
+        }
 
         if (isJumpPressed && isgrounded && isobstacle)
         {

@@ -215,14 +215,18 @@ public class CombatController : NetworkBehaviour
         bool inCombat = weaponManager.ActiveSlot != 0 || IsFistCombatMode;
 
         var activeWeaponType = weaponManager.GetActiveWeaponType();
-        if (_input.jumpDown && !_input.evadeDown && inCombat && !IsDodgeStep && activeWeaponType != WeaponType.Bow)
-        {
-            TryDodgeStep();
-            return;
-        }
-        if (_input.evadeDown && inCombat && _dodgeCooldownTimer <= 0f)
+
+        // Dodge: space in combat mode
+        if (_input.jumpDown && inCombat && _dodgeCooldownTimer <= 0f && activeWeaponType != WeaponType.Bow)
         {
             TryDodge();
+            return;
+        }
+
+        // Dodge step: alt in combat mode
+        if (_input.dodgeDown && inCombat && !IsDodgeStep && activeWeaponType != WeaponType.Bow)
+        {
+            TryDodgeStep();
             return;
         }
 
@@ -291,12 +295,20 @@ public class CombatController : NetworkBehaviour
 
     private void TryDodgeStep()
     {
+        // Don't start a new dodge step while the dodge animation is still playing
+        if (animancerDriver != null && animancerDriver.IsDodgeMixerActive)
+            return;
+
         if (vitalManager != null)
         {
             var stamina = vitalManager.GetVital("stamina");
             if (stamina != null && stamina.Current < dodgeStepStaminaCost) return;
             ConsumeStamina(dodgeStepStaminaCost);
         }
+
+        // Consume jump input so ThirdPersonController doesn't also jump
+        if (playerController != null && playerController.inputController != null)
+            playerController.inputController.isJumpPressed = false;
 
         string dir = _input.movePressed
             ? playerController.inputController.directions
@@ -323,11 +335,15 @@ public class CombatController : NetworkBehaviour
 
             boostDir = dir switch
             {
-                "W" => camForward,
-                "S" => -camForward,
-                "A" => -camRight,
-                "D" => camRight,
-                _ => -camForward,
+                "W"  => camForward,
+                "S"  => -camForward,
+                "A"  => -camRight,
+                "D"  => camRight,
+                "WA" => (camForward - camRight).normalized,
+                "WD" => (camForward + camRight).normalized,
+                "SA" => (-camForward - camRight).normalized,
+                "SD" => (-camForward + camRight).normalized,
+                _    => -camForward,
             };
         }
 

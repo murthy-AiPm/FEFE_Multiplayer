@@ -103,6 +103,13 @@ public class RuleAnimancerDriver : MonoBehaviour
     // Root motion
     private bool _rootMotionActive = false;
 
+    // Dodge mixer one-shot tracking (keyed off CombatController state, no separate timer)
+    private bool _dodgeMixerStartedThisDodge;
+    private bool _dodgeStepMixerStartedThisStep;
+
+    /// <summary>True while a dodge/dodge-step mixer animation is still playing.</summary>
+    public bool IsDodgeMixerActive => _dodgeMixerStartedThisDodge || _dodgeStepMixerStartedThisStep;
+
     // Network — evaluated lazily after spawn so IsOwner is valid
     private bool _isRemoteClient => networkSync != null && networkSync.IsSpawned && !networkSync.IsOwner;
 
@@ -313,9 +320,59 @@ public class RuleAnimancerDriver : MonoBehaviour
             }
         }
 
+        // ── Dodge / Dodge Step via blend tree mixer (one-shot) ──
+        // Single source of truth: CombatController.IsDodging / IsDodgeStep.
+        // No separate timer — the "started" flag stays true for the entire
+        // duration of the combat state, blocking re-triggers and base-layer rules.
+        if (combatMixer != null)
+        {
+            // Clear flags when CombatController exits dodge/dodgestep state
+            if (_dodgeMixerStartedThisDodge && !ctx.Dodging)
+            {
+                _dodgeMixerStartedThisDodge = false;
+                DisableRootMotion();
+            }
+            if (_dodgeStepMixerStartedThisStep && !ctx.IsDodgeStep)
+            {
+                _dodgeStepMixerStartedThisStep = false;
+                DisableRootMotion();
+            }
+
+            // While dodge/dodgestep mixer owns base layer, block all base evaluation
+            if (_dodgeMixerStartedThisDodge || _dodgeStepMixerStartedThisStep)
+                return;
+
+            // Start dodge mixer (once per dodge)
+            if (ctx.Dodging && combatMixer.HasDodgeMixer && !_dodgeMixerStartedThisDodge)
+            {
+                var mixerState = combatMixer.PlayDodge(_baseLayer, ctx.snapshot.move);
+                if (mixerState != null)
+                {
+                    _dodgeMixerStartedThisDodge = true;
+                    _rootMotionActive = allowRootMotion;
+                    if (_animator != null) _animator.applyRootMotion = allowRootMotion;
+                    return;
+                }
+            }
+
+            // Start dodge step mixer (once per step)
+            if (ctx.IsDodgeStep && combatMixer.HasDodgeStepMixer && !_dodgeStepMixerStartedThisStep)
+            {
+                var mixerState = combatMixer.PlayDodgeStep(_baseLayer, ctx.snapshot.move);
+                if (mixerState != null)
+                {
+                    _dodgeStepMixerStartedThisStep = true;
+                    _rootMotionActive = allowRootMotion;
+                    if (_animator != null) _animator.applyRootMotion = allowRootMotion;
+                    return;
+                }
+            }
+        }
+
         // ── Blend tree locomotion: if the mixer wants control, it drives Base ──
         bool mixerActive = false;
-        if (combatMixer != null && combatMixer.WantsControl(
+        bool dodgeMixerOwnsBase = _dodgeMixerStartedThisDodge || _dodgeStepMixerStartedThisStep;
+        if (!dodgeMixerOwnsBase && combatMixer != null && combatMixer.WantsControl(
                 ctx.ActiveWeaponSlot, ctx.Moving, ctx.Dodging,
                 ctx.Blocking, ctx.BowDrawing, ctx.BowAiming, ctx.IsMounted, ctx.IsDodgeStep))
         {
@@ -331,7 +388,15 @@ public class RuleAnimancerDriver : MonoBehaviour
         }
 
         if (!mixerActive)
-            TryPlayBestRule(ctx, AnimLayer.Base);
+        {
+            // Skip rule-based dodge/dodgestep when the mixer handles them
+            // (prevents old Dodge/* rules from playing a second dodge after mixer finishes)
+            bool skipRuleBase = combatMixer != null &&
+                ((ctx.Dodging && combatMixer.HasDodgeMixer) ||
+                 (ctx.IsDodgeStep && combatMixer.HasDodgeStepMixer));
+            if (!skipRuleBase)
+                TryPlayBestRule(ctx, AnimLayer.Base);
+        }
 
         if (_actionId != 0 && !IsLayerLocked(AnimLayer.Action))
             _actionId = 0;

@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using Animancer;
 
-/// <summary>
-/// Drives 2D Cartesian blend trees for combat locomotion (walk + run).
+/// <summary>//
+/// Drives 2D Cartesian blend trees for combat locomotion (walk + run),
+/// dodge rolls, and dodge steps.
 /// Supports multiple weapon profiles (sword, bow, etc.) each with their own clip keys.
 /// Network-friendly: sync a single Vector2 for the blend parameter.
 /// </summary>
@@ -16,13 +17,28 @@ public class CombatLocomotionMixer : MonoBehaviour
     [Header("Weapon Locomotion Profiles")]
     [SerializeField] private List<WeaponLocomotionProfile> weaponProfiles = new List<WeaponLocomotionProfile>();
 
+    [Header("Dodge Clip Keys (4 cardinal directions)")]
+    [SerializeField] private string dodgeFwd   = "Dodge/Front";
+    [SerializeField] private string dodgeBack  = "Dodge/Back";
+    [SerializeField] private string dodgeLeft  = "Dodge/Left";
+    [SerializeField] private string dodgeRight = "Dodge/Right";
+
+    [Header("Dodge Step Clip Keys (4 cardinal directions)")]
+    [SerializeField] private string dodgeStepFwd   = "DodgeStep/Front";
+    [SerializeField] private string dodgeStepBack  = "DodgeStep/Back";
+    [SerializeField] private string dodgeStepLeft  = "DodgeStep/Left";
+    [SerializeField] private string dodgeStepRight = "DodgeStep/Right";
+
     [Header("Blend Settings")]
     [SerializeField] private float fadeDuration = 0.15f;
     [Tooltip("How fast the blend parameter tracks input (lower = smoother).")]
     [SerializeField] private float parameterSmoothTime = 0.1f;
+    [SerializeField] private float dodgeFadeDuration = 0.08f;
 
     // ── Runtime ──
     private Dictionary<int, MixerPair> _mixersBySlot;
+    private CartesianMixerState _dodgeMixer;
+    private CartesianMixerState _dodgeStepMixer;
     private bool _initialized;
 
     // Smoothing
@@ -37,6 +53,10 @@ public class CombatLocomotionMixer : MonoBehaviour
     /// and writes it on remote clients.
     /// </summary>
     public Vector2 BlendParameter => _smoothParam;
+
+    /// <summary>True if dodge/dodge step mixers were built successfully.</summary>
+    public bool HasDodgeMixer => _dodgeMixer != null;
+    public bool HasDodgeStepMixer => _dodgeStepMixer != null;
 
     // ───────────────────── Data ─────────────────────
 
@@ -77,7 +97,7 @@ public class CombatLocomotionMixer : MonoBehaviour
 
     /// <summary>
     /// Must be called after AnimancerComponent is available (e.g. from the driver's Awake).
-    /// Builds mixers for each weapon profile.
+    /// Builds mixers for each weapon profile and dodge/dodge step mixers.
     /// </summary>
     public void Initialize(AnimancerComponent animancer)
     {
@@ -88,6 +108,7 @@ public class CombatLocomotionMixer : MonoBehaviour
             return;
         }
 
+        // Build weapon locomotion mixers
         _mixersBySlot = new Dictionary<int, MixerPair>();
 
         foreach (var profile in weaponProfiles)
@@ -108,20 +129,28 @@ public class CombatLocomotionMixer : MonoBehaviour
             if (pair.walk != null || pair.run != null)
             {
                 _mixersBySlot[profile.weaponSlot] = pair;
-                Debug.Log($"[CombatLocomotionMixer] Built mixer for slot {profile.weaponSlot}" +
+                Debug.Log($"[CombatLocomotionMixer] Built locomotion mixer for slot {profile.weaponSlot}" +
                           $" (walk: {(pair.walk != null ? "OK" : "NONE")}, run: {(pair.run != null ? "OK" : "NONE")})");
             }
         }
 
-        _initialized = _mixersBySlot.Count > 0;
+        // Build dodge mixers (4 cardinal directions each)
+        _dodgeMixer = BuildCardinalMixer(dodgeFwd, dodgeBack, dodgeLeft, dodgeRight, "Dodge");
+        _dodgeStepMixer = BuildCardinalMixer(dodgeStepFwd, dodgeStepBack, dodgeStepLeft, dodgeStepRight, "DodgeStep");
+
+        _initialized = _mixersBySlot.Count > 0 || _dodgeMixer != null || _dodgeStepMixer != null;
+    }
+
+    private CartesianMixerState BuildCardinalMixer(string fwd, string back, string left, string right, string label)
+    {
+        return BuildMixer(fwd, back, left, right, "", "", "", "");
     }
 
     private CartesianMixerState BuildMixer(
         string fwd, string back, string left, string right,
         string fwdLeft, string fwdRight, string backLeft, string backRight)
     {
-        // Build list of valid clips — skip empty keys gracefully
-        var entries = new List<(AnimationClip clip, Vector2 pos)>();
+        var entries = new List<(AnimationClip clip, Vector2 pos, float speed)>();
 
         TryAddClip(entries, fwd,       new Vector2( 0,  1));
         TryAddClip(entries, back,      new Vector2( 0, -1));
@@ -132,7 +161,6 @@ public class CombatLocomotionMixer : MonoBehaviour
         TryAddClip(entries, backLeft,  new Vector2(-1, -1).normalized);
         TryAddClip(entries, backRight, new Vector2( 1, -1).normalized);
 
-        // Need at least 4 cardinal directions for a usable mixer
         if (entries.Count < 4)
         {
             Debug.LogWarning($"[CombatLocomotionMixer] Only {entries.Count} clips found, " +
@@ -141,21 +169,30 @@ public class CombatLocomotionMixer : MonoBehaviour
         }
 
         var mixer = new CartesianMixerState();
-        foreach (var (clip, pos) in entries)
+        foreach (var (clip, pos, speed) in entries)
         {
             mixer.Add(clip, pos);
         }
+
+        // Apply per-clip speeds from the ClipTransition data
+        for (int i = 0; i < entries.Count; i++)
+        {
+            float speed = entries[i].speed;
+            if (!float.IsNaN(speed) && speed > 0f)
+                mixer.GetChild(i).Speed = speed;
+        }
+
         return mixer;
     }
 
-    private void TryAddClip(List<(AnimationClip, Vector2)> entries, string key, Vector2 pos)
+    private void TryAddClip(List<(AnimationClip, Vector2, float)> entries, string key, Vector2 pos)
     {
         if (string.IsNullOrEmpty(key)) return;
 
         if (animationSet.TryGet(key, out var transition) &&
             transition != null && transition.Clip != null)
         {
-            entries.Add((transition.Clip, pos));
+            entries.Add((transition.Clip, pos, transition.Speed));
         }
         else
         {
@@ -163,10 +200,10 @@ public class CombatLocomotionMixer : MonoBehaviour
         }
     }
 
-    // ───────────────────── Public API ─────────────────────
+    // ───────────────────── Locomotion API ─────────────────────
 
     /// <summary>
-    /// Returns true if this mixer is ready and should drive the base layer.
+    /// Returns true if this mixer should drive base layer locomotion.
     /// </summary>
     public bool WantsControl(int activeWeaponSlot, bool isMoving, bool isDodging,
                              bool isBlocking, bool isBowDrawing, bool isBowAiming,
@@ -178,12 +215,11 @@ public class CombatLocomotionMixer : MonoBehaviour
         if (isDodgeStep) return false;
         if (isMounted) return false;
 
-        // Check if we have a mixer for this weapon slot
         return _mixersBySlot.ContainsKey(activeWeaponSlot);
     }
 
     /// <summary>
-    /// Plays the appropriate mixer (walk or run) on the given layer.
+    /// Plays the appropriate locomotion mixer (walk or run) on the given layer.
     /// Call every frame when WantsControl() is true.
     /// </summary>
     public void UpdateAndPlay(AnimancerLayer layer, Vector2 moveInput,
@@ -192,24 +228,80 @@ public class CombatLocomotionMixer : MonoBehaviour
         if (!_mixersBySlot.TryGetValue(activeWeaponSlot, out var pair))
             return;
 
-        // Smooth the blend parameter
         _smoothParam = Vector2.SmoothDamp(_smoothParam, moveInput,
             ref _paramVelocity, parameterSmoothTime);
 
-        // Pick the right mixer (run if sprinting and run mixer exists, else walk)
         var target = isSprinting && pair.run != null ? pair.run : pair.walk;
         if (target == null) return;
 
-        // Update the mixer parameter
         target.Parameter = _smoothParam;
 
-        // Play on layer if not already active
         if (_activeMixer != target)
         {
             layer.Play(target, fadeDuration);
             _activeMixer = target;
         }
     }
+
+    // ───────────────────── Dodge / Dodge Step API ─────────────────────
+
+    /// <summary>
+    /// Plays the dodge mixer as a one-shot on the given layer.
+    /// Sets the blend parameter once from moveInput (direction at dodge start).
+    /// Returns the mixer state so the caller can LockLayerUntilEnd.
+    /// Returns null if the dodge mixer doesn't exist.
+    /// </summary>
+    /// <param name="layer">The base Animancer layer.</param>
+    /// <param name="moveInput">Raw move input at time of dodge. Zero = backward.</param>
+    public CartesianMixerState PlayDodge(AnimancerLayer layer, Vector2 moveInput)
+    {
+        if (_dodgeMixer == null) return null;
+
+        // Default to backward if no input
+        Vector2 dir = moveInput.sqrMagnitude > 0.01f ? moveInput.normalized : new Vector2(0, -1);
+        _dodgeMixer.Parameter = dir;
+
+        layer.Play(_dodgeMixer, dodgeFadeDuration);
+        _activeMixer = _dodgeMixer;
+
+        return _dodgeMixer;
+    }
+
+    /// <summary>
+    /// Plays the dodge step mixer as a one-shot on the given layer.
+    /// Returns the mixer state so the caller can LockLayerUntilEnd.
+    /// Returns null if the dodge step mixer doesn't exist.
+    /// </summary>
+    public CartesianMixerState PlayDodgeStep(AnimancerLayer layer, Vector2 moveInput)
+    {
+        if (_dodgeStepMixer == null) return null;
+
+        Vector2 dir = moveInput.sqrMagnitude > 0.01f ? moveInput.normalized : new Vector2(0, -1);
+        _dodgeStepMixer.Parameter = dir;
+
+        layer.Play(_dodgeStepMixer, dodgeFadeDuration);
+        _activeMixer = _dodgeStepMixer;
+
+        return _dodgeStepMixer;
+    }
+
+    /// <summary>
+    /// Returns the longest clip duration in a mixer (used for lockUntilEnd timing).
+    /// </summary>
+    public static float GetMixerDuration(CartesianMixerState mixer)
+    {
+        if (mixer == null) return 0f;
+        float max = 0f;
+        for (int i = 0; i < mixer.ChildCount; i++)
+        {
+            var child = mixer.GetChild(i);
+            if (child != null && child.Length > max)
+                max = child.Length;
+        }
+        return max;
+    }
+
+    // ───────────────────── Network / Reset ─────────────────────
 
     /// <summary>
     /// Called by network sync on remote clients to directly set the blend parameter.

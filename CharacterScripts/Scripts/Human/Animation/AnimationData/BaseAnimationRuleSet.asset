@@ -113,6 +113,44 @@ MonoBehaviour:
       direction: 0
       useActionId: 0
       actionIdEquals: 0
+  - name: Fists/Walk
+    layer: 0
+    priority: 42
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Fists/Walk
+    all:
+    - useBool: 1
+      boolParam: 17
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 1
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 0
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
   - name: Sword/Idle
     layer: 0
     priority: 53
@@ -349,6 +387,34 @@ MonoBehaviour:
       direction: 0
       useActionId: 0
       actionIdEquals: 0
+  - name: Riding/Walk/Front
+    layer: 0
+    priority: 202
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 0}
+    animationKey: Riding/Walk/Front
+    all:
+    - useBool: 1
+      boolParam: 7
+      boolValue: 1
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 0
+      boolValue: 1
+      useInput: 0
+      input: 2
+      triggerMode: 2
+      useDirection: 0
+      direction: 1
+      useActionId: 0
+      actionIdEquals: 0
   - name: Riding/Idle
     layer: 0
     priority: 200
@@ -385,34 +451,6 @@ MonoBehaviour:
       triggerMode: 2
       useDirection: 0
       direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-  - name: Riding/Walk/Front
-    layer: 0
-    priority: 202
-    lockUntilEnd: 0
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: Riding/Walk/Front
-    all:
-    - useBool: 1
-      boolParam: 7
-      boolValue: 1
-      useInput: 0
-      input: 2
-      triggerMode: 2
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 0
-      boolValue: 1
-      useInput: 0
-      input: 2
-      triggerMode: 2
-      useDirection: 0
-      direction: 1
       useActionId: 0
       actionIdEquals: 0
   - name: Crouch/Walk
@@ -627,224 +665,6 @@ MonoBehaviour:
       triggerMode: 0
       useDirection: 0
       direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-  - name: Fists/Walk
-    layer: 0
-    priority: 42
-    lockUntilEnd: 0
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: Fists/Walk
-    all:
-    - useBool: 1
-      boolParam: 17
-      boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 0
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 1
-      boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 0
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-    - useBool: 1
-      boolParam: 0
-      boolValue: 1
-      useInput: 0
-      input: 0
-      triggerMode: 0
-      useDirection: 0
-      direction: 0
-      useActionId: 0
-      actionIdEquals: 0
-  - name: Dodge/Front
-    layer: 0
-    priority: 500
-    lockUntilEnd: 1
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: Dodge/Front
-    all:
-    - useBool: 1
-      boolParam: 10
-      boolValue: 1
-      useInput: 0
-      input: 1
-      triggerMode: 1
-      useDirection: 1
-      direction: 1
-      useActionId: 0
-      actionIdEquals: 0
-  - name: Dodge/Back
-    layer: 0
-    priority: 500
-    lockUntilEnd: 1
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: Dodge/Back
-    all:
-    - useBool: 1
-      boolParam: 10
-      boolValue: 1
-      useInput: 0
-      input: 1
-      triggerMode: 1
-      useDirection: 1
-      direction: 3
-      useActionId: 0
-      actionIdEquals: 0
-  - name: Dodge/Right
-    layer: 0
-    priority: 500
-    lockUntilEnd: 1
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: Dodge/Right
-    all:
-    - useBool: 1
-      boolParam: 10
-      boolValue: 1
-      useInput: 0
-      input: 1
-      triggerMode: 1
-      useDirection: 1
-      direction: 4
-      useActionId: 0
-      actionIdEquals: 0
-  - name: Dodge/Left
-    layer: 0
-    priority: 500
-    lockUntilEnd: 1
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: Dodge/Left
-    all:
-    - useBool: 1
-      boolParam: 10
-      boolValue: 1
-      useInput: 0
-      input: 1
-      triggerMode: 1
-      useDirection: 1
-      direction: 2
-      useActionId: 0
-      actionIdEquals: 0
-  - name: Dodge/Default
-    layer: 0
-    priority: 490
-    lockUntilEnd: 1
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: Dodge/Back
-    all:
-    - useBool: 1
-      boolParam: 10
-      boolValue: 1
-      useInput: 0
-      input: 1
-      triggerMode: 1
-      useDirection: 0
-      direction: 2
-      useActionId: 0
-      actionIdEquals: 0
-  - name: DodgeStep/Front
-    layer: 0
-    priority: 500
-    lockUntilEnd: 1
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: DodgeStep/Front
-    all:
-    - useBool: 1
-      boolParam: 11
-      boolValue: 1
-      useInput: 0
-      input: 1
-      triggerMode: 1
-      useDirection: 1
-      direction: 1
-      useActionId: 0
-      actionIdEquals: 0
-  - name: DodgeStep/Back
-    layer: 0
-    priority: 500
-    lockUntilEnd: 1
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: DodgeStep/Back
-    all:
-    - useBool: 1
-      boolParam: 11
-      boolValue: 1
-      useInput: 0
-      input: 1
-      triggerMode: 1
-      useDirection: 1
-      direction: 3
-      useActionId: 0
-      actionIdEquals: 0
-  - name: DodgeStep/Right
-    layer: 0
-    priority: 500
-    lockUntilEnd: 1
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: DodgeStep/Right
-    all:
-    - useBool: 1
-      boolParam: 11
-      boolValue: 1
-      useInput: 0
-      input: 1
-      triggerMode: 1
-      useDirection: 1
-      direction: 4
-      useActionId: 0
-      actionIdEquals: 0
-  - name: DodgeStep/Left
-    layer: 0
-    priority: 500
-    lockUntilEnd: 1
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: DodgeStep/Left
-    all:
-    - useBool: 1
-      boolParam: 11
-      boolValue: 1
-      useInput: 0
-      input: 1
-      triggerMode: 1
-      useDirection: 1
-      direction: 2
-      useActionId: 0
-      actionIdEquals: 0
-  - name: DodgeStep/Default
-    layer: 0
-    priority: 490
-    lockUntilEnd: 1
-    allowInterruptSameLayer: 0
-    maskOverride: {fileID: 0}
-    animationKey: DodgeStep/Back
-    all:
-    - useBool: 1
-      boolParam: 11
-      boolValue: 1
-      useInput: 0
-      input: 1
-      triggerMode: 1
-      useDirection: 0
-      direction: 2
       useActionId: 0
       actionIdEquals: 0
   combos: []

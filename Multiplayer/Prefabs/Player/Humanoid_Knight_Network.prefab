@@ -6157,7 +6157,7 @@ MonoBehaviour:
   allowMountedCombat: 0
   mountController: {fileID: 390209779912540638}
   dodgeSpeed: 8
-  dodgeDuration: 0.5
+  dodgeDuration: 0.23
   dodgeStaminaCost: 15
   dodgeCooldown: 0.3
   iFrameDuration: 0.25
@@ -6376,8 +6376,17 @@ MonoBehaviour:
     runFwdRight: Sword/Run/Front/Right
     runBackLeft: Sword/Run/Back/Left
     runBackRight: Sword/Run/Back/Right
-  fadeDuration: 0.15
+  dodgeFwd: Dodge/Front
+  dodgeBack: Dodge/Back
+  dodgeLeft: Dodge/Left
+  dodgeRight: Dodge/Right
+  dodgeStepFwd: DodgeStep/Front
+  dodgeStepBack: DodgeStep/Back
+  dodgeStepLeft: DodgeStep/Left
+  dodgeStepRight: DodgeStep/Right
+  fadeDuration: 0.25
   parameterSmoothTime: 0.1
+  dodgeFadeDuration: 0.08
 --- !u!1 &8848191647751171253
 GameObject:
   m_ObjectHideFlags: 0
