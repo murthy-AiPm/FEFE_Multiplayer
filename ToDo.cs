@@ -107,6 +107,9 @@ BONE AXIS NOTES:
  * Yaw: world Vector3.up works across all neck bones
  * Jaw: local Z rotation (-106.534 closed, -125 open)
 
+COMPLETED:
+ * 6th-April-2026 — Directional dodge roll & dodge step via CombatLocomotionMixer blend trees (CartesianMixerState, 4 cardinal directions each). Dodge rules removed from RuleSet; mixer handles directionality. IsDodgeMixerActive guard added to CombatController to prevent re-entry while animation plays.
+
 OUTSTANDING / NEXT:
  * Ground-to-flight transition: dragon clips into ground during jump→hover. Needs either better jump animation with root motion lift, or small takeoffLiftSpeed during jump timer
  * Flight blend tree tuning — need more animation clips mapped to blend tree positions

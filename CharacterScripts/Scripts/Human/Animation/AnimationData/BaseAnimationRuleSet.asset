@@ -622,7 +622,7 @@ MonoBehaviour:
       useActionId: 0
       actionIdEquals: 0
   - name: Bow/Draw
-    layer: 1
+    layer: 0
     priority: 141
     lockUntilEnd: 1
     allowInterruptSameLayer: 0

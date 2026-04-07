@@ -218,7 +218,7 @@ public class CombatController : NetworkBehaviour
         var activeWeaponType = weaponManager.GetActiveWeaponType();
 
         // Dodge: space in combat mode (block while dodge animation is still playing)
-        if (_input.jumpDown && inCombat && _dodgeCooldownTimer <= 0f && activeWeaponType != WeaponType.Bow
+        if (_input.jumpDown && inCombat && _dodgeCooldownTimer <= 0f
             && (animancerDriver == null || !animancerDriver.IsDodgeMixerActive))
         {
             TryDodge();
@@ -455,6 +455,15 @@ public class CombatController : NetworkBehaviour
     {
         _bowDrawTimer -= Time.deltaTime;
 
+        // Dodge cancels bow draw
+        if (_input.jumpDown && _dodgeCooldownTimer <= 0f
+            && (animancerDriver == null || !animancerDriver.IsDodgeMixerActive))
+        {
+            SetState(CombatState.None);
+            TryDodge();
+            return;
+        }
+
         if (!_input.primaryHeld)
         {
             // Released early — cancel
@@ -468,6 +477,15 @@ public class CombatController : NetworkBehaviour
 
     private void UpdateBowAim()
     {
+        // Dodge cancels bow aim (no arrow fired)
+        if (_input.jumpDown && _dodgeCooldownTimer <= 0f
+            && (animancerDriver == null || !animancerDriver.IsDodgeMixerActive))
+        {
+            SetState(CombatState.None);
+            TryDodge();
+            return;
+        }
+
         // Face camera direction
         if (humanoidController != null && humanoidController.cam != null)
         {
@@ -688,7 +706,7 @@ public class CombatController : NetworkBehaviour
                State == CombatState.BowDrawing ||
                State == CombatState.Blocking;
     }
-    public void SetRemoteCombatState(bool dodging, bool blocking, bool bowDrawing, bool bowAiming, bool fistCombatMode)
+    public void SetRemoteCombatState(bool dodging, bool blocking, bool bowDrawing, bool bowAiming, bool fistCombatMode, bool dodgeStep)
     {
         if (IsOwner) return;
 
@@ -699,6 +717,7 @@ public class CombatController : NetworkBehaviour
         else State = CombatState.None;
 
         IsFistCombatMode = fistCombatMode;
+        IsDodgeStep = dodgeStep;
     }
     public void ResetState()
     {

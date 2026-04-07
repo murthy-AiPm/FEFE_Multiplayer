@@ -99,6 +99,9 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
     private readonly NetworkVariable<bool> nvFistCombatMode =
         new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
+    private readonly NetworkVariable<bool> nvDodgeStep =
+        new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
     // ---- Bow release edge ----
     private readonly NetworkVariable<int> nvBowReleaseSeq =
         new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -304,6 +307,7 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
             if (nvBowDrawing.Value    != combatController.IsBowDrawing)    nvBowDrawing.Value    = combatController.IsBowDrawing;
             if (nvBowAiming.Value     != combatController.IsBowAiming)     nvBowAiming.Value     = combatController.IsBowAiming;
             if (nvFistCombatMode.Value != combatController.IsFistCombatMode) nvFistCombatMode.Value = combatController.IsFistCombatMode;
+            if (nvDodgeStep.Value != combatController.IsDodgeStep) nvDodgeStep.Value = combatController.IsDodgeStep;
         }
 
         // ── Combat locomotion blend tree: sync raw move input ─────────────
@@ -365,7 +369,8 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
                 nvBlocking.Value,
                 nvBowDrawing.Value,
                 nvBowAiming.Value,
-                nvFistCombatMode.Value
+                nvFistCombatMode.Value,
+                nvDodgeStep.Value
             );
         }
 

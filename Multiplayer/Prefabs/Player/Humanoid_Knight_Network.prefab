@@ -6376,6 +6376,23 @@ MonoBehaviour:
     runFwdRight: Sword/Run/Front/Right
     runBackLeft: Sword/Run/Back/Left
     runBackRight: Sword/Run/Back/Right
+  - weaponSlot: 2
+    walkFwd: Bow/Walk/Front
+    walkBack: Bow/Walk/Back
+    walkLeft: Bow/Walk/Left
+    walkRight: Bow/Walk/Right
+    walkFwdLeft: 
+    walkFwdRight: 
+    walkBackLeft: 
+    walkBackRight: 
+    runFwd: Sword/Run
+    runBack: Sword/Run/Back
+    runLeft: Sword/Run/Left
+    runRight: Sword/Run/Right
+    runFwdLeft: Sword/Run/Front/Left
+    runFwdRight: Sword/Run/Front/Right
+    runBackLeft: Sword/Run/Back/Left
+    runBackRight: Sword/Run/Back/Right
   dodgeFwd: Dodge/Front
   dodgeBack: Dodge/Back
   dodgeLeft: Dodge/Left
