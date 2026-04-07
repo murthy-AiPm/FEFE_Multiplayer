@@ -39,7 +39,10 @@ public class DragonDamageAnimator : NetworkBehaviour
     [Header("Hit Rotation (Code-Driven)")]
     [Tooltip("How fast the dragon rotates toward the attacker during the hit (degrees/sec).")]
     [SerializeField] private float hitTurnSpeed = 360f;
-    [Tooltip("How long the code-driven rotation lasts. First half lerps toward attacker, " +
+    [Tooltip("Extra degrees to rotate PAST facing the attacker. 0 = face attacker exactly. " +
+             "30 = overshoot by 30 degrees. Negative values = turn less than fully facing.")]
+    [SerializeField] private float hitTurnOvershoot = 0f;
+    [Tooltip("How long the code-driven rotation lasts. First half lerps toward target, " +
              "second half holds. Should roughly match the hit clip length.")]
     [SerializeField] private float hitRotationDuration = 0.8f;
 
@@ -215,7 +218,10 @@ public class DragonDamageAnimator : NetworkBehaviour
 
         if (toAttacker.sqrMagnitude > 0.001f)
         {
-            _hitTargetRotation = Quaternion.LookRotation(toAttacker.normalized);
+            // Calculate target rotation: face the attacker + overshoot
+            Quaternion faceAttacker = Quaternion.LookRotation(toAttacker.normalized);
+            _hitTargetRotation = faceAttacker * Quaternion.Euler(0f, hitTurnOvershoot, 0f);
+
             _isRotatingFromHit = true;
             _hitRotationTimer = hitRotationDuration;
 

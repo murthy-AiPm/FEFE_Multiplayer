@@ -5814,7 +5814,11 @@ MonoBehaviour:
   damageReceiver: {fileID: 7203970312165627060}
   animator: {fileID: 8804854363994131359}
   groundController: {fileID: 3534620481540292934}
+  groundAlignment: {fileID: -1836003133199254669}
+  rb: {fileID: 4213641409919773835}
   hitResetDelay: 0.8
-  hitRootMotionDuration: 1
+  hitTurnSpeed: 180
+  hitTurnOvershoot: 30
+  hitRotationDuration: 0.8
   debugLogging: 1
   debugKeypadTesting: 1
