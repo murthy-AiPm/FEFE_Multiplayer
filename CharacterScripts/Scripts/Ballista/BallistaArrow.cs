@@ -80,6 +80,11 @@ public class BallistaArrow : NetworkBehaviour
         var hitNetObj = other.GetComponentInParent<NetworkObject>();
         if (hitNetObj != null && hitNetObj.NetworkObjectId == _shooterNetObjId) return;
         _hasHit = true;
+
+        // Disable collider so the stuck arrow doesn't interact with anything
+        if (_collider != null)
+            _collider.enabled = false;
+
         var rb = GetComponent<Rigidbody>();
         if (rb != null)
         {
@@ -127,6 +132,10 @@ public class BallistaArrow : NetworkBehaviour
     [ClientRpc]
     private void StickArrowClientRpc(Vector3 position, Quaternion rotation, ulong parentNetId)
     {
+        // Disable collider on clients too
+        if (_collider != null)
+            _collider.enabled = false;
+
         // Stop physics and freeze in place
         var rb = GetComponent<Rigidbody>();
         if (rb != null)
