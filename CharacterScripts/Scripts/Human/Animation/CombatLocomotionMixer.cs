@@ -211,7 +211,7 @@ public class CombatLocomotionMixer : MonoBehaviour
     {
         if (!_initialized) return false;
         if (!isMoving) return false;
-        if (isDodging || isBowDrawing || isBowAiming) return false;
+        if (isDodging) return false;
         if (isDodgeStep) return false;
         if (isMounted) return false;
 
