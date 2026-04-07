@@ -36,6 +36,24 @@ public class DragonGroundController : AnimalGroundController
         set => _flightRootMotionActive = value;
     }
 
+    /// <summary>
+    /// Called by DragonDamageAnimator when hit animation ends.
+    /// Syncs the ground alignment yaw to the dragon's current facing
+    /// and kills any residual velocity so the dragon doesn't slide.
+    /// </summary>
+    public void SyncYawAfterHit()
+    {
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+
+        float currentYaw = rb != null ? rb.rotation.eulerAngles.y : transform.eulerAngles.y;
+        if (groundAlignment != null)
+            groundAlignment.SetYawImmediate(currentYaw);
+    }
+
     protected override void Awake()
     {
         base.Awake();
@@ -133,6 +151,9 @@ public class DragonGroundController : AnimalGroundController
             rb.MoveRotation(rb.rotation * animator.deltaRotation);
             return;
         }
+
+        // During hit reaction — skip base root motion so the dragon doesn't slide.
+        // Code-driven rotation is handled by DragonDamageAnimator via rb.MoveRotation.
 
         base.OnAnimatorMove();
     }

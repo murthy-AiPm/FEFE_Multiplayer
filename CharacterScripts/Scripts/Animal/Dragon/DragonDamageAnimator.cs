@@ -7,50 +7,70 @@ using UnityEngine;
 ///
 /// Hit reaction:
 ///   Computes hit direction in dragon-local space, sets HitFB / HitLR floats
-///   and GotHit bool on the Animator. The Animator Controller has a transition
-///   from locomotion → hit blend tree conditioned on GotHit == true.
-///   The blend tree uses HitFB (front/back) and HitLR (left/right) to pick
-///   the directional hit animation.
+///   and GotHit bool on the Animator. Code-driven rotation lerps the dragon's
+///   transform toward the attacker during the hit (animation handles the visual flinch,
+///   code handles the actual facing change).
 ///
 /// Death:
 ///   1D blend tree using DeathLR only (left/right). Sets DeathLR float and IsDead bool.
-///   Front/back hits map to nearest side (front-left → left, etc.).
 ///
 /// Animator parameter setup:
 ///   Bool:  GotHit, IsDead
 ///   Float: HitFB, HitLR, DeathLR
+///
+/// Hit clip import settings:
+///   Root Transform Rotation  → Bake Into Pose: CHECKED
+///   Root Transform Pos (XZ)  → Bake Into Pose: CHECKED
+///   (All rotation/movement handled by code, not root motion)
 /// </summary>
 public class DragonDamageAnimator : NetworkBehaviour
 {
     [Header("References")]
     [SerializeField] private DamageReceiver damageReceiver;
     [SerializeField] private Animator animator;
+    [SerializeField] private DragonGroundController groundController;
+    [SerializeField] private AnimalGroundAlignment groundAlignment;
+    [SerializeField] private Rigidbody rb;
 
     [Header("Hit Reaction")]
-    [Tooltip("Seconds before GotHit resets to false. Set this SHORTER than the hit anim length " +
-             "so the Animator entry transition fires, but the exit transition uses Has Exit Time to " +
-             "wait for the clip to finish. HitFB/HitLR values are NOT zeroed — they persist until the next hit.")]
+    [Tooltip("Seconds before GotHit resets to false.")]
     [SerializeField] private float hitResetDelay = 0.1f;
+
+    [Header("Hit Rotation (Code-Driven)")]
+    [Tooltip("How fast the dragon rotates toward the attacker during the hit (degrees/sec).")]
+    [SerializeField] private float hitTurnSpeed = 360f;
+    [Tooltip("How long the code-driven rotation lasts. First half lerps toward attacker, " +
+             "second half holds. Should roughly match the hit clip length.")]
+    [SerializeField] private float hitRotationDuration = 0.8f;
 
     [Header("Debug")]
     [SerializeField] private bool debugLogging = false;
-    [Tooltip("Enable keypad testing: Hit = 8/2/4/6 (FB/LR), Death = 7(-1)/1(-0.5)/3(+0.5)/9(+1). REMOVE BEFORE SHIPPING.")]
+    [Tooltip("Enable keypad testing: Hit = 8/2/4/6 (FB/LR, supports diagonals), " +
+             "Death = 7(-1)/1(-0.5)/3(+0.5)/9(+1), Reset = 5. REMOVE BEFORE SHIPPING.")]
     [SerializeField] private bool debugKeypadTesting = false;
 
     // Animator param hashes
-    private static readonly int Hash_GotHit = Animator.StringToHash("GotHit");
-    private static readonly int Hash_HitFB  = Animator.StringToHash("HitFB");
-    private static readonly int Hash_HitLR  = Animator.StringToHash("HitLR");
-    private static readonly int Hash_IsDead = Animator.StringToHash("IsDead");
+    private static readonly int Hash_GotHit  = Animator.StringToHash("GotHit");
+    private static readonly int Hash_HitFB   = Animator.StringToHash("HitFB");
+    private static readonly int Hash_HitLR   = Animator.StringToHash("HitLR");
+    private static readonly int Hash_IsDead  = Animator.StringToHash("IsDead");
     private static readonly int Hash_DeathLR = Animator.StringToHash("DeathLR");
 
-    private bool _isDead = false;
+    private bool  _isDead = false;
     private float _hitResetTimer = -1f;
+
+    // Code-driven rotation state
+    private bool  _isRotatingFromHit = false;
+    private float _hitRotationTimer = -1f;
+    private Quaternion _hitTargetRotation;
 
     private void Awake()
     {
         if (damageReceiver == null) damageReceiver = GetComponentInParent<DamageReceiver>();
         if (animator == null) animator = GetComponentInChildren<Animator>();
+        if (groundController == null) groundController = GetComponentInParent<DragonGroundController>();
+        if (groundAlignment == null) groundAlignment = GetComponentInParent<AnimalGroundAlignment>();
+        if (rb == null) rb = GetComponentInParent<Rigidbody>();
     }
 
     public override void OnNetworkSpawn()
@@ -78,8 +98,6 @@ public class DragonDamageAnimator : NetworkBehaviour
     private void Update()
     {
         // Auto-reset GotHit after a short delay so the Animator transition can fire.
-        // HitFB/HitLR stay at their values — the exit transition uses Has Exit Time
-        // to wait for the clip to finish before returning to locomotion.
         if (_hitResetTimer > 0f)
         {
             _hitResetTimer -= Time.deltaTime;
@@ -89,32 +107,67 @@ public class DragonDamageAnimator : NetworkBehaviour
             }
         }
 
+        // Code-driven rotation toward attacker during hit
+        if (_isRotatingFromHit)
+        {
+            _hitRotationTimer -= Time.deltaTime;
+
+            if (_hitRotationTimer <= 0f)
+            {
+                // Hit rotation finished — unsuspend alignment and sync yaw
+                _isRotatingFromHit = false;
+
+                if (groundAlignment != null)
+                {
+                    float finalYaw = rb != null ? rb.rotation.eulerAngles.y : transform.eulerAngles.y;
+                    groundAlignment.SetYawImmediate(finalYaw);
+                    groundAlignment.SuspendAlignment = false;
+                }
+
+                if (groundController != null)
+                    groundController.SyncYawAfterHit();
+
+                if (debugLogging)
+                    Debug.Log($"[DragonDamageAnimator] Hit rotation finished, yaw={transform.eulerAngles.y:F1}°");
+            }
+            else if (rb != null)
+            {
+                // Lerp toward attacker during first half of the hit
+                float halfDuration = hitRotationDuration * 0.5f;
+                float remaining = _hitRotationTimer;
+                bool inTurnPhase = remaining > halfDuration;
+
+                if (inTurnPhase)
+                {
+                    float step = hitTurnSpeed * Time.deltaTime;
+                    Quaternion newRot = Quaternion.RotateTowards(rb.rotation, _hitTargetRotation, step);
+                    rb.MoveRotation(newRot);
+                }
+                // Second half: hold position, let animation play out
+            }
+        }
+
         // ── DEBUG KEYPAD TESTING — REMOVE BEFORE SHIPPING ──
         if (debugKeypadTesting && IsOwner && animator != null)
         {
-            // Hit: Numpad 8=front, 2=back, 4=left, 6=right
-            if (Input.GetKeyDown(KeyCode.Keypad8))
-                DebugTriggerHit(1f, 0f);   // front
-            if (Input.GetKeyDown(KeyCode.Keypad2))
-                DebugTriggerHit(-1f, 0f);  // back
-            if (Input.GetKeyDown(KeyCode.Keypad4))
-                DebugTriggerHit(0f, -1f);  // left
-            if (Input.GetKeyDown(KeyCode.Keypad6))
-                DebugTriggerHit(0f, 1f);   // right
+            float hitFB = 0f;
+            float hitLR = 0f;
+            bool hitPressed = false;
 
-            // Death: Numpad 7=-1, 1=-0.5, 3=+0.5, 9=+1
-            if (Input.GetKeyDown(KeyCode.Keypad7))
-                DebugTriggerDeath(-1f);
-            if (Input.GetKeyDown(KeyCode.Keypad1))
-                DebugTriggerDeath(-0.5f);
-            if (Input.GetKeyDown(KeyCode.Keypad3))
-                DebugTriggerDeath(0.5f);
-            if (Input.GetKeyDown(KeyCode.Keypad9))
-                DebugTriggerDeath(1f);
+            if (Input.GetKeyDown(KeyCode.Keypad8)) { hitFB += 1f; hitPressed = true; }
+            if (Input.GetKeyDown(KeyCode.Keypad2)) { hitFB -= 1f; hitPressed = true; }
+            if (Input.GetKeyDown(KeyCode.Keypad4)) { hitLR -= 1f; hitPressed = true; }
+            if (Input.GetKeyDown(KeyCode.Keypad6)) { hitLR += 1f; hitPressed = true; }
 
-            // Reset death: Numpad 5
-            if (Input.GetKeyDown(KeyCode.Keypad5))
-                ResetDeathState();
+            if (hitPressed)
+                DebugTriggerHit(hitFB, hitLR);
+
+            if (Input.GetKeyDown(KeyCode.Keypad7)) DebugTriggerDeath(-1f);
+            if (Input.GetKeyDown(KeyCode.Keypad1)) DebugTriggerDeath(-0.5f);
+            if (Input.GetKeyDown(KeyCode.Keypad3)) DebugTriggerDeath(0.5f);
+            if (Input.GetKeyDown(KeyCode.Keypad9)) DebugTriggerDeath(1f);
+
+            if (Input.GetKeyDown(KeyCode.Keypad5)) ResetDeathState();
         }
     }
 
@@ -123,10 +176,13 @@ public class DragonDamageAnimator : NetworkBehaviour
     private void DebugTriggerHit(float fb, float lr)
     {
         if (_isDead) return;
-        animator.SetFloat(Hash_HitFB, fb);
-        animator.SetFloat(Hash_HitLR, lr);
-        animator.SetBool(Hash_GotHit, true);
-        _hitResetTimer = hitResetDelay;
+
+        // For debug, simulate an attacker position based on FB/LR direction
+        Vector3 attackDir = transform.forward * fb + transform.right * lr;
+        Vector3 fakeAttackerPos = transform.position + attackDir.normalized * 5f;
+
+        TriggerHit(fb, lr, fakeAttackerPos);
+
         if (debugLogging)
             Debug.Log($"[DragonDamageAnimator] DEBUG Hit FB={fb:F1} LR={lr:F1}");
     }
@@ -135,12 +191,38 @@ public class DragonDamageAnimator : NetworkBehaviour
     {
         if (_isDead) return;
         _isDead = true;
+        _isRotatingFromHit = false;
         animator.SetFloat(Hash_DeathLR, lr);
         animator.SetBool(Hash_IsDead, true);
         _hitResetTimer = -1f;
         animator.SetBool(Hash_GotHit, false);
         if (debugLogging)
             Debug.Log($"[DragonDamageAnimator] DEBUG Death LR={lr:F1}");
+    }
+
+    // ─── Shared hit trigger logic ───
+
+    private void TriggerHit(float fb, float lr, Vector3 attackerWorldPos)
+    {
+        animator.SetFloat(Hash_HitFB, fb);
+        animator.SetFloat(Hash_HitLR, lr);
+        animator.SetBool(Hash_GotHit, true);
+        _hitResetTimer = hitResetDelay;
+
+        // Start code-driven rotation toward the attacker
+        Vector3 toAttacker = attackerWorldPos - transform.position;
+        toAttacker.y = 0f;
+
+        if (toAttacker.sqrMagnitude > 0.001f)
+        {
+            _hitTargetRotation = Quaternion.LookRotation(toAttacker.normalized);
+            _isRotatingFromHit = true;
+            _hitRotationTimer = hitRotationDuration;
+
+            // Suspend ground alignment so it doesn't fight our rotation
+            if (groundAlignment != null)
+                groundAlignment.SuspendAlignment = true;
+        }
     }
 
     // ─── Hit Reaction ───
@@ -150,12 +232,7 @@ public class DragonDamageAnimator : NetworkBehaviour
         if (_isDead || animator == null) return;
 
         ComputeDirection(attackerWorldPos, out float fb, out float lr);
-
-        animator.SetFloat(Hash_HitFB, fb);
-        animator.SetFloat(Hash_HitLR, lr);
-        animator.SetBool(Hash_GotHit, true);
-
-        _hitResetTimer = hitResetDelay;
+        TriggerHit(fb, lr, attackerWorldPos);
 
         if (debugLogging)
             Debug.Log($"[DragonDamageAnimator] Hit from FB={fb:F2} LR={lr:F2}");
@@ -167,13 +244,13 @@ public class DragonDamageAnimator : NetworkBehaviour
     {
         if (_isDead || animator == null) return;
         _isDead = true;
+        _isRotatingFromHit = false;
 
         float deathLR = ComputeDeathLR(attackerWorldPos);
 
         animator.SetFloat(Hash_DeathLR, deathLR);
         animator.SetBool(Hash_IsDead, true);
 
-        // Cancel any pending hit reset
         _hitResetTimer = -1f;
         animator.SetBool(Hash_GotHit, false);
 
@@ -181,14 +258,16 @@ public class DragonDamageAnimator : NetworkBehaviour
             Debug.Log($"[DragonDamageAnimator] Death LR={deathLR:F2}");
     }
 
-    // ─── Respawn (call from RespawnController or equivalent) ───
+    // ─── Respawn ───
 
-    /// <summary>
-    /// Resets death state so the dragon can animate again after respawn.
-    /// </summary>
     public void ResetDeathState()
     {
         _isDead = false;
+        _isRotatingFromHit = false;
+        _hitRotationTimer = -1f;
+
+        if (groundController != null)
+            groundController.SyncYawAfterHit();
 
         if (animator != null)
         {
@@ -202,12 +281,6 @@ public class DragonDamageAnimator : NetworkBehaviour
 
     // ─── Direction Computation ───
 
-    /// <summary>
-    /// Converts attacker world position into dragon-local front/back and left/right values.
-    /// FB:  +1 = hit from front, -1 = hit from back
-    /// LR:  +1 = hit from right, -1 = hit from left
-    /// Used by hit reaction (2D blend tree).
-    /// </summary>
     private void ComputeDirection(Vector3 attackerWorldPos, out float fb, out float lr)
     {
         Vector3 toAttacker = (attackerWorldPos - transform.position);
@@ -225,7 +298,6 @@ public class DragonDamageAnimator : NetworkBehaviour
         fb = localDir.z;
         lr = localDir.x;
 
-        // Normalize to dominant axis for cleaner blend tree selection
         float absFB = Mathf.Abs(fb);
         float absLR = Mathf.Abs(lr);
 
@@ -241,12 +313,6 @@ public class DragonDamageAnimator : NetworkBehaviour
         }
     }
 
-    /// <summary>
-    /// Computes death direction as left/right only (1D blend tree).
-    /// Returns raw localDir.x clamped to -1..1 so the blend tree can
-    /// interpolate across all clip positions (-1, -0.5, 0.5, 1).
-    /// If attacker is dead ahead or behind, picks a random side.
-    /// </summary>
     private float ComputeDeathLR(Vector3 attackerWorldPos)
     {
         Vector3 toAttacker = (attackerWorldPos - transform.position);
@@ -257,7 +323,6 @@ public class DragonDamageAnimator : NetworkBehaviour
 
         Vector3 localDir = transform.InverseTransformDirection(toAttacker.normalized);
 
-        // If attacker is almost exactly in front or behind, pick a random side
         if (Mathf.Abs(localDir.x) < 0.1f)
             return Random.value > 0.5f ? 0.5f : -0.5f;
 

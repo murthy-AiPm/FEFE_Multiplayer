@@ -5813,6 +5813,8 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   damageReceiver: {fileID: 7203970312165627060}
   animator: {fileID: 8804854363994131359}
+  groundController: {fileID: 3534620481540292934}
   hitResetDelay: 0.8
+  hitRootMotionDuration: 1
   debugLogging: 1
   debugKeypadTesting: 1
