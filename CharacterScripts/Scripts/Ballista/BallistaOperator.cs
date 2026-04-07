@@ -19,6 +19,7 @@ public class BallistaOperator : NetworkBehaviour
     [SerializeField] private ThirdPersonController thirdPersonController;
     [SerializeField] private CombatController combatController;
     [SerializeField] private InputController inputController;
+    [SerializeField] private WeaponManager weaponManager;
 
     [Header("Camera")]
     [SerializeField] private CinemachineCamera vcam;
@@ -62,11 +63,13 @@ public class BallistaOperator : NetworkBehaviour
         if (thirdPersonController == null) thirdPersonController = GetComponent<ThirdPersonController>();
         if (combatController == null) combatController = GetComponent<CombatController>();
         if (inputController == null) inputController = GetComponentInChildren<InputController>();
+        if (weaponManager == null) weaponManager = GetComponent<WeaponManager>();
     }
 
     private void Update()
     {
         if (!IsOwner || !IsSpawned) return;
+        if (PauseMenu.IsPaused) return;
 
         if (!IsOperating)
         {
@@ -159,12 +162,14 @@ public class BallistaOperator : NetworkBehaviour
         IsOperating = true;
         if (vcam != null && ballistaCube != null)
             vcam.Target.TrackingTarget = ballistaCube;
+
+        // Instantly holster any equipped weapon (no animation)
+        if (weaponManager != null && weaponManager.ActiveSlot != 0)
+            weaponManager.InstantEquip(0);
+
         // Disable normal player controls
         if (thirdPersonController != null) thirdPersonController.enabled = false;
         if (combatController != null) combatController.enabled = false;
-
-        // Play grip animation
-        // animancerDriver?.PlayBallistaGrip(); // wire up when anim is ready
 
         Debug.Log("[BallistaOperator] Mounted ballista");
     }

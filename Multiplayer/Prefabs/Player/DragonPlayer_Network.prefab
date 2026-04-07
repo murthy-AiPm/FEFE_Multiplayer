@@ -5375,11 +5375,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea760d79f5e1a8a4ab481764e01b1252, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DragonCinemachineModeSwitcher
+  ShowTopMostFoldoutHeaderGroup: 1
   flight: {fileID: 358013097769894201}
   grounding: {fileID: 0}
   groundCam: {fileID: 6588417174001191475}
   flightCam: {fileID: 9036942650903576649}
   diveCam: {fileID: 267100468536283623}
+  ownerActivePriority: 15
+  ownerInactivePriority: 5
+  nonOwnerPriority: 0
 --- !u!114 &8585177505333529245
 MonoBehaviour:
   m_ObjectHideFlags: 0

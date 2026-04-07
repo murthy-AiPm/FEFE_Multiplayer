@@ -146,7 +146,7 @@ public class AnimalGroundController : NetworkBehaviour
     private void Update()
     {
         // Gait toggle must be in Update — GetKeyDown is unreliable in FixedUpdate
-        if (IsOwner && Input.GetKeyDown(trotToggleKey))
+        if (IsOwner && !PauseMenu.IsPaused && Input.GetKeyDown(trotToggleKey))
             IsTrotMode = !IsTrotMode;
 
         if (Input.GetKeyDown(debugRespawnKey) && debugRespawnPoint != null)
@@ -293,9 +293,10 @@ public class AnimalGroundController : NetworkBehaviour
 
     private void HandleGroundMovement()
     {
-        float vertical = _ignoreInput ? 0f : Input.GetAxisRaw(forwardAxis);
-        float horizontal = _ignoreInput ? 0f : Input.GetAxisRaw(strafeAxis);
-        bool sprint = !_ignoreInput && Input.GetKey(sprintKey);
+        bool paused = PauseMenu.IsPaused;
+        float vertical = (_ignoreInput || paused) ? 0f : Input.GetAxisRaw(forwardAxis);
+        float horizontal = (_ignoreInput || paused) ? 0f : Input.GetAxisRaw(strafeAxis);
+        bool sprint = !_ignoreInput && !paused && Input.GetKey(sprintKey);
         Vector2 input = new Vector2(horizontal, vertical);
         bool hasInput = input.magnitude > 0.1f;
 
@@ -384,13 +385,13 @@ public class AnimalGroundController : NetworkBehaviour
         }
 
         // Jump animation (Space) - just plays animation, stays grounded
-        if (Input.GetKey(jumpKey) && groundingSystem.IsGrounded /*&& !isPlayingJump*/)
+        if (!paused && Input.GetKey(jumpKey) && groundingSystem.IsGrounded /*&& !isPlayingJump*/)
         {
             TriggerJumpAnimation();
         }
 
         // Takeoff (C) - lifts animal up (subclass handles flight handoff)
-        if (Input.GetKey(takeoffKey) && groundingSystem.IsGrounded)
+        if (!paused && Input.GetKey(takeoffKey) && groundingSystem.IsGrounded)
         {
             TriggerTakeoff();
         }

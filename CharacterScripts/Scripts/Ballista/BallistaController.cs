@@ -109,6 +109,7 @@ public class BallistaController : NetworkBehaviour
         // Only owner drives rotation and firing
         if (!IsOwner) return;
         if (!IsOccupied) return;
+        if (PauseMenu.IsPaused) return;
 
         HandleRotationInput();
         HandleFireInput();
