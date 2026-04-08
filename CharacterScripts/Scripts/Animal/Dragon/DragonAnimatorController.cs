@@ -110,14 +110,6 @@ public class DragonAnimatorController : AnimalAnimatorController
 
         if (animator == null) return;
 
-        // Zero out flight root motion params when in flight
-        if (flightController != null && flightController.IsFlightMode)
-        {
-            animator.SetFloat(thrustHash, 0f);
-            animator.SetFloat(yawHash, 0f);
-            animator.SetFloat(flightPitchHash, 0f);
-        }
-
         // ─── Flight state bools ──────────────────────────
         animator.SetBool(isHoveringHash,    netIsHovering.Value);
         animator.SetBool(isFlyingHash,      netIsFlying.Value);
@@ -129,12 +121,11 @@ public class DragonAnimatorController : AnimalAnimatorController
         // ─── Root motion flight params (Thrust, Yaw, Pitch, FlightMode) ──
         if (IsOwner)
         {
-            // Owner: flight controller writes Thrust/Yaw/Pitch directly to animator in its own Update,
-            // but FlightMode and Pitch also need to be set here for consistency
+            // Owner: flight controller writes Thrust/Yaw/Pitch directly to animator in its own Update.
+            // We only need to ensure FlightMode is set here.
             if (flightController != null)
             {
                 animator.SetBool(flightModeHash, flightController.IsFlightMode);
-                animator.SetFloat(flightPitchHash, flightController.FlightPitch);
             }
         }
         else
@@ -185,14 +176,14 @@ public class DragonAnimatorController : AnimalAnimatorController
         if (netFlightMode.Value != flightController.IsFlightMode)
             netFlightMode.Value = flightController.IsFlightMode;
 
-        // Read Thrust/Yaw/Pitch from what the owner wrote to the animator
-        float thrust = animator.GetFloat(thrustHash);
+        // Read Thrust/Yaw/Pitch directly from the flight controller (source of truth)
+        float thrust = flightController.FlightThrust;
         if (Mathf.Abs(netFlightThrust.Value - thrust) > FLOAT_EPSILON)
             netFlightThrust.Value = thrust;
         if (thrust == 0f && netFlightThrust.Value != 0f)
             netFlightThrust.Value = 0f;
 
-        float flightYaw = animator.GetFloat(yawHash);
+        float flightYaw = flightController.FlightYaw;
         if (Mathf.Abs(netFlightYaw.Value - flightYaw) > FLOAT_EPSILON)
             netFlightYaw.Value = flightYaw;
         if (flightYaw == 0f && netFlightYaw.Value != 0f)

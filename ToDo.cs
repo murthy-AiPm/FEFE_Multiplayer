@@ -173,4 +173,13 @@ DESIGN DECISIONS:
    damage still applies for all hits. Killing blow direction determines death animation.
  * Death direction: killing blow attacker position (Option A), not random.
 
+BUGS FOUND THIS SESSION:
+ * Dragon flight animations NOT syncing on remotes (pre-existing, NOT caused by hit/death changes).
+   Remote sees dragon struggling between falling and flight. Ground anims sync fine.
+   Needs investigation: DragonAnimatorController LateUpdate sets FlightMode/Thrust/Yaw/Pitch
+   on remotes from NetworkVariables, but something is overriding or the values aren't arriving.
+   Suspect: the zero-out block at top of LateUpdate, or UpdateFallAnimParams setting IsFalling=true.
+ * Dragon respawn inversion on remotes — partially fixed (applyRootMotion owner-only on respawn),
+   may still have edge cases. Loading screen added to respawn flow to mask sync delay.
+
  */

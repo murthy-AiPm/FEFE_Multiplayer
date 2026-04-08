@@ -1,7 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 
-/// <summary>//
+/// <summary>
 /// Bridge between DamageReceiver's animation events and the dragon's Mecanim Animator.
 /// Place on the dragon prefab alongside DamageReceiver.
 ///
@@ -321,6 +321,13 @@ public class DragonDamageAnimator : NetworkBehaviour
             animator.SetBool(Hash_GotHit, false);
             animator.SetFloat(Hash_HitFB, 0f);
             animator.SetFloat(Hash_HitLR, 0f);
+
+            // Force animator out of death state immediately.
+            // Without this, the death clip's bone rotations (pelvis/spine flip)
+            // linger on remotes because the transition back to locomotion
+            // doesn't play out correctly.
+            animator.Play("Locomotion", 0, 0f);
+            animator.Update(0f);
         }
     }
 

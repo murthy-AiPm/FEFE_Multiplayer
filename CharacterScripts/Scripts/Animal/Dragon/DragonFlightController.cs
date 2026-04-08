@@ -156,6 +156,8 @@ public class DragonFlightController : NetworkBehaviour
     private KeyCode exitFlightKey = KeyCode.C;
 
     // Public for animator controller to read
+    public float FlightThrust => _rmThrust;
+    public float FlightYaw => _rmYaw;
     public float FlightPitch => _rmPitch;
 
     private Vector3 currentVelocity;

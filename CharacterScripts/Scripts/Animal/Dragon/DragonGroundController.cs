@@ -82,10 +82,14 @@ public class DragonGroundController : AnimalGroundController
     {
         if (flightController == null || rb == null || groundingSystem == null) return;
 
-        bool inFlight = flightController.IsFlying ||
+        bool inFlight = (flightController.IsFlying ||
                         flightController.IsHoverMode ||
                         flightController.IsGliding ||
-                        flightController.IsDiving;
+                        flightController.IsDiving);
+
+        // On remotes, flight controller state is never updated — check synced animator param
+        if (!inFlight && animator != null && animator.GetBool("FlightMode"))
+            inFlight = true;
 
         bool groundExistsBelow = GroundExistsBelow();
         if (!inFlight && !groundingSystem.IsGrounded && !_isSwimming && !groundExistsBelow)
@@ -123,10 +127,16 @@ public class DragonGroundController : AnimalGroundController
 
     protected override bool HasGroundBelow()
     {
-        // During flight, the dragon is intentionally airborne — not falling
+        // During flight, the dragon is intentionally airborne — not falling.
+        // Owner checks flight controller state directly.
+        // Remotes check the synced FlightMode animator param (flight controller
+        // state is never updated on remotes because Update() early-returns).
         if (flightController != null &&
             (flightController.IsFlying || flightController.IsHoverMode ||
              flightController.IsGliding || flightController.IsDiving))
+            return true;
+
+        if (animator != null && animator.GetBool("FlightMode"))
             return true;
 
         return GroundExistsBelow();
