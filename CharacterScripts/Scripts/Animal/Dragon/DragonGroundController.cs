@@ -179,6 +179,21 @@ public class DragonGroundController : AnimalGroundController
         // Pitch can be read directly from the flight controller by the animator controller
     }
 
+    protected override bool CanTakeoff() => GaitSpeed >= 0.5f;
+
+    protected override void BeginTakeoff()
+    {
+        // Skip the base JumpUp + lift flow entirely.
+        // Just enter flight — FlightMode=true triggers Any State → FlyUp in the Animator.
+        if (animator != null)
+            animator.applyRootMotion = false;
+
+        if (groundingSystem != null)
+            groundingSystem.ResetFallingState();
+
+        OnTakeoffRequested();
+    }
+
     protected override void OnTakeoffRequested()
     {
         if (flightController != null)

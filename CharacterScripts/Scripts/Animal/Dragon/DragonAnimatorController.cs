@@ -18,12 +18,7 @@ public class DragonAnimatorController : AnimalAnimatorController
 
     // ─── Animator Parameter Hashes (Flight) ──────────────
 
-    private int isHoveringHash;
-    private int isFlyingHash;
-    private int isGlidingHash;
     private int isDivingHash;
-    private int airSpeedHash;
-    private int verticalSpeedHash;
     private int flightModeHash;
     private int thrustHash;
     private int yawHash;
@@ -38,17 +33,7 @@ public class DragonAnimatorController : AnimalAnimatorController
 
     // ─── NetworkVariables (Flight) ────────────────────────
 
-    private NetworkVariable<bool> netIsHovering = new NetworkVariable<bool>(
-        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<bool> netIsFlying = new NetworkVariable<bool>(
-        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<bool> netIsGliding = new NetworkVariable<bool>(
-        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<bool> netIsDiving = new NetworkVariable<bool>(
-        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<float> netAirSpeed = new NetworkVariable<float>(
-        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<float> netVerticalSpeed = new NetworkVariable<float>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     // ─── NetworkVariables (Root Motion Flight) ────────────
@@ -85,12 +70,7 @@ public class DragonAnimatorController : AnimalAnimatorController
             swimController = GetComponentInParent<DragonSwimController>();
 
         // Cache flight hashes
-        isHoveringHash    = Animator.StringToHash("IsHovering");
-        isFlyingHash      = Animator.StringToHash("IsFlying");
-        isGlidingHash     = Animator.StringToHash("IsGliding");
         isDivingHash      = Animator.StringToHash("IsDiving");
-        airSpeedHash      = Animator.StringToHash("AirSpeed");
-        verticalSpeedHash = Animator.StringToHash("VerticalSpeed");
         flightModeHash    = Animator.StringToHash("FlightMode");
         thrustHash        = Animator.StringToHash("Thrust");
         yawHash           = Animator.StringToHash("Yaw");
@@ -111,12 +91,7 @@ public class DragonAnimatorController : AnimalAnimatorController
         if (animator == null) return;
 
         // ─── Flight state bools ──────────────────────────
-        animator.SetBool(isHoveringHash,    netIsHovering.Value);
-        animator.SetBool(isFlyingHash,      netIsFlying.Value);
-        animator.SetBool(isGlidingHash,     netIsGliding.Value);
         animator.SetBool(isDivingHash,      netIsDiving.Value);
-        animator.SetFloat(airSpeedHash,     netAirSpeed.Value);
-        animator.SetFloat(verticalSpeedHash, netVerticalSpeed.Value);
 
         // ─── Root motion flight params (Thrust, Yaw, Pitch, FlightMode) ──
         if (IsOwner)
@@ -152,25 +127,8 @@ public class DragonAnimatorController : AnimalAnimatorController
         if (flightController == null) return;
 
         // ─── Flight state bools ──────────────────────────
-        if (netIsHovering.Value != flightController.IsHoverMode)
-            netIsHovering.Value = flightController.IsHoverMode;
-
-        if (netIsFlying.Value != flightController.IsFlying)
-            netIsFlying.Value = flightController.IsFlying;
-
-        if (netIsGliding.Value != flightController.IsGliding)
-            netIsGliding.Value = flightController.IsGliding;
-
         if (netIsDiving.Value != flightController.IsDiving)
             netIsDiving.Value = flightController.IsDiving;
-
-        float airSpeed = flightController.AirSpeed;
-        if (Mathf.Abs(netAirSpeed.Value - airSpeed) > FLOAT_EPSILON)
-            netAirSpeed.Value = airSpeed;
-
-        float vertSpeed = flightController.Velocity.y;
-        if (Mathf.Abs(netVerticalSpeed.Value - vertSpeed) > FLOAT_EPSILON)
-            netVerticalSpeed.Value = vertSpeed;
 
         // ─── Root motion flight params ───────────────────
         if (netFlightMode.Value != flightController.IsFlightMode)

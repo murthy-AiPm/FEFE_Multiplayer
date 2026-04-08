@@ -783,9 +783,6 @@ AnimatorStateTransition:
   - m_ConditionMode: 1
     m_ConditionEvent: IsGrounded
     m_EventTreshold: 0
-  - m_ConditionMode: 3
-    m_ConditionEvent: GaitSpeed
-    m_EventTreshold: 0.5
   - m_ConditionMode: 1
     m_ConditionEvent: FlightMode
     m_EventTreshold: 0
@@ -986,6 +983,12 @@ AnimatorStateTransition:
     m_EventTreshold: 0.001
   - m_ConditionMode: 6
     m_ConditionEvent: AttackMode
+    m_EventTreshold: 0
+  - m_ConditionMode: 2
+    m_ConditionEvent: FlightMode
+    m_EventTreshold: 0
+  - m_ConditionMode: 1
+    m_ConditionEvent: IsGrounded
     m_EventTreshold: 0
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: -581463877586572006}
@@ -1432,24 +1435,6 @@ AnimatorController:
     m_DefaultInt: 0
     m_DefaultBool: 0
     m_Controller: {fileID: 9100000}
-  - m_Name: IsHovering
-    m_Type: 4
-    m_DefaultFloat: 0
-    m_DefaultInt: 0
-    m_DefaultBool: 0
-    m_Controller: {fileID: 9100000}
-  - m_Name: IsFlying
-    m_Type: 4
-    m_DefaultFloat: 0
-    m_DefaultInt: 0
-    m_DefaultBool: 0
-    m_Controller: {fileID: 9100000}
-  - m_Name: IsGliding
-    m_Type: 4
-    m_DefaultFloat: 0
-    m_DefaultInt: 0
-    m_DefaultBool: 0
-    m_Controller: {fileID: 9100000}
   - m_Name: IsDiving
     m_Type: 4
     m_DefaultFloat: 0
@@ -1464,30 +1449,6 @@ AnimatorController:
     m_Controller: {fileID: 9100000}
   - m_Name: JumpForward
     m_Type: 9
-    m_DefaultFloat: 0
-    m_DefaultInt: 0
-    m_DefaultBool: 0
-    m_Controller: {fileID: 9100000}
-  - m_Name: AirSpeed
-    m_Type: 1
-    m_DefaultFloat: 0
-    m_DefaultInt: 0
-    m_DefaultBool: 0
-    m_Controller: {fileID: 9100000}
-  - m_Name: VerticalSpeed
-    m_Type: 1
-    m_DefaultFloat: 0
-    m_DefaultInt: 0
-    m_DefaultBool: 0
-    m_Controller: {fileID: 9100000}
-  - m_Name: ForwardSpeed
-    m_Type: 1
-    m_DefaultFloat: 0
-    m_DefaultInt: 0
-    m_DefaultBool: 0
-    m_Controller: {fileID: 9100000}
-  - m_Name: TurnSpeed
-    m_Type: 1
     m_DefaultFloat: 0
     m_DefaultInt: 0
     m_DefaultBool: 0
@@ -1735,52 +1696,52 @@ AnimatorStateMachine:
     m_Position: {x: 1360, y: 90, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 3188710124219323508}
-    m_Position: {x: 1150, y: -30, z: 0}
+    m_Position: {x: 1160, y: 10, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -1198378129795413594}
     m_Position: {x: 1650, y: 100, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -4497914419886623232}
-    m_Position: {x: 1180, y: 350, z: 0}
+    m_Position: {x: 1180, y: 370, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 2583899492730225760}
-    m_Position: {x: 1410, y: 280, z: 0}
+    m_Position: {x: 980, y: 500, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 4141183867955966109}
-    m_Position: {x: 1170, y: 210, z: 0}
+    m_Position: {x: 1180, y: 210, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -1399963727532032652}
-    m_Position: {x: 1650, y: 330, z: 0}
+    m_Position: {x: 1640, y: 370, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 8751866766311642947}
-    m_Position: {x: 1200, y: -190, z: 0}
+    m_Position: {x: 1210, y: -130, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -5724078582852516030}
-    m_Position: {x: 1530, y: -190, z: 0}
+    m_Position: {x: 1530, y: -150, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -3357881633524081082}
-    m_Position: {x: 1180, y: 560, z: 0}
+    m_Position: {x: 1410, y: 260, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 1903895745801787373}
     m_Position: {x: 450, y: -50, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -7775384813229687923}
-    m_Position: {x: 920, y: 560, z: 0}
+    m_Position: {x: 1540, y: 190, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -4722838965935315384}
-    m_Position: {x: 1450, y: -50, z: 0}
+    m_Position: {x: 1170, y: -230, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -8558996628839485438}
-    m_Position: {x: 920, y: 230, z: 0}
+    m_Position: {x: 810, y: 230, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -5601539483654224000}
-    m_Position: {x: 650, y: 350, z: 0}
+    m_Position: {x: 610, y: 360, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 685003040840475246}
-    m_Position: {x: 650, y: 470, z: 0}
+    m_Position: {x: 610, y: 460, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -6383115216600495199}
-    m_Position: {x: 640, y: 570, z: 0}
+    m_Position: {x: 610, y: 570, z: 0}
   m_ChildStateMachines: []
   m_AnyStateTransitions:
   - {fileID: 8847602472859983742}
@@ -1789,9 +1750,9 @@ AnimatorStateMachine:
   m_EntryTransitions: []
   m_StateMachineTransitions: {}
   m_StateMachineBehaviours: []
-  m_AnyStatePosition: {x: 940, y: 350, z: 0}
+  m_AnyStatePosition: {x: 830, y: 370, z: 0}
   m_EntryPosition: {x: 850, y: -90, z: 0}
-  m_ExitPosition: {x: 950, y: -220, z: 0}
+  m_ExitPosition: {x: 750, y: -210, z: 0}
   m_ParentStateMachinePosition: {x: 804, y: -84, z: 0}
   m_DefaultState: {fileID: -581463877586572006}
 --- !u!1101 &1460666833118024070
@@ -2512,6 +2473,12 @@ AnimatorStateTransition:
   - m_ConditionMode: 3
     m_ConditionEvent: GaitSpeed
     m_EventTreshold: 0.001
+  - m_ConditionMode: 1
+    m_ConditionEvent: IsGrounded
+    m_EventTreshold: 0
+  - m_ConditionMode: 2
+    m_ConditionEvent: FlightMode
+    m_EventTreshold: 0
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: -6623143889363264617}
   m_Solo: 0

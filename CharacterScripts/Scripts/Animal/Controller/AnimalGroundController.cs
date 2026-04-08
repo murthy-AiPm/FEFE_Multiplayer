@@ -391,9 +391,9 @@ public class AnimalGroundController : NetworkBehaviour
         }
 
         // Takeoff (C) - lifts animal up (subclass handles flight handoff)
-        if (!paused && Input.GetKey(takeoffKey) && groundingSystem.IsGrounded)
+        if (!paused && Input.GetKey(takeoffKey) && groundingSystem.IsGrounded && CanTakeoff())
         {
-            TriggerTakeoff();
+            BeginTakeoff();
         }
     }
 
@@ -419,11 +419,20 @@ public class AnimalGroundController : NetworkBehaviour
 
     private void TriggerJumpAnimation()
     {
+        EnterJumpState();
+        OnJumpTriggered();
+    }
+
+    /// <summary>
+    /// Sets jump state flags and fires the JumpForward trigger on all clients.
+    /// Protected so subclasses can initiate a forward jump (e.g. running takeoff).
+    /// </summary>
+    protected void EnterJumpState()
+    {
         isPlayingJump = true;
         IsPlayingJump = true;
-        //stateTimer = 0f;
+        stateTimer = 0f;
         JumpForwardServerRpc();
-        OnJumpTriggered();
     }
 
     [ServerRpc]
@@ -447,6 +456,7 @@ public class AnimalGroundController : NetworkBehaviour
             isPlayingJump = false;
             IsPlayingJump = false;
             stateTimer = 0f;
+            OnJumpAnimationComplete();
         }
     }
 
@@ -544,6 +554,25 @@ public class AnimalGroundController : NetworkBehaviour
     protected virtual void OnTakeoffRequested() { }
     protected virtual void OnLanded() { }
     protected virtual bool CanMoveWhileInactive() => false;
+
+    /// <summary>
+    /// Override in subclasses to gate takeoff on conditions (e.g. minimum gait speed).
+    /// Base returns true — takeoff always allowed.
+    /// </summary>
+    protected virtual bool CanTakeoff() => true;
+
+    /// <summary>
+    /// Called when C is pressed and CanTakeoff() returns true.
+    /// Default: old-style vertical takeoff (JumpUp + lift).
+    /// Override for custom takeoff (e.g. running forward jump into flight).
+    /// </summary>
+    protected virtual void BeginTakeoff() => TriggerTakeoff();
+
+    /// <summary>
+    /// Called when jump animation timer expires. Override in subclasses
+    /// to transition to flight after a forward jump takeoff.
+    /// </summary>
+    protected virtual void OnJumpAnimationComplete() { }
 
     /// <summary>
     /// Override in subclasses that have a ground-detection raycast.
