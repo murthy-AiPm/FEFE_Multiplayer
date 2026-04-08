@@ -5792,7 +5792,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VitalManager
   ShowTopMostFoldoutHeaderGroup: 1
   vitalDefinitions:
-  - {fileID: 11400000, guid: 0892d54e46a64254cb46d9d23dbe5f88, type: 2}
+  - {fileID: 11400000, guid: bbc04139ebb33514fab1afbb26621a02, type: 2}
   - {fileID: 11400000, guid: 495d4bd1698c00c46b5c031ad0a733b0, type: 2}
   tpsController: {fileID: 0}
   animalGroundingSystem: {fileID: -1625138427473786608}
@@ -5818,7 +5818,7 @@ MonoBehaviour:
   rb: {fileID: 4213641409919773835}
   hitResetDelay: 0.8
   hitTurnSpeed: 180
-  hitTurnOvershoot: 30
+  hitTurnOvershoot: -30
   hitRotationDuration: 0.8
   debugLogging: 1
   debugKeypadTesting: 1

@@ -159,8 +159,18 @@ PREFAB SETUP REQUIRED:
 
 TODO — REMOVE BEFORE SHIPPING:
  * DragonDamageAnimator.debugKeypadTesting — keypad debug input for testing hit/death anims
-   Hit: Numpad 8=front, 2=back, 4=left, 6=right
+   Hit: Numpad 8=front, 2=back, 4=left, 6=right (supports diagonals)
    Death: Numpad 7=LR-1, 1=LR-0.5, 3=LR+0.5, 9=LR+1
    Reset death: Numpad 5
+
+DESIGN DECISIONS:
+ * Root motion approach for hit rotation ABANDONED — hit clip root bone barely rotates,
+   rotation is baked into pelvis/spine bones. deltaRotation was ~0.2°/frame, not usable.
+ * Code-driven rotation adopted instead: rb.MoveRotation lerps toward attacker during hit,
+   AnimalGroundAlignment.SuspendAlignment prevents fighting, SetYawImmediate syncs on end.
+ * Hit clip import settings: Bake Into Pose CHECKED for Rotation, Pos Y, and Pos XZ.
+ * Multiple projectiles: first hit wins for animation (cooldown via _isRotatingFromHit guard),
+   damage still applies for all hits. Killing blow direction determines death animation.
+ * Death direction: killing blow attacker position (Option A), not random.
 
  */

@@ -152,6 +152,11 @@ public class RespawnController : NetworkBehaviour
         if (animancerDriver != null)
             animancerDriver.PlayRespawn();
 
+        // Reset dragon death state
+        var dragonDamageAnimator = GetComponentInChildren<DragonDamageAnimator>();
+        if (dragonDamageAnimator != null)
+            dragonDamageAnimator.ResetDeathState();
+
         // Restore FOV in case anything reset it
         if (vcam != null && cachedFOV > 0f)
         {

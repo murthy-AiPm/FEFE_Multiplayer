@@ -1,7 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 
-/// <summary>
+/// <summary>//
 /// Bridge between DamageReceiver's animation events and the dragon's Mecanim Animator.
 /// Place on the dragon prefab alongside DamageReceiver.
 ///
@@ -207,25 +207,26 @@ public class DragonDamageAnimator : NetworkBehaviour
 
     private void TriggerHit(float fb, float lr, Vector3 attackerWorldPos)
     {
+        // Set Animator params on all clients (this runs from ClientRpc)
         animator.SetFloat(Hash_HitFB, fb);
         animator.SetFloat(Hash_HitLR, lr);
         animator.SetBool(Hash_GotHit, true);
         _hitResetTimer = hitResetDelay;
 
-        // Start code-driven rotation toward the attacker
+        // Code-driven rotation only on owner — remotes get rotation via NetworkTransform
+        if (!IsOwner) return;
+
         Vector3 toAttacker = attackerWorldPos - transform.position;
         toAttacker.y = 0f;
 
         if (toAttacker.sqrMagnitude > 0.001f)
         {
-            // Calculate target rotation: face the attacker + overshoot
             Quaternion faceAttacker = Quaternion.LookRotation(toAttacker.normalized);
             _hitTargetRotation = faceAttacker * Quaternion.Euler(0f, hitTurnOvershoot, 0f);
 
             _isRotatingFromHit = true;
             _hitRotationTimer = hitRotationDuration;
 
-            // Suspend ground alignment so it doesn't fight our rotation
             if (groundAlignment != null)
                 groundAlignment.SuspendAlignment = true;
         }
@@ -236,6 +237,7 @@ public class DragonDamageAnimator : NetworkBehaviour
     private void HandleHitAnimation(Vector3 attackerWorldPos)
     {
         if (_isDead || animator == null) return;
+        if (_isRotatingFromHit) return; // Already playing a hit reaction — skip anim, damage still goes through
 
         ComputeDirection(attackerWorldPos, out float fb, out float lr);
         TriggerHit(fb, lr, attackerWorldPos);
@@ -259,6 +261,10 @@ public class DragonDamageAnimator : NetworkBehaviour
 
         _hitResetTimer = -1f;
         animator.SetBool(Hash_GotHit, false);
+
+        // Unsuspend alignment (owner only)
+        if (IsOwner && groundAlignment != null)
+            groundAlignment.SuspendAlignment = false;
 
         if (debugLogging)
             Debug.Log($"[DragonDamageAnimator] Death LR={deathLR:F2}");
