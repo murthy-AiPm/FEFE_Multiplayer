@@ -152,10 +152,10 @@ public class RespawnController : NetworkBehaviour
         if (animancerDriver != null)
             animancerDriver.PlayRespawn();
 
-        // Reset dragon death state
+        // Reset dragon death state — pass spawn yaw so alignment syncs correctly
         var dragonDamageAnimator = GetComponentInChildren<DragonDamageAnimator>();
         if (dragonDamageAnimator != null)
-            dragonDamageAnimator.ResetDeathState();
+            dragonDamageAnimator.ResetDeathState(spawnRot.eulerAngles.y);
 
         // Restore FOV in case anything reset it
         if (vcam != null && cachedFOV > 0f)

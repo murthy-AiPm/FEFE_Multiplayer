@@ -272,14 +272,30 @@ public class DragonDamageAnimator : NetworkBehaviour
 
     // ─── Respawn ───
 
-    public void ResetDeathState()
+    public void ResetDeathState(float? spawnYaw = null)
     {
         _isDead = false;
         _isRotatingFromHit = false;
         _hitRotationTimer = -1f;
 
-        if (groundController != null)
-            groundController.SyncYawAfterHit();
+        if (IsOwner)
+        {
+            if (groundAlignment != null)
+            {
+                float yaw = spawnYaw ?? (rb != null ? rb.rotation.eulerAngles.y : transform.eulerAngles.y);
+                groundAlignment.SetYawImmediate(yaw);
+                groundAlignment.SuspendAlignment = false;
+            }
+
+            if (groundController != null)
+            {
+                if (rb != null)
+                {
+                    rb.linearVelocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                }
+            }
+        }
 
         if (animator != null)
         {

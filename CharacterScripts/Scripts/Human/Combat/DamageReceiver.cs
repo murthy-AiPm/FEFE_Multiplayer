@@ -111,6 +111,21 @@ public class DamageReceiver : NetworkBehaviour
 
     // ─── Server-Authoritative Damage ───
 
+    /// <summary>
+    /// Called from server-side projectiles (e.g. BallistaArrow) that bypass HitboxController.
+    /// Applies damage via VitalManager and fires NotifyHitClientRpc so hit animations play.
+    /// MUST be called on the server only.
+    /// </summary>
+    public void ApplyProjectileDamage(float damage, Vector3 attackerPosition)
+    {
+        if (!IsServer) return;
+
+        if (vitalManager != null)
+            vitalManager.ApplyDamage("health", damage);
+
+        NotifyHitClientRpc(damage, attackerPosition, false, attackerPosition);
+    }
+
     [ServerRpc(RequireOwnership = false)]
     private void RequestDamageServerRpc(
         ulong attackerNetId,

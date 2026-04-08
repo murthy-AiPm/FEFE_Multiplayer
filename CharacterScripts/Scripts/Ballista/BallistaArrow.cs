@@ -94,12 +94,22 @@ public class BallistaArrow : NetworkBehaviour
         }
 
 
-        // Try to deal damage
-        var vitalManager = other.GetComponentInParent<VitalManager>();
-        if (vitalManager != null)
+        // Try to deal damage through DamageReceiver (triggers hit animations)
+        var damageReceiver = other.GetComponentInParent<DamageReceiver>();
+        if (damageReceiver != null)
         {
-            vitalManager.ApplyDamage("health", damage);
-            Debug.Log($"[BallistaArrow] Applied {damage} damage to {vitalManager.gameObject.name}");
+            damageReceiver.ApplyProjectileDamage(damage, transform.position);
+            Debug.Log($"[BallistaArrow] Applied {damage} damage via DamageReceiver to {damageReceiver.gameObject.name}");
+        }
+        else
+        {
+            // Fallback: no DamageReceiver, try VitalManager directly (no hit anim)
+            var vitalManager = other.GetComponentInParent<VitalManager>();
+            if (vitalManager != null)
+            {
+                vitalManager.ApplyDamage("health", damage);
+                Debug.Log($"[BallistaArrow] Applied {damage} damage directly to {vitalManager.gameObject.name} (no DamageReceiver)");
+            }
         }
 
         // Notify impact effects on clients
