@@ -110,6 +110,14 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private LayerMask groundAvoidanceMask = ~0;
     [SerializeField] private bool showGroundAvoidanceDebug = false;
 
+    [Header("Dive Crash Detection")]
+    [Tooltip("Raycast origin for forward ground detection during dives. Assign to the dragon's nose/head bone.")]
+    [SerializeField] private Transform noseRaycastOrigin;
+    [Tooltip("Pitch factor threshold to activate dive detection. GetPitchFactor returns -1 (full nose-down) to +1 (full nose-up).")]
+    [SerializeField] private float divePitchThreshold = 0.5f;
+    [Tooltip("How far the nose raycast looks ahead along transform.forward.")]
+    [SerializeField] private float diveGroundDetectDistance = 30f;
+
     [Header("UI/Stats")]
     [SerializeField] private FlightStats flightStats;
 
@@ -164,6 +172,7 @@ public class DragonFlightController : NetworkBehaviour
     private int yawHash;
     private int pitchHash;
     private int flightModeHash;
+    private int diveCrashLandHash;
     private KeyCode exitFlightKey = KeyCode.C;
 
     // Public for animator controller to read
@@ -193,6 +202,7 @@ public class DragonFlightController : NetworkBehaviour
         yawHash        = Animator.StringToHash("Yaw");
         pitchHash      = Animator.StringToHash("Pitch");
         flightModeHash = Animator.StringToHash("FlightMode");
+        diveCrashLandHash = Animator.StringToHash("DiveCrashLand");
 
         isActive = false;
         isHoverMode = false;
@@ -239,6 +249,7 @@ public class DragonFlightController : NetworkBehaviour
         }
 
         EnforceMinAltitude();
+        CheckDiveCrash();
 
         currentVelocity = rb != null ? rb.linearVelocity : (transform.position - lastPosition) / Mathf.Max(Time.deltaTime, 0.0001f);
         lastPosition = transform.position;
@@ -251,8 +262,10 @@ public class DragonFlightController : NetworkBehaviour
         isActive = true;
         isHoverMode = true;
         hoverRequested = true;
-        airSpeed = 0f;
+        airSpeed = flapBaseAirSpeed;
         stamina = maxStamina;
+        _rmThrust = 1f;
+        _rmThrustTarget = 1f;
 
         yaw = smoothedYaw = transform.eulerAngles.y;
         pitch = smoothedPitch = 0f;
@@ -275,6 +288,9 @@ public class DragonFlightController : NetworkBehaviour
         isActive = true;
         isHoverMode = false;
         hoverRequested = false;
+        airSpeed = flapBaseAirSpeed;
+        _rmThrust = 1f;
+        _rmThrustTarget = 1f;
 
         yaw = smoothedYaw = transform.eulerAngles.y;
         pitch = smoothedPitch = NormalizePitch(transform.eulerAngles.x);
@@ -640,6 +656,49 @@ public class DragonFlightController : NetworkBehaviour
         isHoverMode = hoverRequested && _rmThrust < 0.05f;
         isFlapping = _rmThrust > 0.05f;
         isGliding = !isHoverMode && !isFlapping;
+    }
+
+    // ─── Dive Crash Detection ─────────────────────────
+
+    /// <summary>
+    /// When the dragon is diving (pitch factor below -divePitchThreshold),
+    /// fires a raycast from the nose along transform.forward.
+    /// If ground is detected, forces a crash landing.
+    /// </summary>
+    private void CheckDiveCrash()
+    {
+        if (noseRaycastOrigin == null) return;
+
+        float pitchFactor = GetPitchFactor();
+        if (pitchFactor > -divePitchThreshold) return; // Not diving hard enough
+
+        Vector3 origin = noseRaycastOrigin.position;
+        Vector3 direction = noseRaycastOrigin.forward;
+
+        if (Physics.Raycast(origin, direction, out RaycastHit hit,
+            diveGroundDetectDistance, groundAvoidanceMask))
+        {
+            if (showGroundAvoidanceDebug)
+                Debug.DrawLine(origin, hit.point, Color.blue);
+
+            OnDiveCrashDetected(hit);
+        }
+        else if (showGroundAvoidanceDebug)
+        {
+            Debug.DrawRay(origin, direction * diveGroundDetectDistance, Color.blue);
+        }
+    }
+
+    /// <summary>
+    /// Called when the nose raycast detects ground during a dive.
+    /// Fires the DiveCrashLand trigger then exits flight mode.
+    /// </summary>
+    private void OnDiveCrashDetected(RaycastHit hit)
+    {
+        if (animator != null)
+            animator.SetTrigger(diveCrashLandHash);
+
+        ExitFlight();
     }
 
     // ─── Ground Avoidance ─────────────────────────────

@@ -765,6 +765,7 @@ Transform:
   - {fileID: 2771948476100260095}
   - {fileID: 4324119989276610389}
   - {fileID: 4588649731835392431}
+  - {fileID: 1273893278324755240}
   - {fileID: 8224128039964561155}
   - {fileID: 1188864427230914110}
   - {fileID: 4936590141484292012}
@@ -987,6 +988,37 @@ Transform:
   - {fileID: 1021994510393925314}
   m_Father: {fileID: 3086120407189549482}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2147138517973053635
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1273893278324755240}
+  m_Layer: 12
+  m_Name: noseraycast
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1273893278324755240
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2147138517973053635}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.5, y: 0.5, z: 0.5, w: 0.5}
+  m_LocalPosition: {x: -0.1, y: 0.66, z: -0.01}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2510481586615107530}
+  m_LocalEulerAnglesHint: {x: -90, y: 90, z: 0}
 --- !u!1 &2560130988734915919
 GameObject:
   m_ObjectHideFlags: 0
@@ -5417,6 +5449,9 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   showGroundAvoidanceDebug: 1
+  noseRaycastOrigin: {fileID: 1273893278324755240}
+  divePitchThreshold: -0.5
+  diveGroundDetectDistance: 1
   flightStats: {fileID: 0}
 --- !u!114 &6911377320127465881
 MonoBehaviour:
