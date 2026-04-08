@@ -5215,7 +5215,7 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
+  m_AnimatePhysics: 1
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
@@ -5410,6 +5410,13 @@ MonoBehaviour:
   pitchMaxAngle: 60
   rollAngle: 45
   rollSmoothTime: 0.4
+  groundAvoidanceOrigin: {fileID: 3423531768416006098}
+  minFlightAltitude: 3
+  groundAvoidanceRayDistance: 20
+  groundAvoidanceMask:
+    serializedVersion: 2
+    m_Bits: 1
+  showGroundAvoidanceDebug: 1
   flightStats: {fileID: 0}
 --- !u!114 &6911377320127465881
 MonoBehaviour:
@@ -5757,6 +5764,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RespawnController
   ShowTopMostFoldoutHeaderGroup: 1
   corpseVisibleTime: 3
+  respawnLoadingDuration: 1.5
 --- !u!114 &7203970312165627060
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -99,6 +99,17 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private float rollAngle = 45f;
     [SerializeField] private float rollSmoothTime = 0.15f;
 
+    [Header("Ground Avoidance")]
+    [Tooltip("Where the downward raycast originates. If unset, uses transform.position.")]
+    [SerializeField] private Transform groundAvoidanceOrigin;
+    [Tooltip("Minimum distance above terrain during flight. Dragon is pushed up if closer.")]
+    [SerializeField] private float minFlightAltitude = 3f;
+    [Tooltip("How far down to raycast for terrain detection.")]
+    [SerializeField] private float groundAvoidanceRayDistance = 20f;
+    [Tooltip("Layers that count as ground for avoidance.")]
+    [SerializeField] private LayerMask groundAvoidanceMask = ~0;
+    [SerializeField] private bool showGroundAvoidanceDebug = false;
+
     [Header("UI/Stats")]
     [SerializeField] private FlightStats flightStats;
 
@@ -226,6 +237,8 @@ public class DragonFlightController : NetworkBehaviour
             UpdateStaminaAndMovement(Time.deltaTime);
             UpdateUI();
         }
+
+        EnforceMinAltitude();
 
         currentVelocity = rb != null ? rb.linearVelocity : (transform.position - lastPosition) / Mathf.Max(Time.deltaTime, 0.0001f);
         lastPosition = transform.position;
@@ -611,6 +624,43 @@ public class DragonFlightController : NetworkBehaviour
         isHoverMode = hoverRequested && _rmThrust < 0.05f;
         isFlapping = _rmThrust > 0.05f;
         isGliding = !isHoverMode && !isFlapping;
+    }
+
+    // ─── Ground Avoidance ─────────────────────────────
+
+    /// <summary>
+    /// Pushes the dragon upward if it's too close to the terrain.
+    /// Instant snap — no smoothing so fast dives can't outrun the correction.
+    /// No rotation change. Camera stays unaffected.
+    /// </summary>
+    private void EnforceMinAltitude()
+    {
+        Vector3 origin = groundAvoidanceOrigin != null ? groundAvoidanceOrigin.position : transform.position;
+
+        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit,
+            groundAvoidanceRayDistance, groundAvoidanceMask))
+        {
+            float currentAltitude = hit.distance;
+
+            if (showGroundAvoidanceDebug)
+            {
+                // Green line = ray from origin to hit point
+                Debug.DrawLine(origin, hit.point, Color.green);
+                // Yellow line = minimum altitude threshold
+                Debug.DrawLine(origin, origin + Vector3.down * minFlightAltitude, Color.yellow);
+            }
+
+            if (currentAltitude < minFlightAltitude)
+            {
+                float pushUp = minFlightAltitude - currentAltitude;
+                ApplyMovement(Vector3.up * pushUp);
+            }
+        }
+        else if (showGroundAvoidanceDebug)
+        {
+            // Red line = ray found no ground within range
+            Debug.DrawRay(origin, Vector3.down * groundAvoidanceRayDistance, Color.red);
+        }
     }
 
     private static float NormalizePitch(float xDegrees)
