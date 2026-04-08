@@ -256,6 +256,14 @@ public class DragonFlightController : NetworkBehaviour
 
         yaw = smoothedYaw = transform.eulerAngles.y;
         pitch = smoothedPitch = 0f;
+        currentRollAngle = 0f;
+
+        // Suspend ground alignment so slope tilt doesn't carry into flight
+        if (groundAlignment != null)
+            groundAlignment.SuspendAlignment = true;
+
+        // Immediately apply a level rotation so slope tilt is cleared
+        ApplyRotation(Quaternion.Euler(0f, yaw, 0f));
 
         // Set FlightMode animator param
         if (animator != null)
@@ -270,6 +278,14 @@ public class DragonFlightController : NetworkBehaviour
 
         yaw = smoothedYaw = transform.eulerAngles.y;
         pitch = smoothedPitch = NormalizePitch(transform.eulerAngles.x);
+        currentRollAngle = 0f;
+
+        // Suspend ground alignment so slope tilt doesn't carry into flight
+        if (groundAlignment != null)
+            groundAlignment.SuspendAlignment = true;
+
+        // Immediately apply a level rotation (keep current pitch for glide entry)
+        ApplyRotation(Quaternion.Euler(pitch, yaw, 0f));
 
         // Set FlightMode animator param
         if (animator != null)
