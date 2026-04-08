@@ -262,6 +262,16 @@ public class DragonDamageAnimator : NetworkBehaviour
         _hitResetTimer = -1f;
         animator.SetBool(Hash_GotHit, false);
 
+        // Disable root motion so the death animation doesn't slide the rigidbody
+        animator.applyRootMotion = false;
+
+        // Freeze the rigidbody so it doesn't drift during corpse phase
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+
         // Unsuspend alignment (owner only)
         if (IsOwner && groundAlignment != null)
             groundAlignment.SuspendAlignment = false;
@@ -278,27 +288,34 @@ public class DragonDamageAnimator : NetworkBehaviour
         _isRotatingFromHit = false;
         _hitRotationTimer = -1f;
 
+        // Sync alignment on owner
         if (IsOwner)
         {
             if (groundAlignment != null)
             {
                 float yaw = spawnYaw ?? (rb != null ? rb.rotation.eulerAngles.y : transform.eulerAngles.y);
                 groundAlignment.SetYawImmediate(yaw);
-                groundAlignment.SuspendAlignment = false;
             }
 
-            if (groundController != null)
+            if (rb != null)
             {
-                if (rb != null)
-                {
-                    rb.linearVelocity = Vector3.zero;
-                    rb.angularVelocity = Vector3.zero;
-                }
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
             }
         }
 
+        // Unsuspend alignment on ALL clients
+        if (groundAlignment != null)
+            groundAlignment.SuspendAlignment = false;
+
+        // Re-enable root motion on OWNER only (was disabled on death).
+        // On remotes, applyRootMotion must stay false — otherwise Unity's default
+        // root motion fights NetworkTransform and inverts the dragon.
         if (animator != null)
         {
+            if (IsOwner)
+                animator.applyRootMotion = true;
+
             animator.SetBool(Hash_IsDead, false);
             animator.SetFloat(Hash_DeathLR, 0f);
             animator.SetBool(Hash_GotHit, false);

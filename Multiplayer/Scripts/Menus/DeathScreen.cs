@@ -94,6 +94,12 @@ public class DeathScreen : MonoBehaviour
     {
         if (_ownerNetObj == null) return;
 
+        // Show loading screen immediately and hide death screen
+        if (LoadingScreen.Instance != null)
+            LoadingScreen.Instance.Show("Respawning...");
+
+        Hide();
+
         var respawnController = _ownerNetObj.GetComponent<RespawnController>();
         if (respawnController != null)
             respawnController.RequestRespawnServerRpc(spawnPointIndex);

@@ -12,14 +12,14 @@ public class RespawnController : NetworkBehaviour
 {
     [Header("Respawn")]
     [SerializeField] private float corpseVisibleTime = 3f;
+    [Tooltip("Minimum time the loading screen stays visible during respawn.")]
+    [SerializeField] private float respawnLoadingDuration = 1.5f;
 
     private Coroutine _hideCorpseCoroutine;
+    private Coroutine _respawnLoadingCoroutine;
 
     // ─── Corpse Timer (called by DamageReceiver on death) ───
 
-    /// <summary>
-    /// Call from the server after death to start the corpse-hide countdown.
-    /// </summary>
     public void StartCorpseTimer()
     {
         if (!IsServer) return;
@@ -71,7 +71,7 @@ public class RespawnController : NetworkBehaviour
             spawnRot = Quaternion.identity;
         }
 
-        // Reset vitals if present (human has VitalManager, dragon may not yet)
+        // Reset vitals if present
         var vitalManager = GetComponent<VitalManager>();
         if (vitalManager != null)
             vitalManager.ResetAllVitals();
@@ -99,7 +99,6 @@ public class RespawnController : NetworkBehaviour
         float cachedFOV = vcam != null ? vcam.Lens.FieldOfView : 0f;
 
         // --- Teleport ---
-        // Disable physics body before moving
         var cc = GetComponentInChildren<CharacterController>();
         if (cc != null) cc.enabled = false;
 
@@ -117,10 +116,10 @@ public class RespawnController : NetworkBehaviour
         if (cc != null) cc.enabled = IsOwner;
         if (rb != null) rb.isKinematic = false;
 
-        // --- Re-enable controllers (owner only) ---
+        // --- Re-enable controllers ---
+        // Human controllers (owner only for input)
         if (IsOwner)
         {
-            // Human controllers
             var input = GetComponentInChildren<InputController>();
             if (input != null) input.enabled = true;
 
@@ -134,18 +133,18 @@ public class RespawnController : NetworkBehaviour
                 combat.ResetState();
             }
 
-            // Dragon controllers
-            var animalGround = GetComponentInChildren<AnimalGroundController>();
-            if (animalGround != null) animalGround.enabled = true;
-
-            var flightController = GetComponentInChildren<DragonFlightController>();
-            if (flightController != null) flightController.enabled = true;
-
             // Close death screen
             var deathScreen = FindObjectOfType<DeathScreen>();
             if (deathScreen != null)
                 deathScreen.Hide();
         }
+
+        // Dragon/animal controllers — re-enable on ALL clients (they were disabled on all in death)
+        var animalGround = GetComponentInChildren<AnimalGroundController>();
+        if (animalGround != null) animalGround.enabled = true;
+
+        var flightController = GetComponentInChildren<DragonFlightController>();
+        if (flightController != null) flightController.enabled = true;
 
         // Play respawn animation (human)
         var animancerDriver = GetComponentInChildren<RuleAnimancerDriver>();
@@ -157,12 +156,30 @@ public class RespawnController : NetworkBehaviour
         if (dragonDamageAnimator != null)
             dragonDamageAnimator.ResetDeathState(spawnRot.eulerAngles.y);
 
-        // Restore FOV in case anything reset it
+        // Hide loading screen after a delay (owner only)
+        if (IsOwner)
+        {
+            if (_respawnLoadingCoroutine != null)
+                StopCoroutine(_respawnLoadingCoroutine);
+            _respawnLoadingCoroutine = StartCoroutine(HideLoadingScreenAfterDelay());
+        }
+
+        // Restore FOV
         if (vcam != null && cachedFOV > 0f)
         {
             var lens = vcam.Lens;
             lens.FieldOfView = cachedFOV;
             vcam.Lens = lens;
         }
+    }
+
+    private System.Collections.IEnumerator HideLoadingScreenAfterDelay()
+    {
+        yield return new WaitForSeconds(respawnLoadingDuration);
+
+        if (LoadingScreen.Instance != null)
+            LoadingScreen.Instance.Hide();
+
+        _respawnLoadingCoroutine = null;
     }
 }
