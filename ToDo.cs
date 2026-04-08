@@ -176,10 +176,44 @@ DESIGN DECISIONS:
 BUGS FOUND THIS SESSION:
  * Dragon flight animations NOT syncing on remotes (pre-existing, NOT caused by hit/death changes).
    Remote sees dragon struggling between falling and flight. Ground anims sync fine.
-   Needs investigation: DragonAnimatorController LateUpdate sets FlightMode/Thrust/Yaw/Pitch
-   on remotes from NetworkVariables, but something is overriding or the values aren't arriving.
-   Suspect: the zero-out block at top of LateUpdate, or UpdateFallAnimParams setting IsFalling=true.
+   — FIXED 7th-April-2026, see session below.
  * Dragon respawn inversion on remotes — partially fixed (applyRootMotion owner-only on respawn),
    may still have edge cases. Loading screen added to respawn flow to mask sync delay.
+   — FIXED 7th-April-2026: root cause was missing death→idle transition in Animator Controller.
+     Bone rotations from death clip persisted on remotes because there was no transition back.
+
+═══════════════════════════════════════════════════════════════
+ 7th-April-2026 — Flight Sync Fix + Respawn Inversion Fix
+═══════════════════════════════════════════════════════════════
+
+FLIGHT ANIMATION SYNC — FIXED:
+ * Root cause: Two issues preventing flight animations from syncing to remotes.
+ * Issue 1 — Zero-out block in DragonAnimatorController.LateUpdate() was clobbering
+   Thrust/Yaw/Pitch to zero on the owner’s animator every frame during flight.
+   UpdateNetworkVariables was reading from the animator (after clobber) instead of
+   from the flight controller. Fix: removed zero-out block, added FlightThrust and
+   FlightYaw public properties to DragonFlightController, UpdateNetworkVariables now
+   reads directly from the flight controller (same pattern as ground reads from
+   groundController.GaitSpeed/TurnAngle).
+ * Issue 2 — On remotes, DragonFlightController.Update() early-returns (!IsOwner),
+   so IsFlying/IsHoverMode/IsGliding/IsDiving are never set. DragonGroundController
+   .HasGroundBelow() and OnFixedGroundUpdate() checked those flags to suppress falling.
+   Result: remote sees IsFalling=true fighting FlightMode=true. Fix: added fallback
+   check for animator.GetBool("FlightMode") (synced via NetworkVariable) in both methods.
+
+KEY FILES CHANGED:
+ * DragonFlightController.cs — added FlightThrust, FlightYaw public properties
+ * DragonAnimatorController.cs — removed zero-out block, UpdateNetworkVariables reads
+   from flight controller directly, owner LateUpdate only sets FlightMode (not Pitch)
+ * DragonGroundController.cs — HasGroundBelow() and OnFixedGroundUpdate() now also
+   check animator FlightMode param for remote clients
+
+RESPAWN INVERSION — FIXED:
+ * Root cause: Dragon Animator Controller had no transition from death state back to
+   idle/locomotion. When IsDead was reset to false on respawn, the bone rotations from
+   the death clip (pelvis/spine flip) persisted on remotes. Root transform was fine
+   (confirmed via debug logs), inversion was purely at bone level.
+ * Fix: Added death→idle transition in the Animator Controller (done by Murthy in editor).
+ * Debug logs added to RespawnController for diagnosis, then removed after fix confirmed.
 
  */

@@ -161,15 +161,6 @@ public class RespawnController : NetworkBehaviour
         if (dragonDamageAnimator != null)
             dragonDamageAnimator.ResetDeathState(spawnRot.eulerAngles.y);
 
-        // ── DEBUG: Track respawn rotation over several frames ──
-        Debug.Log($"[RespawnDebug] Frame={Time.frameCount} IsOwner={IsOwner} " +
-                  $"spawnRot={spawnRot.eulerAngles} transform.rot={transform.rotation.eulerAngles} " +
-                  $"rb.rot={(rb != null ? rb.rotation.eulerAngles.ToString() : "null")} " +
-                  $"applyRootMotion={(GetComponentInChildren<Animator>()?.applyRootMotion)} " +
-                  $"groundCtrl.enabled={(GetComponentInChildren<AnimalGroundController>()?.enabled)} " +
-                  $"alignSuspended={(GetComponentInChildren<AnimalGroundAlignment>()?.SuspendAlignment)}");
-        StartCoroutine(DebugRespawnFrames());
-
         // Hide loading screen after a delay (owner only)
         if (IsOwner)
         {
@@ -195,25 +186,5 @@ public class RespawnController : NetworkBehaviour
             LoadingScreen.Instance.Hide();
 
         _respawnLoadingCoroutine = null;
-    }
-
-    // ── DEBUG: Remove before shipping ──
-    private System.Collections.IEnumerator DebugRespawnFrames()
-    {
-        var rb = GetComponentInChildren<Rigidbody>();
-        var animator = GetComponentInChildren<Animator>();
-        var groundCtrl = GetComponentInChildren<AnimalGroundController>();
-        var alignment = GetComponentInChildren<AnimalGroundAlignment>();
-
-        for (int i = 0; i < 10; i++)
-        {
-            yield return null; // wait one frame
-            Debug.Log($"[RespawnDebug] Frame+{i + 1}={Time.frameCount} IsOwner={IsOwner} " +
-                      $"transform.rot={transform.rotation.eulerAngles} " +
-                      $"rb.rot={(rb != null ? rb.rotation.eulerAngles.ToString() : "null")} " +
-                      $"applyRootMotion={(animator != null ? animator.applyRootMotion.ToString() : "null")} " +
-                      $"groundCtrl.enabled={(groundCtrl != null ? groundCtrl.enabled.ToString() : "null")} " +
-                      $"alignSuspended={(alignment != null ? alignment.SuspendAlignment.ToString() : "null")}");
-        }
     }
 }
