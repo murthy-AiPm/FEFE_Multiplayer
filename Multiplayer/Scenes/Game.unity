@@ -78651,6 +78651,63 @@ Transform:
   m_Children: []
   m_Father: {fileID: 541777148655995783}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &9204704240934801138
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2433289964815193664, guid: 020d2753718afc147ab00c7632644c75, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 66.45
+      objectReference: {fileID: 0}
+    - target: {fileID: 2433289964815193664, guid: 020d2753718afc147ab00c7632644c75, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 203.96
+      objectReference: {fileID: 0}
+    - target: {fileID: 2433289964815193664, guid: 020d2753718afc147ab00c7632644c75, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 516.0045
+      objectReference: {fileID: 0}
+    - target: {fileID: 2433289964815193664, guid: 020d2753718afc147ab00c7632644c75, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 2433289964815193664, guid: 020d2753718afc147ab00c7632644c75, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2433289964815193664, guid: 020d2753718afc147ab00c7632644c75, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2433289964815193664, guid: 020d2753718afc147ab00c7632644c75, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 2433289964815193664, guid: 020d2753718afc147ab00c7632644c75, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2433289964815193664, guid: 020d2753718afc147ab00c7632644c75, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2433289964815193664, guid: 020d2753718afc147ab00c7632644c75, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 6537733714141924316, guid: 020d2753718afc147ab00c7632644c75, type: 3}
+      propertyPath: m_Name
+      value: Flamethrower
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 020d2753718afc147ab00c7632644c75, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -78678,3 +78735,4 @@ SceneRoots:
   - {fileID: 302126151}
   - {fileID: 289522472}
   - {fileID: 8928914267257785909}
+  - {fileID: 9204704240934801138}

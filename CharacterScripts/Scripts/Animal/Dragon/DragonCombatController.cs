@@ -29,6 +29,7 @@ public class DragonCombatController : NetworkBehaviour
     [Header("References")]
     [SerializeField] private Animator animator;
     [SerializeField] private AnimalGroundController groundController;
+    [SerializeField] private DragonFlightController flightController;
     [SerializeField] private Rigidbody rb;
     [SerializeField] private Transform cam;
 
@@ -250,7 +251,7 @@ public class DragonCombatController : NetworkBehaviour
         else if (_attackMode == 2)
         {
             // Fire breath mode: hold left-click for continuous fire
-            bool wantFire = Input.GetKey(primaryKey) && IsStationary();
+            bool wantFire = Input.GetKey(primaryKey) && CanFireBreath();
             if (wantFire != _isBreathingFire)
             {
                 _isBreathingFire = wantFire;
@@ -269,6 +270,13 @@ public class DragonCombatController : NetworkBehaviour
     private bool IsStationary()
     {
         return groundController == null || groundController.GaitSpeed <= stationaryThreshold;
+    }
+
+    /// <summary>True when fire breath is allowed — stationary on ground OR in flight.</summary>
+    private bool CanFireBreath()
+    {
+        if (flightController != null && flightController.IsFlightMode) return true;
+        return IsStationary();
     }
 
     [ServerRpc]
@@ -361,8 +369,11 @@ public class DragonCombatController : NetworkBehaviour
 
     private void UpdateHeadAngles(bool isStationary)
     {
+        bool inFlight = flightController != null && flightController.IsFlightMode;
+        bool canTrack = isStationary || inFlight;
+
         // ── YAW ──
-        if (!isStationary || _attackMode == 0)
+        if (!canTrack || _attackMode == 0)
         {
             // Moving or no attack mode — return head to zero
             _targetHeadYaw = 0f;
@@ -406,7 +417,7 @@ public class DragonCombatController : NetworkBehaviour
         }
 
         // ── PITCH (fire breath mode only) ──
-        if (_attackMode == 2 && isStationary && cam != null)
+        if (_attackMode == 2 && canTrack && cam != null)
         {
             float cameraPitch = cam.eulerAngles.x;
             if (cameraPitch > 180f) cameraPitch -= 360f;

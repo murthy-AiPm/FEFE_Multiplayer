@@ -230,4 +230,65 @@ WATER ENTRY FLICKER — DEFERRED:
    re-enters before the grace period expires (~0.3s). This way animation bobbing doesn't
    break swimming.
 
+──────────────────────────────────────────────────────────────────────
+9th-April-2026 — Death-from-Sky System & Late-Join Animation Sync
+──────────────────────────────────────────────────────────────────────
+
+DEATH-FROM-SKY SYSTEM — IMPLEMENTED:
+ Three-phase death when killed during flight: hit in sky → fall → hit ground.
+
+ Phase 1 — HandleDeathAnimation (DragonDamageAnimator.cs):
+ * Calls flightController.ExitFlight() to stop flight processing
+ * Immediately re-sets FlightMode=true on animator so ground death anim doesn't fight
+   flight death anim (ExitFlight clears it, we put it back)
+ * Sets _deathFalling=true to start gravity + ground detection
+ * Disables root motion, zeros velocity
+
+ Phase 2 — Death fall gravity (DragonDamageAnimator.cs):
+ * ApplyDeathFallGravity() — uses rb.linearVelocity = Vector3.down * velocity
+   (not rb.MovePosition which clipped through terrain)
+ * Lives in DragonDamageAnimator because DragonGroundController is disabled during death
+ * Inspector fields: deathFallGravity (20), deathFallMaxSpeed (40)
+
+ Phase 3 — Ground detection (DragonDamageAnimator.cs):
+ * CheckDeathFallGround() — raycasts Vector3.down from deathFallRayOrigin
+ * When ground detected within deathFallGroundDistance (3m), fires DeathImpact trigger
+   via ServerRpc/ClientRpc
+ * OnDrawGizmos draws red ray + sphere always visible in Scene view
+
+ FlightMode during death:
+ * DragonAnimatorController.LateUpdate() now skips FlightMode write when IsDead=true
+   (both owner and remotes) so DragonDamageAnimator has full control
+ * FlightMode stays true entire death sequence, only cleared in ResetDeathState (respawn)
+
+ DragonFlightController death guard:
+ * Added IsDead check to !isActive branch in Update() — skips crash detection,
+   C-key re-entry, and _diveCrashTriggered reset when dead
+
+ ExitFlight() made public for DragonDamageAnimator access.
+
+ KEY FILES CHANGED:
+ * DragonDamageAnimator.cs — death fall gravity, ground detection, DeathImpact RPC,
+   FlightMode management, OnDrawGizmos, VitalManager ref, DebugInstantKill (Numpad 5),
+   ResetDeathState moved to Numpad 0
+ * DragonFlightController.cs — ExitFlight() public, IsDead guard in !isActive branch,
+   C-key exit sets _diveCrashTriggered=true to suppress false crash detection
+ * DragonAnimatorController.cs — IsDead guard on FlightMode write in LateUpdate
+ * DragonGroundController.cs — comment update in OnAnimatorMove
+
+ ANIMATOR SETUP NEEDED:
+ * Add DeathImpact Trigger parameter
+ * Create transition: flight death fall state → fly dead ground state,
+   condition: DeathImpact trigger, no exit time
+
+LATE-JOIN ANIMATION SYNC — IMPLEMENTED:
+ * Problem: When client joins and host dragon is already flying, client sees idle animation.
+   Syncs only after a state transition occurs.
+ * Root cause: Unity Animator starts in default state (Idle). NetworkVariables have correct
+   values but Animator needs animator.Play() to jump directly to the correct state.
+ * Fix: Override OnNetworkSpawn in DragonAnimatorController. When a late-joining remote
+   client spawns and netFlightMode.Value is true, calls animator.Play("BlendFly") and sets
+   all flight params (Thrust, Yaw, Pitch). Same for swimming → animator.Play("SwimmingLocomotion").
+ * KEY FILE: DragonAnimatorController.cs — OnNetworkSpawn override with late-join state forcing
+
  */

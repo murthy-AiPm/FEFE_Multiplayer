@@ -5713,6 +5713,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   animator: {fileID: 8804854363994131359}
   groundController: {fileID: 3534620481540292934}
+  flightController: {fileID: 358013097769894201}
   rb: {fileID: 4213641409919773835}
   cam: {fileID: 0}
   spineBone: {fileID: 6834720352492521363}
@@ -5728,7 +5729,7 @@ MonoBehaviour:
   neck2YawWeight: 0.3
   neck3YawWeight: 0.3
   neck4YawWeight: 0.35
-  fireBreathVFXPrefab: {fileID: 793755792036113438, guid: 8e4d4ead1c6f9c84da15c1be3e9dea0c, type: 3}
+  fireBreathVFXPrefab: {fileID: 8633606787089566904, guid: a8d98dde5bcdf7842bfd564669dda97f, type: 3}
   fireBreathSpawnPoint: {fileID: 1664271699964925404}
   meleeAttackVFXPrefab: {fileID: 0}
   meleeAttackSpawnPoint: {fileID: 0}
@@ -5828,11 +5829,14 @@ MonoBehaviour:
   flightController: {fileID: 0}
   groundAlignment: {fileID: -1836003133199254669}
   rb: {fileID: 4213641409919773835}
+  vitalManager: {fileID: 0}
   deathFallRayOrigin: {fileID: 1796149574813655039}
   deathFallGroundDistance: 4
   deathFallGroundMask:
     serializedVersion: 2
     m_Bits: 1
+  deathFallGravity: 20
+  deathFallMaxSpeed: 40
   hitResetDelay: 0.8
   hitTurnSpeed: 180
   hitTurnOvershoot: -30
