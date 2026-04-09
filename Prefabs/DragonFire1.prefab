@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 8511329783041442729}
   - component: {fileID: 8367643276602554439}
   m_Layer: 0
-  m_Name: FlamethrowerFire
+  m_Name: DragonFire1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
