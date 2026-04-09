@@ -5395,53 +5395,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DragonFlightController
   ShowTopMostFoldoutHeaderGroup: 1
   rb: {fileID: 4213641409919773835}
-  useRigidbodyMovement: 0
   groundingSystem: {fileID: -1625138427473786608}
   groundController: {fileID: 0}
   groundAlignment: {fileID: 0}
   animator: {fileID: 0}
   cam: {fileID: 0}
-  useFlightRootMotion: 1
   thrustIncrement: 0.25
   thrustSmoothSpeed: 2
   thrustMin: -1
   thrustMax: 1
   yawSmoothing: 5
-  pitchMouseSensitivity: 3
   pitchSmoothSpeed: 3
   horizontalAxis: Horizontal
-  verticalAxis: Vertical
-  hoverAxis: Hover
   toggleHoverKey: 304
   invertY: 0
   pauseInputKey: 112
-  rotationSmoothTime: 0.25
-  flightMouseSensitivityX: 60
-  flightMouseSensitivityY: 40
   flightPitchClamp: 70
-  flightKeyYawSpeed: 60
-  hoverMouseSensitivityX: 120
-  hoverMouseSensitivityY: 80
-  hoverPitchClamp: 20
-  hoverKeyYawSpeed: 70
-  hoverVerticalSpeed: 3
-  hoverYawRate: 80
-  hoverPitchRate: 0
-  maxStamina: 100
-  staminaDrainRate: 10
-  staminaRegenRate: 15
-  staminaResumeThreshold: 50
-  flapBaseAirSpeed: 50
-  flapMaxAirSpeed: 60
-  flapAcceleration: 5
-  glideMinAirSpeed: 5
-  glideAirSpeedLossRate: 2
-  glideDescentSpeed: 1.5
-  pitchStaminaDrainMultiplier: 1.5
-  pitchAirSpeedBoost: 3
-  pitchMaxAngle: 60
-  rollAngle: 45
-  rollSmoothTime: 0.4
   groundAvoidanceOrigin: {fileID: 3423531768416006098}
   minFlightAltitude: 3
   groundAvoidanceRayDistance: 20
@@ -5452,7 +5421,6 @@ MonoBehaviour:
   noseRaycastOrigin: {fileID: 1273893278324755240}
   divePitchThreshold: -0.5
   diveGroundDetectDistance: 1
-  flightStats: {fileID: 0}
 --- !u!114 &6911377320127465881
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5498,11 +5466,10 @@ MonoBehaviour:
   groundController: {fileID: 0}
   isWalkingDebug: 0
   isRunningDebug: 0
-  airSpeed: 0
+  thrust: 0
   groundDistance: 0
-  rollAngle: 0
+  flightPitch: 0
   velocity: {x: 0, y: 0, z: 0}
-  stamina: 0
 --- !u!114 &1088980159674376588
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5706,7 +5673,7 @@ MonoBehaviour:
   verticalSpeed: 4
   maxPitchAngle: 40
   pitchSmoothing: 3
-  surfaceBuoyancy: 2
+  surfaceBuoyancy: 0
 --- !u!136 &1376780217212887459
 CapsuleCollider:
   m_ObjectHideFlags: 0

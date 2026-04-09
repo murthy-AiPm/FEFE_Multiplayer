@@ -197,7 +197,7 @@ public class DragonGroundController : AnimalGroundController
     protected override void OnTakeoffRequested()
     {
         if (flightController != null)
-            flightController.RequestHover();
+            flightController.EnterFlight();
         else
             Debug.LogWarning("[DragonGroundController] OnTakeoffRequested: no DragonFlightController found.");
     }

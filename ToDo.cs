@@ -216,4 +216,18 @@ RESPAWN INVERSION — FIXED:
  * Fix: Added death→idle transition in the Animator Controller (done by Murthy in editor).
  * Debug logs added to RespawnController for diagnosis, then removed after fix confirmed.
 
+WATER ENTRY FLICKER — DEFERRED:
+ * Issue: When dragon exits flight (C key) and free-falls into water, the IsFalling animator
+   param flickers between true/false, causing free-fall and swim-enter anims to fight.
+ * Root cause: OnTriggerExit in AnimalSwimSystem instantly nukes _isInWaterState when the
+   dragon's collider briefly exits the water trigger volume (due to swim animation or buoyancy
+   pushing the dragon above the trigger boundary). Dragon falls back in, re-enters trigger,
+   but IsInWater waits for waterEntryDepthThreshold (0.3m) again. Cycle repeats = flicker.
+ * Workaround: Set surfaceBuoyancy to 0 on DragonSwimController. Prevents the vertical push
+   that causes the collider to exit the water trigger.
+ * Proper fix: Add a grace period timer to AnimalSwimSystem.OnTriggerExit so brief exits
+   don't immediately clear swim state. OnTriggerEnter cancels the pending exit if the dragon
+   re-enters before the grace period expires (~0.3s). This way animation bobbing doesn't
+   break swimming.
+
  */

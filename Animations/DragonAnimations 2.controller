@@ -368,7 +368,7 @@ AnimatorStateTransition:
   m_Name: 
   m_Conditions:
   - m_ConditionMode: 1
-    m_ConditionEvent: IsSwimming
+    m_ConditionEvent: WaterEnter
     m_EventTreshold: 0
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: -1399963727532032652}
@@ -1739,10 +1739,10 @@ AnimatorStateMachine:
     m_Position: {x: 980, y: 500, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 4141183867955966109}
-    m_Position: {x: 1180, y: 210, z: 0}
+    m_Position: {x: 1180, y: 190, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -1399963727532032652}
-    m_Position: {x: 1640, y: 370, z: 0}
+    m_Position: {x: 1660, y: 370, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 8751866766311642947}
     m_Position: {x: 1210, y: -130, z: 0}
@@ -1751,7 +1751,7 @@ AnimatorStateMachine:
     m_Position: {x: 1530, y: -150, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -3357881633524081082}
-    m_Position: {x: 1410, y: 260, z: 0}
+    m_Position: {x: 1380, y: 270, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 1903895745801787373}
     m_Position: {x: 450, y: -50, z: 0}

@@ -145,12 +145,19 @@ public class DragonFlightController : NetworkBehaviour
         if (!IsOwner) return;
         if (PauseMenu.IsPaused) return;
 
-        // Free-fall crash detection — runs even when flight mode is off
+        // Not in flight mode
         if (!isActive)
         {
             // Reset crash flag once grounded so it can trigger again next fall
             if (groundingSystem != null && groundingSystem.IsGrounded)
                 _diveCrashTriggered = false;
+
+            // Re-enter flight from free-fall (C key)
+            if (Input.GetKeyDown(exitFlightKey))
+            {
+                EnterFlight();
+                return;
+            }
 
             CheckFreeFallCrash();
             return;
@@ -172,30 +179,13 @@ public class DragonFlightController : NetworkBehaviour
         lastPosition = transform.position;
     }
 
-    // ─── Public API for GroundController Handoff ─────────
+    // ─── Public API ──────────────────────────────────────
 
-    public void RequestHover()
-    {
-        isActive = true;
-        isHoverMode = true;
-        hoverRequested = true;
-        _rmThrust = 1f;
-        _rmThrustTarget = 1f;
-
-        // Suspend ground alignment so slope tilt doesn't carry into flight
-        if (groundAlignment != null)
-            groundAlignment.SuspendAlignment = true;
-
-        // Immediately apply a level rotation so slope tilt is cleared
-        float yaw = transform.eulerAngles.y;
-        ApplyRotation(Quaternion.Euler(0f, yaw, 0f));
-
-        // Set FlightMode animator param
-        if (animator != null)
-            animator.SetBool(flightModeHash, true);
-    }
-
-    public void RequestGlide()
+    /// <summary>
+    /// Enter flight mode. Called from ground takeoff and from free-fall re-entry.
+    /// Levels the dragon, suspends ground alignment, starts at full thrust.
+    /// </summary>
+    public void EnterFlight()
     {
         isActive = true;
         isHoverMode = false;
@@ -207,10 +197,20 @@ public class DragonFlightController : NetworkBehaviour
         if (groundAlignment != null)
             groundAlignment.SuspendAlignment = true;
 
-        // Immediately apply a level rotation (keep current pitch for glide entry)
+        // Level the dragon — clear any slope tilt or free-fall rotation
         float yaw = transform.eulerAngles.y;
-        float pitch = NormalizePitch(transform.eulerAngles.x);
-        ApplyRotation(Quaternion.Euler(pitch, yaw, 0f));
+        ApplyRotation(Quaternion.Euler(0f, yaw, 0f));
+
+        // Kill any falling velocity so flight starts clean
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+
+        // Reset grounding so IsFalling doesn't fight FlightMode
+        if (groundingSystem != null)
+            groundingSystem.ResetFallingState();
 
         // Set FlightMode animator param
         if (animator != null)
