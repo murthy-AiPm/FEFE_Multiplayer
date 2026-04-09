@@ -155,8 +155,9 @@ public class DragonFlightController : NetworkBehaviour
             if (groundingSystem != null && groundingSystem.IsGrounded)
                 _diveCrashTriggered = false;
 
-            // Re-enter flight from free-fall (C key) — not while swimming
-            if (Input.GetKeyDown(exitFlightKey) && !IsSwimmingActive())
+            // Re-enter flight from free-fall (C key) — not while swimming or grounded
+            if (Input.GetKeyDown(exitFlightKey) && !IsSwimmingActive()
+                && groundingSystem != null && !groundingSystem.IsGrounded)
             {
                 EnterFlight();
                 return;
@@ -360,7 +361,7 @@ public class DragonFlightController : NetworkBehaviour
                 Debug.DrawLine(origin, hit.point, Color.blue);
 
             if (animator != null)
-                animator.SetTrigger(diveCrashLandHash);
+                DiveCrashLandServerRpc();
 
             _diveCrashTriggered = true;
         }
@@ -407,10 +408,21 @@ public class DragonFlightController : NetworkBehaviour
     /// </summary>
     private void OnDiveCrashDetected(RaycastHit hit)
     {
+        DiveCrashLandServerRpc();
+        ExitFlight();
+    }
+
+    [ServerRpc]
+    private void DiveCrashLandServerRpc()
+    {
+        DiveCrashLandClientRpc();
+    }
+
+    [ClientRpc]
+    private void DiveCrashLandClientRpc()
+    {
         if (animator != null)
             animator.SetTrigger(diveCrashLandHash);
-
-        ExitFlight();
     }
 
     // ─── Ground Avoidance ─────────────────────────────

@@ -1,7 +1,7 @@
 using UnityEngine;
 using Unity.Netcode;
 
-/// <summary>//
+/// <summary>
 /// Dragon animator controller. Extends AnimalAnimatorController with flight,
 /// swim, and root motion flight NetworkVariables and Animator parameter sync.
 /// 
@@ -19,6 +19,7 @@ public class DragonAnimatorController : AnimalAnimatorController
     // ─── Animator Parameter Hashes (Flight) ──────────────
 
     private int isDivingHash;
+    private int isFallingHash;
     private int flightModeHash;
     private int thrustHash;
     private int yawHash;
@@ -34,6 +35,8 @@ public class DragonAnimatorController : AnimalAnimatorController
     // ─── NetworkVariables (Flight) ────────────────────────
 
     private NetworkVariable<bool> netIsDiving = new NetworkVariable<bool>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<bool> netIsFalling = new NetworkVariable<bool>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     // ─── NetworkVariables (Root Motion Flight) ────────────
@@ -71,6 +74,7 @@ public class DragonAnimatorController : AnimalAnimatorController
 
         // Cache flight hashes
         isDivingHash      = Animator.StringToHash("IsDiving");
+        isFallingHash     = Animator.StringToHash("IsFalling");
         flightModeHash    = Animator.StringToHash("FlightMode");
         thrustHash        = Animator.StringToHash("Thrust");
         yawHash           = Animator.StringToHash("Yaw");
@@ -92,6 +96,10 @@ public class DragonAnimatorController : AnimalAnimatorController
 
         // ─── Flight state bools ──────────────────────────
         animator.SetBool(isDivingHash,      netIsDiving.Value);
+
+        // ─── IsFalling (synced so remotes don't compute locally with stale FlightMode) ──
+        if (!IsOwner)
+            animator.SetBool(isFallingHash, netIsFalling.Value);
 
         // ─── Root motion flight params (Thrust, Yaw, Pitch, FlightMode) ──
         if (IsOwner)
@@ -129,6 +137,14 @@ public class DragonAnimatorController : AnimalAnimatorController
         // ─── Flight state bools ──────────────────────────
         if (netIsDiving.Value != flightController.IsDiving)
             netIsDiving.Value = flightController.IsDiving;
+
+        // ─── IsFalling (owner is the authority) ──────────
+        if (animator != null)
+        {
+            bool falling = animator.GetBool(isFallingHash);
+            if (netIsFalling.Value != falling)
+                netIsFalling.Value = falling;
+        }
 
         // ─── Root motion flight params ───────────────────
         if (netFlightMode.Value != flightController.IsFlightMode)
