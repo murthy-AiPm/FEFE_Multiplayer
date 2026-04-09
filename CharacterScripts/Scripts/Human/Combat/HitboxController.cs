@@ -63,14 +63,15 @@ public class HitboxController : MonoBehaviour
 
     /// <summary>
     /// Call after weapon is instantiated and attached to a character.
+    /// Set useInspectorShape=true to keep the Inspector values instead of overriding from WeaponData.
     /// </summary>
-    public void Initialize(NetworkObject owner, WeaponData weapon)
+    public void Initialize(NetworkObject owner, WeaponData weapon, bool useInspectorShape = false)
     {
         _ownerNetObj = owner;
         _weaponData = weapon;
 
-        // Override shape from weapon data if available
-        if (weapon != null)
+        // Override shape from weapon data if available (skip if caller wants Inspector values)
+        if (weapon != null && !useInspectorShape)
         {
             length = weapon.hitboxLength;
             radius = weapon.hitboxRadius;

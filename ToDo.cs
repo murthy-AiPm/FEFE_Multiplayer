@@ -291,4 +291,46 @@ LATE-JOIN ANIMATION SYNC — IMPLEMENTED:
    all flight params (Thrust, Yaw, Pitch). Same for swimming → animator.Play("SwimmingLocomotion").
  * KEY FILE: DragonAnimatorController.cs — OnNetworkSpawn override with late-join state forcing
 
+ DRAGON COMBAT — HITBOXES, FIRE DAMAGE & FIRE PROPAGATION (TODO):
+
+ 1. Dragon Melee Hitbox Colliders on Paws:
+    * Add trigger colliders to each paw bone (front-left, front-right) on the dragon rig
+    * Colliders should be enabled only during melee attack animation window
+      (use animation events or AnimatorStateInfo tag check to toggle)
+    * On trigger enter, check for IDamageable interface on the hit object
+    * Apply melee damage amount (Inspector-tweakable) and knockback direction
+    * Network: damage dealt server-side, VFX/SFX via ClientRpc
+    * Consider adding colliders to tail and jaw for future bite/tail-swipe attacks
+
+ 2. Fire Breath Collision & Damage:
+    * Fire breath particles need a collision callback to detect what they hit
+      Options: ParticleSystem collision module (OnParticleCollision), or a
+      cone-shaped trigger collider attached to the mouth that activates while
+      IsBreathingFire is true
+    * Cone collider approach is simpler for networking — server checks overlap,
+      applies damage-over-time (DOT) to everything inside the cone each tick
+    * Damage amount per tick and tick rate should be Inspector-tweakable
+    * Fire damage should stack or refresh a burn timer on the target
+    * VFX: hit targets should show fire/scorch particle effect on contact point
+    * Network: server owns damage calculation, clients see VFX/SFX via ClientRpc
+
+ 3. Setting Things on Fire (Fire Propagation System):
+    * Burnable interface (IBurnable) for anything that can catch fire:
+      - Players (human characters): catch fire, take DOT, can spread to nearby players
+      - NPCs: catch fire, panic state change, take DOT, eventually die
+      - Animals (horses, other dragons?): catch fire, flee behavior, take DOT
+      - GameObjects & buildings: catch fire with visual stages
+        (intact → burning → charred/destroyed), using pre-authored states
+    * Each burnable object tracks: isBurning, burnTimer, burnDamagePerTick
+    * Fire spread: burning objects can ignite nearby burnables within a radius
+      (proximity check on a timer, not every frame)
+    * Visual: fire VFX prefab instantiated/parented to burning object,
+      scaled to object size, destroyed when burn ends
+    * Audio: looping fire crackle sound on burning objects via proximity sound system
+    * Buildings/structures: use pre-authored destruction states
+      (intact → burning → collapsed), trigger NavMesh Obstacle carving for rubble
+    * Network: burn state is a NetworkVariable (bool + timer), server authoritative,
+      VFX/SFX spawned via ClientRpc
+    * Extinguishing: fire stops after burnDuration expires, or if entering water
+
  */

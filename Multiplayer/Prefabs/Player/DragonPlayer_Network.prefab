@@ -442,6 +442,61 @@ Transform:
   m_Children: []
   m_Father: {fileID: 972056705430346640}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &886773593096513152
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1198817995921798464}
+  - component: {fileID: 7420983997430810754}
+  m_Layer: 12
+  m_Name: LPawWeapon
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1198817995921798464
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 886773593096513152}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8698988640449351899}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7420983997430810754
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 886773593096513152}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc669fd04bbc31f4baf10a9807acdccb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HitboxController
+  length: 2.07
+  radius: 1.01
+  offset: {x: -0.14, y: -2.17, z: 0}
+  castDirection: 0
+  hitLayers:
+    serializedVersion: 2
+    m_Bits: 9437248
+  maxHitsPerSwing: 5
+  drawGizmos: 1
+  activeColor: {r: 1, g: 0, b: 0, a: 1}
+  inactiveColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!1 &1006838726280363496
 GameObject:
   m_ObjectHideFlags: 0
@@ -2182,6 +2237,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1.0000001, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 8496552928018730749}
   - {fileID: 2479650730422058102}
   - {fileID: 7576695163548887300}
   - {fileID: 7718880321568075836}
@@ -3086,6 +3142,61 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5542695949420376264}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &5913978209638373934
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8496552928018730749}
+  - component: {fileID: 2470699562406505562}
+  m_Layer: 12
+  m_Name: RPawWeapon
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8496552928018730749
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5913978209638373934}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4256486713556236103}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2470699562406505562
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5913978209638373934}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc669fd04bbc31f4baf10a9807acdccb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HitboxController
+  length: 2.07
+  radius: 1.01
+  offset: {x: -0.14, y: -2.17, z: 0}
+  castDirection: 0
+  hitLayers:
+    serializedVersion: 2
+    m_Bits: 9437248
+  maxHitsPerSwing: 5
+  drawGizmos: 1
+  activeColor: {r: 1, g: 0, b: 0, a: 1}
+  inactiveColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!1 &5931412905496939859
 GameObject:
   m_ObjectHideFlags: 0
@@ -3430,6 +3541,7 @@ Transform:
   m_LocalScale: {x: 0.99999994, y: 1.0000001, z: 0.99999994}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 1198817995921798464}
   - {fileID: 972056705430346640}
   - {fileID: 4704671030807955798}
   - {fileID: 8799782516789946655}
@@ -5201,6 +5313,7 @@ GameObject:
   - component: {fileID: 7203970312165627060}
   - component: {fileID: -7962891897276758031}
   - component: {fileID: -2412709369278423379}
+  - component: {fileID: 2950672030226061884}
   m_Layer: 3
   m_Name: DragonPlayer_Network
   m_TagString: Untagged
@@ -5843,3 +5956,21 @@ MonoBehaviour:
   hitRotationDuration: 0.8
   debugLogging: 1
   debugKeypadTesting: 1
+--- !u!114 &2950672030226061884
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f09edd8bccab80468e258c780b5579d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DragonHitboxManager
+  ShowTopMostFoldoutHeaderGroup: 1
+  dragonNetObj: {fileID: -5407344593502133865}
+  leftPawHitbox: {fileID: 7420983997430810754}
+  rightPawHitbox: {fileID: 2470699562406505562}
+  pawWeaponData: {fileID: 11400000, guid: 138b0ae589a0d29458f277a1cc324aed, type: 2}
+  debugLogging: 1
