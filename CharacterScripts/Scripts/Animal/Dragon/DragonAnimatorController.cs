@@ -89,6 +89,35 @@ public class DragonAnimatorController : AnimalAnimatorController
         swimVerticalHash = Animator.StringToHash("SwimVertical");
     }
 
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+
+        // Late-join fix: if the dragon is already in flight or swimming when a
+        // remote client spawns, force the Animator into the correct state.
+        // Without this, the Animator starts in its default state (Idle) and waits
+        // for a transition that never fires because the parameters are already set.
+        if (!IsOwner && animator != null)
+        {
+            if (netFlightMode.Value)
+            {
+                animator.Play("BlendFly");
+                animator.SetBool(flightModeHash, true);
+                animator.SetFloat(thrustHash, netFlightThrust.Value);
+                animator.SetFloat(yawHash, netFlightYaw.Value);
+                animator.SetFloat(flightPitchHash, netFlightPitch.Value);
+            }
+            else if (netIsSwimming.Value)
+            {
+                animator.Play("SwimmingLocomotion");
+                animator.SetBool(isSwimmingHash, true);
+                animator.SetFloat(swimSpeedHash, netSwimSpeed.Value);
+                animator.SetFloat(swimTurnHash, netSwimTurn.Value);
+                animator.SetFloat(swimVerticalHash, netSwimVertical.Value);
+            }
+        }
+    }
+
     protected override void LateUpdate()
     {
         // Ground params handled by base
