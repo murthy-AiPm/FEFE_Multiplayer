@@ -162,9 +162,8 @@ public class DragonGroundController : AnimalGroundController
             return;
         }
 
-        // During hit reaction — skip base root motion so the dragon doesn't slide.
-        // Code-driven rotation is handled by DragonDamageAnimator via rb.MoveRotation.
-
+        // When dead, DragonGroundController is disabled so this won't run.
+        // Normal ground root motion handling.
         base.OnAnimatorMove();
     }
 

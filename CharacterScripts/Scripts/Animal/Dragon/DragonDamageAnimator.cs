@@ -29,8 +29,21 @@ public class DragonDamageAnimator : NetworkBehaviour
     [SerializeField] private DamageReceiver damageReceiver;
     [SerializeField] private Animator animator;
     [SerializeField] private DragonGroundController groundController;
+    [SerializeField] private DragonFlightController flightController;
     [SerializeField] private AnimalGroundAlignment groundAlignment;
     [SerializeField] private Rigidbody rb;
+
+    [Header("Death Fall Ground Detection")]
+    [Tooltip("Raycast origin for detecting ground during death fall. Uses transform.position if unset.")]
+    [SerializeField] private Transform deathFallRayOrigin;
+    [Tooltip("How close to the ground before triggering the impact animation.")]
+    [SerializeField] private float deathFallGroundDistance = 3f;
+    [Tooltip("Layers that count as ground for death fall detection.")]
+    [SerializeField] private LayerMask deathFallGroundMask = ~0;
+    [Tooltip("Gravity acceleration during death fall (units/sec²).")]
+    [SerializeField] private float deathFallGravity = 20f;
+    [Tooltip("Maximum fall speed during death fall.")]
+    [SerializeField] private float deathFallMaxSpeed = 40f;
 
     [Header("Hit Reaction")]
     [Tooltip("Seconds before GotHit resets to false.")]
@@ -58,8 +71,11 @@ public class DragonDamageAnimator : NetworkBehaviour
     private static readonly int Hash_HitLR   = Animator.StringToHash("HitLR");
     private static readonly int Hash_IsDead  = Animator.StringToHash("IsDead");
     private static readonly int Hash_DeathLR = Animator.StringToHash("DeathLR");
+    private static readonly int Hash_DeathImpact = Animator.StringToHash("DeathImpact");
 
     private bool  _isDead = false;
+    private bool  _deathFalling = false; // falling from sky after death
+    private float _deathFallVelocity = 0f;
     private float _hitResetTimer = -1f;
 
     // Code-driven rotation state
@@ -72,6 +88,7 @@ public class DragonDamageAnimator : NetworkBehaviour
         if (damageReceiver == null) damageReceiver = GetComponentInParent<DamageReceiver>();
         if (animator == null) animator = GetComponentInChildren<Animator>();
         if (groundController == null) groundController = GetComponentInParent<DragonGroundController>();
+        if (flightController == null) flightController = GetComponentInParent<DragonFlightController>();
         if (groundAlignment == null) groundAlignment = GetComponentInParent<AnimalGroundAlignment>();
         if (rb == null) rb = GetComponentInParent<Rigidbody>();
     }
@@ -148,6 +165,13 @@ public class DragonDamageAnimator : NetworkBehaviour
                 }
                 // Second half: hold position, let animation play out
             }
+        }
+
+        // Death fall — apply gravity and check for ground
+        if (_deathFalling && IsOwner)
+        {
+            ApplyDeathFallGravity();
+            CheckDeathFallGround();
         }
 
         // ── DEBUG KEYPAD TESTING — REMOVE BEFORE SHIPPING ──
@@ -265,7 +289,14 @@ public class DragonDamageAnimator : NetworkBehaviour
         // Disable root motion so the death animation doesn't slide the rigidbody
         animator.applyRootMotion = false;
 
-        // Freeze the rigidbody so it doesn't drift during corpse phase
+        // Exit flight mode if airborne — fake gravity will pull the dragon down
+        if (IsOwner && flightController != null && flightController.IsFlightMode)
+        {
+            flightController.ExitFlight();
+            _deathFalling = true;
+        }
+
+        // Freeze horizontal velocity but allow vertical (gravity)
         if (rb != null)
         {
             rb.linearVelocity = Vector3.zero;
@@ -277,7 +308,7 @@ public class DragonDamageAnimator : NetworkBehaviour
             groundAlignment.SuspendAlignment = false;
 
         if (debugLogging)
-            Debug.Log($"[DragonDamageAnimator] Death LR={deathLR:F2}");
+            Debug.Log($"[DragonDamageAnimator] Death LR={deathLR:F2}, deathFalling={_deathFalling}");
     }
 
     // ─── Respawn ───
@@ -285,6 +316,8 @@ public class DragonDamageAnimator : NetworkBehaviour
     public void ResetDeathState(float? spawnYaw = null)
     {
         _isDead = false;
+        _deathFalling = false;
+        _deathFallVelocity = 0f;
         _isRotatingFromHit = false;
         _hitRotationTimer = -1f;
 
@@ -372,5 +405,72 @@ public class DragonDamageAnimator : NetworkBehaviour
             return Random.value > 0.5f ? 0.5f : -0.5f;
 
         return Mathf.Clamp(localDir.x, -1f, 1f);
+    }
+
+    // ─── Death Fall ───────────────────────────────────
+
+    /// <summary>
+    /// Applies fake gravity during death fall. Uses rb.MovePosition
+    /// since DragonGroundController is disabled during death.
+    /// </summary>
+    private void ApplyDeathFallGravity()
+    {
+        if (rb == null) return;
+
+        _deathFallVelocity += deathFallGravity * Time.deltaTime;
+        _deathFallVelocity = Mathf.Min(_deathFallVelocity, deathFallMaxSpeed);
+        rb.MovePosition(rb.position + Vector3.down * _deathFallVelocity * Time.deltaTime);
+    }
+
+    // ─── Death Fall Ground Detection ─────────────────────
+
+    /// <summary>
+    /// Ground check during death fall using transform.up.
+    /// When the dragon is inverted, transform.up points toward the ground.
+    /// Fires DeathImpact trigger when ground is close enough.
+    /// </summary>
+    private void CheckDeathFallGround()
+    {
+        Vector3 origin = deathFallRayOrigin != null ? deathFallRayOrigin.position : transform.position;
+        Vector3 direction = transform.up;
+
+        if (Physics.Raycast(origin, direction, out RaycastHit hit,
+            deathFallGroundDistance, deathFallGroundMask))
+        {
+            Debug.DrawLine(origin, hit.point, Color.red);
+
+            _deathFalling = false;
+            DeathImpactServerRpc();
+
+            if (debugLogging)
+                Debug.Log($"[DragonDamageAnimator] Death fall hit ground at distance={hit.distance:F1}");
+        }
+        else
+        {
+            Debug.DrawRay(origin, direction * deathFallGroundDistance, Color.red);
+        }
+    }
+
+    [ServerRpc]
+    private void DeathImpactServerRpc()
+    {
+        DeathImpactClientRpc();
+    }
+
+    [ClientRpc]
+    private void DeathImpactClientRpc()
+    {
+        if (animator != null)
+            animator.SetTrigger(Hash_DeathImpact);
+    }
+
+    private void OnDrawGizmos()
+    {
+        Vector3 origin = deathFallRayOrigin != null ? deathFallRayOrigin.position : transform.position;
+        Vector3 direction = transform.up;
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawRay(origin, direction * deathFallGroundDistance);
+        Gizmos.DrawSphere(origin, 0.15f);
     }
 }

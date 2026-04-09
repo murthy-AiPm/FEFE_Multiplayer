@@ -5766,7 +5766,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RespawnController
   ShowTopMostFoldoutHeaderGroup: 1
-  corpseVisibleTime: 3
+  corpseVisibleTime: 100
   respawnLoadingDuration: 1.5
 --- !u!114 &7203970312165627060
 MonoBehaviour:
@@ -5825,8 +5825,14 @@ MonoBehaviour:
   damageReceiver: {fileID: 7203970312165627060}
   animator: {fileID: 8804854363994131359}
   groundController: {fileID: 3534620481540292934}
+  flightController: {fileID: 0}
   groundAlignment: {fileID: -1836003133199254669}
   rb: {fileID: 4213641409919773835}
+  deathFallRayOrigin: {fileID: 1796149574813655039}
+  deathFallGroundDistance: 4
+  deathFallGroundMask:
+    serializedVersion: 2
+    m_Bits: 1
   hitResetDelay: 0.8
   hitTurnSpeed: 180
   hitTurnOvershoot: -30

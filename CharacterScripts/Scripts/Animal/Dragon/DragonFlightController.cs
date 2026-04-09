@@ -226,7 +226,7 @@ public class DragonFlightController : NetworkBehaviour
     /// <summary>
     /// Exit flight mode. Dragon will fall to ground via gravity.
     /// </summary>
-    private void ExitFlight()
+    public void ExitFlight()
     {
         isActive = false;
         isHoverMode = false;
