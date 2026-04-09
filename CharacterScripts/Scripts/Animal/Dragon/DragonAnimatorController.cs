@@ -20,6 +20,7 @@ public class DragonAnimatorController : AnimalAnimatorController
 
     private int isDivingHash;
     private int isFallingHash;
+    private int isDeadHash;
     private int flightModeHash;
     private int thrustHash;
     private int yawHash;
@@ -75,6 +76,7 @@ public class DragonAnimatorController : AnimalAnimatorController
         // Cache flight hashes
         isDivingHash      = Animator.StringToHash("IsDiving");
         isFallingHash     = Animator.StringToHash("IsFalling");
+        isDeadHash        = Animator.StringToHash("IsDead");
         flightModeHash    = Animator.StringToHash("FlightMode");
         thrustHash        = Animator.StringToHash("Thrust");
         yawHash           = Animator.StringToHash("Yaw");
@@ -102,19 +104,20 @@ public class DragonAnimatorController : AnimalAnimatorController
             animator.SetBool(isFallingHash, netIsFalling.Value);
 
         // ─── Root motion flight params (Thrust, Yaw, Pitch, FlightMode) ──
+        // When dead, don't overwrite FlightMode — DragonDamageAnimator controls it
+        bool isDead = animator.GetBool(isDeadHash);
+
         if (IsOwner)
         {
-            // Owner: flight controller writes Thrust/Yaw/Pitch directly to animator in its own Update.
-            // We only need to ensure FlightMode is set here.
-            if (flightController != null)
+            if (flightController != null && !isDead)
             {
                 animator.SetBool(flightModeHash, flightController.IsFlightMode);
             }
         }
         else
         {
-            // Remotes: read all flight root motion params from NetworkVariables
-            animator.SetBool(flightModeHash, netFlightMode.Value);
+            if (!isDead)
+                animator.SetBool(flightModeHash, netFlightMode.Value);
             animator.SetFloat(thrustHash, netFlightThrust.Value);
             animator.SetFloat(yawHash, netFlightYaw.Value);
             animator.SetFloat(flightPitchHash, netFlightPitch.Value);

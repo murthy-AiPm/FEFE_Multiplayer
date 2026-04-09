@@ -32,6 +32,7 @@ public class DragonDamageAnimator : NetworkBehaviour
     [SerializeField] private DragonFlightController flightController;
     [SerializeField] private AnimalGroundAlignment groundAlignment;
     [SerializeField] private Rigidbody rb;
+    [SerializeField] private VitalManager vitalManager;
 
     [Header("Death Fall Ground Detection")]
     [Tooltip("Raycast origin for detecting ground during death fall. Uses transform.position if unset.")]
@@ -62,7 +63,7 @@ public class DragonDamageAnimator : NetworkBehaviour
     [Header("Debug")]
     [SerializeField] private bool debugLogging = false;
     [Tooltip("Enable keypad testing: Hit = 8/2/4/6 (FB/LR, supports diagonals), " +
-             "Death = 7(-1)/1(-0.5)/3(+0.5)/9(+1), Reset = 5. REMOVE BEFORE SHIPPING.")]
+             "Death = 7(-1)/1(-0.5)/3(+0.5)/9(+1), Kill = 5, Reset = 0. REMOVE BEFORE SHIPPING.")]
     [SerializeField] private bool debugKeypadTesting = false;
 
     // Animator param hashes
@@ -72,6 +73,7 @@ public class DragonDamageAnimator : NetworkBehaviour
     private static readonly int Hash_IsDead  = Animator.StringToHash("IsDead");
     private static readonly int Hash_DeathLR = Animator.StringToHash("DeathLR");
     private static readonly int Hash_DeathImpact = Animator.StringToHash("DeathImpact");
+    private static readonly int Hash_FlightMode = Animator.StringToHash("FlightMode");
 
     private bool  _isDead = false;
     private bool  _deathFalling = false; // falling from sky after death
@@ -91,6 +93,7 @@ public class DragonDamageAnimator : NetworkBehaviour
         if (flightController == null) flightController = GetComponentInParent<DragonFlightController>();
         if (groundAlignment == null) groundAlignment = GetComponentInParent<AnimalGroundAlignment>();
         if (rb == null) rb = GetComponentInParent<Rigidbody>();
+        if (vitalManager == null) vitalManager = GetComponentInParent<VitalManager>();
     }
 
     public override void OnNetworkSpawn()
@@ -173,6 +176,10 @@ public class DragonDamageAnimator : NetworkBehaviour
             ApplyDeathFallGravity();
             CheckDeathFallGround();
         }
+        else if (_isDead && IsOwner && !_deathFalling)
+        {
+            Debug.Log($"[DragonDamageAnimator] Dead but NOT deathFalling. FlightMode={animator?.GetBool(Hash_FlightMode)}, vel={rb?.linearVelocity}");
+        }
 
         // ── DEBUG KEYPAD TESTING — REMOVE BEFORE SHIPPING ──
         if (debugKeypadTesting && IsOwner && animator != null)
@@ -194,7 +201,8 @@ public class DragonDamageAnimator : NetworkBehaviour
             if (Input.GetKeyDown(KeyCode.Keypad3)) DebugTriggerDeath(0.5f);
             if (Input.GetKeyDown(KeyCode.Keypad9)) DebugTriggerDeath(1f);
 
-            if (Input.GetKeyDown(KeyCode.Keypad5)) ResetDeathState();
+            if (Input.GetKeyDown(KeyCode.Keypad5)) DebugInstantKill();
+            if (Input.GetKeyDown(KeyCode.Keypad0)) ResetDeathState();
         }
     }
 
@@ -225,6 +233,24 @@ public class DragonDamageAnimator : NetworkBehaviour
         animator.SetBool(Hash_GotHit, false);
         if (debugLogging)
             Debug.Log($"[DragonDamageAnimator] DEBUG Death LR={lr:F1}");
+    }
+
+    private void DebugInstantKill()
+    {
+        if (_isDead) return;
+        if (vitalManager != null)
+        {
+            vitalManager.ApplyDamage("health", 99999f);
+            if (debugLogging)
+                Debug.Log("[DragonDamageAnimator] DEBUG Instant kill via VitalManager");
+        }
+        else
+        {
+            // Fallback if no VitalManager — trigger death animation directly
+            DebugTriggerDeath(Random.value > 0.5f ? 1f : -1f);
+            if (debugLogging)
+                Debug.Log("[DragonDamageAnimator] DEBUG Instant kill (no VitalManager, direct anim)");
+        }
     }
 
     // ─── Shared hit trigger logic ───
@@ -289,11 +315,17 @@ public class DragonDamageAnimator : NetworkBehaviour
         // Disable root motion so the death animation doesn't slide the rigidbody
         animator.applyRootMotion = false;
 
-        // Exit flight mode if airborne — fake gravity will pull the dragon down
+        // Stop flight processing but keep FlightMode TRUE on animator
+        // so ground death anim (IsGrounded + IsDead) doesn't fight flight death anim
         if (IsOwner && flightController != null && flightController.IsFlightMode)
         {
             flightController.ExitFlight();
+            // Re-enable FlightMode on animator — ExitFlight cleared it,
+            // but we need it true so the Animator stays in flight death states
+            if (animator != null)
+                animator.SetBool(Hash_FlightMode, true);
             _deathFalling = true;
+            Debug.Log($"[DragonDamageAnimator] _deathFalling=TRUE, FlightMode on animator={animator?.GetBool(Hash_FlightMode)}");
         }
 
         // Freeze horizontal velocity but allow vertical (gravity)
@@ -354,6 +386,7 @@ public class DragonDamageAnimator : NetworkBehaviour
             animator.SetBool(Hash_GotHit, false);
             animator.SetFloat(Hash_HitFB, 0f);
             animator.SetFloat(Hash_HitLR, 0f);
+            animator.SetBool(Hash_FlightMode, false);
         }
     }
 
@@ -410,8 +443,9 @@ public class DragonDamageAnimator : NetworkBehaviour
     // ─── Death Fall ───────────────────────────────────
 
     /// <summary>
-    /// Applies fake gravity during death fall. Uses rb.MovePosition
-    /// since DragonGroundController is disabled during death.
+    /// Applies fake gravity during death fall via rigidbody velocity.
+    /// Uses velocity instead of MovePosition so physics collisions are respected.
+    /// DragonGroundController is disabled during death so nothing will zero this.
     /// </summary>
     private void ApplyDeathFallGravity()
     {
@@ -419,31 +453,28 @@ public class DragonDamageAnimator : NetworkBehaviour
 
         _deathFallVelocity += deathFallGravity * Time.deltaTime;
         _deathFallVelocity = Mathf.Min(_deathFallVelocity, deathFallMaxSpeed);
-        rb.MovePosition(rb.position + Vector3.down * _deathFallVelocity * Time.deltaTime);
+        rb.linearVelocity = Vector3.down * _deathFallVelocity;
     }
 
     // ─── Death Fall Ground Detection ─────────────────────
 
     /// <summary>
-    /// Ground check during death fall using transform.up.
-    /// When the dragon is inverted, transform.up points toward the ground.
+    /// Ground check during death fall using Vector3.down.
     /// Fires DeathImpact trigger when ground is close enough.
     /// </summary>
     private void CheckDeathFallGround()
     {
         Vector3 origin = deathFallRayOrigin != null ? deathFallRayOrigin.position : transform.position;
-        Vector3 direction = transform.up;
+        Vector3 direction = Vector3.down;
 
         if (Physics.Raycast(origin, direction, out RaycastHit hit,
             deathFallGroundDistance, deathFallGroundMask))
         {
             Debug.DrawLine(origin, hit.point, Color.red);
+            Debug.Log($"[DragonDamageAnimator] GROUND HIT! distance={hit.distance:F1}, collider={hit.collider.name}");
 
             _deathFalling = false;
             DeathImpactServerRpc();
-
-            if (debugLogging)
-                Debug.Log($"[DragonDamageAnimator] Death fall hit ground at distance={hit.distance:F1}");
         }
         else
         {
@@ -467,10 +498,9 @@ public class DragonDamageAnimator : NetworkBehaviour
     private void OnDrawGizmos()
     {
         Vector3 origin = deathFallRayOrigin != null ? deathFallRayOrigin.position : transform.position;
-        Vector3 direction = transform.up;
 
         Gizmos.color = Color.red;
-        Gizmos.DrawRay(origin, direction * deathFallGroundDistance);
+        Gizmos.DrawRay(origin, Vector3.down * deathFallGroundDistance);
         Gizmos.DrawSphere(origin, 0.15f);
     }
 }
