@@ -17,6 +17,7 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private AnimalGroundAlignment groundAlignment;
     [SerializeField] private Animator animator;
     [SerializeField] private Transform cam;
+    [SerializeField] private DragonSwimController swimController;
 
     [Header("Root Motion Flight")]
     [Tooltip("How much Thrust changes per key press.")]
@@ -119,6 +120,8 @@ public class DragonFlightController : NetworkBehaviour
             animator = GetComponentInParent<Animator>();
         if (cam == null)
             cam = Camera.main?.transform;
+        if (swimController == null)
+            swimController = GetComponentInParent<DragonSwimController>();
         if (rb == null)
             rb = GetComponent<Rigidbody>();
 
@@ -152,8 +155,8 @@ public class DragonFlightController : NetworkBehaviour
             if (groundingSystem != null && groundingSystem.IsGrounded)
                 _diveCrashTriggered = false;
 
-            // Re-enter flight from free-fall (C key)
-            if (Input.GetKeyDown(exitFlightKey))
+            // Re-enter flight from free-fall (C key) — not while swimming
+            if (Input.GetKeyDown(exitFlightKey) && !IsSwimmingActive())
             {
                 EnterFlight();
                 return;
@@ -187,6 +190,8 @@ public class DragonFlightController : NetworkBehaviour
     /// </summary>
     public void EnterFlight()
     {
+        // Don't enter flight while swimming
+        if (IsSwimmingActive()) return;
         isActive = true;
         isHoverMode = false;
         hoverRequested = false;
@@ -443,6 +448,11 @@ public class DragonFlightController : NetworkBehaviour
     }
 
     // ─── Helpers ─────────────────────────────────────────
+
+    private bool IsSwimmingActive()
+    {
+        return swimController != null && swimController.IsSwimming;
+    }
 
     private void ApplyMovement(Vector3 displacement)
     {

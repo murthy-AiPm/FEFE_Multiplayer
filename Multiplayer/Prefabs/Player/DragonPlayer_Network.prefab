@@ -5396,10 +5396,11 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   rb: {fileID: 4213641409919773835}
   groundingSystem: {fileID: -1625138427473786608}
-  groundController: {fileID: 0}
-  groundAlignment: {fileID: 0}
-  animator: {fileID: 0}
+  groundController: {fileID: 3534620481540292934}
+  groundAlignment: {fileID: -1836003133199254669}
+  animator: {fileID: 8804854363994131359}
   cam: {fileID: 0}
+  swimController: {fileID: 5974085032444721806}
   thrustIncrement: 0.25
   thrustSmoothSpeed: 2
   thrustMin: -1
