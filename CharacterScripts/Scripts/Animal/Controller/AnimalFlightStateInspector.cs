@@ -21,13 +21,10 @@ public class AnimalStateInspector : MonoBehaviour
     [SerializeField] private bool isWalkingDebug;
     [SerializeField] private bool isRunningDebug;
 
-    [SerializeField] private float airSpeed;
+    [SerializeField] private float thrust;
     [SerializeField] private float groundDistance;
-    [SerializeField] private float rollAngle;
+    [SerializeField] private float flightPitch;
     [SerializeField] private Vector3 velocity;
-
-    [Header("DRAGON STATS")]
-    [SerializeField] private float stamina;
 
     private void Awake()
     {
@@ -49,10 +46,9 @@ public class AnimalStateInspector : MonoBehaviour
             isFlying = flight.IsFlying;
             isGliding = flight.IsGliding;
             isDiving = flight.IsDiving;
-            airSpeed = flight.AirSpeed;
-            rollAngle = flight.RollAngle;
+            thrust = flight.FlightThrust;
+            flightPitch = flight.FlightPitch;
             velocity = flight.Velocity;
-            stamina = flight.Stamina;
         }
 
         // Ground controller state

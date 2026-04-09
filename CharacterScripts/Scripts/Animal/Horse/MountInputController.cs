@@ -1,7 +1,7 @@
 using UnityEngine;
 using Unity.Netcode;
 
-/// <summary>
+/// <summary>//
 /// Attach to Horse alongside DragonGroundController.
 /// Enables/disables the ground controller based on whether someone is mounted.
 /// When unmounted: Horse is idle (or AI-controlled if you add AI later)
