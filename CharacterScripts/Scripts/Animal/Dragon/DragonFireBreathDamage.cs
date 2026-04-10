@@ -16,6 +16,7 @@ public class DragonFireBreathDamage : NetworkBehaviour
 {
     [Header("References")]
     [SerializeField] private DragonCombatController combatController;
+    [SerializeField] private DragonFlightController flightController;
     [Tooltip("Where the fire cone originates (mouth bone / fire breath spawn point).")]
     [SerializeField] private Transform fireOrigin;
     [Tooltip("Camera transform — cone direction follows where the player is aiming.")]
@@ -54,6 +55,8 @@ public class DragonFireBreathDamage : NetworkBehaviour
     {
         if (combatController == null)
             combatController = GetComponentInParent<DragonCombatController>();
+        if (flightController == null)
+            flightController = GetComponentInParent<DragonFlightController>();
         if (cam == null)
             cam = Camera.main?.transform;
 
@@ -89,9 +92,9 @@ public class DragonFireBreathDamage : NetworkBehaviour
         if (fireOrigin == null) return;
 
         Vector3 origin = fireOrigin.position;
-        Vector3 forward = cam != null ? cam.forward : fireOrigin.forward;
-
-        // Overlap sphere at the midpoint of the cone for best coverage
+        // In flight: aim along camera. On ground: aim along mouth bone forward (head tracks camera).
+        bool inFlight = flightController != null && flightController.IsFlightMode;
+        Vector3 forward = (inFlight && cam != null) ? cam.forward : fireOrigin.forward;
         int count = Physics.OverlapSphereNonAlloc(origin, coneRange, _overlapBuffer, hitLayers, QueryTriggerInteraction.Ignore);
 
         _hitThisTick.Clear();
@@ -160,9 +163,10 @@ public class DragonFireBreathDamage : NetworkBehaviour
             : new Color(1f, 0.8f, 0f, 0.2f);
 
         Vector3 origin = fireOrigin.position;
-        Vector3 forward = cam != null ? cam.forward : fireOrigin.forward;
-        Vector3 up = cam != null ? cam.up : Vector3.up;
-        Vector3 right = cam != null ? cam.right : Vector3.right;
+        bool inFlightGiz = flightController != null && flightController.IsFlightMode;
+        Vector3 forward = (inFlightGiz && cam != null) ? cam.forward : fireOrigin.forward;
+        Vector3 up = (inFlightGiz && cam != null) ? cam.up : Vector3.up;
+        Vector3 right = (inFlightGiz && cam != null) ? cam.right : fireOrigin.right;
 
         // Draw cone edges
         Quaternion leftRot = Quaternion.AngleAxis(-coneAngle, up);

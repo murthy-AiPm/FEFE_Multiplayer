@@ -333,4 +333,57 @@ LATE-JOIN ANIMATION SYNC — IMPLEMENTED:
       VFX/SFX spawned via ClientRpc
     * Extinguishing: fire stops after burnDuration expires, or if entering water
 
+ LESSON LEARNED — FLIGHT HEAD YAW COMPENSATION:
+ * Problem: During flight fire breath, the turn animation rotates the dragon's head
+   in the turn direction. Procedural head tracking adds MORE rotation on top,
+   causing the head to overshoot past where the camera is looking.
+ * What DIDN'T work: Complex yaw-scaling systems that tried to detect same/opposite
+   direction of turn vs look, lerping clamps based on FlightYaw, etc. These failed
+   because the camera yaw and body yaw are tightly coupled during flight (body chases
+   camera), so DeltaAngle between them doesn't cleanly separate "where I want to look"
+   from "where the body is turning."
+ * What WORKED: A simple fixed offset that counteracts the animation's head turn.
+   flightYawAnimCompensation (Inspector-tweakable, default 20°) is multiplied by
+   -FlightYaw and added to the delta. FlightYaw +1 (right turn) → offset -20°.
+   FlightYaw -1 (left turn) → offset +20°. Straight flight → offset 0°.
+   One line of math: animCompensation = FlightYaw * -flightYawAnimCompensation
+ * Takeaway: When procedural bone manipulation fights baked animation, the fix is
+   usually a simple offset to counteract the animation — not a complex system to
+   detect and avoid the conflict. Try the simple thing first.
+
+ DRAGON FIRE VFX — BURN STATUS & GROUND FIRE (TODO):
+
+ 1. Characters Ablaze (BurnStatus component):
+    * New script: BurnStatus.cs — attach to any character/animal that can burn
+    * Flow: DragonFireBreathDamage hits target → checks for BurnStatus → calls Ignite()
+    * Ignite() starts burn: spawns fire VFX parented to target, starts DOT timer
+    * Burn continues AFTER leaving fire cone (independent timer + DOT)
+    * Re-entering fire cone refreshes the burn timer
+    * When timer expires: fire VFX destroyed, DOT stops
+    * Network: burn state is NetworkVariable<bool>, server applies DOT,
+      fire VFX spawned/destroyed via ClientRpc
+    * Fire VFX prefab: character-scale fire particles (needs art setup in Unity)
+    * Modify DragonFireBreathDamage.cs to call BurnStatus.Ignite() on hit targets
+
+ 2. Ground Fire (fire streak → burnt patch):
+    * New script: GroundFireSpawner.cs — on the dragon, spawns fire pools on ground hits
+    * DragonFireBreathDamage does a raycast to find ground hit points
+    * At each ground hit: spawn a "fire pool" prefab
+    * Fire pool prefab contains: fire particle system (plays for X seconds, then stops)
+      + a scorch decal/projector underneath (persists longer, the burnt patch)
+    * Fire pools can optionally damage players who walk through them (overlap + DOT)
+    * Spawn rate limited to avoid creating hundreds of fire pools per second
+    * Self-destructs after burn duration + scorch duration
+    * Fire pool prefab needs art setup in Unity (particle system + decal)
+
+ FILES TO CREATE:
+ * BurnStatus.cs — CharacterScripts/Scripts/Shared/ or similar shared location
+ * GroundFireSpawner.cs — CharacterScripts/Scripts/Animal/Dragon/
+ * Fire pool prefab — Prefabs/VFX/
+ * Character fire VFX prefab — Prefabs/VFX/
+
+ FILES TO MODIFY:
+ * DragonFireBreathDamage.cs — add BurnStatus.Ignite() call on hit,
+   add ground raycast for fire pool spawning
+
  */

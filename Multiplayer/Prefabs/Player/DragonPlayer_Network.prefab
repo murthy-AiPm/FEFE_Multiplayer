@@ -5861,13 +5861,13 @@ MonoBehaviour:
   spineWeight: 1
   spine1Weight: 0
   spine2Weight: 0
+  flightYawAnimCompensation: -30
   maxHeadAngle: 80
   maxHeadPitch: 45
   headTurnSpeed: 200
   headReturnSpeed: 150
   headPitchOffsetGround: -40
   headPitchOffsetFlight: -20
-  maxHeadAngleFireBreathFlight: 40
   stationaryThreshold: 0.1
   primaryKey: 323
   meleeModeKey: 49

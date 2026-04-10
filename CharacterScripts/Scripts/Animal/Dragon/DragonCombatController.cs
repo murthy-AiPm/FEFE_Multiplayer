@@ -220,9 +220,11 @@ public class DragonCombatController : NetworkBehaviour
         // Position: follow mouth bone exactly
         _activeFireBreathInstance.transform.position = spawnRef.position;
 
-        // Rotation: smooth toward camera forward (stable aim direction)
+        // Rotation: in flight use camera forward (head can't turn enough),
+        // on ground use mouth bone forward (head tracks camera procedurally)
+        bool inFlight = flightController != null && flightController.IsFlightMode;
         Quaternion targetRotation;
-        if (cam != null)
+        if (inFlight && cam != null)
             targetRotation = Quaternion.LookRotation(cam.forward, Vector3.up);
         else
             targetRotation = spawnRef.rotation;
