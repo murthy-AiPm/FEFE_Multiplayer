@@ -89,6 +89,8 @@ public class DragonCombatController : NetworkBehaviour
     [SerializeField] private float spine2Weight = 0.5f;
 
     [Header("Head Tracking")]
+    [Tooltip("Compensates for flight turn animation rotating the head. Tweakable in Inspector.")]
+    [SerializeField] private float flightYawAnimCompensation = 20f;
     [SerializeField] private float maxHeadAngle = 80f;
     [SerializeField] private float maxHeadPitch = 45f;
     [SerializeField] private float headTurnSpeed = 200f;
@@ -448,7 +450,16 @@ public class DragonCombatController : NetworkBehaviour
                 float cameraYaw = cam.eulerAngles.y;
                 float bodyYaw   = rb.rotation.eulerAngles.y;
                 float delta     = Mathf.DeltaAngle(cameraYaw, bodyYaw);
-                _targetHeadYaw = Mathf.Clamp(delta, -maxHeadAngle, maxHeadAngle);
+
+                // In flight: compensate for turn animation rotating the head
+                // FlightYaw +1 (right) → offset -20, FlightYaw -1 (left) → offset +20
+                float animCompensation = 0f;
+                if (inFlight && flightController != null)
+                {
+                    animCompensation = flightController.FlightYaw * -flightYawAnimCompensation;
+                }
+
+                _targetHeadYaw = Mathf.Clamp(delta + animCompensation, -maxHeadAngle, maxHeadAngle);
             }
 
             _currentHeadYaw = Mathf.MoveTowards(_currentHeadYaw, _targetHeadYaw, headTurnSpeed * Time.deltaTime);
