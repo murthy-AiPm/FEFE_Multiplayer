@@ -57,6 +57,8 @@ public class DragonCombatController : NetworkBehaviour
     [SerializeField] private GameObject fireBreathVFXPrefab;
     [Tooltip("Where to spawn the fire breath VFX (e.g. mouth bone).")]
     [SerializeField] private Transform fireBreathSpawnPoint;
+    [Tooltip("How fast the fire VFX rotation smooths toward camera direction. Higher = snappier.")]
+    [SerializeField] private float fireVFXRotationSmoothing = 10f;
 
     [Header("Melee Attack VFX")]
     [Tooltip("VFX prefab to instantiate on melee attack.")]
@@ -91,8 +93,10 @@ public class DragonCombatController : NetworkBehaviour
     [SerializeField] private float maxHeadPitch = 45f;
     [SerializeField] private float headTurnSpeed = 200f;
     [SerializeField] private float headReturnSpeed = 150f;
-    [Tooltip("Pitch offset to correct for bone rest pose. Positive = tilt head up.")]
-    [SerializeField] private float headPitchOffset = 0f;
+    [Tooltip("Pitch offset on the ground to correct for bone rest pose. Positive = tilt head up.")]
+    [SerializeField] private float headPitchOffsetGround = 0f;
+    [Tooltip("Pitch offset during flight. Flight animations have a different neck pose.")]
+    [SerializeField] private float headPitchOffsetFlight = 0f;
 
     [Header("Melee Attack")]
     [SerializeField] private float stationaryThreshold = 0.1f;
@@ -125,6 +129,7 @@ public class DragonCombatController : NetworkBehaviour
     private bool _isBreathingFire;
     private float _currentJawZ;
     private GameObject _activeFireBreathInstance;
+    private Quaternion _smoothedFireRotation;
 
     // ─── Attack Twist (captured at melee fire, independent of head) ─
     private float _attackTwistAngle;
@@ -193,6 +198,38 @@ public class DragonCombatController : NetworkBehaviour
         ApplySpineTwist(twist);
         ApplyHeadTurn(headYaw, headPitch);
         ApplyJaw();
+        UpdateFireBreathVFX();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // FIRE BREATH VFX STABILIZER
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Snaps fire VFX position to the mouth bone each frame,
+    /// but smooths rotation toward camera direction to eliminate bone wobble.
+    /// </summary>
+    private void UpdateFireBreathVFX()
+    {
+        if (_activeFireBreathInstance == null) return;
+
+        Transform spawnRef = fireBreathSpawnPoint != null ? fireBreathSpawnPoint : transform;
+
+        // Position: follow mouth bone exactly
+        _activeFireBreathInstance.transform.position = spawnRef.position;
+
+        // Rotation: smooth toward camera forward (stable aim direction)
+        Quaternion targetRotation;
+        if (cam != null)
+            targetRotation = Quaternion.LookRotation(cam.forward, Vector3.up);
+        else
+            targetRotation = spawnRef.rotation;
+
+        _smoothedFireRotation = Quaternion.Slerp(
+            _smoothedFireRotation, targetRotation,
+            fireVFXRotationSmoothing * Time.deltaTime);
+
+        _activeFireBreathInstance.transform.rotation = _smoothedFireRotation;
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -293,12 +330,14 @@ public class DragonCombatController : NetworkBehaviour
             animator.SetBool(isBreathingFireHash, value);
 
         // VFX: spawn / destroy fire breath particle effect on ALL clients
+        // Spawned UNPARENTED — position/rotation updated in LateUpdate for stability
         if (value)
         {
             if (fireBreathVFXPrefab != null && _activeFireBreathInstance == null)
             {
-                Transform parent = fireBreathSpawnPoint != null ? fireBreathSpawnPoint : transform;
-                _activeFireBreathInstance = Instantiate(fireBreathVFXPrefab, parent.position, parent.rotation, parent);
+                Transform spawnRef = fireBreathSpawnPoint != null ? fireBreathSpawnPoint : transform;
+                _activeFireBreathInstance = Instantiate(fireBreathVFXPrefab, spawnRef.position, spawnRef.rotation);
+                _smoothedFireRotation = spawnRef.rotation;
             }
         }
         else
@@ -403,14 +442,13 @@ public class DragonCombatController : NetworkBehaviour
         }
         else if (_attackMode == 2)
         {
-            // Fire breath mode — yaw tracks camera, compensated for spine twist
+            // Fire breath mode — head yaw tracks camera direction
             if (cam != null && rb != null)
             {
                 float cameraYaw = cam.eulerAngles.y;
                 float bodyYaw   = rb.rotation.eulerAngles.y;
                 float delta     = Mathf.DeltaAngle(cameraYaw, bodyYaw);
-                float compensated = delta - _currentTwistAngle;
-                _targetHeadYaw = Mathf.Clamp(compensated, -maxHeadAngle, maxHeadAngle);
+                _targetHeadYaw = Mathf.Clamp(delta, -maxHeadAngle, maxHeadAngle);
             }
 
             _currentHeadYaw = Mathf.MoveTowards(_currentHeadYaw, _targetHeadYaw, headTurnSpeed * Time.deltaTime);
@@ -421,9 +459,8 @@ public class DragonCombatController : NetworkBehaviour
         {
             float cameraPitch = cam.eulerAngles.x;
             if (cameraPitch > 180f) cameraPitch -= 360f;
-            // Camera pitch: positive = looking down, negative = looking up
-            // Head should match: positive pitch = head down, negative = head up
-            _targetHeadPitch = Mathf.Clamp(cameraPitch + headPitchOffset, -maxHeadPitch, maxHeadPitch);
+            float pitchOffset = inFlight ? headPitchOffsetFlight : headPitchOffsetGround;
+            _targetHeadPitch = Mathf.Clamp(cameraPitch + pitchOffset, -maxHeadPitch, maxHeadPitch);
             _currentHeadPitch = Mathf.MoveTowards(_currentHeadPitch, _targetHeadPitch, headTurnSpeed * Time.deltaTime);
         }
         else

@@ -584,13 +584,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1134641788560160407}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.7024665, y: 0.08087488, z: 0.7024666, w: 0.08087472}
-  m_LocalPosition: {x: -2.186, y: 0.714, z: -0.092}
+  m_LocalRotation: {x: -0.5, y: 0.5, z: 0.5, w: 0.5}
+  m_LocalPosition: {x: 0.14804208, y: 0.120406926, z: 0.1400239}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 7040834288271894113}
-  m_LocalEulerAnglesHint: {x: -166.865, y: 90, z: 0}
+  m_Father: {fileID: 2510481586615107530}
+  m_LocalEulerAnglesHint: {x: -90, y: -90, z: 180}
 --- !u!1 &1222800521661459634
 GameObject:
   m_ObjectHideFlags: 0
@@ -815,6 +815,7 @@ Transform:
   m_LocalScale: {x: 0.99999994, y: 0.99999994, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 1664271699964925404}
   - {fileID: 7722879248959693172}
   - {fileID: 2380759585138777262}
   - {fileID: 2771948476100260095}
@@ -4407,7 +4408,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1664271699964925404}
   - {fileID: 4736920305905838227}
   m_Father: {fileID: 142127849840715812}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -5406,7 +5406,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1353946614
+  GlobalObjectIdHash: 48177541
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -5525,6 +5525,7 @@ MonoBehaviour:
   toggleHoverKey: 304
   invertY: 0
   pauseInputKey: 112
+  pitchStabilizeKey: 306
   flightPitchClamp: 70
   groundAvoidanceOrigin: {fileID: 3423531768416006098}
   minFlightAltitude: 3
@@ -5532,7 +5533,7 @@ MonoBehaviour:
   groundAvoidanceMask:
     serializedVersion: 2
     m_Bits: 1
-  showGroundAvoidanceDebug: 1
+  showGroundAvoidanceDebug: 0
   noseRaycastOrigin: {fileID: 1273893278324755240}
   divePitchThreshold: -0.5
   diveGroundDetectDistance: 1
@@ -5845,6 +5846,7 @@ MonoBehaviour:
   neck4YawWeight: 0.35
   fireBreathVFXPrefab: {fileID: 793755792036113438, guid: 8e4d4ead1c6f9c84da15c1be3e9dea0c, type: 3}
   fireBreathSpawnPoint: {fileID: 1664271699964925404}
+  fireVFXRotationSmoothing: 10
   meleeAttackVFXPrefab: {fileID: 0}
   meleeAttackSpawnPoint: {fileID: 0}
   soundPlayer: {fileID: 0}
@@ -5863,7 +5865,9 @@ MonoBehaviour:
   maxHeadPitch: 45
   headTurnSpeed: 200
   headReturnSpeed: 150
-  headPitchOffset: -20
+  headPitchOffsetGround: -40
+  headPitchOffsetFlight: -20
+  maxHeadAngleFireBreathFlight: 40
   stationaryThreshold: 0.1
   primaryKey: 323
   meleeModeKey: 49
@@ -5999,5 +6003,5 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 9437248
   maxTargetsPerTick: 20
-  debugLogging: 1
+  debugLogging: 0
   drawGizmos: 1

@@ -38,6 +38,8 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private KeyCode toggleHoverKey = KeyCode.Space;
     [SerializeField] private bool invertY = false;
     [SerializeField] private KeyCode pauseInputKey = KeyCode.P;
+    [Tooltip("Hold to lock flight pitch to zero (fly level) for fire strafing runs.")]
+    [SerializeField] private KeyCode pitchStabilizeKey = KeyCode.RightControl;
 
     [Header("Pitch")]
     [Tooltip("Max camera pitch angle used to normalize pitch to -1..1 range.")]
@@ -297,7 +299,12 @@ public class DragonFlightController : NetworkBehaviour
             _rmYaw = 0f;
 
         // ── Pitch (driven from camera angle — dragon follows where camera looks) ──
-        if (cam != null)
+        if (Input.GetKey(pitchStabilizeKey))
+        {
+            // Pitch stabilized — fly level, ignore camera pitch
+            _rmPitchTarget = 0f;
+        }
+        else if (cam != null)
         {
             float camPitch = cam.eulerAngles.x;
             if (camPitch > 180f) camPitch -= 360f;
