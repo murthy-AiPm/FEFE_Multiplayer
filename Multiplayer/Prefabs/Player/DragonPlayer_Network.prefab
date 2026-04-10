@@ -6002,6 +6002,7 @@ MonoBehaviour:
   cam: {fileID: 0}
   damagePerSecond: 20
   tickRate: 4
+  burnTimePerTick: 1.5
   coneAngle: 30
   coneRange: 15
   hitLayers:
@@ -6038,4 +6039,4 @@ MonoBehaviour:
   patchFadeDuration: 1.2
   patchDamagePerTick: 5
   patchTickInterval: 0.5
-  patchBurnTimeOnContact: 1.5
+  patchBurnTimeOnContact: 5

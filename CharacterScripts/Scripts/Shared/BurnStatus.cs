@@ -80,14 +80,14 @@ public class BurnStatus : NetworkBehaviour
     /// <summary>
     /// Server-only. Add time to the burn timer. Source ownerId is used to prevent self-ignition.
     /// </summary>
-    public void Ignite(float addedDuration, ulong sourceOwnerId)
+    public void Ignite(float addedDuration, NetworkObjectReference sourceRef)
     {
         if (!IsServer) return;
         if (_refreshLocked) return;
         if (addedDuration <= 0f) return;
 
-        // Self-immunity: a character cannot ignite itself
-        if (sourceOwnerId == OwnerClientId) return;
+        // Self-immunity by NetworkObject identity (works for both player-owned and server-owned characters)
+        if (sourceRef.TryGet(out NetworkObject sourceObj) && sourceObj == NetworkObject) return;
 
         float newTime = Mathf.Min(netBurnTimeRemaining.Value + addedDuration, maxBurnDuration);
         netBurnTimeRemaining.Value = newTime;

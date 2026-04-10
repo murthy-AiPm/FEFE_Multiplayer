@@ -90,20 +90,20 @@ public class GroundFireSpawner : NetworkBehaviour
     [ServerRpc(RequireOwnership = true)]
     private void RequestSpawnGroundFireServerRpc(Vector3 position, Vector3 normal)
     {
-        ulong sourceOwnerId = _ownerNetObj != null ? _ownerNetObj.OwnerClientId : OwnerClientId;
-        SpawnLocally(position, normal, sourceOwnerId);
-        SpawnGroundFireClientRpc(position, normal, sourceOwnerId);
+        NetworkObjectReference sourceRef = _ownerNetObj != null ? new NetworkObjectReference(_ownerNetObj) : default;
+        SpawnLocally(position, normal, sourceRef);
+        SpawnGroundFireClientRpc(position, normal, sourceRef);
     }
 
     [ClientRpc]
-    private void SpawnGroundFireClientRpc(Vector3 position, Vector3 normal, ulong sourceOwnerId)
+    private void SpawnGroundFireClientRpc(Vector3 position, Vector3 normal, NetworkObjectReference sourceRef)
     {
         // Host already spawned via SpawnLocally inside the ServerRpc
         if (IsServer) return;
-        SpawnLocally(position, normal, sourceOwnerId);
+        SpawnLocally(position, normal, sourceRef);
     }
 
-    private void SpawnLocally(Vector3 position, Vector3 normal, ulong sourceOwnerId)
+    private void SpawnLocally(Vector3 position, Vector3 normal, NetworkObjectReference sourceRef)
     {
         if (GroundFirePool.Instance == null) return;
 
@@ -116,6 +116,6 @@ public class GroundFireSpawner : NetworkBehaviour
             burnTimeOnContact = patchBurnTimeOnContact,
         };
 
-        GroundFirePool.Instance.SpawnAt(position, normal, config, sourceOwnerId);
+        GroundFirePool.Instance.SpawnAt(position, normal, config, sourceRef);
     }
 }

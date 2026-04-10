@@ -27,6 +27,8 @@ public class DragonFireBreathDamage : NetworkBehaviour
     [SerializeField] private float damagePerSecond = 20f;
     [Tooltip("How many times per second damage is applied.")]
     [SerializeField] private float tickRate = 4f;
+    [Tooltip("Burn duration (seconds) added to BurnStatus per damage tick. Should be larger than the tick interval so burn time accumulates while target is in the cone and persists after exit.")]
+    [SerializeField] private float burnTimePerTick = 1.5f;
 
     [Header("Cone Shape")]
     [Tooltip("Half-angle of the fire cone in degrees.")]
@@ -134,14 +136,14 @@ public class DragonFireBreathDamage : NetworkBehaviour
         }
 
         if (hitIds.Count > 0)
-            RequestFireDamageServerRpc(hitIds.ToArray(), _damagePerTick, _tickInterval, origin);
+            RequestFireDamageServerRpc(hitIds.ToArray(), _damagePerTick, burnTimePerTick, origin);
     }
 
     [ServerRpc(RequireOwnership = true)]
     private void RequestFireDamageServerRpc(ulong[] hitIds, float damage, float burnTime, Vector3 origin)
     {
         if (hitIds == null) return;
-        ulong sourceOwnerId = _ownerNetObj != null ? _ownerNetObj.OwnerClientId : OwnerClientId;
+        NetworkObjectReference sourceRef = _ownerNetObj != null ? new NetworkObjectReference(_ownerNetObj) : default;
 
         for (int i = 0; i < hitIds.Length; i++)
         {
@@ -155,7 +157,7 @@ public class DragonFireBreathDamage : NetworkBehaviour
 
             var burnStatus = targetObj.GetComponentInChildren<BurnStatus>();
             if (burnStatus != null)
-                burnStatus.Ignite(burnTime, sourceOwnerId);
+                burnStatus.Ignite(burnTime, sourceRef);
         }
     }
 

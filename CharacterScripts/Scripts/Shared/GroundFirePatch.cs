@@ -1,4 +1,5 @@
 using System;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -19,7 +20,7 @@ public class GroundFirePatch : MonoBehaviour
     public Action<GroundFirePatch> OnReturnToPool;
 
     private GroundFirePatchConfig _config;
-    private ulong _sourceOwnerId;
+    private NetworkObjectReference _sourceRef;
     private float _age;
     private float _tickTimer;
     private bool _isServer;
@@ -35,10 +36,10 @@ public class GroundFirePatch : MonoBehaviour
     /// Server: pass isServer=true to enable damage. Client visual-only: isServer=false.
     /// Configured by GroundFirePool.SpawnAt -> set externally before activation.
     /// </summary>
-    public void Activate(GroundFirePatchConfig config, ulong sourceOwnerId)
+    public void Activate(GroundFirePatchConfig config, NetworkObjectReference sourceRef)
     {
         _config = config;
-        _sourceOwnerId = sourceOwnerId;
+        _sourceRef = sourceRef;
         _age = 0f;
         _tickTimer = 0f;
         _active = true;
@@ -99,7 +100,7 @@ public class GroundFirePatch : MonoBehaviour
         var burn = other.GetComponentInParent<BurnStatus>();
         if (burn != null)
         {
-            burn.Ignite(_config.burnTimeOnContact, _sourceOwnerId);
+            burn.Ignite(_config.burnTimeOnContact, _sourceRef);
         }
     }
 }

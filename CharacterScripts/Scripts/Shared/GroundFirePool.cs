@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -53,7 +54,7 @@ public class GroundFirePool : MonoBehaviour
     /// <summary>
     /// Spawn a patch at the given world position/normal. Returns the patch (or null if pool exhausted).
     /// </summary>
-    public GroundFirePatch SpawnAt(Vector3 position, Vector3 normal, GroundFirePatchConfig config, ulong sourceOwnerId)
+    public GroundFirePatch SpawnAt(Vector3 position, Vector3 normal, GroundFirePatchConfig config, NetworkObjectReference sourceRef)
     {
         GroundFirePatch patch;
         if (_idle.Count > 0)
@@ -74,7 +75,7 @@ public class GroundFirePool : MonoBehaviour
 
         patch.transform.SetPositionAndRotation(position, Quaternion.LookRotation(Vector3.forward, normal));
         patch.gameObject.SetActive(true);
-        patch.Activate(config, sourceOwnerId);
+        patch.Activate(config, sourceRef);
         _active.AddLast(patch);
         return patch;
     }

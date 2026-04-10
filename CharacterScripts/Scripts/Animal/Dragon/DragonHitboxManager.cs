@@ -63,8 +63,8 @@ public class DragonHitboxManager : NetworkBehaviour
         if (leftPawHitbox != null) leftPawHitbox.EnableHitbox();
         if (rightPawHitbox != null) rightPawHitbox.EnableHitbox();
 
-        if (debugLogging)
-            Debug.Log("[DragonHitboxManager] Paw hitboxes ENABLED");
+        //if (debugLogging)
+        //    Debug.Log("[DragonHitboxManager] Paw hitboxes ENABLED");
     }
 
     /// <summary>Disable both paw hitboxes (attack window ends).</summary>
@@ -75,8 +75,8 @@ public class DragonHitboxManager : NetworkBehaviour
         if (leftPawHitbox != null) leftPawHitbox.DisableHitbox();
         if (rightPawHitbox != null) rightPawHitbox.DisableHitbox();
 
-        if (debugLogging)
-            Debug.Log("[DragonHitboxManager] Paw hitboxes DISABLED");
+        //if (debugLogging)
+        //    Debug.Log("[DragonHitboxManager] Paw hitboxes DISABLED");
     }
 
     /// <summary>Enable only the left paw hitbox.</summary>
