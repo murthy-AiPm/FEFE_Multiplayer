@@ -1685,6 +1685,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7734732602489724150, guid: 8bf9189251d2ab64fbffce681373f88a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 565673388299000574}
+    - targetCorrespondingSourceObject: {fileID: 7734732602489724150, guid: 8bf9189251d2ab64fbffce681373f88a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 565673388299000576}
   m_SourcePrefab: {fileID: 100100000, guid: 8bf9189251d2ab64fbffce681373f88a, type: 3}
 --- !u!224 &565673388299000572 stripped
 RectTransform:
@@ -1721,6 +1724,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+--- !u!114 &565673388299000576
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 565673388299000573}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b240359bf5f0cc047a4f170f52a8f6ce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LANManager
+  port: 7777
+  joinIP: 127.0.0.1
+  ipInputField: {fileID: 0}
+  loadingScreen: {fileID: 0}
+  lanHostKey: 286
+  lanJoinKey: 287
+  debugLogging: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
