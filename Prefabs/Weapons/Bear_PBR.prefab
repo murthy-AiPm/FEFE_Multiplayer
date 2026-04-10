@@ -178,7 +178,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 893738681
+  GlobalObjectIdHash: 2517650064
   InScenePlacedSourceGlobalObjectIdHash: 4233055752
   DeferredDespawnTick: 0
   Ownership: 1
@@ -314,7 +314,6 @@ MonoBehaviour:
   blockAngle: 120
   blockStaminaRatio: 0.5
   hitStunDuration: 0.2
-  animancerDriver: {fileID: 0}
 --- !u!114 &4619646487853674270
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -356,7 +355,8 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 1
-  collidersToDisableOnDeath: []
+  collidersToDisableOnDeath:
+  - {fileID: -5162157580005954776}
   vitalManager: {fileID: 6124247818986976737}
   animator: {fileID: 5119333705707283841}
   agent: {fileID: 1212467679657730948}

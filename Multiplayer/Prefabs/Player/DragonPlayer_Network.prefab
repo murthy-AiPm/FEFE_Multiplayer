@@ -5314,6 +5314,7 @@ GameObject:
   - component: {fileID: -7962891897276758031}
   - component: {fileID: -2412709369278423379}
   - component: {fileID: 2950672030226061884}
+  - component: {fileID: 692041439902515234}
   m_Layer: 3
   m_Name: DragonPlayer_Network
   m_TagString: Untagged
@@ -5974,3 +5975,28 @@ MonoBehaviour:
   rightPawHitbox: {fileID: 2470699562406505562}
   pawWeaponData: {fileID: 11400000, guid: 138b0ae589a0d29458f277a1cc324aed, type: 2}
   debugLogging: 1
+--- !u!114 &692041439902515234
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3b73ce604681e8409c42e3411d036d5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DragonFireBreathDamage
+  ShowTopMostFoldoutHeaderGroup: 1
+  combatController: {fileID: -7800844257033982807}
+  fireOrigin: {fileID: 1664271699964925404}
+  damagePerSecond: 20
+  tickRate: 4
+  coneAngle: 30
+  coneRange: 15
+  hitLayers:
+    serializedVersion: 2
+    m_Bits: 9437248
+  maxTargetsPerTick: 20
+  debugLogging: 1
+  drawGizmos: 1
