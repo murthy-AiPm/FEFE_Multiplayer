@@ -386,4 +386,21 @@ LATE-JOIN ANIMATION SYNC — IMPLEMENTED:
  * DragonFireBreathDamage.cs — add BurnStatus.Ignite() call on hit,
    add ground raycast for fire pool spawning
 
+ GROUND FIRE BREATH WOBBLE (TODO):
+ * Issue: On the ground, fire breath VFX is positioned at the mouth bone and
+   aimed along mouth bone forward. Because the head/neck bones are jittered
+   each frame by procedural neck rotations (head tracking), the mouth bone's
+   forward vector wobbles, causing the fire VFX to visibly shake.
+ * Already tried: Quaternion.Slerp smoothing toward LookRotation(spawnRef.forward, Vector3.up)
+   in UpdateFireBreathVFX. Reduces but does not eliminate wobble.
+ * Possible fixes to try:
+   - Use the body's forward (rb.rotation * Vector3.forward) combined with the
+     procedural head yaw/pitch values directly, instead of reading the bone transform
+   - Cache the spawn rotation at fire breath start and only update it when the
+     camera moves significantly (deadzone-based update)
+   - Run fire VFX update in LateUpdate AFTER all bone manipulation is finished,
+     and apply heavy smoothing (Slerp factor ~3-5 instead of 10)
+   - Position fire VFX at mouth bone but compute rotation purely from camera +
+     body forward (independent of bone transforms entirely)
+
  */

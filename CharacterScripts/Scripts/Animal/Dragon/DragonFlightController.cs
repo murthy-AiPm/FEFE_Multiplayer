@@ -32,6 +32,8 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private float yawSmoothing = 5f;
     [Tooltip("How fast pitch smoothly moves to target value (per second).")]
     [SerializeField] private float pitchSmoothSpeed = 3f;
+    [Tooltip("How fast roll smoothly moves to target value (per second).")]
+    [SerializeField] private float rollSmoothSpeed = 3f;
 
     [Header("Input")]
     [SerializeField] private string horizontalAxis = "Horizontal";
@@ -40,6 +42,10 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private KeyCode pauseInputKey = KeyCode.P;
     [Tooltip("Hold to lock flight pitch to zero (fly level) for fire strafing runs.")]
     [SerializeField] private KeyCode pitchStabilizeKey = KeyCode.RightControl;
+    [Tooltip("Roll left key.")]
+    [SerializeField] private KeyCode rollLeftKey = KeyCode.Q;
+    [Tooltip("Roll right key.")]
+    [SerializeField] private KeyCode rollRightKey = KeyCode.E;
 
     [Header("Pitch")]
     [Tooltip("Max camera pitch angle used to normalize pitch to -1..1 range.")]
@@ -78,6 +84,7 @@ public class DragonFlightController : NetworkBehaviour
     public float FlightThrust => _rmThrust;
     public float FlightYaw => _rmYaw;
     public float FlightPitch => _rmPitch;
+    public float FlightRoll => _rmRoll;
 
     // ─── Private State ───────────────────────────────────
 
@@ -93,12 +100,15 @@ public class DragonFlightController : NetworkBehaviour
     private float _rmYaw;
     private float _rmPitch;
     private float _rmPitchTarget;
+    private float _rmRoll;
+    private float _rmRollTarget;
     private bool _inputPaused;
 
     // Animator hashes
     private int thrustHash;
     private int yawHash;
     private int pitchHash;
+    private int rollHash;
     private int flightModeHash;
     private int diveCrashLandHash;
     private KeyCode exitFlightKey = KeyCode.C;
@@ -130,6 +140,7 @@ public class DragonFlightController : NetworkBehaviour
         thrustHash        = Animator.StringToHash("Thrust");
         yawHash           = Animator.StringToHash("Yaw");
         pitchHash         = Animator.StringToHash("Pitch");
+        rollHash          = Animator.StringToHash("Roll");
         flightModeHash    = Animator.StringToHash("FlightMode");
         diveCrashLandHash = Animator.StringToHash("DiveCrashLand");
 
@@ -242,6 +253,8 @@ public class DragonFlightController : NetworkBehaviour
         _rmYaw = 0f;
         _rmPitch = 0f;
         _rmPitchTarget = 0f;
+        _rmRoll = 0f;
+        _rmRollTarget = 0f;
 
         // Clear animator flight params
         if (animator != null)
@@ -250,6 +263,7 @@ public class DragonFlightController : NetworkBehaviour
             animator.SetFloat(thrustHash, 0f);
             animator.SetFloat(yawHash, 0f);
             animator.SetFloat(pitchHash, 0f);
+            animator.SetFloat(rollHash, 0f);
             animator.applyRootMotion = true;
         }
 
@@ -313,6 +327,15 @@ public class DragonFlightController : NetworkBehaviour
         }
         _rmPitch = Mathf.MoveTowards(_rmPitch, _rmPitchTarget, pitchSmoothSpeed * dt);
 
+        // ── Roll (Q = left, E = right; smoothly returns to 0 when released) ──
+        if (Input.GetKey(rollLeftKey))
+            _rmRollTarget = -1f;
+        else if (Input.GetKey(rollRightKey))
+            _rmRollTarget = 1f;
+        else
+            _rmRollTarget = 0f;
+        _rmRoll = Mathf.MoveTowards(_rmRoll, _rmRollTarget, rollSmoothSpeed * dt);
+
         // Tell ground systems to hand off to flight
         if (groundController != null)
             groundController.FlightRootMotionActive = true;
@@ -325,6 +348,7 @@ public class DragonFlightController : NetworkBehaviour
             animator.SetFloat(thrustHash, _rmThrust);
             animator.SetFloat(yawHash, _rmYaw);
             animator.SetFloat(pitchHash, _rmPitch);
+            animator.SetFloat(rollHash, _rmRoll);
             animator.applyRootMotion = true;
         }
 
