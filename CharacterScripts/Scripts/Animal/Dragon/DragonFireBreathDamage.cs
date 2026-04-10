@@ -18,6 +18,8 @@ public class DragonFireBreathDamage : NetworkBehaviour
     [SerializeField] private DragonCombatController combatController;
     [Tooltip("Where the fire cone originates (mouth bone / fire breath spawn point).")]
     [SerializeField] private Transform fireOrigin;
+    [Tooltip("Camera transform — cone direction follows where the player is aiming.")]
+    [SerializeField] private Transform cam;
 
     [Header("Damage")]
     [Tooltip("Total damage applied per second while a target is inside the cone.")]
@@ -52,6 +54,8 @@ public class DragonFireBreathDamage : NetworkBehaviour
     {
         if (combatController == null)
             combatController = GetComponentInParent<DragonCombatController>();
+        if (cam == null)
+            cam = Camera.main?.transform;
 
         _overlapBuffer = new Collider[maxTargetsPerTick];
     }
@@ -85,7 +89,7 @@ public class DragonFireBreathDamage : NetworkBehaviour
         if (fireOrigin == null) return;
 
         Vector3 origin = fireOrigin.position;
-        Vector3 forward = fireOrigin.forward;
+        Vector3 forward = cam != null ? cam.forward : fireOrigin.forward;
 
         // Overlap sphere at the midpoint of the cone for best coverage
         int count = Physics.OverlapSphereNonAlloc(origin, coneRange, _overlapBuffer, hitLayers, QueryTriggerInteraction.Ignore);
@@ -156,13 +160,15 @@ public class DragonFireBreathDamage : NetworkBehaviour
             : new Color(1f, 0.8f, 0f, 0.2f);
 
         Vector3 origin = fireOrigin.position;
-        Vector3 forward = fireOrigin.forward;
+        Vector3 forward = cam != null ? cam.forward : fireOrigin.forward;
+        Vector3 up = cam != null ? cam.up : Vector3.up;
+        Vector3 right = cam != null ? cam.right : Vector3.right;
 
         // Draw cone edges
-        Quaternion leftRot = Quaternion.AngleAxis(-coneAngle, fireOrigin.up);
-        Quaternion rightRot = Quaternion.AngleAxis(coneAngle, fireOrigin.up);
-        Quaternion upRot = Quaternion.AngleAxis(-coneAngle, fireOrigin.right);
-        Quaternion downRot = Quaternion.AngleAxis(coneAngle, fireOrigin.right);
+        Quaternion leftRot = Quaternion.AngleAxis(-coneAngle, up);
+        Quaternion rightRot = Quaternion.AngleAxis(coneAngle, up);
+        Quaternion upRot = Quaternion.AngleAxis(-coneAngle, right);
+        Quaternion downRot = Quaternion.AngleAxis(coneAngle, right);
 
         Gizmos.DrawRay(origin, leftRot * forward * coneRange);
         Gizmos.DrawRay(origin, rightRot * forward * coneRange);

@@ -1102,8 +1102,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2560130988734915919}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.122183256, y: -0.000000033070357, z: 0.000000004071147, w: 0.9925076}
-  m_LocalPosition: {x: -0.08001709, y: 8.158775, z: -10.869995}
+  m_LocalRotation: {x: 0.06722523, y: 0.04970307, z: -0.0033530586, w: 0.99649346}
+  m_LocalPosition: {x: -0.85424805, y: 7.213356, z: -10.611938}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1186,7 +1186,7 @@ MonoBehaviour:
     SplineCurvature: 0.5
   RecenteringTarget: 2
   HorizontalAxis:
-    Value: 0
+    Value: 5.7109113
     Center: 0
     Range: {x: -45, y: 45}
     Wrap: 0
@@ -1196,7 +1196,7 @@ MonoBehaviour:
       Time: 2
     Restrictions: 0
   VerticalAxis:
-    Value: 17.5
+    Value: 13.035445
     Center: 17.5
     Range: {x: -10, y: 45}
     Wrap: 0
@@ -1283,7 +1283,7 @@ MonoBehaviour:
         LegacyInput: 
         LegacyGain: 1
         CancelDeltaTime: 0
-      InputValue: 0
+      InputValue: -0
       Driver:
         AccelTime: 0.2
         DecelTime: 0.2
@@ -1296,7 +1296,7 @@ MonoBehaviour:
         LegacyInput: 
         LegacyGain: 1
         CancelDeltaTime: 0
-      InputValue: 0
+      InputValue: -0
       Driver:
         AccelTime: 0
         DecelTime: 0
@@ -4750,8 +4750,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8637463985270368911}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.06510989, y: 0.65069824, z: 0.056155786, w: 0.7544528}
-  m_LocalPosition: {x: -9.7453, y: 0.14674377, z: 1.4629517}
+  m_LocalRotation: {x: -0.02308166, y: 0.685841, z: 0.02177311, w: 0.7270593}
+  m_LocalPosition: {x: -9.962891, y: 1.225708, z: 2.3282166}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4834,7 +4834,7 @@ MonoBehaviour:
     SplineCurvature: 0.5
   RecenteringTarget: 2
   HorizontalAxis:
-    Value: 81.55404
+    Value: 86.65797
     Center: 0
     Range: {x: -180, y: 180}
     Wrap: 1
@@ -4844,7 +4844,7 @@ MonoBehaviour:
       Time: 2
     Restrictions: 0
   VerticalAxis:
-    Value: -9.864912
+    Value: -3.636652
     Center: 17.5
     Range: {x: -10, y: 45}
     Wrap: 0
@@ -5406,7 +5406,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 48177541
+  GlobalObjectIdHash: 1353946614
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -5990,6 +5990,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   combatController: {fileID: -7800844257033982807}
   fireOrigin: {fileID: 1664271699964925404}
+  cam: {fileID: 0}
   damagePerSecond: 20
   tickRate: 4
   coneAngle: 30
