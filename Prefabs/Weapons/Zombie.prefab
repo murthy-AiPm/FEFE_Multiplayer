@@ -2193,6 +2193,7 @@ GameObject:
   - component: {fileID: 7770190236804263619}
   - component: {fileID: 8765647463129273858}
   - component: {fileID: 2530349030484619935}
+  - component: {fileID: 9198660598978998450}
   m_Layer: 20
   m_Name: Zombie
   m_TagString: Animal
@@ -2418,7 +2419,6 @@ MonoBehaviour:
   blockAngle: 120
   blockStaminaRatio: 0.5
   hitStunDuration: 0.2
-  animancerDriver: {fileID: 0}
 --- !u!114 &1022701708860307316
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2546,6 +2546,27 @@ MonoBehaviour:
   sleepSound: 
   idleIntervalMin: 4
   idleIntervalMax: 12
+--- !u!114 &9198660598978998450
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4688998701282180775}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b76ded94906b734a953234b1eb2d419, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BurnStatus
+  ShowTopMostFoldoutHeaderGroup: 1
+  vitalManager: {fileID: 796216624645616193}
+  damageReceiver: {fileID: 3199055610490735062}
+  pelvisBone: {fileID: 8870210242670712098}
+  damagePerTick: 10
+  tickInterval: 1
+  maxBurnDuration: 10
+  fireVFXPrefab: {fileID: 793755792036113438, guid: 8632a9a917098bb4ba8938012d4e0d89, type: 3}
+  vfxScale: 2
 --- !u!1 &5093741960022277789
 GameObject:
   m_ObjectHideFlags: 0

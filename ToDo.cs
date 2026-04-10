@@ -403,4 +403,56 @@ LATE-JOIN ANIMATION SYNC — IMPLEMENTED:
    - Position fire VFX at mouth bone but compute rotation purely from camera +
      body forward (independent of bone transforms entirely)
 
+──────────────────────────────────────────────────────────────────────
+10th-April-2026 — Burn System Phase 2 (Ground Fire Pool/Spawner)
+──────────────────────────────────────────────────────────────────────
+
+PHASE 2 — IMPLEMENTED:
+ * GroundFirePool.cs (Shared/) — singleton-per-scene local pool. Prewarms patches in Awake,
+   recycles oldest on overflow. SpawnAt(pos, normal, config, sourceOwnerId) is the only API.
+   Holds GroundFirePatchConfig struct so all tuning is owned by the spawner (Inspector).
+ * GroundFirePatch.cs (Shared/) — single patch behavior. Holds DecalProjector ref, fades
+   fadeFactor from baseline -> 0 over the last fadeDuration seconds of lifetime. OnTriggerStay
+   calls BurnStatus.Ignite() on entering targets, server-only (gated by runtime _isServer flag
+   set from NetworkManager.Singleton.IsServer in Activate()). Patches do NOT stack DPS — they
+   refresh BurnStatus burn timer, BurnStatus owns the actual damage (matches design decision).
+ * GroundFireSpawner.cs (Animal/Dragon/) — owner-driven, polls combatController.IsBreathingFire
+   (same pattern as DragonFireBreathDamage). Every spawnInterval: projects forwardProjection
+   meters along breath forward + random scatter, raycasts down with separate groundMask, sends
+   RequestSpawnGroundFireServerRpc. ServerRpc spawns locally on host then ClientRpc fans to
+   non-host clients. Zero NGO churn — pure local pools + RPC fan-out. Late joiners miss
+   in-flight patches; acceptable for ~3s decals.
+
+ARCHITECTURE NOTES:
+ * Same prefab on host and clients. GroundFirePatch.Activate() reads NetworkManager.IsServer
+   to decide whether to enable damage logic. Visual fade runs everywhere.
+ * Damage path: GroundFirePatch.OnTriggerStay -> BurnStatus.Ignite(burnTimeOnContact, ownerId).
+   BurnStatus is the sole DOT source; patches just keep targets ignited.
+ * sourceOwnerId is propagated through ServerRpc/ClientRpc so BurnStatus self-immunity works.
+ * No edits made to BurnStatus.cs (already supports refresh-without-stack via maxBurnDuration
+   clamp) or DragonFireBreathDamage.cs (independent component, parallel polling).
+
+PREFAB / INSPECTOR SETUP REQUIRED (next session):
+ * Create GroundFirePatch prefab: empty GO + GroundFirePatch component + URP DecalProjector
+   child + trigger collider (sphere or box, isTrigger=true). Optional particle VFX child wired
+   to vfxRoot field.
+ * Create scene-level GroundFirePool GameObject in main gameplay scene. Add GroundFirePool
+   component, assign patchPrefab, set poolSize (default 64).
+ * Add GroundFireSpawner component to dragon prefab. Wire combatController, flightController,
+   fireOrigin (mouth bone), cam.
+ * CRITICAL: Set groundMask explicitly in Inspector. Do NOT leave at default (0) or Default-only.
+   Same mistake as the flight controller groundCheckMask — needs to include terrain + ground
+   layers used in the city/battleground scenes.
+ * Tune: spawnInterval (0.05s), forwardProjection (8m), scatterRadius (1.5m), maxGroundDistance
+   (50m), patchLifetime (3s), patchFadeDuration (1.2s), patchDamagePerTick (5), patchTickInterval
+   (0.5s), patchBurnTimeOnContact (1.5s).
+ * Phase 1 prefab setup still pending: BurnStatus components on human/dragon/NPC prefabs,
+   character fire VFX prefab assigned, pelvisBone wired.
+
+STILL DEFERRED:
+ * Ground fire breath VFX wobble fix (logged in earlier session, not touched this pass)
+ * Flight remote-client animation sync bug (logged separately)
+ * Building/structure burnable states with pre-authored destruction stages
+ * Fire propagation between burnables (proximity ignition)
+
  */

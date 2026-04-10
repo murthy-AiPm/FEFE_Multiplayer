@@ -5315,6 +5315,7 @@ GameObject:
   - component: {fileID: -2412709369278423379}
   - component: {fileID: 2950672030226061884}
   - component: {fileID: 692041439902515234}
+  - component: {fileID: -8493373264538071150}
   m_Layer: 3
   m_Name: DragonPlayer_Network
   m_TagString: Untagged
@@ -5521,11 +5522,14 @@ MonoBehaviour:
   thrustMax: 1
   yawSmoothing: 5
   pitchSmoothSpeed: 3
+  rollSmoothSpeed: 3
   horizontalAxis: Horizontal
   toggleHoverKey: 304
   invertY: 0
   pauseInputKey: 112
   pitchStabilizeKey: 306
+  rollLeftKey: 113
+  rollRightKey: 101
   flightPitchClamp: 70
   groundAvoidanceOrigin: {fileID: 3423531768416006098}
   minFlightAltitude: 3
@@ -5993,6 +5997,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DragonFireBreathDamage
   ShowTopMostFoldoutHeaderGroup: 1
   combatController: {fileID: -7800844257033982807}
+  flightController: {fileID: 0}
   fireOrigin: {fileID: 1664271699964925404}
   cam: {fileID: 0}
   damagePerSecond: 20
@@ -6005,3 +6010,32 @@ MonoBehaviour:
   maxTargetsPerTick: 20
   debugLogging: 0
   drawGizmos: 1
+--- !u!114 &-8493373264538071150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2759edf42a69c3c408a45079e5b1394c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GroundFireSpawner
+  ShowTopMostFoldoutHeaderGroup: 1
+  combatController: {fileID: -7800844257033982807}
+  flightController: {fileID: 358013097769894201}
+  fireOrigin: {fileID: 1664271699964925404}
+  cam: {fileID: 0}
+  spawnInterval: 0.05
+  forwardProjection: 8
+  scatterRadius: 1.5
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 1
+  maxGroundDistance: 50
+  patchLifetime: 3
+  patchFadeDuration: 1.2
+  patchDamagePerTick: 5
+  patchTickInterval: 0.5
+  patchBurnTimeOnContact: 1.5

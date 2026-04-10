@@ -98,6 +98,7 @@ public class DragonFireBreathDamage : NetworkBehaviour
         int count = Physics.OverlapSphereNonAlloc(origin, coneRange, _overlapBuffer, hitLayers, QueryTriggerInteraction.Ignore);
 
         _hitThisTick.Clear();
+        var hitIds = new List<ulong>();
 
         for (int i = 0; i < count; i++)
         {
@@ -114,24 +115,47 @@ public class DragonFireBreathDamage : NetworkBehaviour
 
             // Skip self
             var hitNetObj = col.GetComponentInParent<NetworkObject>();
-            if (hitNetObj != null && hitNetObj == _ownerNetObj) continue;
+            if (hitNetObj == null) continue;
+            if (hitNetObj == _ownerNetObj) continue;
 
             // Cone angle check
             Vector3 toTarget = (col.ClosestPoint(origin) - origin).normalized;
             float angle = Vector3.Angle(forward, toTarget);
             if (angle > coneAngle) continue;
 
-            // Find DamageReceiver
-            var receiver = col.GetComponentInParent<DamageReceiver>();
-            if (receiver == null) continue;
+            // Must have DamageReceiver to take damage
+            if (col.GetComponentInParent<DamageReceiver>() == null) continue;
 
             _hitThisTick.Add(rootId);
-
-            // Apply damage through server-authoritative pipeline
-            receiver.ApplyProjectileDamage(_damagePerTick, origin);
+            hitIds.Add(hitNetObj.NetworkObjectId);
 
             if (debugLogging)
-                Debug.Log($"[DragonFire] Hit {rootObj.name} for {_damagePerTick} damage");
+                Debug.Log($"[DragonFire] Owner detected hit on {rootObj.name}");
+        }
+
+        if (hitIds.Count > 0)
+            RequestFireDamageServerRpc(hitIds.ToArray(), _damagePerTick, _tickInterval, origin);
+    }
+
+    [ServerRpc(RequireOwnership = true)]
+    private void RequestFireDamageServerRpc(ulong[] hitIds, float damage, float burnTime, Vector3 origin)
+    {
+        if (hitIds == null) return;
+        ulong sourceOwnerId = _ownerNetObj != null ? _ownerNetObj.OwnerClientId : OwnerClientId;
+
+        for (int i = 0; i < hitIds.Length; i++)
+        {
+            if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(hitIds[i], out var targetObj))
+                continue;
+            if (targetObj == null) continue;
+
+            var receiver = targetObj.GetComponentInChildren<DamageReceiver>();
+            if (receiver != null)
+                receiver.ApplyProjectileDamage(damage, origin);
+
+            var burnStatus = targetObj.GetComponentInChildren<BurnStatus>();
+            if (burnStatus != null)
+                burnStatus.Ignite(burnTime, sourceOwnerId);
         }
     }
 

@@ -76,6 +76,11 @@ public class RespawnController : NetworkBehaviour
         if (vitalManager != null)
             vitalManager.ResetAllVitals();
 
+        // Clear any active burn so respawned character isn't on fire
+        var burnStatus = GetComponent<BurnStatus>();
+        if (burnStatus != null)
+            burnStatus.ClearBurn();
+
         NotifyRespawnClientRpc(spawnPos, spawnRot);
     }
 
