@@ -26,10 +26,10 @@ public class GroundFireSpawner : NetworkBehaviour
     [Tooltip("Random scatter applied to forward projection per spawn (meters).")]
     [SerializeField] private float scatterRadius = 1.5f;
 
-    [Header("Ground Raycast")]
-    [Tooltip("Separate mask for ground detection. DO NOT leave at Default-only — set explicitly in Inspector.")]
+    [Header("Surface Raycast")]
+    [Tooltip("Separate mask for surface detection. DO NOT leave at Default-only — set explicitly in Inspector.")]
     [SerializeField] private LayerMask groundMask = 0;
-    [Tooltip("Max raycast distance downward when searching for ground.")]
+    [Tooltip("Max raycast distance when searching for a surface along the breath direction.")]
     [SerializeField] private float maxGroundDistance = 50f;
 
     [Header("Patch Tuning")]
@@ -75,16 +75,17 @@ public class GroundFireSpawner : NetworkBehaviour
         Vector3 forward = (inFlight && cam != null) ? cam.forward : fireOrigin.forward;
         Vector3 origin = fireOrigin.position;
 
-        Vector3 scatter = Random.insideUnitSphere * scatterRadius;
-        scatter.y = 0f;
-        Vector3 projected = origin + forward * forwardProjection + scatter;
-
-        // Raycast down from above the projected point to find ground
-        Vector3 rayStart = projected + Vector3.up * (maxGroundDistance * 0.5f);
-        if (!Physics.Raycast(rayStart, Vector3.down, out RaycastHit hit, maxGroundDistance, groundMask, QueryTriggerInteraction.Ignore))
+        // Bullet-decal pattern: single raycast forward along breath direction. Hit any surface
+        // within maxGroundDistance → spawn patch. Miss → no spawn. No aim-angle gating. Empty sky
+        // breathes produce no patches because the ray hits nothing. Ground, walls, ceilings, slopes
+        // all work uniformly via hit.normal.
+        if (!Physics.Raycast(origin, forward, out RaycastHit hit, maxGroundDistance, groundMask, QueryTriggerInteraction.Ignore))
             return;
 
-        RequestSpawnGroundFireServerRpc(hit.point, hit.normal);
+        // Scatter is applied tangent to the surface, not in world XZ, so walls/slopes get clean scatter too.
+        Vector3 scatter = Random.insideUnitSphere * scatterRadius;
+        Vector3 tangentScatter = Vector3.ProjectOnPlane(scatter, hit.normal);
+        RequestSpawnGroundFireServerRpc(hit.point + tangentScatter, hit.normal);
     }
 
     [ServerRpc(RequireOwnership = true)]

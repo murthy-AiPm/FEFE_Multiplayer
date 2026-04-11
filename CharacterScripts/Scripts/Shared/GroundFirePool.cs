@@ -73,7 +73,15 @@ public class GroundFirePool : MonoBehaviour
             return null;
         }
 
-        patch.transform.SetPositionAndRotation(position, Quaternion.LookRotation(Vector3.forward, normal));
+        // Build orthonormal rotation from the hit normal. Patch's local up-axis aligns with the normal
+        // (so the decal projects into the surface). Tangent is derived robustly for any surface orientation:
+        // for ground (normal ≈ up), cross with forward; for walls (normal horizontal), cross with world up.
+        Vector3 up = normal.sqrMagnitude > 0.0001f ? normal.normalized : Vector3.up;
+        Vector3 tangentRef = Mathf.Abs(Vector3.Dot(up, Vector3.up)) > 0.95f ? Vector3.forward : Vector3.up;
+        Vector3 forward = Vector3.Cross(Vector3.Cross(up, tangentRef).normalized, up).normalized;
+        Quaternion rot = Quaternion.LookRotation(forward, up);
+
+        patch.transform.SetPositionAndRotation(position, rot);
         patch.gameObject.SetActive(true);
         patch.Activate(config, sourceRef);
         _active.AddLast(patch);
