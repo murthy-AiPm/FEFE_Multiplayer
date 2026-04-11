@@ -455,4 +455,79 @@ STILL DEFERRED:
  * Building/structure burnable states with pre-authored destruction stages
  * Fire propagation between burnables (proximity ignition)
 
+──────────────────────────────────────────────────────────────────────
+10th-April-2026 (cont.) — Burn System Testing, Bug Fixes, Ground Patch Behavior
+──────────────────────────────────────────────────────────────────────
+
+PHASE 1 BUGS FIXED DURING TESTING:
+
+ 1. NPC IGNITION BROKEN — self-immunity check used OwnerClientId comparison.
+    Symptom: zombies took fire breath damage and died, but never caught fire.
+    Root cause: BurnStatus.Ignite() compared sourceOwnerId == OwnerClientId. Host-controlled
+    dragon has OwnerClientId=0, server-spawned NPCs also have OwnerClientId=0, so the
+    self-immunity check matched for ALL server-owned NPCs and Ignite() returned immediately.
+    Fix: Signature changed to (float, NetworkObjectReference). Self-immunity compares
+    NetworkObject identity via sourceRef.TryGet() == NetworkObject. Works for both
+    player-owned and server-owned characters. Future-proof for controllable NPCs.
+    Files: BurnStatus.cs, DragonFireBreathDamage.cs, GroundFirePool.cs, GroundFirePatch.cs,
+    GroundFireSpawner.cs (all propagate NetworkObjectReference).
+
+ 2. BURN DURATION NOT ACCUMULATING — burn ended instantly when fire breath stopped.
+    Root cause: DragonFireBreathDamage passed _tickInterval (0.25s) as burn duration per
+    Ignite() call. Each tick added 0.25s, BurnStatus.Update() decremented Time.deltaTime
+    every frame → net accumulation ~0.
+    Fix: Added burnTimePerTick serialized field (default 1.5s) on DragonFireBreathDamage,
+    decoupled from _tickInterval. ~2s of breathing now hits maxBurnDuration cap.
+    Files: DragonFireBreathDamage.cs only.
+
+GROUND FIRE PATCHES — NOW WORKING ON ALL SURFACES (BULLET-DECAL PATTERN):
+ * Rewrote GroundFireSpawner.TrySpawnPatch() to bullet-decal pattern: single forward raycast
+   from fireOrigin along breath direction, spawn at hit.point with hit.normal. No aim-angle
+   gating, no downward fallback, no projection math. Hit = spawn, miss = skip. Empty sky
+   breathes produce no patches because the ray hits nothing.
+ * Scatter applied tangent to surface via Vector3.ProjectOnPlane(scatter, hit.normal) so
+   walls and slopes get clean scatter.
+ * GroundFirePool.SpawnAt() builds orthonormal rotation from hit.normal (robust for ground,
+   walls, ceilings, slopes). Patch's local up-axis = surface normal.
+ * DecalProjector child on patch prefab needs -90° X rotation so its local -Z (projection
+   direction) points along patch up-axis (into the surface). Prefab-only fix.
+ * Verified working: flat ground, slopes, vertical walls, ceilings. Flight horizontal into
+   sky correctly produces no patches.
+
+LESSONS LEARNED:
+
+ * NetworkObject IDENTITY vs OwnerClientId: OwnerClientId is a property OF an entity, not an
+   identifier FOR one. Server-owned objects all share OwnerClientId 0 — any "is this the
+   same thing" check using OwnerClientId silently fails for NPC-vs-NPC or host-vs-NPC. Use
+   NetworkObject identity (via NetworkObjectReference over the wire) for equality.
+
+ * REFRESH-ON-CONTACT TIMERS need refresh value > time between refreshes, or net accumulation
+   is zero and the system is a no-op. Applies to status effect refreshes, fall damage immunity
+   windows, stagger refreshes — anything time-gated where additions race against decay.
+
+ * MATCH FAMILIAR GAME PATTERNS DIRECTLY: When user references a familiar pattern ("like
+   bullet marks in shooters"), implement THAT pattern. Don't invent a new one with projection
+   math, fallback raycasts, aim-angle gates. First ground-fire attempt had all three; second
+   attempt was 8 lines of raycast-forward-spawn-at-hit and worked for every case.
+
+PHASE 1 + PHASE 2 NOW VERIFIED IN-EDITOR (host only):
+ * Dragon breathes fire on zombie → zombie takes damage AND catches fire (BurnStatus VFX visible)
+ * Burn persists several seconds after dragon stops breathing; DOT continues ticking
+ * Ground patches spawn at hit points on ground, walls, slopes, ceilings via bullet-decal raycast
+ * URP Decal placeholder (M_GroundFire_Placeholder, Shader Graphs/Decal shader) renders correctly
+
+NEXT SESSION — START HERE:
+ * Commit current state before any new work. Suggested msg: "Burn system Phase 1+2 working:
+   NPC ignition, burn accumulation, bullet-decal ground patches on all surfaces"
+ * Particle system Simulation Space check on walls — Local vs World. Local = flames follow
+   surface normal (correct on walls, may look odd on slopes). Prefab setting, no code.
+ * Multiplayer testing: host dragon igniting remote client's NPCs, ground patches on remotes,
+   BurnStatus VFX syncing across clients.
+ * Human character burn: add BurnStatus component to human prefab, wire fireVFXPrefab,
+   pelvisBone, vitalManager. Test dragon-vs-human fire breath.
+ * Corpse burn persistence test (_refreshLocked lets current burn finish after death).
+ * Low-pri deferred: dwell-timer delayed spawn. Design: track last hit point, increment
+   dwell timer while within "same location" radius (~1m), spawn only after threshold (~0.5s),
+   reset when aim moves. Separate concern from current code structure.
+
  */
