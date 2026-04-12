@@ -530,4 +530,46 @@ NEXT SESSION — START HERE:
    dwell timer while within "same location" radius (~1m), spawn only after threshold (~0.5s),
    reset when aim moves. Separate concern from current code structure.
 
+──────────────────────────────────────────────────────────────────────
+11th-April-2026 — Deferred Item Triage & Lifetime Tuning Note
+──────────────────────────────────────────────────────────────────────
+
+TRIAGE OF OPEN ITEMS:
+
+ FIXED / DONE:
+  * Dragon melee hitbox colliders on paws — DONE.
+  * Particle Simulation Space (Local vs World) on ground patch prefab — DONE.
+
+ STILL IN TESTING:
+  * Flight remote-client animation sync — host-side looked okay in today's pass,
+    needs dedicated client-side testing to confirm fully resolved.
+  * Human burn prefab wiring (BurnStatus on human prefab, fireVFXPrefab, pelvisBone,
+    vitalManager refs) — in progress, dragon-vs-human fire breath not yet verified.
+  * Corpse burn persistence (_refreshLocked lets active burn play out after death) —
+    still being validated.
+
+ DEFERRED TO NEXT RELEASE / VERSION:
+  * Ground fire breath VFX wobble on the ground (mouth-bone jitter from procedural
+    neck tracking shakes VFX forward vector). Partial smoothing already in place.
+  * Building/structure burnable states with pre-authored destruction stages
+    (intact → burning → charred/collapsed, NavMesh Obstacle carving on collapse).
+    May run experiments before committing to approach.
+  * Fire propagation between burnables (proximity-ignition loop, timer-based).
+  * Dwell-timer delayed patch spawn (see earlier design note). Defer to next release.
+
+PATCH & BURN LIFETIME — NEEDS TUNING (next session, Inspector only):
+ * User feedback: ground fire patches and character burns disappear too quickly.
+ * No code change — pure Inspector tuning pass.
+ * GroundFireSpawner (patch config):
+   - patchLifetime: currently 3s → try 6–10s for longer-lingering scorch.
+   - patchFadeDuration: currently 1.2s → keep short relative to lifetime so the
+     decal stays visually solid and doesn't ghost for most of its life.
+ * BurnStatus:
+   - maxBurnDuration: raise so sustained fire breath produces a longer visible burn
+     on characters/NPCs.
+ * DragonFireBreathDamage:
+   - burnTimePerTick: currently 1.5s. Raising this extends how long each hit keeps
+     the target ignited after the cone leaves them.
+ * Tune values live in Play Mode, then bake into prefab defaults.
+
  */

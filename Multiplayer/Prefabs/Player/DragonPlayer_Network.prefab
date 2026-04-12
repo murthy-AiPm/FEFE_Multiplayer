@@ -6030,12 +6030,12 @@ MonoBehaviour:
   cam: {fileID: 0}
   spawnInterval: 0.05
   forwardProjection: 8
-  scatterRadius: 1.5
+  scatterRadius: 0.5
   groundMask:
     serializedVersion: 2
     m_Bits: 1
-  maxGroundDistance: 50
-  patchLifetime: 3
+  maxGroundDistance: 35
+  patchLifetime: 10
   patchFadeDuration: 1.2
   patchDamagePerTick: 5
   patchTickInterval: 0.5
