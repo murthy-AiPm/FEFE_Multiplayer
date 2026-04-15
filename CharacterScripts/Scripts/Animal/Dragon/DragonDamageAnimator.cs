@@ -19,9 +19,11 @@ using UnityEngine;
 ///   Float: HitFB, HitLR, DeathLR
 ///
 /// Hit clip import settings:
-///   Root Transform Rotation  → Bake Into Pose: CHECKED
-///   Root Transform Pos (XZ)  → Bake Into Pose: CHECKED
-///   (All rotation/movement handled by code, not root motion)
+///   Root Transform Rotation  → Bake Into Pose: UNCHECKED
+///   Root Transform Pos (XZ)  → Bake Into Pose: UNCHECKED
+///   Root Transform Pos (Y)   → Bake Into Pose: CHECKED
+///   (Hit motion driven by root motion via DragonHitRootMotion StateMachineBehaviour
+///    on the hit blend tree state.)
 /// </summary>
 public class DragonDamageAnimator : NetworkBehaviour
 {
@@ -50,16 +52,6 @@ public class DragonDamageAnimator : NetworkBehaviour
     [Tooltip("Seconds before GotHit resets to false.")]
     [SerializeField] private float hitResetDelay = 0.1f;
 
-    [Header("Hit Rotation (Code-Driven)")]
-    [Tooltip("How fast the dragon rotates toward the attacker during the hit (degrees/sec).")]
-    [SerializeField] private float hitTurnSpeed = 360f;
-    [Tooltip("Extra degrees to rotate PAST facing the attacker. 0 = face attacker exactly. " +
-             "30 = overshoot by 30 degrees. Negative values = turn less than fully facing.")]
-    [SerializeField] private float hitTurnOvershoot = 0f;
-    [Tooltip("How long the code-driven rotation lasts. First half lerps toward target, " +
-             "second half holds. Should roughly match the hit clip length.")]
-    [SerializeField] private float hitRotationDuration = 0.8f;
-
     [Header("Debug")]
     [SerializeField] private bool debugLogging = false;
     [Tooltip("Enable keypad testing: Hit = 8/2/4/6 (FB/LR, supports diagonals), " +
@@ -80,10 +72,22 @@ public class DragonDamageAnimator : NetworkBehaviour
     private float _deathFallVelocity = 0f;
     private float _hitResetTimer = -1f;
 
-    // Code-driven rotation state
-    private bool  _isRotatingFromHit = false;
-    private float _hitRotationTimer = -1f;
-    private Quaternion _hitTargetRotation;
+    // Hit anim active state — driven by DragonHitRootMotion StateMachineBehaviour.
+    // _wasHitAnimActive tracks the previous frame so we can detect the true→false
+    // transition and run cleanup once when the hit animation ends.
+    private bool _hitAnimActive;
+    private bool _wasHitAnimActive;
+
+    /// <summary>
+    /// Set by DragonHitRootMotion (StateMachineBehaviour) on the hit blend tree state.
+    /// True for the duration of the hit animation. Cleanup runs in Update on the
+    /// frame this flips back to false.
+    /// </summary>
+    public bool HitAnimActive
+    {
+        get => _hitAnimActive;
+        set => _hitAnimActive = value;
+    }
 
     private void Awake()
     {
@@ -130,16 +134,12 @@ public class DragonDamageAnimator : NetworkBehaviour
             }
         }
 
-        // Code-driven rotation toward attacker during hit
-        if (_isRotatingFromHit)
+        // Detect hit anim ending (true → false transition driven by
+        // DragonHitRootMotion StateMachineBehaviour). Runs cleanup once.
+        if (_wasHitAnimActive && !_hitAnimActive)
         {
-            _hitRotationTimer -= Time.deltaTime;
-
-            if (_hitRotationTimer <= 0f)
+            if (IsOwner)
             {
-                // Hit rotation finished — unsuspend alignment and sync yaw
-                _isRotatingFromHit = false;
-
                 if (groundAlignment != null)
                 {
                     float finalYaw = rb != null ? rb.rotation.eulerAngles.y : transform.eulerAngles.y;
@@ -149,26 +149,12 @@ public class DragonDamageAnimator : NetworkBehaviour
 
                 if (groundController != null)
                     groundController.SyncYawAfterHit();
-
-                if (debugLogging)
-                    Debug.Log($"[DragonDamageAnimator] Hit rotation finished, yaw={transform.eulerAngles.y:F1}°");
             }
-            else if (rb != null)
-            {
-                // Lerp toward attacker during first half of the hit
-                float halfDuration = hitRotationDuration * 0.5f;
-                float remaining = _hitRotationTimer;
-                bool inTurnPhase = remaining > halfDuration;
 
-                if (inTurnPhase)
-                {
-                    float step = hitTurnSpeed * Time.deltaTime;
-                    Quaternion newRot = Quaternion.RotateTowards(rb.rotation, _hitTargetRotation, step);
-                    rb.MoveRotation(newRot);
-                }
-                // Second half: hold position, let animation play out
-            }
+            if (debugLogging)
+                Debug.Log($"[DragonDamageAnimator] Hit anim finished, yaw={transform.eulerAngles.y:F1}°");
         }
+        _wasHitAnimActive = _hitAnimActive;
 
         // Death fall — apply gravity and check for ground
         if (_deathFalling && IsOwner)
@@ -226,7 +212,6 @@ public class DragonDamageAnimator : NetworkBehaviour
     {
         if (_isDead) return;
         _isDead = true;
-        _isRotatingFromHit = false;
         animator.SetFloat(Hash_DeathLR, lr);
         animator.SetBool(Hash_IsDead, true);
         _hitResetTimer = -1f;
@@ -257,29 +242,21 @@ public class DragonDamageAnimator : NetworkBehaviour
 
     private void TriggerHit(float fb, float lr, Vector3 attackerWorldPos)
     {
-        // Set Animator params on all clients (this runs from ClientRpc)
+        // Set Animator params on all clients (this runs from ClientRpc).
+        // The hit blend tree state will fire DragonHitRootMotion.OnStateEnter,
+        // which flips HitAnimActive / HitRootMotionActive on owner and remotes alike.
+        // Root motion drives position + rotation; remotes mirror via NetworkTransform.
         animator.SetFloat(Hash_HitFB, fb);
         animator.SetFloat(Hash_HitLR, lr);
         animator.SetBool(Hash_GotHit, true);
         _hitResetTimer = hitResetDelay;
 
-        // Code-driven rotation only on owner — remotes get rotation via NetworkTransform
+        // Owner suspends alignment for the duration of the hit so the ground
+        // alignment system doesn't fight the root-motion rotation.
         if (!IsOwner) return;
 
-        Vector3 toAttacker = attackerWorldPos - transform.position;
-        toAttacker.y = 0f;
-
-        if (toAttacker.sqrMagnitude > 0.001f)
-        {
-            Quaternion faceAttacker = Quaternion.LookRotation(toAttacker.normalized);
-            _hitTargetRotation = faceAttacker * Quaternion.Euler(0f, hitTurnOvershoot, 0f);
-
-            _isRotatingFromHit = true;
-            _hitRotationTimer = hitRotationDuration;
-
-            if (groundAlignment != null)
-                groundAlignment.SuspendAlignment = true;
-        }
+        if (groundAlignment != null)
+            groundAlignment.SuspendAlignment = true;
     }
 
     // ─── Hit Reaction ───
@@ -287,7 +264,7 @@ public class DragonDamageAnimator : NetworkBehaviour
     private void HandleHitAnimation(Vector3 attackerWorldPos)
     {
         if (_isDead || animator == null) return;
-        if (_isRotatingFromHit) return; // Already playing a hit reaction — skip anim, damage still goes through
+        if (_hitAnimActive) return; // Already playing a hit reaction — skip anim, damage still goes through
 
         ComputeDirection(attackerWorldPos, out float fb, out float lr);
         TriggerHit(fb, lr, attackerWorldPos);
@@ -302,7 +279,6 @@ public class DragonDamageAnimator : NetworkBehaviour
     {
         if (_isDead || animator == null) return;
         _isDead = true;
-        _isRotatingFromHit = false;
 
         float deathLR = ComputeDeathLR(attackerWorldPos);
 
@@ -350,8 +326,8 @@ public class DragonDamageAnimator : NetworkBehaviour
         _isDead = false;
         _deathFalling = false;
         _deathFallVelocity = 0f;
-        _isRotatingFromHit = false;
-        _hitRotationTimer = -1f;
+        _hitAnimActive = false;
+        _wasHitAnimActive = false;
 
         // Sync alignment on owner
         if (IsOwner)

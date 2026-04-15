@@ -25,6 +25,7 @@ public class DragonGroundController : AnimalGroundController
     private float _dragonFallVelocity;
     private bool  _isSwimming;
     private bool  _flightRootMotionActive;
+    private bool  _hitRootMotionActive;
 
     /// <summary>
     /// Set by DragonFlightController to prevent ground OnAnimatorMove
@@ -34,6 +35,17 @@ public class DragonGroundController : AnimalGroundController
     {
         get => _flightRootMotionActive;
         set => _flightRootMotionActive = value;
+    }
+
+    /// <summary>
+    /// Set by DragonHitRootMotion (StateMachineBehaviour) for the duration of
+    /// the hit blend tree state. Routes animator root motion straight to the
+    /// rigidbody so the hit clips drive position and rotation.
+    /// </summary>
+    public bool HitRootMotionActive
+    {
+        get => _hitRootMotionActive;
+        set => _hitRootMotionActive = value;
     }
 
     /// <summary>
@@ -153,6 +165,22 @@ public class DragonGroundController : AnimalGroundController
             if (!IsOwner) return;
 
             // Apply animator root motion directly to rigidbody
+            if (animator.deltaPosition.sqrMagnitude > 0.00001f)
+                rb.linearVelocity = animator.deltaPosition / Time.deltaTime;
+            else
+                rb.linearVelocity = Vector3.zero;
+
+            rb.MoveRotation(rb.rotation * animator.deltaRotation);
+            return;
+        }
+
+        // Hit root motion: same pattern as flight — owner-only apply,
+        // remotes get the result via NetworkTransform.
+        if (_hitRootMotionActive)
+        {
+            if (animator == null || rb == null) return;
+            if (!IsOwner) return;
+
             if (animator.deltaPosition.sqrMagnitude > 0.00001f)
                 rb.linearVelocity = animator.deltaPosition / Time.deltaTime;
             else

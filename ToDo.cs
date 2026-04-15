@@ -572,4 +572,29 @@ PATCH & BURN LIFETIME — NEEDS TUNING (next session, Inspector only):
      the target ignited after the cone leaves them.
  * Tune values live in Play Mode, then bake into prefab defaults.
 
+DRAGON HIT ROOT MOTION — DONE:
+ * Switched dragon hit reactions from code-driven rotation to full root motion.
+ * New DragonHitRootMotion StateMachineBehaviour on the hit blend tree state
+   flips HitRootMotionActive (DragonGroundController) and HitAnimActive
+   (DragonDamageAnimator) on enter/exit.
+ * DragonGroundController.OnAnimatorMove gained a hit-root-motion branch that
+   mirrors the flight branch (owner-only, applies animator deltaPosition/
+   deltaRotation; remotes sync via NetworkTransform).
+ * DragonDamageAnimator: removed hitTurnSpeed/hitTurnOvershoot/hitRotationDuration
+   and the timer-driven rotation logic. Cleanup (alignment yaw sync +
+   SyncYawAfterHit) now runs on the true→false edge of HitAnimActive.
+ * Unity-side: Bake Into Pose UNCHECKED on Root Transform Rotation and
+   Position XZ for all 6 hit clips (Position Y stays baked).
+
+RIGIDBODY INTERPOLATION → EXTRAPOLATE DURING FLIGHT — TODO:
+ * Issue: rigidbody Interpolate mode causes visible lag during flight where
+   root motion drives position; Extrapolate gives smoother visuals.
+ * Plan: have DragonFlightController set rb.interpolation = Extrapolate when
+   entering flight and restore Interpolate (or whatever the ground default is)
+   on exit. Cache the original mode in OnEnable/Awake so we restore correctly.
+ * Apply on owner only — remotes use NetworkTransform interpolation, the
+   rigidbody mode is irrelevant there.
+ * Watch for: extrapolation can overshoot on sudden direction changes; if
+   visible during sharp yaw/pitch reversals, may need to clamp or revert.
+
  */
