@@ -28,6 +28,14 @@ public class DamageReceiver : NetworkBehaviour
     [Header("Hit Feedback")]
     [SerializeField] private float hitStunDuration = 0.2f;
 
+    [Header("Stagger (Projectile Crit Zones)")]
+    [Tooltip("Accumulated stagger damage from crit-zone projectile hits needed to trigger a hit reaction animation.")]
+    [SerializeField] private float staggerThreshold = 200f;
+    [Tooltip("Stagger damage drains at this rate per second after the decay delay expires.")]
+    [SerializeField] private float staggerDecayRate = 50f;
+    [Tooltip("Seconds after the last crit-zone hit before stagger starts decaying.")]
+    [SerializeField] private float staggerDecayDelay = 2f;
+
     // Events
     public System.Action<float, Vector3> OnDamageReceived;
     public System.Action<float, Vector3> OnDamageBlocked;
@@ -40,6 +48,10 @@ public class DamageReceiver : NetworkBehaviour
 
     private float _hitStunTimer;
     private Vector3 _lastAttackerPosition;
+
+    // Stagger accumulation (server only)
+    private float _staggerAccumulated;
+    private float _timeSinceLastCritHit;
 
     public bool IsHitStunned => _hitStunTimer > 0f;
 
@@ -70,6 +82,16 @@ public class DamageReceiver : NetworkBehaviour
     {
         if (_hitStunTimer > 0f)
             _hitStunTimer -= Time.deltaTime;
+
+        // Stagger decay (server only)
+        if (IsServer && _staggerAccumulated > 0f)
+        {
+            _timeSinceLastCritHit += Time.deltaTime;
+            if (_timeSinceLastCritHit >= staggerDecayDelay)
+            {
+                _staggerAccumulated = Mathf.Max(0f, _staggerAccumulated - staggerDecayRate * Time.deltaTime);
+            }
+        }
     }
 
     public void OnHitLocal(HitInfo hitInfo)
@@ -113,17 +135,37 @@ public class DamageReceiver : NetworkBehaviour
 
     /// <summary>
     /// Called from server-side projectiles (e.g. BallistaArrow) that bypass HitboxController.
-    /// Applies damage via VitalManager and fires NotifyHitClientRpc so hit animations play.
+    /// Applies damage via VitalManager. If critMultiplier > 0 (hit landed on a CritZoneMarker),
+    /// accumulates stagger damage. When stagger crosses the threshold, fires the hit reaction
+    /// animation and resets the accumulator.
     /// MUST be called on the server only.
     /// </summary>
-    public void ApplyProjectileDamage(float damage, Vector3 attackerPosition)
+    public void ApplyProjectileDamage(float damage, Vector3 attackerPosition, float critMultiplier = 0f)
     {
         if (!IsServer) return;
 
-        if (vitalManager != null)
-            vitalManager.ApplyDamage("health", damage);
+        // Crit multiplier scales both health damage and stagger accumulation
+        float finalDamage = critMultiplier > 0f ? damage * critMultiplier : damage;
 
-        NotifyHitClientRpc(damage, attackerPosition, false, attackerPosition);
+        if (vitalManager != null)
+            vitalManager.ApplyDamage("health", finalDamage);
+
+        // Stagger accumulation: only crit-zone hits (critMultiplier > 0) contribute.
+        // Non-crit hits (critMultiplier == 0) deal base damage but never trigger hit anim.
+        bool triggerHitAnimation = false;
+        if (critMultiplier > 0f)
+        {
+            _staggerAccumulated += finalDamage;
+            _timeSinceLastCritHit = 0f;
+
+            if (_staggerAccumulated >= staggerThreshold)
+            {
+                triggerHitAnimation = true;
+                _staggerAccumulated = 0f;
+            }
+        }
+
+        NotifyHitClientRpc(finalDamage, attackerPosition, false, attackerPosition, triggerHitAnimation);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -162,7 +204,7 @@ public class DamageReceiver : NetworkBehaviour
     }
 
     [ClientRpc]
-    private void NotifyHitClientRpc(float damage, Vector3 hitPoint, bool wasBlocked, Vector3 attackerPosition)
+    private void NotifyHitClientRpc(float damage, Vector3 hitPoint, bool wasBlocked, Vector3 attackerPosition, bool triggerHitAnimation = true)
     {
         _hitStunTimer = hitStunDuration;
 
@@ -173,7 +215,8 @@ public class DamageReceiver : NetworkBehaviour
         else
         {
             OnDamageReceived?.Invoke(damage, hitPoint);
-            OnPlayHitAnimation?.Invoke(attackerPosition);
+            if (triggerHitAnimation)
+                OnPlayHitAnimation?.Invoke(attackerPosition);
         }
     }
 

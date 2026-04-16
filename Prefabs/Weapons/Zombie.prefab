@@ -2565,7 +2565,7 @@ MonoBehaviour:
   damagePerTick: 10
   tickInterval: 1
   maxBurnDuration: 10
-  fireVFXPrefab: {fileID: 793755792036113438, guid: 8632a9a917098bb4ba8938012d4e0d89, type: 3}
+  fireVFXPrefab: {fileID: 1796120904278366016, guid: 1bef320677628644081dfb5e21bea115, type: 3}
   vfxScale: 2
 --- !u!1 &5093741960022277789
 GameObject:

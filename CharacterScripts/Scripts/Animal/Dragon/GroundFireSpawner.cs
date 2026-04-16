@@ -1,3 +1,4 @@
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -31,6 +32,8 @@ public class GroundFireSpawner : NetworkBehaviour
     [SerializeField] private LayerMask groundMask = 0;
     [Tooltip("Max raycast distance when searching for a surface along the breath direction.")]
     [SerializeField] private float maxGroundDistance = 50f;
+    [Tooltip("How fast the flame stream travels (m/s). Patch spawn is delayed by hitDistance/streamSpeed so visual flame appears to cause the fire. Lower = more delay, more obvious travel time.")]
+    [SerializeField] private float flameStreamSpeed = 30f;
 
     [Header("Patch Tuning")]
     [SerializeField] private float patchLifetime = 3f;
@@ -85,7 +88,23 @@ public class GroundFireSpawner : NetworkBehaviour
         // Scatter is applied tangent to the surface, not in world XZ, so walls/slopes get clean scatter too.
         Vector3 scatter = Random.insideUnitSphere * scatterRadius;
         Vector3 tangentScatter = Vector3.ProjectOnPlane(scatter, hit.normal);
-        RequestSpawnGroundFireServerRpc(hit.point + tangentScatter, hit.normal);
+        Vector3 spawnPos = hit.point + tangentScatter;
+
+        // Delay spawn by flame travel time so visible breath stream appears to cause the fire.
+        // Fire-and-forget: even if breath stops, the in-flight flame still lands (per design).
+        float travelDelay = (flameStreamSpeed > 0f) ? hit.distance / flameStreamSpeed : 0f;
+        if (travelDelay <= 0f)
+            RequestSpawnGroundFireServerRpc(spawnPos, hit.normal);
+        else
+            StartCoroutine(SpawnAfterDelay(spawnPos, hit.normal, travelDelay));
+    }
+
+    private IEnumerator SpawnAfterDelay(Vector3 position, Vector3 normal, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        // Guard: dragon may have despawned or lost ownership while flame was in flight.
+        if (!IsSpawned || !IsOwner) yield break;
+        RequestSpawnGroundFireServerRpc(position, normal);
     }
 
     [ServerRpc(RequireOwnership = true)]

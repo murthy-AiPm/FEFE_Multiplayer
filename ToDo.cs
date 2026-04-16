@@ -597,4 +597,41 @@ RIGIDBODY INTERPOLATION → EXTRAPOLATE DURING FLIGHT — TODO:
  * Watch for: extrapolation can overshoot on sudden direction changes; if
    visible during sharp yaw/pitch reversals, may need to clamp or revert.
 
+GROUND FIRE SPAWN TRAVEL DELAY — DONE:
+ * Fixed timing mismatch where quick fire breath taps spawned ground fire
+   patches before the breath VFX was visible (raycast was instant, VFX had
+   startup ramp).
+ * GroundFireSpawner.TrySpawnPatch now delays the ServerRpc by
+   hit.distance / flameStreamSpeed via a fire-and-forget coroutine.
+ * New serialized field: flameStreamSpeed (default 30 m/s, Inspector tweakable).
+ * Coroutine guards: aborts spawn if !IsSpawned or !IsOwner at completion.
+ * In-flight flames still land even if breath stops mid-travel (intentional).
+
+CRIT ZONE HIT REACTIONS — DONE:
+ * Hit reaction animations now only fire on critical hits (projectile hits a
+   CritZoneMarker collider). Damage always applies regardless.
+ * New file: Shared/CritZoneMarker.cs — MonoBehaviour marker with future-ready
+   damageMultiplier and zoneName fields. Drag onto head/wing/etc colliders.
+ * DamageReceiver.ApplyProjectileDamage gains triggerHitAnimation param
+   (default false). NotifyHitClientRpc gates OnPlayHitAnimation on this flag.
+ * BallistaArrow checks other.GetComponent<CritZoneMarker>() on hit and passes
+   isCritical through. Debug.Log includes crit status.
+ * Existing melee/RequestDamageServerRpc path unchanged (always triggers anim
+   via default param = true).
+ * Setup: drag CritZoneMarker onto dragon head collider (or any crit zone).
+   Same pattern applies to humans/NPCs later.
+
+STAGGER THRESHOLD SYSTEM — DONE:
+ * Replaced instant crit-hit-animation with stagger accumulation.
+ * DamageReceiver tracks _staggerAccumulated (server only). Crit-zone hits
+   add finalDamage (base damage * critMultiplier) to the accumulator. When it
+   crosses staggerThreshold (default 200), hit reaction fires and resets to 0.
+ * Crit multiplier now scales both health damage AND stagger accumulation.
+   Head (mult 5, base 50) = 250 damage + 250 stagger → instant stagger.
+   Chest (mult 1, base 50) = 50 damage + 50 stagger → 4 hits to stagger.
+ * Stagger decays after staggerDecayDelay (default 2s) at staggerDecayRate
+   (default 50/sec). Prevents infinite chip-away.
+ * Non-crit-zone hits: base damage only, no stagger, no anim.
+ * All new fields Inspector-tweakable on DamageReceiver.
+
  */

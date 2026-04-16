@@ -795,6 +795,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2510481586615107530}
   - component: {fileID: 7129453786256326859}
+  - component: {fileID: 2232242284257745525}
   m_Layer: 12
   m_Name: Head
   m_TagString: Untagged
@@ -850,6 +851,20 @@ CapsuleCollider:
   m_Height: 0.9448736
   m_Direction: 1
   m_Center: {x: -0.08000004, y: 0.05326291, z: -0.000000021732218}
+--- !u!114 &2232242284257745525
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1493216127232398713}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a8ab341fe3ff884b95c62e5d1d8fb92, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CritZoneMarker
+  damageMultiplier: 5
+  zoneName: Head
 --- !u!1 &1712461836808213696
 GameObject:
   m_ObjectHideFlags: 0
@@ -1611,6 +1626,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7548757821673491252}
   - component: {fileID: 7775736959076007057}
+  - component: {fileID: 5334077635167771601}
   m_Layer: 12
   m_Name: Wing L02
   m_TagString: Untagged
@@ -1658,6 +1674,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 3, y: 0.3, z: 4}
   m_Center: {x: -1, y: -0.5, z: -1.5}
+--- !u!114 &5334077635167771601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3090446477578504490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a8ab341fe3ff884b95c62e5d1d8fb92, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CritZoneMarker
+  damageMultiplier: 2
+  zoneName: LWing
 --- !u!1 &3119396858633905749
 GameObject:
   m_ObjectHideFlags: 0
@@ -2357,6 +2387,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8397877593476129180}
   - component: {fileID: 4227514282872529538}
+  - component: {fileID: 6249004095221049386}
   m_Layer: 12
   m_Name: Wing R02
   m_TagString: Untagged
@@ -2404,6 +2435,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 3, y: 0.3, z: 4}
   m_Center: {x: -1, y: -0.5, z: 1.5}
+--- !u!114 &6249004095221049386
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4551708238541384946}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a8ab341fe3ff884b95c62e5d1d8fb92, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CritZoneMarker
+  damageMultiplier: 2
+  zoneName: RWing
 --- !u!1 &4700324621708818297
 GameObject:
   m_ObjectHideFlags: 0
@@ -3812,6 +3857,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5688100995211649117}
   - component: {fileID: 2934970310493324168}
+  - component: {fileID: 5168718724867843030}
   m_Layer: 12
   m_Name: Spine2
   m_TagString: Untagged
@@ -3861,6 +3907,20 @@ CapsuleCollider:
   m_Height: 1.4708989
   m_Direction: 0
   m_Center: {x: -0.19045, y: 0.15, z: -0.07999999}
+--- !u!114 &5168718724867843030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7256931635852848265}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a8ab341fe3ff884b95c62e5d1d8fb92, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CritZoneMarker
+  damageMultiplier: 1
+  zoneName: Chest
 --- !u!1 &7405144604186011539
 GameObject:
   m_ObjectHideFlags: 0
@@ -5407,7 +5467,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 48177541
+  GlobalObjectIdHash: 1353946614
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -5847,7 +5907,7 @@ MonoBehaviour:
   neck1YawWeight: 0.3
   neck2YawWeight: 0.3
   neck3YawWeight: 0.3
-  neck4YawWeight: 0.35
+  neck4YawWeight: 1
   fireBreathVFXPrefab: {fileID: 793755792036113438, guid: 8e4d4ead1c6f9c84da15c1be3e9dea0c, type: 3}
   fireBreathSpawnPoint: {fileID: 1664271699964925404}
   fireVFXRotationSmoothing: 10
@@ -5867,7 +5927,7 @@ MonoBehaviour:
   spine2Weight: 0
   flightYawAnimCompensation: -30
   maxHeadAngle: 80
-  maxHeadPitch: 45
+  maxHeadPitch: 80
   headTurnSpeed: 200
   headReturnSpeed: 150
   headPitchOffsetGround: -40
@@ -5912,6 +5972,9 @@ MonoBehaviour:
   blockAngle: 0
   blockStaminaRatio: 0
   hitStunDuration: 0.2
+  staggerThreshold: 200
+  staggerDecayRate: 50
+  staggerDecayDelay: 2
 --- !u!114 &-7962891897276758031
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5960,9 +6023,6 @@ MonoBehaviour:
   deathFallGravity: 20
   deathFallMaxSpeed: 40
   hitResetDelay: 0.8
-  hitTurnSpeed: 180
-  hitTurnOvershoot: -30
-  hitRotationDuration: 0.8
   debugLogging: 1
   debugKeypadTesting: 1
 --- !u!114 &2950672030226061884
@@ -6035,6 +6095,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   maxGroundDistance: 35
+  flameStreamSpeed: 30
   patchLifetime: 10
   patchFadeDuration: 1.2
   patchDamagePerTick: 5

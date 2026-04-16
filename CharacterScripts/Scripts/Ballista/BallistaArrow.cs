@@ -94,12 +94,15 @@ public class BallistaArrow : NetworkBehaviour
         }
 
 
-        // Try to deal damage through DamageReceiver (triggers hit animations)
+        // Try to deal damage through DamageReceiver
+        // Crit-zone hits accumulate stagger damage; when threshold is crossed, hit reaction fires
         var damageReceiver = other.GetComponentInParent<DamageReceiver>();
         if (damageReceiver != null)
         {
-            damageReceiver.ApplyProjectileDamage(damage, transform.position);
-            Debug.Log($"[BallistaArrow] Applied {damage} damage via DamageReceiver to {damageReceiver.gameObject.name}");
+            var critZone = other.GetComponent<CritZoneMarker>();
+            float critMultiplier = critZone != null ? critZone.DamageMultiplier : 0f;
+            damageReceiver.ApplyProjectileDamage(damage, transform.position, critMultiplier);
+            Debug.Log($"[BallistaArrow] Applied {damage} damage via DamageReceiver to {damageReceiver.gameObject.name} (critMultiplier: {critMultiplier})");
         }
         else
         {

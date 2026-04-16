@@ -332,7 +332,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BallistaArrow
   ShowTopMostFoldoutHeaderGroup: 1
-  damage: 200
+  damage: 50
   maxRange: 200
   stickDuration: 5
   despawnDelay: 0.2
