@@ -283,6 +283,7 @@ public class BearAI : NetworkBehaviour
         {
             var col = _separationBuffer[i];
             if (col == null || col.transform == transform) continue;
+            if (col.isTrigger) continue; // Skip trigger colliders (e.g. CritZoneMarker hit zones)
             if (col.GetComponentInParent<BearAI>() == null) continue;
 
             Vector3 away = rootPosition - col.transform.position;
