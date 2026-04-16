@@ -4,13 +4,13 @@ using Unity.Netcode;
 // ─────────────────────────────────────────────────────────
 // DragonSoundPlayer.cs — Dragon-specific sound effects
 //
-// Attach to dragon prefab root. Handles:
-// - Wing flap loop (cadence timer while flying)
-// - Roar (ability trigger)
-// - Fire breath (start + loop + end)
-// - Landing thud
-// - Takeoff whoosh
-// - Grounded footsteps (heavy, terrain-aware via FootstepSoundPlayer)
+// Attach to dragon prefab root (same GameObject as Animator).
+//
+// Sound triggering:
+//   - Wing flaps, footsteps, etc. → Animation events call PlaySound(string)
+//     (Function: PlaySound, String: e.g. "WingFlap", "DragonWalk")
+//   - Fire breath, melee, roar, etc. → Called from ability scripts
+//   - Landing/takeoff → Auto-detected via flight state transitions
 // ─────────────────────────────────────────────────────────
 
 public class DragonSoundPlayer : NetworkBehaviour
@@ -18,16 +18,6 @@ public class DragonSoundPlayer : NetworkBehaviour
     [Header("References (auto-found if null)")]
     [SerializeField] private DragonFlightController flightController;
     [SerializeField] private AnimalGroundController groundController;
-
-    [Header("Wing Flap")]
-    [Tooltip("Sound name in database for wing flap")]
-    [SerializeField] private string wingFlapSound = "Dragon_WingFlap";
-
-    [Tooltip("Interval between wing flap sounds while flying (seconds)")]
-    [SerializeField] private float wingFlapInterval = 1.2f;
-
-    [Tooltip("Faster flap interval when boosting")]
-    [SerializeField] private float wingFlapBoostInterval = 0.8f;
 
     [Header("Roar")]
     [SerializeField] private string roarSound = "Dragon_Roar";
@@ -51,7 +41,6 @@ public class DragonSoundPlayer : NetworkBehaviour
     [SerializeField] private string tailSweepSound = "Dragon_TailSweep";
 
     // ─── State ───
-    private float _wingFlapTimer;
     private bool _wasFlying;
     private bool _isBreathingFire;
     private AudioSource _fireBreathLoopSource; // persistent source for looping fire breath
@@ -67,27 +56,7 @@ public class DragonSoundPlayer : NetworkBehaviour
         if (!IsOwner) return;
         if (ProximitySoundManager.Instance == null) return;
 
-        UpdateWingFlaps();
         UpdateFlightStateTransitions();
-    }
-
-    // ─── Wing Flaps ───
-
-    private void UpdateWingFlaps()
-    {
-        bool isFlying = IsFlying();
-        if (!isFlying)
-        {
-            _wingFlapTimer = 0f;
-            return;
-        }
-
-        _wingFlapTimer -= Time.deltaTime;
-        if (_wingFlapTimer <= 0f)
-        {
-            ProximitySoundManager.Instance.PlaySound(wingFlapSound, transform.position);
-            _wingFlapTimer = IsBoosting() ? wingFlapBoostInterval : wingFlapInterval;
-        }
     }
 
     // ─── Flight State Transitions ───
@@ -232,21 +201,25 @@ public class DragonSoundPlayer : NetworkBehaviour
         }
     }
 
+    // ─── Animation Event Handler ───
+
+    /// <summary>
+    /// Called by animation events. Add an event in the animation clip with:
+    ///   Function: PlaySound
+    ///   String:   sound name matching a SoundDatabase entry (e.g. "WingFlap", "DragonWalk")
+    /// </summary>
+    public void PlaySound(string soundName)
+    {
+        if (string.IsNullOrEmpty(soundName)) return;
+        if (ProximitySoundManager.Instance == null) return;
+        ProximitySoundManager.Instance.PlaySound(soundName, transform.position);
+    }
+
     // ─── Helpers ───
 
     private bool IsFlying()
     {
-        // Check if dragon is airborne — adapt to your flight controller's API
         if (flightController == null) return false;
-
-        // DragonFlightController likely has a public bool or state
-        // Adjust this based on your actual API
-        return flightController.enabled && flightController.gameObject.activeInHierarchy;
-    }
-
-    private bool IsBoosting()
-    {
-        // Adapt to your flight controller's boost detection
-        return Input.GetKey(KeyCode.LeftShift);
+        return flightController.IsFlightMode;
     }
 }

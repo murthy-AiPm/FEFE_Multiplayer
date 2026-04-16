@@ -5376,6 +5376,7 @@ GameObject:
   - component: {fileID: 2950672030226061884}
   - component: {fileID: 692041439902515234}
   - component: {fileID: -8493373264538071150}
+  - component: {fileID: -4205619173964242213}
   m_Layer: 3
   m_Name: DragonPlayer_Network
   m_TagString: Untagged
@@ -5467,7 +5468,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1353946614
+  GlobalObjectIdHash: 48177541
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -6101,3 +6102,32 @@ MonoBehaviour:
   patchDamagePerTick: 5
   patchTickInterval: 0.5
   patchBurnTimeOnContact: 5
+--- !u!114 &-4205619173964242213
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e970858811b5f174eb09f033d2f777b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DragonSoundPlayer
+  ShowTopMostFoldoutHeaderGroup: 1
+  flightController: {fileID: 358013097769894201}
+  groundController: {fileID: 3534620481540292934}
+  wingFlapSound: Dragon_WingFlap
+  wingFlapInterval: 1.2
+  wingFlapBoostInterval: 0.8
+  roarSound: Dragon_Roar
+  fireBreathStartSound: Dragon_FireBreath_Start
+  fireBreathLoopSound: Dragon_FireBreath_Loop
+  fireBreathEndSound: Dragon_FireBreath_End
+  landingSound: Dragon_Landing
+  takeoffSound: Dragon_Takeoff
+  deathSound: Dragon_Death
+  eatSound: Dragon_Eat
+  clawSound: Dragon_Claw
+  biteSound: Dragon_Bite
+  tailSweepSound: Dragon_TailSweep

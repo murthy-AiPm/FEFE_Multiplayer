@@ -474,6 +474,47 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+  - soundName: Wing Flap
+    category: 2
+    clips:
+    - {fileID: 8300000, guid: 0669bdc9a9b129646acc2192dd31a88e, type: 3}
+    - {fileID: 8300000, guid: 6304dc1ae60c1e540963d7ee1439e855, type: 3}
+    - {fileID: 8300000, guid: b88eccae129cdff41974dc6c08d1b665, type: 3}
+    - {fileID: 8300000, guid: a91235cdb3f3ed243a1e2d7d3e08ef8c, type: 3}
+    - {fileID: 8300000, guid: 0e66fb054ffbf08498e2865d3653a76a, type: 3}
+    - {fileID: 8300000, guid: 4ac1fb43560d2a94cbe7cd5663c2b251, type: 3}
+    - {fileID: 8300000, guid: 84a2ade6eb6b1424aa16c22e699f4d6f, type: 3}
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   terrainLayerMappings:
   - terrainLayerIndex: 0
     surfaceType: Soil

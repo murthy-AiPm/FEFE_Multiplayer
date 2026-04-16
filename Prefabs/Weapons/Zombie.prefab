@@ -2533,7 +2533,7 @@ MonoBehaviour:
   separationRadius: 1.2
   separationStrength: 2
   gravityStrength: 20
-  groundCheckDistance: 0.1
+  groundCheckDistance: 0.21
   groundLayer:
     serializedVersion: 2
     m_Bits: 1
@@ -2586,7 +2586,7 @@ MonoBehaviour:
   canvasRoot: {fileID: 4077868996284968681}
   fillImage: {fileID: 6469193711966255398}
   heightOffset: 2.5
-  visibleDistance: 50
+  visibleDistance: 0
   hideWhenFull: 0
   showAfterDamageTime: 5
   fillSpeed: 5
