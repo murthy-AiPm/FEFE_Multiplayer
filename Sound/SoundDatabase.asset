@@ -475,7 +475,7 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
   - soundName: Wing Flap
-    category: 2
+    category: 1
     clips:
     - {fileID: 8300000, guid: 0669bdc9a9b129646acc2192dd31a88e, type: 3}
     - {fileID: 8300000, guid: 6304dc1ae60c1e540963d7ee1439e855, type: 3}
