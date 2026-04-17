@@ -26,6 +26,8 @@ public class DragonSoundPlayer : NetworkBehaviour
     [SerializeField] private string fireBreathStartSound = "Dragon_FireBreath_Start";
     [SerializeField] private string fireBreathLoopSound = "Dragon_FireBreath_Loop";
     [SerializeField] private string fireBreathEndSound = "Dragon_FireBreath_End";
+    [Tooltip("Seconds before current loop clip ends to start the next random clip. The incoming clip's start masks the outgoing clip's quiet tail so chained non-seamless clips sound continuous.")]
+    [SerializeField] private float fireBreathLoopOverlap = 0.5f;
 
     [Header("Movement")]
     [SerializeField] private string landingSound = "Dragon_Landing";
@@ -53,7 +55,12 @@ public class DragonSoundPlayer : NetworkBehaviour
     // ─── State ───
     private bool _wasFlying;
     private bool _isBreathingFire;
-    private AudioSource _fireBreathLoopSource; // persistent source for looping fire breath
+    // Two AudioSources alternate — when one nears end of clip, the other starts the next random clip.
+    // Overlap masks the quiet tails of non-seamless fire breath clips.
+    private GameObject _fireBreathSourceHolder;
+    private AudioSource _fireBreathSourceA;
+    private AudioSource _fireBreathSourceB;
+    private AudioSource _activeFireBreathSource;
     private Quaternion _lastWingRotation;
     private float _wingActivity; // smoothed angular velocity in deg/sec
 
@@ -70,6 +77,9 @@ public class DragonSoundPlayer : NetworkBehaviour
         if (ProximitySoundManager.Instance == null) return;
 
         UpdateFlightStateTransitions();
+
+        if (_isBreathingFire)
+            UpdateFireBreathCrossfade();
     }
 
     // ─── Wing Motion Tracking ───
@@ -189,11 +199,11 @@ public class DragonSoundPlayer : NetworkBehaviour
         ProximitySoundManager.Instance.PlaySound(sound, transform.position);
     }
 
-    // ─── Fire Breath Loop (local audio source for continuous sound) ───
+    // ─── Fire Breath Loop (two AudioSources alternating with overlap) ───
 
     private void StartFireBreathLoop()
     {
-        if (_fireBreathLoopSource != null) return;
+        if (_fireBreathSourceHolder != null) return;
 
         var db = ProximitySoundManager.Instance?.Database;
         if (db == null) return;
@@ -201,35 +211,84 @@ public class DragonSoundPlayer : NetworkBehaviour
         var entry = db.GetSound(fireBreathLoopSound);
         if (entry == null) return;
 
+        _fireBreathSourceHolder = new GameObject("DragonFireBreathLoop");
+        _fireBreathSourceHolder.transform.SetParent(transform);
+        _fireBreathSourceHolder.transform.localPosition = Vector3.zero;
+
+        _fireBreathSourceA = CreateFireBreathSource(db, entry);
+        _fireBreathSourceB = CreateFireBreathSource(db, entry);
+
+        // Play first random clip on A
+        PlayRandomFireBreathClip(entry, _fireBreathSourceA);
+        _activeFireBreathSource = _fireBreathSourceA;
+    }
+
+    private AudioSource CreateFireBreathSource(SoundDatabase db, SoundEntry entry)
+    {
+        var source = _fireBreathSourceHolder.AddComponent<AudioSource>();
+        source.loop = false; // not looped — we chain clips manually for overlap
+        source.spatialBlend = 1f;
+        source.rolloffMode = AudioRolloffMode.Logarithmic;
+        source.outputAudioMixerGroup = ProximitySoundManager.Instance?.GetMixerGroup(SoundCategory.Loud);
+        db.GetDistanceForSound(entry, out float minDist, out float maxDist);
+        source.minDistance = minDist;
+        source.maxDistance = maxDist;
+        return source;
+    }
+
+    private void PlayRandomFireBreathClip(SoundEntry entry, AudioSource source)
+    {
         var clip = entry.GetRandomClip();
         if (clip == null) return;
+        source.clip = clip;
+        source.volume = entry.GetRandomVolume();
+        source.Play();
+    }
 
-        var go = new GameObject("DragonFireBreathLoop");
-        go.transform.SetParent(transform);
-        go.transform.localPosition = Vector3.zero;
+    /// <summary>
+    /// Called each frame while fire breath is active. When the active source has fewer
+    /// than fireBreathLoopOverlap seconds of clip left, start the next random clip on
+    /// the other source so the incoming sound masks the outgoing clip's tail.
+    /// </summary>
+    private void UpdateFireBreathCrossfade()
+    {
+        if (_activeFireBreathSource == null) return;
+        if (_activeFireBreathSource.clip == null) return;
 
-        _fireBreathLoopSource = go.AddComponent<AudioSource>();
-        _fireBreathLoopSource.clip = clip;
-        _fireBreathLoopSource.loop = true;
-        _fireBreathLoopSource.spatialBlend = 1f;
-        _fireBreathLoopSource.volume = entry.GetRandomVolume();
-        _fireBreathLoopSource.rolloffMode = AudioRolloffMode.Logarithmic;
-        _fireBreathLoopSource.outputAudioMixerGroup = ProximitySoundManager.Instance?.GetMixerGroup(SoundCategory.Loud);
+        // If active somehow stopped (clip ended without overlap kicking in), restart on it immediately
+        if (!_activeFireBreathSource.isPlaying)
+        {
+            var dbNow = ProximitySoundManager.Instance?.Database;
+            var entryNow = dbNow?.GetSound(fireBreathLoopSound);
+            if (entryNow != null)
+                PlayRandomFireBreathClip(entryNow, _activeFireBreathSource);
+            return;
+        }
 
-        db.GetDistanceForSound(entry, out float minDist, out float maxDist);
-        _fireBreathLoopSource.minDistance = minDist;
-        _fireBreathLoopSource.maxDistance = maxDist;
+        float remaining = _activeFireBreathSource.clip.length - _activeFireBreathSource.time;
+        if (remaining > fireBreathLoopOverlap) return;
 
-        _fireBreathLoopSource.Play();
+        // Time to start the next clip on the other source
+        var other = (_activeFireBreathSource == _fireBreathSourceA) ? _fireBreathSourceB : _fireBreathSourceA;
+        if (other == null || other.isPlaying) return; // next clip already queued
+
+        var db = ProximitySoundManager.Instance?.Database;
+        var entry = db?.GetSound(fireBreathLoopSound);
+        if (entry == null) return;
+
+        PlayRandomFireBreathClip(entry, other);
+        _activeFireBreathSource = other;
     }
 
     private void StopFireBreathLoop()
     {
-        if (_fireBreathLoopSource != null)
+        if (_fireBreathSourceHolder != null)
         {
-            _fireBreathLoopSource.Stop();
-            Destroy(_fireBreathLoopSource.gameObject);
-            _fireBreathLoopSource = null;
+            Destroy(_fireBreathSourceHolder);
+            _fireBreathSourceHolder = null;
+            _fireBreathSourceA = null;
+            _fireBreathSourceB = null;
+            _activeFireBreathSource = null;
         }
     }
 

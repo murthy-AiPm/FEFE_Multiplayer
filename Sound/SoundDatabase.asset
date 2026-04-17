@@ -515,6 +515,180 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+  - soundName: DragonFootstep
+    category: 1
+    clips:
+    - {fileID: 8300000, guid: 92d72b6289a6dee439dfc504c56f3177, type: 3}
+    - {fileID: 8300000, guid: 995eaff00ea7d9748b7d53af63dd7f05, type: 3}
+    - {fileID: 8300000, guid: 035f9e96c66b9a742816987e56abca8a, type: 3}
+    - {fileID: 8300000, guid: 4fbef4a7061706742a758f5058d9fc8b, type: 3}
+    - {fileID: 8300000, guid: b5c7ea9bfbeb2a94b9d8455064b6d997, type: 3}
+    - {fileID: 8300000, guid: 4074c85a2b135314486b05e2c6d1ae34, type: 3}
+    - {fileID: 8300000, guid: 3ab38c8cf6e324448a219eae9053319b, type: 3}
+    - {fileID: 8300000, guid: b61aa696fd562394ca6d75de9b1b2605, type: 3}
+    - {fileID: 8300000, guid: 1650d282718beeb4da7a427b3c910e34, type: 3}
+    - {fileID: 8300000, guid: 2ec91e0f8ac4a5343ac9131a7195319f, type: 3}
+    - {fileID: 8300000, guid: e59d14d320c551045883c8982a52281c, type: 3}
+    - {fileID: 8300000, guid: ae87a8ee7d788024eb3f700ec03f4e4b, type: 3}
+    - {fileID: 8300000, guid: 3da6eb1182dee9d40a27fa6268d10601, type: 3}
+    - {fileID: 8300000, guid: f0ccd975278c59340bd0e880e2a0b24d, type: 3}
+    - {fileID: 8300000, guid: d5d08e300a09a7a4bbf4db8a1f5903c6, type: 3}
+    - {fileID: 8300000, guid: 0030a5a3b6e7c3448b650da6840f9088, type: 3}
+    - {fileID: 8300000, guid: 3033114b791924240beb1cc4c7b31ec9, type: 3}
+    - {fileID: 8300000, guid: d6c9e7e11eaff5640b75cf8613b2f3a0, type: 3}
+    - {fileID: 8300000, guid: abad7b90628133f47893b69ee9a39836, type: 3}
+    - {fileID: 8300000, guid: fb96ca74c3088bd468b53e2aafd128e4, type: 3}
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - soundName: Dragon_FireBreath_Start
+    category: 1
+    clips:
+    - {fileID: 8300000, guid: fa111b744afd9bc4d91443e92e373b55, type: 3}
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - soundName: Dragon_FireBreath_Loop
+    category: 1
+    clips:
+    - {fileID: 8300000, guid: e7290cc87dc7bda42a1c873a5ad89292, type: 3}
+    - {fileID: 8300000, guid: c43032eaf261d954581acbf461bf2148, type: 3}
+    - {fileID: 8300000, guid: 678a1df5c4023394b83cd351aa1da2b8, type: 3}
+    - {fileID: 8300000, guid: 4b58fa5668a2ce24eab5a949e8e1234d, type: 3}
+    - {fileID: 8300000, guid: 2a64615e5376c7345befddef951ff074, type: 3}
+    - {fileID: 8300000, guid: e32913307d703204fa1c7228252fad11, type: 3}
+    - {fileID: 8300000, guid: c01f75542e59b7446ba5ceebe94ab270, type: 3}
+    - {fileID: 8300000, guid: 4ba649f90d6ace24f923fbd599312653, type: 3}
+    - {fileID: 8300000, guid: 8532daf97c49e634f82c69ac9185aa86, type: 3}
+    - {fileID: 8300000, guid: 6fea2eff0b91eb74880ac081088d08b9, type: 3}
+    - {fileID: 8300000, guid: 310a68ccf9c2d1d48ab73986c8e594bc, type: 3}
+    - {fileID: 8300000, guid: 2c829171db380dd4581c1d8476d8bcf8, type: 3}
+    - {fileID: 8300000, guid: 4cecf2baa057f9a4398cba9b2c6b66f7, type: 3}
+    - {fileID: 8300000, guid: 2c131c2b0607ce948b443e8212f3dbcb, type: 3}
+    - {fileID: 8300000, guid: 9052f8e76351e0b4d8e0772573a14557, type: 3}
+    - {fileID: 8300000, guid: c840190d2d122bf40be83d68c9d59b30, type: 3}
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - soundName: Dragon_FireBreath_End
+    category: 1
+    clips:
+    - {fileID: 8300000, guid: 6e7a499e82e84694fa5398ecf363b82c, type: 3}
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   terrainLayerMappings:
   - terrainLayerIndex: 0
     surfaceType: Soil

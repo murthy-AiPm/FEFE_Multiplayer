@@ -5914,7 +5914,7 @@ MonoBehaviour:
   fireVFXRotationSmoothing: 10
   meleeAttackVFXPrefab: {fileID: 0}
   meleeAttackSpawnPoint: {fileID: 0}
-  soundPlayer: {fileID: 0}
+  soundPlayer: {fileID: -4205619173964242213}
   meleeAttackSoundType: claw
   jawBone: {fileID: 4324119989276610389}
   jawClosedZ: -90
@@ -6121,6 +6121,7 @@ MonoBehaviour:
   fireBreathStartSound: Dragon_FireBreath_Start
   fireBreathLoopSound: Dragon_FireBreath_Loop
   fireBreathEndSound: Dragon_FireBreath_End
+  fireBreathLoopOverlap: 100
   landingSound: Dragon_Landing
   takeoffSound: Dragon_Takeoff
   deathSound: Dragon_Death

@@ -649,4 +649,19 @@ DRAGON SOUND SYSTEM — DONE:
  * Setup: drag wing bone (shoulder-adjacent) into Wing Bone slot on
    DragonSoundPlayer. Leave empty to disable gating.
 
+FIRE BREATH LOOP CROSSFADE — DONE:
+ * Replaced single looping AudioSource with two alternating AudioSources.
+ * When active source has <fireBreathLoopOverlap seconds of clip left, the
+   other source starts a new random clip from the Fire Breath Loop entry.
+ * Incoming clip's start masks outgoing clip's quiet tail — no perceived gap
+   between chained non-seamless clips.
+ * Both sources are created at runtime in StartFireBreathLoop under a child
+   GameObject parented to dragon. Destroyed in StopFireBreathLoop.
+ * New Inspector field: fireBreathLoopOverlap (default 0.5s).
+ * Known limitation: if source clips contain internal quiet sections
+   (dynamic one-shot recordings rather than sustained flame loops), user
+   will still hear those quiet sections when both random clips coincide in
+   quiet portions. Fix is to curate Fire Breath Loop entry to only include
+   clips with consistent sustained sound — not a code problem.
+
  */
