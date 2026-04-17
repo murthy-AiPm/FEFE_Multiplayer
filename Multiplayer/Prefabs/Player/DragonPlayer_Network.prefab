@@ -6121,7 +6121,8 @@ MonoBehaviour:
   fireBreathStartSound: Dragon_FireBreath_Start
   fireBreathLoopSound: Dragon_FireBreath_Loop
   fireBreathEndSound: Dragon_FireBreath_End
-  fireBreathLoopOverlap: 100
+  fireBreathLoopOverlap: 5
+  fireBreathLoopMaxClipDuration: 3
   landingSound: Dragon_Landing
   takeoffSound: Dragon_Takeoff
   deathSound: Dragon_Death

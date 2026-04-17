@@ -28,6 +28,8 @@ public class DragonSoundPlayer : NetworkBehaviour
     [SerializeField] private string fireBreathEndSound = "Dragon_FireBreath_End";
     [Tooltip("Seconds before current loop clip ends to start the next random clip. The incoming clip's start masks the outgoing clip's quiet tail so chained non-seamless clips sound continuous.")]
     [SerializeField] private float fireBreathLoopOverlap = 0.5f;
+    [Tooltip("Max seconds to play any single fire breath loop clip. Caps long clips with trailing silence/fade so crossfade triggers on audible content, not on the silent tail. Set to a very large value (e.g. 999) to disable capping and use full clip length.")]
+    [SerializeField] private float fireBreathLoopMaxClipDuration = 3f;
 
     [Header("Movement")]
     [SerializeField] private string landingSound = "Dragon_Landing";
@@ -265,12 +267,25 @@ public class DragonSoundPlayer : NetworkBehaviour
             return;
         }
 
-        float remaining = _activeFireBreathSource.clip.length - _activeFireBreathSource.time;
+        // Cap effective clip length so trailing silence/fade in long clips never plays.
+        float activeEffective = Mathf.Min(_activeFireBreathSource.clip.length, fireBreathLoopMaxClipDuration);
+        float remaining = activeEffective - _activeFireBreathSource.time;
         if (remaining > fireBreathLoopOverlap) return;
 
         // Time to start the next clip on the other source
         var other = (_activeFireBreathSource == _fireBreathSourceA) ? _fireBreathSourceB : _fireBreathSourceA;
-        if (other == null || other.isPlaying) return; // next clip already queued
+        if (other == null) return;
+
+        // If the other source is still running the silent tail of its previous clip
+        // (past the effective cap), force-stop so we can start the new clip cleanly.
+        if (other.isPlaying && other.clip != null)
+        {
+            float otherEffective = Mathf.Min(other.clip.length, fireBreathLoopMaxClipDuration);
+            if (other.time >= otherEffective)
+                other.Stop();
+        }
+
+        if (other.isPlaying) return; // next clip already queued and still within its audible window
 
         var db = ProximitySoundManager.Instance?.Database;
         var entry = db?.GetSound(fireBreathLoopSound);
