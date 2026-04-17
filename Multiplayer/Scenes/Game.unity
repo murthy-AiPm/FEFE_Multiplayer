@@ -2152,7 +2152,7 @@ GameObject:
   - component: {fileID: 296133309}
   - component: {fileID: 296133308}
   - component: {fileID: 296133307}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: EnvironmentalSound-Test
   m_TagString: Untagged
   m_Icon: {fileID: 0}

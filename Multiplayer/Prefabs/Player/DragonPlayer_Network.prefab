@@ -6117,9 +6117,6 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   flightController: {fileID: 358013097769894201}
   groundController: {fileID: 3534620481540292934}
-  wingFlapSound: Dragon_WingFlap
-  wingFlapInterval: 1.2
-  wingFlapBoostInterval: 0.8
   roarSound: Dragon_Roar
   fireBreathStartSound: Dragon_FireBreath_Start
   fireBreathLoopSound: Dragon_FireBreath_Loop
@@ -6131,3 +6128,7 @@ MonoBehaviour:
   clawSound: Dragon_Claw
   biteSound: Dragon_Bite
   tailSweepSound: Dragon_TailSweep
+  wingBone: {fileID: 75585899002368969}
+  wingFlapSoundName: Wing Flap
+  wingMotionThreshold: 80
+  wingMotionSmoothing: 8

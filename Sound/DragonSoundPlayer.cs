@@ -40,15 +40,28 @@ public class DragonSoundPlayer : NetworkBehaviour
     [SerializeField] private string biteSound = "Dragon_Bite";
     [SerializeField] private string tailSweepSound = "Dragon_TailSweep";
 
+    [Header("Wing Flap Motion Gate")]
+    [Tooltip("Wing bone to track for flap motion detection. Drag a wing bone here — ideally near the shoulder where flap rotation is largest.")]
+    [SerializeField] private Transform wingBone;
+    [Tooltip("Sound name that will be gated by wing motion. Must match the string used in animation events.")]
+    [SerializeField] private string wingFlapSoundName = "WingFlap";
+    [Tooltip("Minimum smoothed wing angular velocity (deg/sec) to allow wing flap sounds. 80 works for the default dragon rig (glide peaks at ~30, flap bottoms at ~160).")]
+    [SerializeField] private float wingMotionThreshold = 80f;
+    [Tooltip("Smoothing factor for wing motion. Higher = more responsive to sudden motion changes, lower = smoother average.")]
+    [SerializeField] private float wingMotionSmoothing = 8f;
+
     // ─── State ───
     private bool _wasFlying;
     private bool _isBreathingFire;
     private AudioSource _fireBreathLoopSource; // persistent source for looping fire breath
+    private Quaternion _lastWingRotation;
+    private float _wingActivity; // smoothed angular velocity in deg/sec
 
     private void Awake()
     {
         if (flightController == null) flightController = GetComponent<DragonFlightController>();
         if (groundController == null) groundController = GetComponent<AnimalGroundController>();
+        if (wingBone != null) _lastWingRotation = wingBone.localRotation;
     }
 
     private void Update()
@@ -57,6 +70,25 @@ public class DragonSoundPlayer : NetworkBehaviour
         if (ProximitySoundManager.Instance == null) return;
 
         UpdateFlightStateTransitions();
+    }
+
+    // ─── Wing Motion Tracking ───
+
+    /// <summary>
+    /// Runs on ALL clients (not just owner) so gating works for remote dragons too.
+    /// LateUpdate so we read the wing bone AFTER the animator has written to it.
+    /// </summary>
+    private void LateUpdate()
+    {
+        if (wingBone == null) return;
+
+        Quaternion current = wingBone.localRotation;
+        float deltaAngle = Quaternion.Angle(_lastWingRotation, current);
+        float angularVelocity = deltaAngle / Mathf.Max(Time.deltaTime, 0.0001f);
+
+        // Low-pass filter the angular velocity so single-frame dips at flap apex don't kill the sound
+        _wingActivity = Mathf.Lerp(_wingActivity, angularVelocity, wingMotionSmoothing * Time.deltaTime);
+        _lastWingRotation = current;
     }
 
     // ─── Flight State Transitions ───
@@ -207,11 +239,20 @@ public class DragonSoundPlayer : NetworkBehaviour
     /// Called by animation events. Add an event in the animation clip with:
     ///   Function: PlaySound
     ///   String:   sound name matching a SoundDatabase entry (e.g. "WingFlap", "DragonWalk")
+    ///
+    /// Wing flap sounds are gated by actual wing bone motion — if the wings aren't
+    /// moving (gliding, descending without flap), the sound is suppressed even if
+    /// the animation event fires during a crossfade.
     /// </summary>
     public void PlaySound(string soundName)
     {
         if (string.IsNullOrEmpty(soundName)) return;
         if (ProximitySoundManager.Instance == null) return;
+
+        // Motion gate for wing flap sounds — ignore events during glide / descent
+        if (soundName == wingFlapSoundName && wingBone != null && _wingActivity < wingMotionThreshold)
+            return;
+
         ProximitySoundManager.Instance.PlaySound(soundName, transform.position);
     }
 

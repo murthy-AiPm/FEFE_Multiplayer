@@ -634,4 +634,19 @@ STAGGER THRESHOLD SYSTEM — DONE:
  * Non-crit-zone hits: base damage only, no stagger, no anim.
  * All new fields Inspector-tweakable on DamageReceiver.
 
+DRAGON SOUND SYSTEM — DONE:
+ * PlaySound(string) added to DragonSoundPlayer — called from animation events
+   (Function: PlaySound, String: e.g. "WingFlap", "DragonWalk").
+ * Removed timer-driven wing flap cadence (was doubling with anim events).
+ * Fixed IsFlying() to use flightController.IsFlightMode (was broken).
+ * Wing flap motion gate: tracks wingBone localRotation delta per frame,
+   smooths into _wingActivity (deg/sec). PlaySound suppresses wingFlapSoundName
+   when _wingActivity < wingMotionThreshold.
+ * Solves Unity gotcha: animation events on flap clip still fire during
+   crossfade to glide (clip timeline advances even as blend weight drops).
+ * Tuned thresholds for default dragon rig: glide peaks ~30 deg/sec, flap
+   bottoms ~160 deg/sec. Threshold 80 sits in the gap.
+ * Setup: drag wing bone (shoulder-adjacent) into Wing Bone slot on
+   DragonSoundPlayer. Leave empty to disable gating.
+
  */
