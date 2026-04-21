@@ -17,6 +17,10 @@ public class GroundFirePatch : MonoBehaviour
     [Tooltip("Optional VFX root (particles) toggled with the patch.")]
     [SerializeField] private GameObject vfxRoot;
 
+    [Header("Debug")]
+    [Tooltip("Logs every OnTriggerStay hit. Use to verify trigger geometry / layer matrix while diagnosing 'zombies don't take damage'.")]
+    [SerializeField] private bool debugLogging;
+
     public Action<GroundFirePatch> OnReturnToPool;
 
     private GroundFirePatchConfig _config;
@@ -30,6 +34,17 @@ public class GroundFirePatch : MonoBehaviour
     private void Awake()
     {
         if (decal != null) _baseFadeFactor = decal.fadeFactor;
+
+        // OnTrigger* requires at least one of the two parties to have a Rigidbody.
+        // Zombies/NPCs in this project are NavMesh-driven with no Rigidbody, so we add a
+        // kinematic one here so the trigger always dispatches regardless of who walks in.
+        // Kinematic = no forces, no gravity, won't move — it's purely a dispatch enabler.
+        if (GetComponent<Rigidbody>() == null)
+        {
+            var rb = gameObject.AddComponent<Rigidbody>();
+            rb.isKinematic = true;
+            rb.useGravity = false;
+        }
     }
 
     /// <summary>
@@ -50,6 +65,60 @@ public class GroundFirePatch : MonoBehaviour
 
         if (decal != null) decal.fadeFactor = _baseFadeFactor;
         if (vfxRoot != null) vfxRoot.SetActive(true);
+
+        if (debugLogging)
+        {
+            Debug.Log($"[GroundFire] Activated. isServer={_isServer} pos={transform.position}", this);
+
+            // Direct physics probe: what does Unity think is inside our trigger volume right now?
+            // Bypasses OnTriggerStay so we can tell whether the issue is geometry/layers vs trigger
+            // dispatch. Uses ALL layers so layer-matrix mismatches show up here as "found something
+            // that the trigger isn't dispatching".
+            var box = GetComponent<BoxCollider>();
+            if (box != null)
+            {
+                Vector3 worldCenter = transform.TransformPoint(box.center);
+                Vector3 halfExtents = Vector3.Scale(box.size, transform.lossyScale) * 0.5f;
+                var hits = Physics.OverlapBox(worldCenter, halfExtents, transform.rotation, ~0, QueryTriggerInteraction.Collide);
+                Debug.Log($"[GroundFire] Probe found {hits.Length} colliders in trigger volume (center={worldCenter}, halfExt={halfExtents}, allLayers).", this);
+                for (int i = 0; i < hits.Length; i++)
+                {
+                    var h = hits[i];
+                    Debug.Log($"[GroundFire]   [{i}] {h.name} layer={LayerMask.LayerToName(h.gameObject.layer)}({h.gameObject.layer}) isTrigger={h.isTrigger} hasRB={h.attachedRigidbody != null}", h);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Editor/Inspector helper: right-click the GroundFirePatch component header → "Activate For Testing"
+    /// (works in Play mode). Lets you drop a GroundFirePatch.prefab into a scene and turn it on without
+    /// involving the dragon, GroundFireSpawner, or the pool. Source NetObj is empty so BurnStatus self-
+    /// immunity won't filter anything out. Tweak the [SerializeField] debug values below to taste.
+    /// </summary>
+    [Header("Debug — Standalone Activation")]
+    [SerializeField] private float debugLifetime = 10f;
+    [SerializeField] private float debugFadeDuration = 1.2f;
+    [SerializeField] private float debugDamagePerTick = 5f;
+    [SerializeField] private float debugTickInterval = 0.5f;
+    [SerializeField] private float debugBurnTimeOnContact = 1.5f;
+
+    [ContextMenu("Activate For Testing")]
+    private void ActivateForTesting()
+    {
+        if (!Application.isPlaying)
+        {
+            Debug.LogWarning("[GroundFire] Activate For Testing only works in Play mode.", this);
+            return;
+        }
+        Activate(new GroundFirePatchConfig
+        {
+            lifetime = debugLifetime,
+            fadeDuration = debugFadeDuration,
+            damagePerTick = debugDamagePerTick,
+            tickInterval = debugTickInterval,
+            burnTimeOnContact = debugBurnTimeOnContact,
+        }, default);
     }
 
     public void ForceExpire()
@@ -87,6 +156,12 @@ public class GroundFirePatch : MonoBehaviour
 
     private void OnTriggerStay(Collider other)
     {
+        if (debugLogging)
+        {
+            var burnDbg = other.GetComponentInParent<BurnStatus>();
+            Debug.Log($"[GroundFire] [patch={name}#{GetInstanceID()}] OnTriggerStay: {other.name} | active={_active} isServer={_isServer} hasBurnStatus={burnDbg != null}", this);
+        }
+
         if (!_active || !_isServer) return;
 
         _tickTimer -= Time.deltaTime;

@@ -5634,6 +5634,7 @@ GameObject:
   - component: {fileID: -7552329350069882304}
   - component: {fileID: 2104147845960171010}
   - component: {fileID: 8012761472847845033}
+  - component: {fileID: 1947542239926039705}
   m_Layer: 6
   m_Name: Humanoid_Knight_Network
   m_TagString: Player
@@ -6436,6 +6437,27 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   damageReceiver: {fileID: 6854998894812114630}
   animancerDriver: {fileID: 2683264340040594894}
+--- !u!114 &1947542239926039705
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8837511929152388741}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b76ded94906b734a953234b1eb2d419, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BurnStatus
+  ShowTopMostFoldoutHeaderGroup: 1
+  vitalManager: {fileID: 1702300467690810362}
+  damageReceiver: {fileID: 6854998894812114630}
+  pelvisBone: {fileID: 1218925387297013232}
+  damagePerTick: 10
+  tickInterval: 1
+  maxBurnDuration: 10
+  fireVFXPrefab: {fileID: 1796120904278366016, guid: 1bef320677628644081dfb5e21bea115, type: 3}
+  vfxScale: 1
 --- !u!1 &8848191647751171253
 GameObject:
   m_ObjectHideFlags: 0
