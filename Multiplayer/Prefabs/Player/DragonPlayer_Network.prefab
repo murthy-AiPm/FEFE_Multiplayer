@@ -5499,6 +5499,7 @@ MonoBehaviour:
   animator: {fileID: 8804854363994131359}
   flightController: {fileID: 358013097769894201}
   swimController: {fileID: 0}
+  combatController: {fileID: 0}
 --- !u!114 &3534620481540292934
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5577,8 +5578,8 @@ MonoBehaviour:
   animator: {fileID: 8804854363994131359}
   cam: {fileID: 0}
   swimController: {fileID: 5974085032444721806}
-  thrustIncrement: 0.25
-  thrustSmoothSpeed: 2
+  thrustAccelRate: 0.5
+  thrustDecelRate: 0.5
   thrustMin: -1
   thrustMax: 1
   yawSmoothing: 5
@@ -5937,6 +5938,8 @@ MonoBehaviour:
   primaryKey: 323
   meleeModeKey: 49
   fireBreathModeKey: 50
+  roarKey: 114
+  roarDuration: 2
 --- !u!114 &-2926760166734874171
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6121,7 +6124,7 @@ MonoBehaviour:
   fireBreathStartSound: Dragon_FireBreath_Start
   fireBreathLoopSound: Dragon_FireBreath_Loop
   fireBreathEndSound: Dragon_FireBreath_End
-  fireBreathLoopOverlap: 5
+  fireBreathLoopOverlap: 1
   fireBreathLoopMaxClipDuration: 3
   landingSound: Dragon_Landing
   takeoffSound: Dragon_Takeoff

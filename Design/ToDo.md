@@ -1,4 +1,50 @@
-/* 7th-March-2026
+═══════════════════════════════════════════════════════════════
+ MAINTENANCE CONVENTION — READ BEFORE APPENDING
+═══════════════════════════════════════════════════════════════
+
+ This file is an append-only session log. Newest entries go at
+ the BOTTOM of the file. (Converted from ToDo.cs to ToDo.md on
+ 21st-April-2026 — no more block-comment wrapper to worry about;
+ just plain markdown now.)
+
+ BEFORE APPENDING:
+  * Tail-read the last ~40 lines to match the style of the most
+    recent entries and to avoid duplicating a change already logged.
+  * One entry per logical change, not per file edited. A feature
+    that touched 3 files is still ONE entry.
+
+ ENTRY FORMAT:
+  * Start with a date-stamped session header when opening a new
+    session, using the existing separator style:
+
+        ═══════════════════════════════════════════════════════════════
+         DD-Month-YYYY — Short Session Topic
+        ═══════════════════════════════════════════════════════════════
+
+  * Each change inside the session uses an ALL-CAPS TITLE followed
+    by a STATUS tag: DONE / WIP / BLOCKED / REVERTED.
+        Example:  DRAGON ROAR — DONE:
+  * Under the title, use " * " prefixed bullets. Cover, as applicable:
+      - symptom (for bug fixes)
+      - root cause
+      - files changed
+      - fix description
+      - any Inspector fields added or renamed
+  * Keep bullets terse but complete enough that a future session can
+    reconstruct the "why" without reading the diff.
+
+ DO NOT:
+  * Rewrite, reflow, or delete old entries — even ones whose approach
+    was later reverted. History is the value. If an approach is
+    undone, add a new "TITLE — REVERTED:" entry that references the
+    original by date and title.
+  * Use this file for a feature backlog or TODO list. Backlog items
+    live in CLAUDE.md ("on the horizon") or a separate BACKLOG.md.
+  * Paste large code blocks. Describe the change; the diff is in git.
+
+───────────────────────────────────────────────────────────────
+
+ 7th-March-2026
  * 1.  Setup horse height
  * 2.  Setup Arrow spwan point
  * 3.  Zoom out camera bit or add camera controls
@@ -700,5 +746,3 @@ DRAGON ROAR — DONE:
      on owner.
  * Animator setup: AnyState -> Roar with condition IsRoar == true;
    Roar -> Idle via Has Exit Time. No animation events needed.
-
- */

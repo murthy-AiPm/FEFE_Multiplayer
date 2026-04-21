@@ -20,10 +20,10 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private DragonSwimController swimController;
 
     [Header("Root Motion Flight")]
-    [Tooltip("How much Thrust changes per key press.")]
-    [SerializeField] private float thrustIncrement = 0.25f;
-    [Tooltip("How fast thrust smoothly moves to target value (per second).")]
-    [SerializeField] private float thrustSmoothSpeed = 2f;
+    [Tooltip("Rate thrust ramps UP per second while W is held.")]
+    [SerializeField] private float thrustAccelRate = 0.5f;
+    [Tooltip("Rate thrust ramps DOWN per second while S is held.")]
+    [SerializeField] private float thrustDecelRate = 0.5f;
     [Tooltip("Min thrust value.")]
     [SerializeField] private float thrustMin = -1f;
     [Tooltip("Max thrust value.")]
@@ -96,7 +96,6 @@ public class DragonFlightController : NetworkBehaviour
 
     // Root motion flight state
     private float _rmThrust;
-    private float _rmThrustTarget;
     private float _rmYaw;
     private float _rmPitch;
     private float _rmPitchTarget;
@@ -210,7 +209,6 @@ public class DragonFlightController : NetworkBehaviour
         isHoverMode = false;
         hoverRequested = false;
         _rmThrust = 1f;
-        _rmThrustTarget = 1f;
 
         // Suspend ground alignment so slope tilt doesn't carry into flight
         if (groundAlignment != null)
@@ -249,7 +247,6 @@ public class DragonFlightController : NetworkBehaviour
 
         // Reset root motion flight params
         _rmThrust = 0f;
-        _rmThrustTarget = 0f;
         _rmYaw = 0f;
         _rmPitch = 0f;
         _rmPitchTarget = 0f;
@@ -299,12 +296,12 @@ public class DragonFlightController : NetworkBehaviour
 
         float horizontal = Input.GetAxisRaw(horizontalAxis);
 
-        // ── Thrust (throttle-style: W/S set target, smooth lerp to it) ──
-        if (Input.GetKeyDown(KeyCode.W))
-            _rmThrustTarget = Mathf.Clamp(_rmThrustTarget + thrustIncrement, thrustMin, thrustMax);
-        if (Input.GetKeyDown(KeyCode.S))
-            _rmThrustTarget = Mathf.Clamp(_rmThrustTarget - thrustIncrement, thrustMin, thrustMax);
-        _rmThrust = Mathf.MoveTowards(_rmThrust, _rmThrustTarget, thrustSmoothSpeed * dt);
+        // ── Thrust (hold-to-ramp: W accelerates, S decelerates, release freezes value) ──
+        if (Input.GetKey(KeyCode.W))
+            _rmThrust += thrustAccelRate * dt;
+        if (Input.GetKey(KeyCode.S))
+            _rmThrust -= thrustDecelRate * dt;
+        _rmThrust = Mathf.Clamp(_rmThrust, thrustMin, thrustMax);
 
         // ── Yaw ──
         float targetYaw = Mathf.Clamp(horizontal, -1f, 1f);

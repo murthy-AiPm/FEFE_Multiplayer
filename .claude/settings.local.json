@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk 'NR<=1 || /^## / || /^### /' /c/UnityProjects/FEFE_Multiplayer/Assets/FEFE/CLAUDE.md)",
+      "Bash(git diff *)",
+      "Bash(git rm *)"
+    ]
+  }
+}
