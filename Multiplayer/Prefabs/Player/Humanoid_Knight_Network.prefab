@@ -4682,7 +4682,7 @@ Transform:
   m_GameObject: {fileID: 7373322244298232115}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.03, y: 2.255, z: 0.1}
+  m_LocalPosition: {x: 0.53, y: 2.065, z: 1.73}
   m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6189,6 +6189,9 @@ MonoBehaviour:
   blockAngle: 120
   blockStaminaRatio: 0.5
   hitStunDuration: 0.2
+  staggerThreshold: 200
+  staggerDecayRate: 50
+  staggerDecayDelay: 2
 --- !u!114 &6257174079470732274
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6417,6 +6420,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RespawnController
   ShowTopMostFoldoutHeaderGroup: 1
   corpseVisibleTime: 3
+  respawnLoadingDuration: 1.5
 --- !u!114 &8012761472847845033
 MonoBehaviour:
   m_ObjectHideFlags: 0

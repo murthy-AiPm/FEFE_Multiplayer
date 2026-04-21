@@ -53,6 +53,10 @@ public class DragonSoundPlayer : NetworkBehaviour
     [SerializeField] private float wingMotionThreshold = 80f;
     [Tooltip("Smoothing factor for wing motion. Higher = more responsive to sudden motion changes, lower = smoother average.")]
     [SerializeField] private float wingMotionSmoothing = 8f;
+    [Tooltip("Minimum seconds between wing flap sounds. Suppresses duplicate events that fire when multiple flap clips in a blend tree both have animation events. Should be well below the natural flap cadence (~1.2s) — 0.25s is a safe default.")]
+    [SerializeField] private float wingFlapDebounce = 0.25f;
+    [Tooltip("Log every wing flap PlaySound event with frame number, gate result, wing activity, and IsOwner. Two log lines on the same/adjacent frame = doubling. TURN OFF FOR SHIPPING.")]
+    [SerializeField] private bool debugWingFlapLogs;
 
     // ─── State ───
     private bool _wasFlying;
@@ -65,6 +69,7 @@ public class DragonSoundPlayer : NetworkBehaviour
     private AudioSource _activeFireBreathSource;
     private Quaternion _lastWingRotation;
     private float _wingActivity; // smoothed angular velocity in deg/sec
+    private float _lastWingFlapTime = -999f;
 
     private void Awake()
     {
@@ -323,10 +328,22 @@ public class DragonSoundPlayer : NetworkBehaviour
         if (string.IsNullOrEmpty(soundName)) return;
         if (ProximitySoundManager.Instance == null) return;
 
-        // Motion gate for wing flap sounds — ignore events during glide / descent
-        if (soundName == wingFlapSoundName && wingBone != null && _wingActivity < wingMotionThreshold)
-            return;
+        // Motion gate + debounce for wing flap sounds.
+        // Gate: ignore events during glide / descent (low wing activity).
+        // Debounce: suppress duplicate events from blend-tree clips that both carry the wing flap event.
+        bool isWingFlap = soundName == wingFlapSoundName;
+        bool gated = isWingFlap && wingBone != null && _wingActivity < wingMotionThreshold;
+        bool debounced = isWingFlap && !gated && (Time.time - _lastWingFlapTime) < wingFlapDebounce;
 
+        if (debugWingFlapLogs && isWingFlap)
+        {
+            string status = gated ? "GATED" : debounced ? "DEBOUNCED" : "PLAYED";
+            Debug.Log($"[WingFlap] frame={Time.frameCount} t={Time.time:F3} owner={IsOwner} activity={_wingActivity:F1} threshold={wingMotionThreshold} sinceLast={(Time.time - _lastWingFlapTime):F3} {status} on {gameObject.name}");
+        }
+
+        if (gated || debounced) return;
+
+        if (isWingFlap) _lastWingFlapTime = Time.time;
         ProximitySoundManager.Instance.PlaySound(soundName, transform.position);
     }
 
