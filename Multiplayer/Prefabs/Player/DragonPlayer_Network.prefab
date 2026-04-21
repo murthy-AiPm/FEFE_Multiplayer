@@ -5368,10 +5368,10 @@ GameObject:
   - component: {fileID: -660038134078556429}
   - component: {fileID: 5974085032444721806}
   - component: {fileID: 1376780217212887459}
-  - component: {fileID: -7800844257033982807}
   - component: {fileID: -2926760166734874171}
   - component: {fileID: 7203970312165627060}
   - component: {fileID: -7962891897276758031}
+  - component: {fileID: -7800844257033982807}
   - component: {fileID: -2412709369278423379}
   - component: {fileID: 2950672030226061884}
   - component: {fileID: 692041439902515234}
@@ -5879,67 +5879,6 @@ CapsuleCollider:
   m_Height: 4.01
   m_Direction: 2
   m_Center: {x: 0, y: 1.28, z: 0.34}
---- !u!114 &-7800844257033982807
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9190477138144183562}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 332d1e9748674954b8d784ac79d03929, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DragonCombatController
-  ShowTopMostFoldoutHeaderGroup: 1
-  animator: {fileID: 8804854363994131359}
-  groundController: {fileID: 3534620481540292934}
-  flightController: {fileID: 358013097769894201}
-  rb: {fileID: 4213641409919773835}
-  cam: {fileID: 0}
-  spineBone: {fileID: 6834720352492521363}
-  spine1Bone: {fileID: 8123714689142491674}
-  spine2Bone: {fileID: 5688100995211649117}
-  neckBone: {fileID: 7041529955691784601}
-  neck1Bone: {fileID: 1662348704302100748}
-  neck2Bone: {fileID: 142127849840715812}
-  neck3Bone: {fileID: 7040834288271894113}
-  neck4Bone: {fileID: 4736920305905838227}
-  neckYawWeight: 0.3
-  neck1YawWeight: 0.3
-  neck2YawWeight: 0.3
-  neck3YawWeight: 0.3
-  neck4YawWeight: 1
-  fireBreathVFXPrefab: {fileID: 793755792036113438, guid: 8e4d4ead1c6f9c84da15c1be3e9dea0c, type: 3}
-  fireBreathSpawnPoint: {fileID: 1664271699964925404}
-  fireVFXRotationSmoothing: 10
-  meleeAttackVFXPrefab: {fileID: 0}
-  meleeAttackSpawnPoint: {fileID: 0}
-  soundPlayer: {fileID: -4205619173964242213}
-  meleeAttackSoundType: claw
-  jawBone: {fileID: 4324119989276610389}
-  jawClosedZ: -90
-  jawOpenZ: -125
-  jawSpeed: 300
-  maxTwistAngle: 60
-  twistSpeed: 180
-  twistReturnSpeed: 120
-  spineWeight: 1
-  spine1Weight: 0
-  spine2Weight: 0
-  flightYawAnimCompensation: -30
-  maxHeadAngle: 80
-  maxHeadPitch: 80
-  headTurnSpeed: 200
-  headReturnSpeed: 150
-  headPitchOffsetGround: -40
-  headPitchOffsetFlight: -20
-  stationaryThreshold: 0.1
-  primaryKey: 323
-  meleeModeKey: 49
-  fireBreathModeKey: 50
-  roarKey: 114
-  roarDuration: 2
 --- !u!114 &-2926760166734874171
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5999,6 +5938,69 @@ MonoBehaviour:
   animalGroundingSystem: {fileID: -1625138427473786608}
   debugHealth: 0
   debugStamina: 0
+--- !u!114 &-7800844257033982807
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 332d1e9748674954b8d784ac79d03929, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DragonCombatController
+  ShowTopMostFoldoutHeaderGroup: 1
+  animator: {fileID: 8804854363994131359}
+  groundController: {fileID: 3534620481540292934}
+  flightController: {fileID: 358013097769894201}
+  rb: {fileID: 4213641409919773835}
+  cam: {fileID: 0}
+  spineBone: {fileID: 6834720352492521363}
+  spine1Bone: {fileID: 8123714689142491674}
+  spine2Bone: {fileID: 5688100995211649117}
+  neckBone: {fileID: 7041529955691784601}
+  neck1Bone: {fileID: 1662348704302100748}
+  neck2Bone: {fileID: 142127849840715812}
+  neck3Bone: {fileID: 7040834288271894113}
+  neck4Bone: {fileID: 4736920305905838227}
+  neckYawWeight: 0.3
+  neck1YawWeight: 0.3
+  neck2YawWeight: 0.3
+  neck3YawWeight: 0.3
+  neck4YawWeight: 1
+  fireBreathVFXPrefab: {fileID: 793755792036113438, guid: 8e4d4ead1c6f9c84da15c1be3e9dea0c, type: 3}
+  fireBreathSpawnPoint: {fileID: 1664271699964925404}
+  fireVFXRotationSmoothing: 10
+  fireBreathDamage: {fileID: 692041439902515234}
+  groundFireSpawner: {fileID: -8493373264538071150}
+  meleeAttackVFXPrefab: {fileID: 0}
+  meleeAttackSpawnPoint: {fileID: 0}
+  soundPlayer: {fileID: -4205619173964242213}
+  meleeAttackSoundType: claw
+  jawBone: {fileID: 4324119989276610389}
+  jawClosedZ: -90
+  jawOpenZ: -125
+  jawSpeed: 300
+  maxTwistAngle: 60
+  twistSpeed: 180
+  twistReturnSpeed: 120
+  spineWeight: 1
+  spine1Weight: 0
+  spine2Weight: 0
+  flightYawAnimCompensation: -30
+  maxHeadAngle: 80
+  maxHeadPitch: 80
+  headTurnSpeed: 200
+  headReturnSpeed: 150
+  headPitchOffsetGround: -40
+  headPitchOffsetFlight: -20
+  stationaryThreshold: 0.1
+  primaryKey: 323
+  meleeModeKey: 49
+  fireBreathModeKey: 50
+  roarKey: 114
+  roarDuration: 2
 --- !u!114 &-2412709369278423379
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6046,7 +6048,7 @@ MonoBehaviour:
   leftPawHitbox: {fileID: 7420983997430810754}
   rightPawHitbox: {fileID: 2470699562406505562}
   pawWeaponData: {fileID: 11400000, guid: 138b0ae589a0d29458f277a1cc324aed, type: 2}
-  debugLogging: 1
+  debugLogging: 0
 --- !u!114 &692041439902515234
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6061,20 +6063,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DragonFireBreathDamage
   ShowTopMostFoldoutHeaderGroup: 1
   combatController: {fileID: -7800844257033982807}
-  flightController: {fileID: 0}
-  fireOrigin: {fileID: 1664271699964925404}
-  cam: {fileID: 0}
   damagePerSecond: 20
   tickRate: 4
   burnTimePerTick: 1.5
-  coneAngle: 2
-  coneRange: 60
-  hitLayers:
-    serializedVersion: 2
-    m_Bits: 9437248
-  maxTargetsPerTick: 20
   debugLogging: 0
-  drawGizmos: 1
 --- !u!114 &-8493373264538071150
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6089,17 +6081,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GroundFireSpawner
   ShowTopMostFoldoutHeaderGroup: 1
   combatController: {fileID: -7800844257033982807}
-  flightController: {fileID: 358013097769894201}
-  fireOrigin: {fileID: 1664271699964925404}
-  cam: {fileID: 0}
   spawnInterval: 0.05
-  forwardProjection: 8
   scatterRadius: 0.5
-  groundMask:
-    serializedVersion: 2
-    m_Bits: 1
-  maxGroundDistance: 35
-  flameStreamSpeed: 30
   patchLifetime: 10
   patchFadeDuration: 1.2
   patchDamagePerTick: 5

@@ -3,66 +3,46 @@ using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
-/// Deals damage-over-time to anything inside the dragon's fire breath cone.
-/// Runs a periodic server-side overlap check while IsBreathingFire is true.
-/// Targets must have a DamageReceiver component to take damage.
+/// Deals damage-over-time to anything the dragon's fire breath VFX particles physically
+/// hit. Particle collision events are forwarded by FireBreathParticleHandler on the
+/// owner's local VFX instance. Each tick, the unique set of receivers hit during that
+/// interval is sent to the server in a single ServerRpc which applies damage + burn.
+///
+/// Damage scales by tickRate: damagePerSecond / tickRate is applied per receiver per tick
+/// while particles continue to land on it. Targets need a DamageReceiver to take damage.
 ///
 /// Setup:
-///   1. Add to dragon prefab
-///   2. Assign fireOrigin (mouth bone) and combatController
-///   3. Tweak damagePerSecond, tickRate, coneAngle, coneRange in Inspector
+///   1. Add to dragon prefab; assign combatController
+///   2. Tune damagePerSecond, tickRate, burnTimePerTick in Inspector
+///   3. Range / aim / collision filtering all live on the VFX particle system itself
 /// </summary>
 public class DragonFireBreathDamage : NetworkBehaviour
 {
     [Header("References")]
     [SerializeField] private DragonCombatController combatController;
-    [SerializeField] private DragonFlightController flightController;
-    [Tooltip("Where the fire cone originates (mouth bone / fire breath spawn point).")]
-    [SerializeField] private Transform fireOrigin;
-    [Tooltip("Camera transform — cone direction follows where the player is aiming.")]
-    [SerializeField] private Transform cam;
 
     [Header("Damage")]
-    [Tooltip("Total damage applied per second while a target is inside the cone.")]
+    [Tooltip("Total damage applied per second to a target while particles continuously hit it.")]
     [SerializeField] private float damagePerSecond = 20f;
-    [Tooltip("How many times per second damage is applied.")]
+    [Tooltip("How many times per second damage is applied. Targets hit between ticks all get damage on the next tick.")]
     [SerializeField] private float tickRate = 4f;
-    [Tooltip("Burn duration (seconds) added to BurnStatus per damage tick. Should be larger than the tick interval so burn time accumulates while target is in the cone and persists after exit.")]
+    [Tooltip("Burn duration (seconds) added to BurnStatus per damage tick. Should be larger than the tick interval so burn time accumulates while particles continue to hit and persists after they stop.")]
     [SerializeField] private float burnTimePerTick = 1.5f;
-
-    [Header("Cone Shape")]
-    [Tooltip("Half-angle of the fire cone in degrees.")]
-    [SerializeField] private float coneAngle = 30f;
-    [Tooltip("How far the fire cone reaches.")]
-    [SerializeField] private float coneRange = 15f;
-
-    [Header("Detection")]
-    [SerializeField] private LayerMask hitLayers = ~0;
-    [Tooltip("Max targets detected per tick.")]
-    [SerializeField] private int maxTargetsPerTick = 20;
 
     [Header("Debug")]
     [SerializeField] private bool debugLogging;
-    [SerializeField] private bool drawGizmos = true;
 
-    // ─── State ───────────────────────────────────────────
     private float _tickTimer;
     private float _tickInterval;
     private float _damagePerTick;
-    private Collider[] _overlapBuffer;
-    private HashSet<int> _hitThisTick = new HashSet<int>();
     private NetworkObject _ownerNetObj;
+    private readonly HashSet<ulong> _hitThisTick = new HashSet<ulong>();
+    private Vector3 _lastHitPoint;
 
     private void Awake()
     {
         if (combatController == null)
             combatController = GetComponentInParent<DragonCombatController>();
-        if (flightController == null)
-            flightController = GetComponentInParent<DragonFlightController>();
-        if (cam == null)
-            cam = Camera.main?.transform;
-
-        _overlapBuffer = new Collider[maxTargetsPerTick];
     }
 
     public override void OnNetworkSpawn()
@@ -75,68 +55,45 @@ public class DragonFireBreathDamage : NetworkBehaviour
     private void Update()
     {
         if (!IsOwner) return;
-        if (combatController == null || !combatController.IsBreathingFire) return;
 
         _tickTimer += Time.deltaTime;
-        if (_tickTimer >= _tickInterval)
-        {
-            _tickTimer -= _tickInterval;
-            DealFireDamage();
-        }
+        if (_tickTimer < _tickInterval) return;
+        _tickTimer -= _tickInterval;
+        FlushTick();
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // DAMAGE TICK
-    // ═══════════════════════════════════════════════════════════════
-
-    private void DealFireDamage()
+    /// <summary>
+    /// Called by FireBreathParticleHandler on the owner's local VFX instance for every
+    /// particle that collided with `other` this frame. Dedupes per-tick so a target hit
+    /// by 50 particles in one frame still only takes one tick of damage.
+    /// </summary>
+    public void HandleParticleHit(GameObject other, Vector3 point)
     {
-        if (fireOrigin == null) return;
+        if (!IsOwner) return;
+        if (other == null) return;
 
-        Vector3 origin = fireOrigin.position;
-        // In flight: aim along camera. On ground: aim along mouth bone forward (head tracks camera).
-        bool inFlight = flightController != null && flightController.IsFlightMode;
-        Vector3 forward = (inFlight && cam != null) ? cam.forward : fireOrigin.forward;
-        int count = Physics.OverlapSphereNonAlloc(origin, coneRange, _overlapBuffer, hitLayers, QueryTriggerInteraction.Ignore);
+        var hitNetObj = other.GetComponentInParent<NetworkObject>();
+        if (hitNetObj == null) return;
+        if (hitNetObj == _ownerNetObj) return;
+        if (other.GetComponentInParent<DamageReceiver>() == null) return;
 
+        _hitThisTick.Add(hitNetObj.NetworkObjectId);
+        _lastHitPoint = point;
+
+        if (debugLogging)
+            Debug.Log($"[DragonFire] Particle hit on {other.name}");
+    }
+
+    private void FlushTick()
+    {
+        if (_hitThisTick.Count == 0) return;
+
+        var ids = new ulong[_hitThisTick.Count];
+        int i = 0;
+        foreach (var id in _hitThisTick) ids[i++] = id;
         _hitThisTick.Clear();
-        var hitIds = new List<ulong>();
 
-        for (int i = 0; i < count; i++)
-        {
-            var col = _overlapBuffer[i];
-            if (col == null) continue;
-
-            // Resolve root object to avoid hitting the same character twice
-            var rootObj = col.attachedRigidbody != null
-                ? col.attachedRigidbody.gameObject
-                : col.gameObject;
-
-            int rootId = rootObj.GetInstanceID();
-            if (_hitThisTick.Contains(rootId)) continue;
-
-            // Skip self
-            var hitNetObj = col.GetComponentInParent<NetworkObject>();
-            if (hitNetObj == null) continue;
-            if (hitNetObj == _ownerNetObj) continue;
-
-            // Cone angle check
-            Vector3 toTarget = (col.ClosestPoint(origin) - origin).normalized;
-            float angle = Vector3.Angle(forward, toTarget);
-            if (angle > coneAngle) continue;
-
-            // Must have DamageReceiver to take damage
-            if (col.GetComponentInParent<DamageReceiver>() == null) continue;
-
-            _hitThisTick.Add(rootId);
-            hitIds.Add(hitNetObj.NetworkObjectId);
-
-            if (debugLogging)
-                Debug.Log($"[DragonFire] Owner detected hit on {rootObj.name}");
-        }
-
-        if (hitIds.Count > 0)
-            RequestFireDamageServerRpc(hitIds.ToArray(), _damagePerTick, burnTimePerTick, origin);
+        RequestFireDamageServerRpc(ids, _damagePerTick, burnTimePerTick, _lastHitPoint);
     }
 
     [ServerRpc(RequireOwnership = true)]
@@ -161,10 +118,6 @@ public class DragonFireBreathDamage : NetworkBehaviour
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // HELPERS
-    // ═══════════════════════════════════════════════════════════════
-
     private void RecalculateTickValues()
     {
         _tickInterval = tickRate > 0f ? 1f / tickRate : 0.25f;
@@ -174,39 +127,5 @@ public class DragonFireBreathDamage : NetworkBehaviour
     private void OnValidate()
     {
         RecalculateTickValues();
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // GIZMOS
-    // ═══════════════════════════════════════════════════════════════
-
-    private void OnDrawGizmosSelected()
-    {
-        if (!drawGizmos || fireOrigin == null) return;
-
-        Gizmos.color = combatController != null && combatController.IsBreathingFire
-            ? new Color(1f, 0.3f, 0f, 0.4f)
-            : new Color(1f, 0.8f, 0f, 0.2f);
-
-        Vector3 origin = fireOrigin.position;
-        bool inFlightGiz = flightController != null && flightController.IsFlightMode;
-        Vector3 forward = (inFlightGiz && cam != null) ? cam.forward : fireOrigin.forward;
-        Vector3 up = (inFlightGiz && cam != null) ? cam.up : Vector3.up;
-        Vector3 right = (inFlightGiz && cam != null) ? cam.right : fireOrigin.right;
-
-        // Draw cone edges
-        Quaternion leftRot = Quaternion.AngleAxis(-coneAngle, up);
-        Quaternion rightRot = Quaternion.AngleAxis(coneAngle, up);
-        Quaternion upRot = Quaternion.AngleAxis(-coneAngle, right);
-        Quaternion downRot = Quaternion.AngleAxis(coneAngle, right);
-
-        Gizmos.DrawRay(origin, leftRot * forward * coneRange);
-        Gizmos.DrawRay(origin, rightRot * forward * coneRange);
-        Gizmos.DrawRay(origin, upRot * forward * coneRange);
-        Gizmos.DrawRay(origin, downRot * forward * coneRange);
-        Gizmos.DrawRay(origin, forward * coneRange);
-
-        // Draw range sphere wireframe
-        Gizmos.DrawWireSphere(origin, coneRange);
     }
 }

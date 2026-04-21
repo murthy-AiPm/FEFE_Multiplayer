@@ -60,6 +60,12 @@ public class DragonCombatController : NetworkBehaviour
     [Tooltip("How fast the fire VFX rotation smooths toward camera direction. Higher = snappier.")]
     [SerializeField] private float fireVFXRotationSmoothing = 10f;
 
+    [Header("Fire Breath Particle Collision Receivers")]
+    [Tooltip("Receives particle-hit damage events from the owner's VFX. Auto-found from siblings if left empty.")]
+    [SerializeField] private DragonFireBreathDamage fireBreathDamage;
+    [Tooltip("Receives particle-hit ground-fire spawn events from the owner's VFX. Auto-found from siblings if left empty.")]
+    [SerializeField] private GroundFireSpawner groundFireSpawner;
+
     [Header("Melee Attack VFX")]
     [Tooltip("VFX prefab to instantiate on melee attack.")]
     [SerializeField] private GameObject meleeAttackVFXPrefab;
@@ -182,6 +188,11 @@ public class DragonCombatController : NetworkBehaviour
         meleeAttackHash      = Animator.StringToHash("MeleeAttack");
         attackModeHash       = Animator.StringToHash("AttackMode");
         isBreathingFireHash  = Animator.StringToHash("IsBreathingFire");
+
+        if (fireBreathDamage == null)
+            fireBreathDamage = GetComponentInChildren<DragonFireBreathDamage>();
+        if (groundFireSpawner == null)
+            groundFireSpawner = GetComponentInChildren<GroundFireSpawner>();
 
         _currentJawZ = jawClosedZ;
     }
@@ -351,6 +362,20 @@ public class DragonCombatController : NetworkBehaviour
                 Transform spawnRef = fireBreathSpawnPoint != null ? fireBreathSpawnPoint : transform;
                 _activeFireBreathInstance = Instantiate(fireBreathVFXPrefab, spawnRef.position, spawnRef.rotation);
                 _smoothedFireRotation = spawnRef.rotation;
+
+                // Attach particle-collision handlers to every PS in the VFX that has its
+                // Collision module enabled. Only the OWNER binds receivers — remote
+                // clients still simulate particles locally so they see the flame, but
+                // their handlers stay inert so we don't get N-clients of duplicated RPCs.
+                var systems = _activeFireBreathInstance.GetComponentsInChildren<ParticleSystem>(true);
+                for (int i = 0; i < systems.Length; i++)
+                {
+                    var ps = systems[i];
+                    if (!ps.collision.enabled) continue;
+                    var handler = ps.GetComponent<FireBreathParticleHandler>();
+                    if (handler == null) handler = ps.gameObject.AddComponent<FireBreathParticleHandler>();
+                    if (IsOwner) handler.Bind(fireBreathDamage, groundFireSpawner);
+                }
             }
         }
         else

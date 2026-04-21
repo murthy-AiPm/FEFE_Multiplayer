@@ -746,3 +746,50 @@ DRAGON ROAR — DONE:
      on owner.
  * Animator setup: AnyState -> Roar with condition IsRoar == true;
    Roar -> Idle via Has Exit Time. No animation events needed.
+
+21st-April-2026 — DRAGON FIRE BREATH: PARTICLE-COLLISION DRIVEN:
+ * Root cause: previous architecture used three independent range knobs
+   (DragonFireBreathDamage.coneRange, GroundFireSpawner.maxGroundDistance,
+   GroundFireSpawner.forwardProjection [dead]) plus a separate VFX particle
+   visual length, all tuned by hand. Symptoms:
+   - Stray ground fire patches where the visible flame wasn't landing
+     (single forward raycast doesn't model particle gravity, cone spread,
+     emitter-velocity inheritance, or smoothed-vs-raw aim direction).
+   - Inconsistent zombie damage (4 Hz overlap-sphere + cone-angle gate on
+     a smoothed forward vector dropped edge-of-cone hits during sweeps).
+ * Fix: VFX particles ARE the source of truth.
+   - New FireBreathParticleHandler.cs sits on every PS in the VFX whose
+     Collision module is enabled. OnParticleCollision pulls events via
+     GetCollisionEvents and forwards (intersection, normal) to:
+       * DragonFireBreathDamage.HandleParticleHit(other, point) — adds
+         hit NetObjectId to a per-tick HashSet, flushes one ServerRpc
+         per tickRate with all unique receivers (dedupes 50-particles-
+         on-one-zombie down to one tick of damage).
+       * GroundFireSpawner.HandleParticleHit(point, normal) — throttled
+         by spawnInterval, ServerRpc -> ClientRpc fan-out spawns the
+         patch from the local GroundFirePool (unchanged pattern).
+   - Only the OWNER binds receivers. Remote clients still simulate VFX
+     locally so they see flame, but their handlers are unbound and inert
+     so we don't get N-clients of duplicated damage/patch RPCs.
+   - DragonCombatController.SetBreathingFireClientRpc auto-attaches the
+     handler to every collision-enabled PS in the spawned VFX and calls
+     Bind() on the owner only.
+ * Files changed:
+   - NEW: CharacterScripts/Scripts/Animal/Dragon/FireBreathParticleHandler.cs
+   - REWRITE: DragonFireBreathDamage.cs — removed coneRange/coneAngle/
+     hitLayers/maxTargetsPerTick/cam/flightController/Update raycast loop.
+     Kept damagePerSecond/tickRate/burnTimePerTick. Added HandleParticleHit.
+   - REWRITE: GroundFireSpawner.cs — removed forwardProjection (dead),
+     maxGroundDistance, groundMask, flameStreamSpeed, cam, flightController,
+     Update raycast. Kept spawnInterval/scatterRadius/patch tuning.
+     Added HandleParticleHit.
+   - DragonCombatController.cs — added [SerializeField] fireBreathDamage
+     and groundFireSpawner refs (auto-found from siblings in Awake).
+     SetBreathingFireClientRpc now wires handlers after instantiating VFX.
+ * Required Inspector setup on the fire breath VFX prefab particle system:
+   - Collision module enabled, Type = World, "Send Collision Messages" on
+   - Collision layer mask = ground + character/zombie layers
+   - Collision Quality = High (recommended for tight detection on small
+     fast particles; Medium can miss thin colliders)
+   - Range is now whatever startSpeed * startLifetime gives — increase
+     either to extend reach; collision footprint follows automatically.
