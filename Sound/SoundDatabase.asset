@@ -478,8 +478,6 @@ MonoBehaviour:
     category: 1
     clips:
     - {fileID: 8300000, guid: 0669bdc9a9b129646acc2192dd31a88e, type: 3}
-    - {fileID: 8300000, guid: a91235cdb3f3ed243a1e2d7d3e08ef8c, type: 3}
-    - {fileID: 8300000, guid: 4ac1fb43560d2a94cbe7cd5663c2b251, type: 3}
     volume: {x: 0.8, y: 1}
     pitch: {x: 0.95, y: 1.05}
     overrideDistance: 0

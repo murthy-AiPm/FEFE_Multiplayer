@@ -102,6 +102,7 @@ public class DragonFlightController : NetworkBehaviour
     private float _rmRoll;
     private float _rmRollTarget;
     private bool _inputPaused;
+    private bool _wasPauseMenuPaused;
 
     // Animator hashes
     private int thrustHash;
@@ -158,7 +159,27 @@ public class DragonFlightController : NetworkBehaviour
     private void Update()
     {
         if (!IsOwner) return;
-        if (PauseMenu.IsPaused) return;
+
+        // Pause menu (Esc): zero thrust/pitch/yaw on entry so the dragon hovers
+        // in place while paused. Animator stays running so the blend tree can
+        // transition to the glide/hover pose naturally.
+        bool menuPaused = PauseMenu.IsPaused;
+        if (menuPaused && !_wasPauseMenuPaused)
+        {
+            _rmThrust = 0f;
+            _rmPitch = 0f;
+            _rmPitchTarget = 0f;
+            _rmYaw = 0f;
+            if (animator != null)
+            {
+                animator.SetFloat(thrustHash, 0f);
+                animator.SetFloat(pitchHash, 0f);
+                animator.SetFloat(yawHash, 0f);
+            }
+        }
+        _wasPauseMenuPaused = menuPaused;
+
+        if (menuPaused) return;
 
         // Not in flight mode
         if (!isActive)
@@ -292,6 +313,7 @@ public class DragonFlightController : NetworkBehaviour
             _inputPaused = !_inputPaused;
             animator.speed = _inputPaused ? 0f : 1f;
         }
+
         if (_inputPaused) return;
 
         float horizontal = Input.GetAxisRaw(horizontalAxis);

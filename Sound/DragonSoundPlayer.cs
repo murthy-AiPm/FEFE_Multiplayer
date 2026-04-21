@@ -58,6 +58,14 @@ public class DragonSoundPlayer : NetworkBehaviour
     [Tooltip("Log every wing flap PlaySound event with frame number, gate result, wing activity, and IsOwner. Two log lines on the same/adjacent frame = doubling. TURN OFF FOR SHIPPING.")]
     [SerializeField] private bool debugWingFlapLogs;
 
+    [Header("Footstep")]
+    [Tooltip("Sound name (animation event String) for dragon footsteps. Must match the SoundDatabase entry exactly.")]
+    [SerializeField] private string footstepSoundName = "DragonFootstep";
+    [Tooltip("Minimum seconds between footstep sounds. Suppresses duplicate events that fire when multiple walk clips in a blend tree both carry footstep events. Should be shorter than real paw-to-paw spacing (~0.2s+) — 0.1s catches 40ms blend-tree doubles without swallowing legitimate paw landings.")]
+    [SerializeField] private float footstepDebounce = 0.1f;
+    [Tooltip("Log every footstep PlaySound event with frame number, sinceLast, IsOwner. Two log lines on the same/adjacent frame = doubling. TURN OFF FOR SHIPPING.")]
+    [SerializeField] private bool debugFootstepLogs;
+
     // ─── State ───
     private bool _wasFlying;
     private bool _isBreathingFire;
@@ -70,6 +78,7 @@ public class DragonSoundPlayer : NetworkBehaviour
     private Quaternion _lastWingRotation;
     private float _wingActivity; // smoothed angular velocity in deg/sec
     private float _lastWingFlapTime = -999f;
+    private float _lastFootstepTime = -999f;
 
     private void Awake()
     {
@@ -343,7 +352,20 @@ public class DragonSoundPlayer : NetworkBehaviour
 
         if (gated || debounced) return;
 
+        // Footstep debounce — suppress duplicate events from blend-tree clips that both carry the footstep event.
+        bool isFootstep = soundName == footstepSoundName;
+        bool footstepDebounced = isFootstep && (Time.time - _lastFootstepTime) < footstepDebounce;
+
+        if (debugFootstepLogs && isFootstep)
+        {
+            string status = footstepDebounced ? "DEBOUNCED" : "PLAYED";
+            Debug.Log($"[Footstep] frame={Time.frameCount} t={Time.time:F3} owner={IsOwner} sinceLast={(Time.time - _lastFootstepTime):F3} {status} on {gameObject.name}");
+        }
+
+        if (footstepDebounced) return;
+
         if (isWingFlap) _lastWingFlapTime = Time.time;
+        if (isFootstep) _lastFootstepTime = Time.time;
         ProximitySoundManager.Instance.PlaySound(soundName, transform.position);
     }
 
