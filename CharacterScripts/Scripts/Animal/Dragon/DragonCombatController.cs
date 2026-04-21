@@ -107,6 +107,11 @@ public class DragonCombatController : NetworkBehaviour
     [SerializeField] private KeyCode primaryKey = KeyCode.Mouse0;
     [SerializeField] private KeyCode meleeModeKey = KeyCode.Alpha1;
     [SerializeField] private KeyCode fireBreathModeKey = KeyCode.Alpha2;
+    [SerializeField] private KeyCode roarKey = KeyCode.R;
+
+    [Header("Roar")]
+    [Tooltip("How long IsRoar bool stays true after pressing the roar key. Should match or exceed the roar animation clip length.")]
+    [SerializeField] private float roarDuration = 2f;
 
     // ─── Animator Hashes ─────────────────────────────────
     private int meleeAttackHash;
@@ -135,6 +140,9 @@ public class DragonCombatController : NetworkBehaviour
 
     // ─── Attack Twist (captured at melee fire, independent of head) ─
     private float _attackTwistAngle;
+
+    // ─── Roar State ──────────────────────────────────────
+    private float _roarEndTime;
 
     // ─── Network ─────────────────────────────────────────
     private NetworkVariable<float> netTwistAngle = new NetworkVariable<float>(
@@ -184,6 +192,7 @@ public class DragonCombatController : NetworkBehaviour
 
         HandleAttackModeToggle();
         HandleCombatInput();
+        HandleRoarInput();
         bool isStationary = groundController == null || groundController.GaitSpeed <= stationaryThreshold;
         UpdateTwistAngle(isStationary);
         UpdateHeadAngles(isStationary);
@@ -579,6 +588,33 @@ public class DragonCombatController : NetworkBehaviour
     }
 
     // ═══════════════════════════════════════════════════════════════
+    // ROAR
+    // ═══════════════════════════════════════════════════════════════
+
+    private void HandleRoarInput()
+    {
+        if (!Input.GetKeyDown(roarKey)) return;
+        if (IsRoaring) return; // ignore re-press while already roaring
+        if (animator != null && animator.GetBool("IsDead")) return; // block when dead
+
+        _roarEndTime = Time.time + roarDuration;
+        RoarSoundServerRpc();
+    }
+
+    [ServerRpc]
+    private void RoarSoundServerRpc()
+    {
+        RoarSoundClientRpc();
+    }
+
+    [ClientRpc]
+    private void RoarSoundClientRpc()
+    {
+        if (soundPlayer != null)
+            soundPlayer.OnRoar();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // NETWORK SYNC
     // ═══════════════════════════════════════════════════════════════
 
@@ -616,4 +652,5 @@ public class DragonCombatController : NetworkBehaviour
     public float TwistAngle    => _currentTwistAngle;
     public float HeadYaw       => _currentHeadYaw;
     public float HeadPitch     => _currentHeadPitch;
+    public bool IsRoaring      => Time.time < _roarEndTime;
 }

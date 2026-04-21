@@ -689,6 +689,41 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+  - soundName: Dragon_Roar
+    category: 1
+    clips:
+    - {fileID: 8300000, guid: 0f19fd5c644eb6a4d86197cc6d86d7a6, type: 3}
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   terrainLayerMappings:
   - terrainLayerIndex: 0
     surfaceType: Soil

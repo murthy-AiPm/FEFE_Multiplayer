@@ -664,4 +664,41 @@ FIRE BREATH LOOP CROSSFADE — DONE:
    quiet portions. Fix is to curate Fire Breath Loop entry to only include
    clips with consistent sustained sound — not a code problem.
 
+FIRE BREATH LOOP SILENCE AFTER FIRST CLIP — DONE:
+ * Symptom: after first random clip played, loop went silent. Raising
+   fireBreathLoopOverlap to 100s did not help.
+ * Root cause: crossfade trigger used full clip.length. If loop clips had
+   trailing silence / fade-out (common in non-seamless dragon breath
+   recordings), the overlap window would pass the audible portion; the
+   "other" source would then be marked isPlaying (still in its own silent
+   tail) and the early-return blocked the next start — dead air until the
+   unreliable "not playing" safety branch restarted it.
+ * Fix in DragonSoundPlayer.UpdateFireBreathCrossfade:
+   - New Inspector field fireBreathLoopMaxClipDuration (default 3s).
+   - effectiveLength = Min(clip.length, maxDuration).
+   - Crossfade now triggers on effectiveLength - time, not clip.length.
+   - Before starting next clip on "other", force-stop it if its own
+     time >= its effectiveLength (kills silent-tail zombies).
+ * Inspector-tunable per project — raise if any clip has real content
+   beyond 3s. 999 effectively disables capping.
+
+DRAGON ROAR — DONE:
+ * Input: KeyCode roarKey (default R) on DragonCombatController.
+ * State: _roarEndTime timer, public IsRoaring => Time.time < _roarEndTime.
+ * roarDuration (default 2s) Inspector-tunable; holds IsRoar bool high
+   long enough for the AnyState->Roar transition to fire.
+ * Re-press blocked while IsRoaring; blocked when animator IsDead.
+ * Sound: RoarSoundServerRpc -> RoarSoundClientRpc -> soundPlayer.OnRoar()
+   on ALL clients (mirrors MeleeAttack RPC pattern). Sound clip string
+   stays "Dragon_Roar" in SoundDatabase.
+ * Animator sync in DragonAnimatorController mirrors IsDiving pattern:
+   - New [SerializeField] DragonCombatController combatController (auto-
+     wired from parent in Awake).
+   - netIsRoar NetworkVariable, Owner write permission.
+   - LateUpdate writes netIsRoar.Value -> animator IsRoar bool on all clients.
+   - UpdateNetworkVariables writes combatController.IsRoaring -> netIsRoar
+     on owner.
+ * Animator setup: AnyState -> Roar with condition IsRoar == true;
+   Roar -> Idle via Has Exit Time. No animation events needed.
+
  */

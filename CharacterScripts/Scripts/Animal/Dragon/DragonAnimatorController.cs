@@ -16,6 +16,9 @@ public class DragonAnimatorController : AnimalAnimatorController
     [Header("Dragon Swim References")]
     [SerializeField] private DragonSwimController swimController;
 
+    [Header("Dragon Combat References")]
+    [SerializeField] private DragonCombatController combatController;
+
     // ─── Animator Parameter Hashes (Flight) ──────────────
 
     private int isDivingHash;
@@ -25,6 +28,7 @@ public class DragonAnimatorController : AnimalAnimatorController
     private int thrustHash;
     private int yawHash;
     private int flightPitchHash;
+    private int isRoarHash;
 
     // ─── Animator Parameter Hashes (Swim) ────────────────
 
@@ -38,6 +42,8 @@ public class DragonAnimatorController : AnimalAnimatorController
     private NetworkVariable<bool> netIsDiving = new NetworkVariable<bool>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<bool> netIsFalling = new NetworkVariable<bool>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<bool> netIsRoar = new NetworkVariable<bool>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     // ─── NetworkVariables (Root Motion Flight) ────────────
@@ -72,6 +78,8 @@ public class DragonAnimatorController : AnimalAnimatorController
             flightController = GetComponentInParent<DragonFlightController>();
         if (swimController == null)
             swimController = GetComponentInParent<DragonSwimController>();
+        if (combatController == null)
+            combatController = GetComponentInParent<DragonCombatController>();
 
         // Cache flight hashes
         isDivingHash      = Animator.StringToHash("IsDiving");
@@ -81,6 +89,9 @@ public class DragonAnimatorController : AnimalAnimatorController
         thrustHash        = Animator.StringToHash("Thrust");
         yawHash           = Animator.StringToHash("Yaw");
         flightPitchHash   = Animator.StringToHash("Pitch");
+
+        // Cache combat hashes
+        isRoarHash        = Animator.StringToHash("IsRoar");
 
         // Cache swim hashes
         isSwimmingHash   = Animator.StringToHash("IsSwimming");
@@ -128,6 +139,9 @@ public class DragonAnimatorController : AnimalAnimatorController
         // ─── Flight state bools ──────────────────────────
         animator.SetBool(isDivingHash,      netIsDiving.Value);
 
+        // ─── Roar bool (synced from owner to all clients) ─
+        animator.SetBool(isRoarHash,        netIsRoar.Value);
+
         // ─── IsFalling (synced so remotes don't compute locally with stale FlightMode) ──
         if (!IsOwner)
             animator.SetBool(isFallingHash, netIsFalling.Value);
@@ -169,6 +183,14 @@ public class DragonAnimatorController : AnimalAnimatorController
         // ─── Flight state bools ──────────────────────────
         if (netIsDiving.Value != flightController.IsDiving)
             netIsDiving.Value = flightController.IsDiving;
+
+        // ─── Roar bool ───────────────────────────────────
+        if (combatController != null)
+        {
+            bool roaring = combatController.IsRoaring;
+            if (netIsRoar.Value != roaring)
+                netIsRoar.Value = roaring;
+        }
 
         // ─── IsFalling (owner is the authority) ──────────
         if (animator != null)
