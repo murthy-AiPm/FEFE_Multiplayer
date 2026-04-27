@@ -61,6 +61,10 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private float rollMinThrust = 0.4f;
     [Tooltip("After the roll ends, code keeps applying forward speed (tapered to zero) for this long, to cover the animator's exit blend back into flight.")]
     [SerializeField] private float rollExitBlendTime = 0.3f;
+    [Tooltip("Total sideways distance (m) the dragon travels during a roll. Q slides left, E slides right.")]
+    [SerializeField] private float rollLateralDistance = 4f;
+    [Tooltip("Peak vertical height (m) of the arc bump during a roll. Returns to baseline at end of roll.")]
+    [SerializeField] private float rollArcHeight = 2f;
 
     [Header("Pitch")]
     [Tooltip("Max camera pitch angle used to normalize pitch to -1..1 range.")]
@@ -366,7 +370,25 @@ public class DragonFlightController : NetworkBehaviour
         if (_rollTimeRemaining > 0f)
         {
             _rollTimeRemaining -= dt;
-            ApplyMovement(transform.forward * rollForwardSpeed * dt);
+
+            // Net lateral slide + vertical arc bump. Both velocity profiles are
+            // zero at the endpoints — no velocity flick when the roll starts/ends.
+            //   lateral: eases 0 → rollLateralDistance via (1 - cos(π*t))/2
+            //   vertical: rises to rollArcHeight at t=0.5 then returns to 0 via (1 - cos(2π*t))/2
+            float duration = Mathf.Max(rollDuration, 0.0001f);
+            float t = Mathf.Clamp01(1f - (_rollTimeRemaining / duration));
+            float dirSign = _rmRoll;
+
+            float rightVel = rollLateralDistance * (Mathf.PI / (2f * duration))
+                             * Mathf.Sin(Mathf.PI * t) * dirSign;
+            float upVel = rollArcHeight * (Mathf.PI / duration)
+                          * Mathf.Sin(2f * Mathf.PI * t);
+
+            Vector3 displacement = (transform.forward * rollForwardSpeed
+                                  + transform.right   * rightVel
+                                  + Vector3.up        * upVel) * dt;
+            ApplyMovement(displacement);
+
             if (_rollTimeRemaining <= 0f)
             {
                 _rmRoll = 0;

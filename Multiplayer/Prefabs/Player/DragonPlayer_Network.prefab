@@ -5597,6 +5597,8 @@ MonoBehaviour:
   rollDuration: 1.12
   rollCooldown: 0.5
   rollMinThrust: 0.4
+  rollExitBlendTime: 0.3
+  rollArcRadius: 10
   flightPitchClamp: 70
   groundAvoidanceOrigin: {fileID: 3423531768416006098}
   minFlightAltitude: 3
