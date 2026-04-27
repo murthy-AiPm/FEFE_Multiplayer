@@ -5586,10 +5586,10 @@ MonoBehaviour:
   pitchSmoothSpeed: 3
   rollSmoothSpeed: 3
   horizontalAxis: Horizontal
-  toggleHoverKey: 304
+  toggleHoverKey: 0
   invertY: 0
   pauseInputKey: 112
-  pitchStabilizeKey: 306
+  pitchStabilizeKey: 304
   rollLeftKey: 113
   rollRightKey: 101
   flightPitchClamp: 70

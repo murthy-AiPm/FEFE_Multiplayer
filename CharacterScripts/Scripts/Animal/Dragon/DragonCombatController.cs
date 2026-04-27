@@ -350,6 +350,17 @@ public class DragonCombatController : NetworkBehaviour
     [ClientRpc]
     private void SetBreathingFireClientRpc(bool value)
     {
+        ApplyFireBreathVisualState(value);
+    }
+
+    /// <summary>
+    /// Applies animator + VFX + SFX for the fire breath state on this client.
+    /// Shared by SetBreathingFireClientRpc (live toggle) and OnNetworkSpawn
+    /// (late-join: a client that connects mid-breath misses the ClientRpc and
+    /// would otherwise see the dragon idle with netIsBreathingFire == true).
+    /// </summary>
+    private void ApplyFireBreathVisualState(bool value)
+    {
         if (animator != null)
             animator.SetBool(isBreathingFireHash, value);
 
@@ -394,6 +405,20 @@ public class DragonCombatController : NetworkBehaviour
                 soundPlayer.OnFireBreathStart();
             else
                 soundPlayer.OnFireBreathEnd();
+        }
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+
+        // Late-join fix: a client that connects while the dragon is already
+        // breathing fire misses SetBreathingFireClientRpc, so VFX/animator/SFX
+        // never come up even though netIsBreathingFire.Value is true. Owner is
+        // never a late joiner for its own dragon, so skip it.
+        if (!IsOwner && netIsBreathingFire.Value)
+        {
+            ApplyFireBreathVisualState(true);
         }
     }
 

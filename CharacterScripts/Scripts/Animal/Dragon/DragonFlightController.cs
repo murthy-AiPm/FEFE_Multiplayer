@@ -37,7 +37,6 @@ public class DragonFlightController : NetworkBehaviour
 
     [Header("Input")]
     [SerializeField] private string horizontalAxis = "Horizontal";
-    [SerializeField] private KeyCode toggleHoverKey = KeyCode.Space;
     [SerializeField] private bool invertY = false;
     [SerializeField] private KeyCode pauseInputKey = KeyCode.P;
     [Tooltip("Hold to lock flight pitch to zero (fly level) for fire strafing runs.")]
@@ -46,6 +45,12 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private KeyCode rollLeftKey = KeyCode.Q;
     [Tooltip("Roll right key.")]
     [SerializeField] private KeyCode rollRightKey = KeyCode.E;
+    [Tooltip("Hold to ascend while hovering (thrust ~ 0).")]
+    [SerializeField] private KeyCode hoverUpKey = KeyCode.Space;
+    [Tooltip("Hold to descend while hovering (thrust ~ 0).")]
+    [SerializeField] private KeyCode hoverDownKey = KeyCode.LeftControl;
+    [Tooltip("Vertical speed (m/s) applied while hover up/down keys are held.")]
+    [SerializeField] private float hoverVerticalSpeed = 4f;
 
     [Header("Pitch")]
     [Tooltip("Max camera pitch angle used to normalize pitch to -1..1 range.")]
@@ -89,7 +94,6 @@ public class DragonFlightController : NetworkBehaviour
     // ─── Private State ───────────────────────────────────
 
     private bool isActive;
-    private bool hoverRequested;
     private bool isHoverMode;
     private bool isFlapping;
     private bool isGliding;
@@ -146,7 +150,6 @@ public class DragonFlightController : NetworkBehaviour
 
         isActive = false;
         isHoverMode = false;
-        hoverRequested = false;
         isFlapping = false;
         isGliding = false;
         _diveCrashTriggered = false;
@@ -228,7 +231,6 @@ public class DragonFlightController : NetworkBehaviour
         if (IsSwimmingActive()) return;
         isActive = true;
         isHoverMode = false;
-        hoverRequested = false;
         _rmThrust = 1f;
 
         // Suspend ground alignment so slope tilt doesn't carry into flight
@@ -262,7 +264,6 @@ public class DragonFlightController : NetworkBehaviour
     {
         isActive = false;
         isHoverMode = false;
-        hoverRequested = false;
         isFlapping = false;
         isGliding = false;
 
@@ -371,21 +372,20 @@ public class DragonFlightController : NetworkBehaviour
             animator.applyRootMotion = true;
         }
 
-        // Hover toggle
-        if (Input.GetKeyDown(toggleHoverKey))
-        {
-            hoverRequested = !hoverRequested;
-            if (hoverRequested && rb != null)
-            {
-                Vector3 v = rb.linearVelocity;
-                v.y = 0f;
-                rb.linearVelocity = v;
-            }
-        }
-
-        isHoverMode = hoverRequested && _rmThrust < 0.05f;
+        isHoverMode = Mathf.Abs(_rmThrust) < 0.05f;
         isFlapping = _rmThrust > 0.05f;
-        isGliding = !isHoverMode && !isFlapping;
+        isGliding = _rmThrust < -0.05f;
+
+        // Hover up/down — only while thrust is at or below zero
+        if (_rmThrust <= 0f)
+        {
+            float vertical = 0f;
+            if (Input.GetKey(hoverUpKey))   vertical += 1f;
+            if (Input.GetKey(hoverDownKey)) vertical -= 1f;
+
+            if (vertical != 0f)
+                ApplyMovement(Vector3.up * vertical * hoverVerticalSpeed * dt);
+        }
     }
 
     // ─── Free-Fall Crash Detection ───────────────────
