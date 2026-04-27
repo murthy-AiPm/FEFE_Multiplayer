@@ -344,6 +344,11 @@ between modes with shared takeoff/dive/landing animations.
   `FlightYaw`, `FlightPitch`, `FlightRoll`. `EnterFlight()` / `ExitFlight()` to
   toggle `IsFlightMode`. `DiveCrashLand` ServerRpc for the kill-on-impact
   result; `EnforceMinAltitude` is a fail-safe so the rigidbody can't tunnel.
+  Roll is dual-mode based on thrust: **above** `rollMotionMinThrust` Q/E is a
+  one-shot discrete roll (snaps `_rmRoll = ±1`, locked for `rollDuration`,
+  code drives forward/lateral/arc displacement); **at or below** that threshold
+  Q/E is a smooth axis like Yaw (`MoveTowards` based on key hold, no code-
+  driven displacement — visual roll only).
 - `DragonSwimController` — engages when `AnimalSwimSystem` reports submerged.
   `surfaceBuoyancy = 0` workaround keeps the dragon slightly under the
   waterline without bobbing oscillation.
@@ -404,6 +409,16 @@ Owner presses jump while grounded + tap held:
 - Late-join `animator.Play("BlendFly")` works only because the `BlendFly`
   state name matches the actual state in the controller asset; renaming the
   state without updating this code silently breaks late-join sync.
+- The animator-side `Roll` parameter is a **Float**, not an Int — required by
+  the smooth-axis branch which writes intermediate values via `MoveTowards`.
+  The roll destination state is a single clip, not a direct blend tree;
+  blending the roll motion with active flight blend weights (Pitch/Yaw/Thrust)
+  every frame produced a visibly rough transition even in the animator preview.
+- Roll exit blend (`rollExitBlendTime`) keeps code-driven forward speed
+  (linearly tapered) running for ~0.3s after the discrete roll ends, to cover
+  the animator's exit transition back into BlendFly. Without it the dragon
+  visibly stalls — root motion is zero (roll clip is in-place) while BlendFly
+  ramps in.
 
 ### 4.2 Combat
 

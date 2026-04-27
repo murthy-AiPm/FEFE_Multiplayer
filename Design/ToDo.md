@@ -793,3 +793,52 @@ DRAGON ROAR — DONE:
      fast particles; Medium can miss thin colliders)
    - Range is now whatever startSpeed * startLifetime gives — increase
      either to extend reach; collision footprint follows automatically.
+
+26th-April-2026 — DRAGON ROLL: DUAL-MODE INPUT + LATERAL SLIDE TRAJECTORY:
+ * Roll behaviour rewritten in DragonFlightController. Q/E now branches on
+   flight thrust:
+     - thrust >  rollMotionMinThrust (default 0.4): one-shot discrete roll.
+       KeyDown snaps _rmRoll to ±1, locked for rollDuration. Code drives the
+       displacement (forward speed + lateral slide + arc bump).
+     - thrust ≤ rollMotionMinThrust: smooth axis like Yaw. Key hold drives
+       _rmRoll via MoveTowards(target, rollSmoothing*dt). No code-driven
+       displacement — the roll plays visually only.
+ * _rmRoll changed from int → float. animator.SetInteger → SetFloat.
+   FlightRoll public property is now float. Required after switching the
+   animator's Roll parameter from Int to Float so the smooth-axis branch
+   can write intermediate values.
+ * Trajectory rewrite: previous "circular barrel roll" (rollArcRadius)
+   returned to the original lateral line at end of roll, so the dragon
+   never actually slid sideways. Replaced with two independent components
+   — rollLateralDistance (net sideways displacement, eased via
+   (1-cos(π*t))/2) and rollArcHeight (single up-bump, returns to baseline
+   via (1-cos(2π*t))/2). Both velocity profiles are zero at the endpoints
+   so there's no velocity flick when the roll starts/ends.
+ * Roll exit blend (rollExitBlendTime, default 0.3s): code keeps applying
+   forward speed (linearly tapered) for this long after _rollTimeRemaining
+   hits zero, to cover the animator's exit transition back into BlendFly.
+   Without this, root motion was at zero (roll clip is in-place) while
+   BlendFly ramped in, producing a visible "speed = 0 for a second" stall.
+ * Animator-side smoothness fix (user-side): the BlendFly→Roll destination
+   was a direct blend tree, which mixed the roll motion with active flight
+   blend weights (Pitch/Yaw/Thrust) every frame and produced a rough
+   transition even in the animator preview. Switched to a simple state
+   playing a single roll clip — preview is clean.
+ * Removed: rollArcRadius (replaced by rollLateralDistance/rollArcHeight),
+   rollMinThrust trigger gate (roll input now triggers at any thrust;
+   motion is gated separately by rollMotionMinThrust).
+ * Files changed:
+   - CharacterScripts/Scripts/Animal/Dragon/DragonFlightController.cs —
+     fields and roll input/motion logic.
+   - Animations/DragonAnimations 2.controller — roll destination state
+     swapped from blend tree to simple state; Roll parameter Int → Float.
+ * Inspector defaults on DragonFlightController:
+   - rollForwardSpeed: 15 m/s
+   - rollDuration: 0.6 s
+   - rollCooldown: 0.5 s
+   - rollMotionMinThrust: 0.4
+   - rollSmoothing: 3 (≈0.33s to reach ±1 from rest)
+   - rollExitBlendTime: 0.3 s (match to the animator's Roll→BlendFly
+     transition duration)
+   - rollLateralDistance: 4 m
+   - rollArcHeight: 2 m
