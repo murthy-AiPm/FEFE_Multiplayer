@@ -57,8 +57,10 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private float rollDuration = 0.6f;
     [Tooltip("Cooldown (seconds) after a roll completes before another can start.")]
     [SerializeField] private float rollCooldown = 0.5f;
-    [Tooltip("Minimum thrust required to start a roll (matches animator transition gate).")]
-    [SerializeField] private float rollMinThrust = 0.4f;
+    [Tooltip("Thrust must exceed this for code-driven roll motion (forward speed, lateral slide, arc) to apply. Below this, the roll plays visually but the dragon doesn't translate.")]
+    [SerializeField] private float rollMotionMinThrust = 0.4f;
+    [Tooltip("How fast roll moves toward target per second when in smooth-axis mode (thrust ≤ rollMotionMinThrust). Higher = snappier response.")]
+    [SerializeField] private float rollSmoothing = 3f;
     [Tooltip("After the roll ends, code keeps applying forward speed (tapered to zero) for this long, to cover the animator's exit blend back into flight.")]
     [SerializeField] private float rollExitBlendTime = 0.3f;
     [Tooltip("Total sideways distance (m) the dragon travels during a roll. Q slides left, E slides right.")]
@@ -103,7 +105,7 @@ public class DragonFlightController : NetworkBehaviour
     public float FlightThrust => _rmThrust;
     public float FlightYaw => _rmYaw;
     public float FlightPitch => _rmPitch;
-    public int FlightRoll => _rmRoll;
+    public float FlightRoll => _rmRoll;
 
     // ─── Private State ───────────────────────────────────
 
@@ -117,7 +119,7 @@ public class DragonFlightController : NetworkBehaviour
     private float _rmYaw;
     private float _rmPitch;
     private float _rmPitchTarget;
-    private int _rmRoll;
+    private float _rmRoll;
     private float _rollTimeRemaining;
     private float _rollCooldownRemaining;
     private float _rollExitBlendRemaining;
@@ -300,7 +302,7 @@ public class DragonFlightController : NetworkBehaviour
             animator.SetFloat(thrustHash, 0f);
             animator.SetFloat(yawHash, 0f);
             animator.SetFloat(pitchHash, 0f);
-            animator.SetInteger(rollHash, 0);
+            animator.SetFloat(rollHash, 0f);
             animator.applyRootMotion = true;
         }
 
@@ -367,6 +369,9 @@ public class DragonFlightController : NetworkBehaviour
 
         // ── Roll (one-shot, locked for rollDuration, then cooldown; forward
         //   movement applied since roll clips are in-place) ──
+        // Roll has two modes based on thrust:
+        //   thrust >  rollMotionMinThrust → discrete one-shot (KeyDown snaps _rmRoll = ±1, locked for rollDuration)
+        //   thrust ≤ rollMotionMinThrust  → smooth axis (key hold → MoveTowards target, like Yaw)
         if (_rollTimeRemaining > 0f)
         {
             _rollTimeRemaining -= dt;
@@ -375,28 +380,31 @@ public class DragonFlightController : NetworkBehaviour
             // zero at the endpoints — no velocity flick when the roll starts/ends.
             //   lateral: eases 0 → rollLateralDistance via (1 - cos(π*t))/2
             //   vertical: rises to rollArcHeight at t=0.5 then returns to 0 via (1 - cos(2π*t))/2
-            float duration = Mathf.Max(rollDuration, 0.0001f);
-            float t = Mathf.Clamp01(1f - (_rollTimeRemaining / duration));
-            float dirSign = _rmRoll;
+            if (_rmThrust > rollMotionMinThrust)
+            {
+                float duration = Mathf.Max(rollDuration, 0.0001f);
+                float t = Mathf.Clamp01(1f - (_rollTimeRemaining / duration));
+                float dirSign = _rmRoll;
 
-            float rightVel = rollLateralDistance * (Mathf.PI / (2f * duration))
-                             * Mathf.Sin(Mathf.PI * t) * dirSign;
-            float upVel = rollArcHeight * (Mathf.PI / duration)
-                          * Mathf.Sin(2f * Mathf.PI * t);
+                float rightVel = rollLateralDistance * (Mathf.PI / (2f * duration))
+                                 * Mathf.Sin(Mathf.PI * t) * dirSign;
+                float upVel = rollArcHeight * (Mathf.PI / duration)
+                              * Mathf.Sin(2f * Mathf.PI * t);
 
-            Vector3 displacement = (transform.forward * rollForwardSpeed
-                                  + transform.right   * rightVel
-                                  + Vector3.up        * upVel) * dt;
-            ApplyMovement(displacement);
+                Vector3 displacement = (transform.forward * rollForwardSpeed
+                                      + transform.right   * rightVel
+                                      + Vector3.up        * upVel) * dt;
+                ApplyMovement(displacement);
+            }
 
             if (_rollTimeRemaining <= 0f)
             {
-                _rmRoll = 0;
+                _rmRoll = 0f;
                 _rollCooldownRemaining = rollCooldown;
                 _rollExitBlendRemaining = rollExitBlendTime;
             }
         }
-        else
+        else if (_rmThrust > rollMotionMinThrust)
         {
             if (_rollExitBlendRemaining > 0f)
             {
@@ -410,23 +418,38 @@ public class DragonFlightController : NetworkBehaviour
             if (_rollCooldownRemaining > 0f)
                 _rollCooldownRemaining -= dt;
 
-            _rmRoll = 0;
+            _rmRoll = 0f;
 
-            if (_rollCooldownRemaining <= 0f && _rmThrust > rollMinThrust)
+            if (_rollCooldownRemaining <= 0f)
             {
                 if (Input.GetKeyDown(rollLeftKey))
                 {
-                    _rmRoll = -1;
+                    _rmRoll = -1f;
                     _rollTimeRemaining = rollDuration;
                     _rollExitBlendRemaining = 0f;
                 }
                 else if (Input.GetKeyDown(rollRightKey))
                 {
-                    _rmRoll = 1;
+                    _rmRoll = 1f;
                     _rollTimeRemaining = rollDuration;
                     _rollExitBlendRemaining = 0f;
                 }
             }
+        }
+        else
+        {
+            // Smooth axis mode — like Yaw. No discrete one-shot, no code-driven motion.
+            float targetRoll = 0f;
+            if (Input.GetKey(rollLeftKey))       targetRoll = -1f;
+            else if (Input.GetKey(rollRightKey)) targetRoll =  1f;
+
+            _rmRoll = Mathf.MoveTowards(_rmRoll, targetRoll, rollSmoothing * dt);
+            if (Mathf.Abs(targetRoll) < 0.01f && Mathf.Abs(_rmRoll) < 0.02f)
+                _rmRoll = 0f;
+
+            _rollExitBlendRemaining = 0f;
+            if (_rollCooldownRemaining > 0f)
+                _rollCooldownRemaining -= dt;
         }
 
         // Tell ground systems to hand off to flight
@@ -441,7 +464,7 @@ public class DragonFlightController : NetworkBehaviour
             animator.SetFloat(thrustHash, _rmThrust);
             animator.SetFloat(yawHash, _rmYaw);
             animator.SetFloat(pitchHash, _rmPitch);
-            animator.SetInteger(rollHash, _rmRoll);
+            animator.SetFloat(rollHash, _rmRoll);
             animator.applyRootMotion = true;
         }
 
