@@ -32,8 +32,6 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private float yawSmoothing = 5f;
     [Tooltip("How fast pitch smoothly moves to target value (per second).")]
     [SerializeField] private float pitchSmoothSpeed = 3f;
-    [Tooltip("How fast roll smoothly moves to target value (per second).")]
-    [SerializeField] private float rollSmoothSpeed = 3f;
 
     [Header("Input")]
     [SerializeField] private string horizontalAxis = "Horizontal";
@@ -51,6 +49,18 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private KeyCode hoverDownKey = KeyCode.LeftControl;
     [Tooltip("Vertical speed (m/s) applied while hover up/down keys are held.")]
     [SerializeField] private float hoverVerticalSpeed = 4f;
+
+    [Header("Roll")]
+    [Tooltip("Forward speed (m/s) applied during a roll, since roll clips are in-place.")]
+    [SerializeField] private float rollForwardSpeed = 15f;
+    [Tooltip("How long a roll lasts (seconds). Input is locked for this duration.")]
+    [SerializeField] private float rollDuration = 0.6f;
+    [Tooltip("Cooldown (seconds) after a roll completes before another can start.")]
+    [SerializeField] private float rollCooldown = 0.5f;
+    [Tooltip("Minimum thrust required to start a roll (matches animator transition gate).")]
+    [SerializeField] private float rollMinThrust = 0.4f;
+    [Tooltip("After the roll ends, code keeps applying forward speed (tapered to zero) for this long, to cover the animator's exit blend back into flight.")]
+    [SerializeField] private float rollExitBlendTime = 0.3f;
 
     [Header("Pitch")]
     [Tooltip("Max camera pitch angle used to normalize pitch to -1..1 range.")]
@@ -89,7 +99,7 @@ public class DragonFlightController : NetworkBehaviour
     public float FlightThrust => _rmThrust;
     public float FlightYaw => _rmYaw;
     public float FlightPitch => _rmPitch;
-    public float FlightRoll => _rmRoll;
+    public int FlightRoll => _rmRoll;
 
     // ─── Private State ───────────────────────────────────
 
@@ -103,8 +113,10 @@ public class DragonFlightController : NetworkBehaviour
     private float _rmYaw;
     private float _rmPitch;
     private float _rmPitchTarget;
-    private float _rmRoll;
-    private float _rmRollTarget;
+    private int _rmRoll;
+    private float _rollTimeRemaining;
+    private float _rollCooldownRemaining;
+    private float _rollExitBlendRemaining;
     private bool _inputPaused;
     private bool _wasPauseMenuPaused;
 
@@ -272,8 +284,10 @@ public class DragonFlightController : NetworkBehaviour
         _rmYaw = 0f;
         _rmPitch = 0f;
         _rmPitchTarget = 0f;
-        _rmRoll = 0f;
-        _rmRollTarget = 0f;
+        _rmRoll = 0;
+        _rollTimeRemaining = 0f;
+        _rollCooldownRemaining = 0f;
+        _rollExitBlendRemaining = 0f;
 
         // Clear animator flight params
         if (animator != null)
@@ -282,7 +296,7 @@ public class DragonFlightController : NetworkBehaviour
             animator.SetFloat(thrustHash, 0f);
             animator.SetFloat(yawHash, 0f);
             animator.SetFloat(pitchHash, 0f);
-            animator.SetFloat(rollHash, 0f);
+            animator.SetInteger(rollHash, 0);
             animator.applyRootMotion = true;
         }
 
@@ -347,14 +361,51 @@ public class DragonFlightController : NetworkBehaviour
         }
         _rmPitch = Mathf.MoveTowards(_rmPitch, _rmPitchTarget, pitchSmoothSpeed * dt);
 
-        // ── Roll (Q = left, E = right; smoothly returns to 0 when released) ──
-        if (Input.GetKey(rollLeftKey))
-            _rmRollTarget = -1f;
-        else if (Input.GetKey(rollRightKey))
-            _rmRollTarget = 1f;
+        // ── Roll (one-shot, locked for rollDuration, then cooldown; forward
+        //   movement applied since roll clips are in-place) ──
+        if (_rollTimeRemaining > 0f)
+        {
+            _rollTimeRemaining -= dt;
+            ApplyMovement(transform.forward * rollForwardSpeed * dt);
+            if (_rollTimeRemaining <= 0f)
+            {
+                _rmRoll = 0;
+                _rollCooldownRemaining = rollCooldown;
+                _rollExitBlendRemaining = rollExitBlendTime;
+            }
+        }
         else
-            _rmRollTarget = 0f;
-        _rmRoll = Mathf.MoveTowards(_rmRoll, _rmRollTarget, rollSmoothSpeed * dt);
+        {
+            if (_rollExitBlendRemaining > 0f)
+            {
+                float taper = rollExitBlendTime > 0f
+                    ? _rollExitBlendRemaining / rollExitBlendTime
+                    : 0f;
+                ApplyMovement(transform.forward * rollForwardSpeed * taper * dt);
+                _rollExitBlendRemaining -= dt;
+            }
+
+            if (_rollCooldownRemaining > 0f)
+                _rollCooldownRemaining -= dt;
+
+            _rmRoll = 0;
+
+            if (_rollCooldownRemaining <= 0f && _rmThrust > rollMinThrust)
+            {
+                if (Input.GetKeyDown(rollLeftKey))
+                {
+                    _rmRoll = -1;
+                    _rollTimeRemaining = rollDuration;
+                    _rollExitBlendRemaining = 0f;
+                }
+                else if (Input.GetKeyDown(rollRightKey))
+                {
+                    _rmRoll = 1;
+                    _rollTimeRemaining = rollDuration;
+                    _rollExitBlendRemaining = 0f;
+                }
+            }
+        }
 
         // Tell ground systems to hand off to flight
         if (groundController != null)
@@ -368,7 +419,7 @@ public class DragonFlightController : NetworkBehaviour
             animator.SetFloat(thrustHash, _rmThrust);
             animator.SetFloat(yawHash, _rmYaw);
             animator.SetFloat(pitchHash, _rmPitch);
-            animator.SetFloat(rollHash, _rmRoll);
+            animator.SetInteger(rollHash, _rmRoll);
             animator.applyRootMotion = true;
         }
 

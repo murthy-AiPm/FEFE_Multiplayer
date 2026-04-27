@@ -5584,14 +5584,19 @@ MonoBehaviour:
   thrustMax: 1
   yawSmoothing: 5
   pitchSmoothSpeed: 3
-  rollSmoothSpeed: 3
   horizontalAxis: Horizontal
-  toggleHoverKey: 0
   invertY: 0
   pauseInputKey: 112
   pitchStabilizeKey: 304
   rollLeftKey: 113
   rollRightKey: 101
+  hoverUpKey: 32
+  hoverDownKey: 306
+  hoverVerticalSpeed: 4
+  rollForwardSpeed: 15
+  rollDuration: 1.12
+  rollCooldown: 0.5
+  rollMinThrust: 0.4
   flightPitchClamp: 70
   groundAvoidanceOrigin: {fileID: 3423531768416006098}
   minFlightAltitude: 3
