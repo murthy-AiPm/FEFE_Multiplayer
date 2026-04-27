@@ -606,11 +606,11 @@ MonoBehaviour:
       useActionId: 0
       actionIdEquals: 0
   - name: Bow/Aim/Idle
-    layer: 1
+    layer: 0
     priority: 140
     lockUntilEnd: 0
     allowInterruptSameLayer: 0
-    maskOverride: {fileID: 31900000, guid: 8a05a2e26dcdf4c4dbc0913d2f466bb0, type: 2}
+    maskOverride: {fileID: 0}
     animationKey: Bow/Aim/Idle
     all:
     - useBool: 1
@@ -662,7 +662,7 @@ MonoBehaviour:
       useActionId: 0
       actionIdEquals: 0
   - name: Bow/Release
-    layer: 1
+    layer: 2
     priority: 141
     lockUntilEnd: 0
     allowInterruptSameLayer: 0

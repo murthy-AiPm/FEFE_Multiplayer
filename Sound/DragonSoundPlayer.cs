@@ -347,7 +347,7 @@ public class DragonSoundPlayer : NetworkBehaviour
         if (debugWingFlapLogs && isWingFlap)
         {
             string status = gated ? "GATED" : debounced ? "DEBOUNCED" : "PLAYED";
-            Debug.Log($"[WingFlap] frame={Time.frameCount} t={Time.time:F3} owner={IsOwner} activity={_wingActivity:F1} threshold={wingMotionThreshold} sinceLast={(Time.time - _lastWingFlapTime):F3} {status} on {gameObject.name}");
+           // Debug.Log($"[WingFlap] frame={Time.frameCount} t={Time.time:F3} owner={IsOwner} activity={_wingActivity:F1} threshold={wingMotionThreshold} sinceLast={(Time.time - _lastWingFlapTime):F3} {status} on {gameObject.name}");
         }
 
         if (gated || debounced) return;
@@ -359,7 +359,7 @@ public class DragonSoundPlayer : NetworkBehaviour
         if (debugFootstepLogs && isFootstep)
         {
             string status = footstepDebounced ? "DEBOUNCED" : "PLAYED";
-            Debug.Log($"[Footstep] frame={Time.frameCount} t={Time.time:F3} owner={IsOwner} sinceLast={(Time.time - _lastFootstepTime):F3} {status} on {gameObject.name}");
+           //Debug.Log($"[Footstep] frame={Time.frameCount} t={Time.time:F3} owner={IsOwner} sinceLast={(Time.time - _lastFootstepTime):F3} {status} on {gameObject.name}");
         }
 
         if (footstepDebounced) return;

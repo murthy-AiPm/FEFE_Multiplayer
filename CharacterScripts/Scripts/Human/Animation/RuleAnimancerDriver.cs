@@ -312,6 +312,16 @@ public class RuleAnimancerDriver : MonoBehaviour
         //    Action lock only prevents new Action rules, NOT Base layer updates.
         //    This allows locomotion to keep running under a masked Action (e.g. unsheathe over combat walk).
         if (TryPlayBestRule(ctx, AnimLayer.Attack)) return;
+        // No Attack rule matched: if the layer is still at full weight (e.g. a non-locking
+        // Attack rule like Bow/Release just played and has no OnEnd cleanup), fade it out
+        // and restore the default mask. Mid-fade frames (weight between 0 and 1) skip this
+        // so we don't re-trigger StartFade every frame.
+        bool attackFadingOut = !IsLayerLocked(AnimLayer.Attack) && _attackLayer.Weight > 0f && _attackLayer.Weight < 1f;
+        if (!IsLayerLocked(AnimLayer.Attack) && !attackFadingOut && _attackLayer.Weight > 0f)
+        {
+            _attackLayer.SetMask(attackLayerMask);
+            _attackLayer.StartFade(0, layerFadeOutDuration);
+        }
         bool actionFadingOut = !IsLayerLocked(AnimLayer.Action) && _actionLayer.Weight > 0f && _actionLayer.Weight < 1f;
         if (!IsLayerLocked(AnimLayer.Action) && !actionFadingOut)
         {
