@@ -207,13 +207,21 @@ public class CombatLocomotionMixer : MonoBehaviour
     /// </summary>
     public bool WantsControl(int activeWeaponSlot, bool isMoving, bool isDodging,
                              bool isBlocking, bool isBowDrawing, bool isBowAiming,
-                             bool isMounted, bool isDodgeStep)
+                             bool isMounted, bool isDodgeStep, bool isSprinting)
     {
         if (!_initialized) return false;
         if (!isMoving) return false;
         if (isDodging) return false;
         if (isDodgeStep) return false;
         if (isMounted) return false;
+
+        // Sword strafes only at walk speed. Sprinting falls through to rules for a
+        // forward-only run animation.
+        if (activeWeaponSlot == 1 && isSprinting) return false;
+
+        // Bow only strafes while drawing or aiming. Walking around with bow equipped
+        // but not drawn falls through to the rule system for a forward-facing combat run.
+        if (activeWeaponSlot == 2 && !isBowDrawing && !isBowAiming) return false;
 
         return _mixersBySlot.ContainsKey(activeWeaponSlot);
     }

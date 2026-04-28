@@ -6371,14 +6371,14 @@ MonoBehaviour:
     walkFwdRight: Sword/Strafe/Front/Right
     walkBackLeft: Sword/Strafe/Back/Left
     walkBackRight: Sword/Strafe/Back/Right
-    runFwd: Sword/Run
-    runBack: Sword/Run/Back
-    runLeft: Sword/Run/Left
-    runRight: Sword/Run/Right
-    runFwdLeft: Sword/Run/Front/Left
-    runFwdRight: Sword/Run/Front/Right
-    runBackLeft: Sword/Run/Back/Left
-    runBackRight: Sword/Run/Back/Right
+    runFwd: 
+    runBack: 
+    runLeft: 
+    runRight: 
+    runFwdLeft: 
+    runFwdRight: 
+    runBackLeft: 
+    runBackRight: 
   - weaponSlot: 2
     walkFwd: Bow/Walk/Front
     walkBack: Bow/Walk/Back

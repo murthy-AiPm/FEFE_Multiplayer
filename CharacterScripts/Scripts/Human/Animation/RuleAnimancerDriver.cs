@@ -387,7 +387,7 @@ public class RuleAnimancerDriver : MonoBehaviour
         bool dodgeMixerOwnsBase = _dodgeMixerStartedThisDodge || _dodgeStepMixerStartedThisStep;
         if (!dodgeMixerOwnsBase && combatMixer != null && combatMixer.WantsControl(
                 ctx.ActiveWeaponSlot, ctx.Moving, ctx.Dodging,
-                ctx.Blocking, ctx.BowDrawing, ctx.BowAiming, ctx.IsMounted, ctx.IsDodgeStep))
+                ctx.Blocking, ctx.BowDrawing, ctx.BowAiming, ctx.IsMounted, ctx.IsDodgeStep, ctx.Modified))
         {
             combatMixer.UpdateAndPlay(_baseLayer, ctx.snapshot.move, ctx.Modified, ctx.ActiveWeaponSlot);
             _rootMotionActive = false;

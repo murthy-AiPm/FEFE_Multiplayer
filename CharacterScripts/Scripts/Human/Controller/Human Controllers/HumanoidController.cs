@@ -156,19 +156,27 @@ public class HumanoidController : ThirdPersonController
     {
         CameraCalculations(out float targetAngle, out float angle);
 
-        if (playerController.inputController.isCombatMode)
+        bool inCombat   = playerController.inputController.isCombatMode;
+        bool sprinting  = isModified;
+        bool bowAimDraw = combatController != null && (combatController.IsBowDrawing || combatController.IsBowAiming);
+        // Strafe-style movement only when in combat AND (bow drawn/aiming OR walking).
+        // Combat sprint falls through to forward locomotion so the character runs
+        // in the move direction like non-combat mode.
+        bool useStrafe  = inCombat && (bowAimDraw || !sprinting);
+
+        if (useStrafe)
         {
             if (isMoving)
             {
                 // Face camera direction
                 transform.rotation = Quaternion.Euler(0f, cam.eulerAngles.y, 0f);
-                
+
                 // Strafe movement: move relative to character's facing (camera direction)
                 // Use raw input to determine strafe direction
                 Vector3 forward = transform.forward;
                 Vector3 right = transform.right;
                 Vector3 strafeDir = (forward * input.move.y + right * input.move.x).normalized;
-                
+
                 controller.Move(strafeDir * speed * speedModifier * Time.deltaTime);
             }
             else if (combatController != null && combatController.IsBlocking)
