@@ -67,12 +67,13 @@ One line per class. Behavior detail lives in `design/ARCHITECTURE.md`.
 - `TrainingDummy` / `BowAimDebug` — test scaffolding.
 
 ### Animal base + horse
-- `AnimalGroundController` — base ground locomotion. `OnAnimatorMove` is `protected virtual`; `TurnAngle` setter is `protected`.
+- `AnimalGroundController` — base ground locomotion. `OnAnimatorMove` is `protected virtual`; `TurnAngle` setter is `protected`. Input is gated by `protected virtual bool IsInputSuppressed()`: if a `MountableEntity` is on the same GameObject, suppression follows `IsMounted` + ownership; otherwise the legacy `_ignoreInput` flag (`protected`). Camera-relative rotation lazy-resolves `Camera.main` every `HandleGroundMovement`/`HandleAirSteering` call. Fake-gravity branch does a predict-cast (`fakeGravityLandHeight`, `fakeGravityGroundMask`) that clamps the fall step so the body lands flush.
 - `AnimalAnimatorController` — base ground param sync (20 Hz throttled, change-detected).
 - `AnimalGroundAlignment` — slope alignment with `SuspendAlignment` flag (FixedUpdate bails when true).
 - `AnimalGroundingSystem` / `AnimalSwimSystem` / `AnimalFootIKController` / `AnimalFlightStateInspector` — base systems.
-- `HorseGroundController` — horse override.
-- `MountController` / `MountableEntity` / `MountInputController` / `MountPromptUI` / `MountDetectionDebug` / `RandomIdleAnimator` — horse mount system.
+- `HorseGroundController` — thin override: forces `useRootMotion = true`, disables animator `applyRootMotion`, routes jump to `HorseSoundPlayer`. All input gating lives in the base.
+- `MountController` / `MountableEntity` / `MountPromptUI` / `MountDetectionDebug` / `RandomIdleAnimator` — horse mount system. `MountableEntity.SetMounted` always uses `FreezeRotation` (never `FreezeAll`).
+- `MountInputController` — legacy stub kept for prefab references; input gating moved to `AnimalGroundController.IsInputSuppressed`.
 
 ### Shared
 - `RespawnController` — death/respawn flow (loading screen mask + bone reset).
@@ -168,6 +169,11 @@ Late-join: a remote that spawns into an in-progress flight sees the correct Netw
 - **Dragon hit-animation rotation lives in spine/pelvis bones, not root.** `Animator.deltaRotation` was ~0.2°/frame on imported hit clips, useless for code-driven rotation. The working solution: `rb.MoveRotation` lerps toward attacker, `AnimalGroundAlignment.SuspendAlignment = true` prevents alignment fighting, `SetYawImmediate` on exit. (Hit clips later switched to full root motion via `DragonHitRootMotion` SMB — see design/ToDo.md 11th-April. Either pattern is in the codebase; check the SMB before assuming.)
 - **NetworkObject identity vs OwnerClientId.** `OwnerClientId` is a property of an entity, not an identifier for one. All server-owned NPCs share `OwnerClientId == 0`, so equality checks for "is this the same thing" silently match every server-owned object. Use `NetworkObjectReference` over the wire and compare `NetworkObject` identity (see `BurnStatus` self-immunity).
 - **Refresh-on-contact timers** must use a refresh value > the time between refreshes, or the burn/stagger/etc. accumulates to zero. Burn DOT was a no-op until `burnTimePerTick` was decoupled from `_tickInterval`.
+- **Horse prefabs are inconsistent.** As of 28th-April-2026, `HorseFEFEBlack` and `HorseFEFEPalomino` carry `HorseGroundController`; `HorseFEFE`, `HorseFEFEBrown`, `HorseFEFEGray`, `HorseFEFEWhite` carry `DragonGroundController`. Anything that is supposed to apply to "all horses" must live in `AnimalGroundController` (the common base) or be replicated. A `HorseGroundController`-only feature is dead code on most prefabs. Long-term cleanup is to standardize all horse prefabs on `HorseGroundController`.
+- **Scene-loaded NetworkObjects spawn before the player's MainCamera.** Horses are scene objects, so any `cam = Camera.main?.transform` in `Awake` resolves to `null` permanently — the player's `MainCamera.prefab` (under `Multiplayer/Prefabs/Player/`) doesn't exist yet. Lazy-resolve in the consumer (`HandleGroundMovement` / `HandleAirSteering` re-fetch `Camera.main` on every call). This is the same trap any future scene-NPC will hit.
+- **Input gating: `MountableEntity.IsMounted` is the source of truth, not flags.** A flag-based "riderless" gate (`_ignoreInput` toggled by `MountInputController.Update`) raced with `OnBecameGrounded` resetting the flag, opening a one-tick window per frame where input leaked into every horse on the map. The current pattern (`AnimalGroundController.IsInputSuppressed` consults `MountableEntity` directly each call) has no flag to keep in sync. Don't reintroduce a state flag.
+- **Rigidbody constraints + dismount.** `MountableEntity.SetMounted(false)` used to set `RigidbodyConstraints.FreezeAll` to keep the riderless horse from drifting. That blocked decay (instant stop instead of glide-down) and trapped the horse mid-air on a mid-jump dismount. The fix is to leave it on `FreezeRotation` and rely on the controller's no-input branch + `OnAnimatorMove`'s X/Z-zero idle behavior. Don't reintroduce `FreezeAll`.
+- **Root-motion + gravity conflict.** `OnAnimatorMove` for `useRootMotion = true` animals (horse) sets `rb.linearVelocity = animator.deltaPosition / Time.deltaTime`, which kills Y velocity each frame. The idle branch was changed to zero only X/Z, preserving Y so gravity (or fake gravity's `MovePosition`) can land the body. If a future horse animation has Y root motion (e.g. a falling clip), it will fight fake gravity — flatten it or gate `OnAnimatorMove`'s Y write.
 
 ## Further reading
 

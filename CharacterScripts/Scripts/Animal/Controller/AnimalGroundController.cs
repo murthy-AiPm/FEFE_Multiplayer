@@ -80,6 +80,10 @@ public class AnimalGroundController : NetworkBehaviour
     [SerializeField] private bool useFakeGravity = false;
     [SerializeField] private float fakeGravity = 20f;
     [SerializeField] private float maxFallSpeed = 30f;
+    [Tooltip("Distance from rigidbody origin to feet at rest. Fake gravity stops the body this far above the predicted ground hit so the horse lands flush instead of clipping.")]
+    [SerializeField] private float fakeGravityLandHeight = 0.1f;
+    [Tooltip("Layers fake gravity treats as solid ground for the landing predict-cast.")]
+    [SerializeField] private LayerMask fakeGravityGroundMask = ~0;
     private float _fallVelocity;
     // Animator hashes
     private int jumpForwardHash;
@@ -215,12 +219,49 @@ public class AnimalGroundController : NetworkBehaviour
         if (useFakeGravity)
         {
             if (groundingSystem.IsGrounded)
+            {
                 _fallVelocity = 0f;
+            }
             else if (!isPlayingJump)
             {
                 _fallVelocity += fakeGravity * Time.fixedDeltaTime;
                 _fallVelocity = Mathf.Min(_fallVelocity, maxFallSpeed);
-                rb.MovePosition(rb.position + Vector3.down * _fallVelocity * Time.fixedDeltaTime);
+
+                float fallStep = _fallVelocity * Time.fixedDeltaTime;
+
+                // Predictive ground check: cast from the body, ignoring our own colliders.
+                // If the next step would overshoot the surface, clamp it and zero the
+                // fall velocity so the horse lands flush instead of clipping through.
+                float castDist = fallStep + fakeGravityLandHeight + 0.5f;
+                var rayHits = Physics.RaycastAll(rb.position, Vector3.down, castDist,
+                    fakeGravityGroundMask, QueryTriggerInteraction.Ignore);
+                float bestDist = float.MaxValue;
+                for (int i = 0; i < rayHits.Length; i++)
+                {
+                    var h = rayHits[i];
+                    if (h.collider == null) continue;
+                    if (h.collider.transform.root == transform.root) continue; // ignore self
+                    if (h.distance < bestDist) bestDist = h.distance;
+                }
+
+                if (bestDist < float.MaxValue)
+                {
+                    float distToLand = Mathf.Max(0f, bestDist - fakeGravityLandHeight);
+                    if (distToLand <= fallStep)
+                    {
+                        fallStep = distToLand;
+                        _fallVelocity = 0f;
+                    }
+                }
+
+                if (fallStep > 0f)
+                    rb.MovePosition(rb.position + Vector3.down * fallStep);
+
+                // Zero rb's Y velocity so any animator-driven Y from OnAnimatorMove
+                // doesn't fight fake gravity's MovePosition.
+                Vector3 v = rb.linearVelocity;
+                v.y = 0f;
+                rb.linearVelocity = v;
             }
         }
         if (!ignoreOwnershipForTesting && !IsOwner) return;
@@ -314,11 +355,10 @@ public class AnimalGroundController : NetworkBehaviour
 
     private void HandleGroundMovement()
     {
-        // Lazy-resolve the camera. The horse exists in the scene before any player
-        // (and their MainCamera) spawns, so Camera.main was null in Awake. Retry
-        // here so rotation picks up the player's camera once it's available.
-        if (cam == null)
-            cam = Camera.main?.transform;
+        // Always pick up the live Camera.main. The horse exists in the scene before
+        // any player (and their MainCamera) spawns, so the Awake-time fetch is null.
+        // Refreshing every call also covers camera swaps (mount/dismount, etc).
+        if (Camera.main != null) cam = Camera.main.transform;
 
         bool paused = PauseMenu.IsPaused;
         bool suppressed = IsInputSuppressed();
@@ -353,32 +393,24 @@ public class AnimalGroundController : NetworkBehaviour
         IsRunning = isMoving && sprint;
         ForwardSpeed = vertical;
 
-        // Camera-relative movement
-        if (isMoving && cam != null && rb != null)
-        {
-            Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
-            float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + cam.eulerAngles.y;
+        // ── ROTATION ───────────────────────────────────────────────────
+        // Turn the animal toward the camera direction (with WASD steering offset)
+        // only while there's movement input. Standing idle = horse holds its facing.
+        bool wantsRotation = !suppressed && cam != null && rb != null && isMoving;
 
-            // Cap how fast the desired yaw can change per gait
+        if (wantsRotation)
+        {
+            float steeringOffset = isMoving
+                ? Mathf.Atan2(horizontal, vertical) * Mathf.Rad2Deg
+                : 0f;
+            float targetAngle = cam.eulerAngles.y + steeringOffset;
+
             float turnRate = sprint ? sprintTurnRate : (IsTrotMode ? trotTurnRate : walkTurnRate);
             _cappedYaw = Mathf.MoveTowardsAngle(_cappedYaw, targetAngle, turnRate * Time.fixedDeltaTime);
 
-            // Feed the capped yaw to rotation — horse turns gradually
             if (groundAlignment != null)
                 groundAlignment.UpdateTargetYaw(_cappedYaw);
 
-            // Move in the capped direction so horse doesn't slide sideways
-            Vector3 worldForward = Quaternion.Euler(0f, _cappedYaw, 0f) * Vector3.forward;
-            Vector3 moveDir = ProjectOnSlope(worldForward, currentGroundNormal);
-
-            if (!useRootMotion)
-            {
-                float speed = sprint ? runSpeed : (IsTrotMode ? trotSpeed : walkSpeed);
-                rb.MovePosition(rb.position + moveDir * speed * Time.fixedDeltaTime);
-            }
-
-            // TurnAngle from delta between where horse is facing and where it needs to face
-            // Normalize over 30 degrees so ±1 is reachable in normal turns
             float currentYaw = rb.rotation.eulerAngles.y;
             float angleDelta = Mathf.DeltaAngle(currentYaw, _cappedYaw);
             float targetTurnAngle = Mathf.Clamp(angleDelta / 30f, -1f, 1f);
@@ -390,13 +422,11 @@ public class AnimalGroundController : NetworkBehaviour
             TurnSpeed = Mathf.Abs(angleDelta) / 180f;
 
             rb.constraints = RigidbodyConstraints.FreezeRotation;
-
-
         }
         else
         {
-            // Gradually track current facing so TurnAngle decays smoothly instead of snapping
-            float currentYaw = rb.rotation.eulerAngles.y;
+            // Suppressed (riderless) or no camera — settle in current facing.
+            float currentYaw = rb != null ? rb.rotation.eulerAngles.y : _cappedYaw;
             _cappedYaw = Mathf.MoveTowardsAngle(_cappedYaw, currentYaw, walkTurnRate * Time.fixedDeltaTime);
             TurnAngle = Mathf.Clamp(
                 Mathf.SmoothDamp(TurnAngle, 0f, ref _turnAngleVel, 1f / turnAngleSmoothing),
@@ -405,11 +435,15 @@ public class AnimalGroundController : NetworkBehaviour
             IsTurningLeft = false;
             IsTurningRight = false;
             TurnSpeed = 0f;
+        }
 
-
-
-            //if (groundingSystem.IsGrounded && !isPlayingJump)
-            //    rb.constraints = RigidbodyConstraints.FreezeAll;
+        // ── MOVEMENT (only when WASD held) ────────────────────────────
+        if (isMoving && rb != null && !useRootMotion)
+        {
+            Vector3 worldForward = Quaternion.Euler(0f, _cappedYaw, 0f) * Vector3.forward;
+            Vector3 moveDir = ProjectOnSlope(worldForward, currentGroundNormal);
+            float speed = sprint ? runSpeed : (IsTrotMode ? trotSpeed : walkSpeed);
+            rb.MovePosition(rb.position + moveDir * speed * Time.fixedDeltaTime);
         }
 
         // Jump animation (Space) - just plays animation, stays grounded

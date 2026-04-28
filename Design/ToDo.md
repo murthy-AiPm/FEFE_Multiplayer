@@ -842,3 +842,343 @@ DRAGON ROAR — DONE:
      transition duration)
    - rollLateralDistance: 4 m
    - rollArcHeight: 2 m
+
+28th-April-2026 — HUMANOID COMBAT LOCOMOTION REFINEMENTS:
+ * Combat strafe gate (HumanoidController.Walk): previously "in combat
+   mode → strafe always". New gate: `useStrafe = inCombat && (bowAimDraw
+   || !sprinting)`. Effect:
+     - Sword + walk → strafe (faces camera, 8-direction blend).
+     - Sword + sprint → rule-based forward run (no strafe).
+     - Bow drawing/aiming → always strafe (speed already capped to walk
+       by CombatController.IsSlowMovement, so the sprint key is a no-op
+       while the bow is up).
+     - Bow held but not drawn + sprint → rule-based forward run.
+ * CombatLocomotionMixer reshaped:
+     - WeaponLocomotionProfile is now walk-only (8 cardinal+diagonal
+       clip keys). The per-profile run mixer was removed — sprint is
+       no longer driven by the mixer at all.
+     - New BowLocomotionProfile (slot 2 only) holds two independent
+       8-direction mixers: noAim (bow held) and aim (drawing or
+       aiming). SelectMixer(activeWeaponSlot, bowAimDraw) picks the
+       right one with a fallback to whichever variant is built.
+     - WantsControl gained an `isSprinting` arg and short-circuits
+       false when sprinting (any weapon), so sprint always falls
+       through to the rule system for a forward run clip.
+     - UpdateAndPlay signature now (layer, moveInput, activeWeaponSlot,
+       bowAimDraw). RuleAnimancerDriver passes `ctx.BowDrawing ||
+       ctx.BowAiming` for the last arg.
+ * Sprint dodge override (RuleAnimancerDriver): when the dodge mixer
+   starts with sprint held and a non-zero move vector, the input
+   passed to PlayDodge is forced to (0, 1) so the front-dodge clip
+   plays. The clip's root motion carries the player in their current
+   facing direction — which already aligns with movement during a
+   sprint — instead of trying to dodge sideways while running.
+ * Dodge step now also blocked while sprinting (CombatController
+   HandleIdleInput): added `!_input.modifiedHeld` to the dodge-step
+   gate (was previously only blocked while bow equipped). Avoids
+   alt-tap producing a tiny dodge-step that fights the sprint run.
+ * Fist combat gated behind enableFistCombat (CombatController, default
+   false). When false:
+     - Idle handler no longer flips IsFistCombatMode on first
+       unarmed primary press.
+     - CanAttack returns false when ActiveSlot == 0 (the slot check,
+       not the weapon ref — WeaponManager may still hand back a fist
+       weapon for slot 0).
+   Net effect: pressing primary while unarmed is a no-op. Used to
+   "disable melee combat" while client testing of the new sword/bow
+   locomotion is pending. Re-enable by ticking the flag in the
+   Inspector once fist clips and stamina costs are tuned.
+ * Added CombatController.IsBowEquipped (true when the active weapon's
+   type is Bow). Saves callers a WeaponManager.GetActiveWeaponType()
+   round-trip.
+ * Bow upper-body avatar masks tightened (UpperBody_Bow.mask,
+   UpperBody_Bow 1.mask) so spine-aim IK on chest/upperChest doesn't
+   fight the bow draw/aim clips. No code change — mask asset edits.
+ * Files changed:
+   - CharacterScripts/Scripts/Human/Animation/CombatLocomotionMixer.cs
+   - CharacterScripts/Scripts/Human/Animation/RuleAnimancerDriver.cs
+   - CharacterScripts/Scripts/Human/Combat/CombatController.cs
+   - CharacterScripts/Scripts/Human/Controller/Human Controllers/HumanoidController.cs
+   - CharacterScripts/Scripts/Human/Animation/AnimationData/BaseAnimationRuleSet.asset
+   - CharacterScripts/Scripts/Human/Animation/AnimationData/UpperBody_Bow.mask
+   - CharacterScripts/Scripts/Human/Animation/AnimationData/UpperBody_Bow 1.mask
+ * Status: melee disabled pending client/host testing of strafe +
+   sprint + bow flow over the network. Re-enable enableFistCombat
+   once that pass is clean.
+
+═══════════════════════════════════════════════════════════════
+ 28th-April-2026 — Dragon: pause-menu hover, hover keys, ground-fire trigger
+═══════════════════════════════════════════════════════════════
+
+DRAGON PAUSE-MENU HOVER — DONE (logged retroactively, commit 21st-April):
+ * Symptom: opening the Esc pause menu while flying froze the dragon mid-
+   flap. The animator kept its current pose (BlendFly with non-zero
+   thrust/yaw/pitch), so unpausing snapped through whatever was held.
+ * Root cause: `DragonFlightController.Update` early-returned on
+   `PauseMenu.IsPaused`, leaving `_rmThrust/_rmPitch/_rmYaw` and the
+   matching animator floats at their last in-flight values.
+ * Fix in DragonFlightController.Update:
+   - New private `_wasPauseMenuPaused` edge tracker.
+   - On the rising edge (entered pause this frame) zero `_rmThrust`,
+     `_rmPitch`, `_rmPitchTarget`, `_rmYaw` and write 0 into the matching
+     animator floats so the BlendFly tree transitions to the glide/hover
+     pose naturally. Animator.speed is NOT zeroed here — the blend tree
+     keeps running so it can ease into the rest pose.
+   - The original `if (PauseMenu.IsPaused) return;` still fires after the
+     edge handler so input is still suppressed for the rest of the frame.
+ * Files changed:
+   - CharacterScripts/Scripts/Animal/Dragon/DragonFlightController.cs
+   - Sound/DragonSoundPlayer.cs (related VFX/SFX tweaks made the same day)
+
+GROUND FIRE PATCH — TRIGGER DISPATCH FIX — DONE (commit 21st-April):
+ * Symptom: dragon's ground fire patches were spawning correctly on every
+   client but zombies walking through them took no damage. Player
+   characters did take damage.
+ * Root cause: Unity's `OnTriggerStay` requires at least one of the two
+   parties to have a Rigidbody. The player has a CharacterController
+   which carries its own dispatch path, so player-vs-trigger worked.
+   Zombies are NavMesh-driven with NO Rigidbody, so zombie-vs-trigger
+   silently never fired despite the colliders overlapping.
+ * Fix in GroundFirePatch.Awake:
+   - If the patch GameObject has no Rigidbody, add a kinematic one
+     (`isKinematic = true; useGravity = false`). Kinematic = no forces,
+     no gravity, won't move — purely a dispatch enabler so OnTriggerStay
+     fires regardless of who walks in.
+ * Also added (debug-only, can stay in for now):
+   - `[SerializeField] bool debugLogging` — when on, logs every
+     OnTriggerStay hit and an `OverlapBox` probe of the trigger volume
+     on Activate (lists every collider Unity sees, including layer + RB
+     status). Bypasses OnTriggerStay so it tells you whether the issue
+     is geometry/layers vs trigger dispatch.
+   - `[ContextMenu("Activate For Testing")]` — drops a GroundFirePatch
+     prefab into a scene at runtime and turns it on without involving
+     the dragon, GroundFireSpawner, or the pool. Source NetObj is empty
+     so BurnStatus self-immunity won't filter it out.
+ * Files changed:
+   - CharacterScripts/Scripts/Shared/GroundFirePatch.cs
+
+DRAGON HOVER — UP/DOWN KEYS + SMART STATE DETECTION — DONE (commit
+26th-April, "added hover"):
+ * Replaced the old "press Space to toggle hover" semantics with always-
+   on smart hover detection plus optional vertical input.
+ * Removed:
+   - `KeyCode toggleHoverKey` (was Space).
+   - `bool hoverRequested` flag and the velocity-zeroing branch on toggle.
+ * Added inputs:
+   - `KeyCode hoverUpKey   = Space`        — hold to ascend.
+   - `KeyCode hoverDownKey = LeftControl`  — hold to descend.
+   - `float hoverVerticalSpeed = 4`        — m/s while either is held.
+ * State derivation (every frame, no toggle):
+   - `isHoverMode = Mathf.Abs(_rmThrust) < 0.05f` — at-rest thrust is
+     hover.
+   - `isFlapping  = _rmThrust >  0.05f`
+   - `isGliding   = _rmThrust < -0.05f`
+ * Vertical input only applies while `_rmThrust <= 0f` (i.e. hovering or
+   gliding). Pressing Space while flapping forward does nothing — no
+   more accidental jump-up while at full throttle.
+ * Why it's better: state used to depend on a sticky toggle that could
+   go out of sync with thrust. Now hover is purely a function of
+   current thrust, which is itself bounded by user input and
+   incrementing logic in the same controller. No flag, no race, no
+   late-join sync needed.
+ * Files changed:
+   - CharacterScripts/Scripts/Animal/Dragon/DragonFlightController.cs
+
+DRAGON FIRE BREATH — LATE-JOIN VISUAL RESTORATION — DONE (commit
+26th-April, in the same "added hover" commit):
+ * Symptom: a client connecting while a host dragon was already
+   breathing fire saw a dragon with no flame VFX, no animator
+   IsBreathingFire, and no SFX — even though `netIsBreathingFire.Value`
+   was already true on spawn.
+ * Root cause: the visual side effects are applied via
+   `SetBreathingFireClientRpc`, which only fires on the rising edge of
+   `IsBreathingFire`. A late joiner missed that RPC, so the value
+   replicated correctly but the animator/VFX/SFX never came up.
+ * Fix in DragonCombatController:
+   - Extracted the body of `SetBreathingFireClientRpc` into a private
+     `ApplyFireBreathVisualState(bool)` so it can be reused.
+   - Added `OnNetworkSpawn` override: if `!IsOwner &&
+     netIsBreathingFire.Value` calls `ApplyFireBreathVisualState(true)`
+     so the late joiner instantly catches up to the current breathing
+     state (mirrors the `animator.Play("BlendFly")` late-join pattern
+     in `DragonAnimatorController`).
+ * Files changed:
+   - CharacterScripts/Scripts/Animal/Dragon/DragonCombatController.cs
+
+═══════════════════════════════════════════════════════════════
+ 28th-April-2026 — Horse mount input gate / mouse-turn / dismount decay / fall predict
+═══════════════════════════════════════════════════════════════
+
+HORSE INPUT SUPPRESSION — DONE:
+ * Symptom: WASD on the player moved every horse on the map
+   simultaneously when the player was on foot. Previous workaround
+   (`MountInputController.UpdateControllerState` flipping
+   `groundController.enabled = false` on dismount) traded one bug for
+   others — controller-disabled-while-mid-air froze the horse, and the
+   dismount path slammed the rigidbody to FreezeAll (instant stop, no
+   decay, frozen-in-air on a mid-jump dismount).
+ * Multiple iterations during the session — flag-based gating
+   (`_ignoreInput` set/cleared by `MountInputController`) was racy
+   because `OnBecameGrounded` reset the flag every grounding tick and
+   FixedUpdate runs before Update each frame, opening a one-tick window
+   where input leaked. Final fix: source-of-truth gate.
+ * Root cause: input was guarded by a stateful flag instead of asking
+   the canonical mount state (`MountableEntity.IsMounted` →
+   NetworkVariable-backed riderId).
+ * Fix:
+   - `AnimalGroundController` gained `protected virtual bool IsInputSuppressed()`.
+     Default consults `MountableEntity` if attached:
+       * `mountableEntity.IsMounted == false` → suppress.
+       * `online && !IsOwner` → suppress.
+     Otherwise falls back to legacy `_ignoreInput`. Dragon has no
+     `MountableEntity` so it stays on the legacy path — behavior
+     unchanged for the dragon.
+   - All input read sites (movement axes, sprint, jump key, takeoff key,
+     `HandleAirSteering`) routed through `IsInputSuppressed()` /
+     a local `bool suppressed` cached at the top of `HandleGroundMovement`.
+   - `_ignoreInput` was promoted from `private` → `protected`. The
+     `_ignoreInput = false` line in `OnBecameGrounded` was removed —
+     it had been harmless dead code but became actively harmful when
+     subclasses started writing the flag.
+   - The misnamed `StopGradually()` (slammed gait/forward to zero) is
+     gone — its only caller was removed.
+   - `MountableEntity` field added to `AnimalGroundController`
+     (`[SerializeField] protected MountableEntity mountableEntity`),
+     auto-found in Awake. The user wired this in the inspector for the
+     existing horse prefabs.
+ * `MountInputController` is now a near-empty legacy stub. The
+   enabled-toggle is gone (controller stays enabled at all times, so
+   in-air physics and decay-to-idle keep ticking after a dismount).
+   Class is preserved so existing horse prefabs that reference it don't
+   break their MonoBehaviour list.
+ * `MountController.FinishDismount` no longer calls `StopGradually()`.
+ * `AnimalAnimatorController.LateUpdate` lost the now-dead "ramp gait
+   when controller disabled" workaround that masked the visual side
+   effect of the old enable-toggle approach.
+
+HORSE PREFAB INCONSISTENCY — NOTED, NOT FIXED:
+ * Discovery: horse prefabs are split — `HorseFEFEBlack` and
+   `HorseFEFEPalomino` carry `HorseGroundController`, while
+   `HorseFEFE`, `HorseFEFEBrown`, `HorseFEFEGray`, `HorseFEFEWhite`
+   carry `DragonGroundController`. This is why the early
+   `HorseGroundController.IsInputSuppressed` override silently
+   failed to suppress input on most horses — it was dead code on
+   prefabs that didn't have the subclass attached.
+ * Solution applied: the gate logic was moved to `AnimalGroundController`
+   (the common base) so it works regardless of which subclass each
+   prefab happens to carry. Long-term cleanup is to standardize all
+   horse prefabs on `HorseGroundController` — `DragonGroundController`
+   has flight/swim/dragon-fake-gravity branches that are dead weight
+   and potentially active on a horse.
+
+HORSE MOUSE-CAMERA TURN — DONE:
+ * Symptom: pressing W on the horse moved it forward but the horse
+   never rotated to follow the camera. `cam.eulerAngles.y` was being
+   read from a `cam` field that was permanently null.
+ * Root cause: horses are scene-loaded NetworkObjects. They run
+   `Awake` before any player (and their `MainCamera` prefab) spawns,
+   so `cam = Camera.main?.transform` at `Awake` time set `cam = null`
+   forever. Latent bug — predates this session, exposed once we
+   stopped relying on `MountInputController` enabled-toggling (which
+   was masking other behaviors).
+ * Fix: `HandleGroundMovement` now refreshes `cam = Camera.main.transform`
+   at the top of every call (when `Camera.main` is non-null). Same
+   pattern in `HandleAirSteering`. The serialized field is preserved
+   as an Inspector override hook.
+ * Confirmed working with a one-shot diagnostic log:
+   `[HorseRot] mounted=False suppressed=True isOwner=True isActive=True
+   cam=MainCamera camYaw=247.3 horseYaw=343.3 cappedYaw=343.3
+   groundAlign=OK wantsRotation=False` — every gate read correctly.
+ * Idle-while-mounted does NOT auto-rotate the horse: rotation is
+   gated on `isMoving` (i.e. WASD held). The user explicitly chose
+   this behavior — no mouse-only turn while standing. Pressing W with
+   mouse-camera does turn the horse.
+
+DISMOUNT DECAY + MID-JUMP DISMOUNT — DONE:
+ * Symptom: dismounting on a moving horse stopped it dead instead of
+   gliding to a halt; dismounting mid-jump froze the horse in mid-air.
+ * Root causes (two stacked):
+   - `MountableEntity.SetMounted(false)` slammed
+     `RigidbodyConstraints.FreezeAll` on dismount, locking X/Y/Z and
+     rotation. Decay logic in `HandleGroundMovement` still ran but had
+     no effect because the rigidbody couldn't move.
+   - `AnimalGroundController.OnAnimatorMove` zeroed *all* velocity
+     (including Y) whenever the animator delta was small. With root
+     motion, this killed gravity every frame after a falling clip
+     ended, so even with FreezeAll removed the horse would hover.
+ * Fix:
+   - `MountableEntity.SetMounted` always uses `FreezeRotation`, never
+     `FreezeAll`. The horse won't drift because a riderless horse has
+     no input → no animator delta → no horizontal velocity (the X/Z
+     zeroing in `OnAnimatorMove` still applies in the idle branch).
+   - `OnAnimatorMove`'s idle branch only zeros X/Z, preserves Y.
+     Gravity (or the predict-cast fake gravity below) can pull the
+     body down. Dragon is unaffected — it uses `useRootMotion = false`
+     and goes down the `_pendingRootMotion` accumulator branch.
+
+HORSE FAKE-GRAVITY LANDING PREDICT — WIP (started, not smooth yet):
+ * Symptom: horse jumps off a ledge → falls → on contact, body clips
+   into the surface; recovery via `AnimalGroundAlignment.AdjustHeight`
+   is slow (capped at 0.05 / frame, smoothed) so the touch-down looks
+   like a thud followed by a slow rise.
+ * Root cause: `AnimalGroundController.FixedUpdate`'s fake-gravity
+   branch did an unguarded `rb.MovePosition(rb.position + Vector3.down
+   * fallStep)` each step. The grounding system has 0.08s of confirm
+   debounce, so `IsGrounded` flips true a few frames *after* contact —
+   by which time the body has already overshot.
+ * First-pass fix (in code now):
+   - Added `[SerializeField] float fakeGravityLandHeight = 0.1f` and
+     `[SerializeField] LayerMask fakeGravityGroundMask = ~0` on
+     `AnimalGroundController` (under "Fake Gravity (for horse)").
+   - The fake-gravity branch now does `Physics.RaycastAll` straight
+     down from `rb.position`, ignoring any hit whose `transform.root`
+     matches the horse's own root (self-filter). If the predicted fall
+     step would put the body below `fakeGravityLandHeight` above the
+     ground hit, the step is clamped and `_fallVelocity` is reset to
+     zero — so the body lands flush instead of clipping.
+   - After the predict-clamped MovePosition, `rb.linearVelocity.y` is
+     zeroed so any animator-driven Y from a falling clip doesn't pile
+     on top of fake gravity.
+ * Status — WIP: the predict-cast clean-lands the contact frame, but
+   the user reports the descent itself still feels rough. Likely
+   suspects for the next pass:
+   - Falling animation root motion has a Y component that still
+     contributes via `OnAnimatorMove` even with `linearVelocity.y`
+     zeroed (MovePosition is its own integration path).
+   - `cliffFallPush` impulse on the cliff → falling transition.
+   - `targetBodyHeight` on `AnimalGroundAlignment` is 0.1 on Black —
+     may not match the rigidbody's actual rest offset to the hooves,
+     so the predict-cast lands the body at the wrong absolute height
+     and the alignment still has a residual snap to do on contact.
+ * Inspector tuning the user needs to do per horse prefab:
+   - Toggle "Use Fake Gravity" on the controller (currently `0` in
+     `HorseFEFEBlack.prefab` — the gameplay-time value differs).
+   - Set "Fake Gravity Land Height" to the actual rb-origin → hoof
+     distance at rest (try 1.0–1.2 first; `targetBodyHeight = 0.1`
+     suggests the rb is near hoof level but Black's needs verifying).
+   - Uncheck the horse's own layers from "Fake Gravity Ground Mask".
+ * Next session: revisit the descent smoothness — likely needs the
+   falling animation to be flat-Y (no root-motion in Y) plus possibly
+   gating `OnAnimatorMove`'s X/Z velocity write while in fake-gravity
+   freefall.
+ * Files changed:
+   - CharacterScripts/Scripts/Animal/Controller/AnimalGroundController.cs
+     `IsInputSuppressed` virtual + MountableEntity wiring + lazy
+     Camera.main resolve in HandleGroundMovement / HandleAirSteering +
+     `_ignoreInput` made protected + `_ignoreInput = false` removed
+     from `OnBecameGrounded` + `StopGradually()` deleted +
+     `OnAnimatorMove` Y-preserve in idle branch + new fields
+     `fakeGravityLandHeight`, `fakeGravityGroundMask` + predict-cast
+     in fake-gravity branch.
+   - CharacterScripts/Scripts/Animal/Controller/HorseGroundController.cs
+     Stripped to bare override (Awake sets useRootMotion + disables
+     animator.applyRootMotion, OnJumpTriggered routes to
+     HorseSoundPlayer). All input-gate logic moved to base.
+   - CharacterScripts/Scripts/Animal/Horse/MountInputController.cs
+     Reduced to legacy stub.
+   - CharacterScripts/Scripts/Animal/Horse/MountController.cs
+     Removed `horseController.StopGradually()` block in `FinishDismount`.
+   - CharacterScripts/Scripts/Animal/Horse/MountableEntity.cs
+     `SetMounted` always FreezeRotation (never FreezeAll).
+   - CharacterScripts/Scripts/Animal/Controller/AnimalAnimatorController.cs
+     Removed gait-ramp-when-disabled workaround (LateUpdate).

@@ -348,7 +348,11 @@ between modes with shared takeoff/dive/landing animations.
   one-shot discrete roll (snaps `_rmRoll = ±1`, locked for `rollDuration`,
   code drives forward/lateral/arc displacement); **at or below** that threshold
   Q/E is a smooth axis like Yaw (`MoveTowards` based on key hold, no code-
-  driven displacement — visual roll only).
+  driven displacement — visual roll only). Hover state is derived from thrust
+  every frame (`isHoverMode = |thrust| < 0.05`, `isFlapping = thrust > 0.05`,
+  `isGliding = thrust < -0.05`) — there is no toggle. While `thrust ≤ 0`,
+  `hoverUpKey` (Space) / `hoverDownKey` (LeftControl) drive vertical motion at
+  `hoverVerticalSpeed`; pressing them while flapping forward is a no-op.
 - `DragonSwimController` — engages when `AnimalSwimSystem` reports submerged.
   `surfaceBuoyancy = 0` workaround keeps the dragon slightly under the
   waterline without bobbing oscillation.
@@ -419,6 +423,11 @@ Owner presses jump while grounded + tap held:
   the animator's exit transition back into BlendFly. Without it the dragon
   visibly stalls — root motion is zero (roll clip is in-place) while BlendFly
   ramps in.
+- Pause-menu freeze: `DragonFlightController.Update` early-returns on
+  `PauseMenu.IsPaused`, but on the rising edge (entered pause this frame) it
+  zeroes `_rmThrust/_rmPitch/_rmYaw` and the matching animator floats so the
+  BlendFly tree eases into a glide/hover pose. Animator.speed is intentionally
+  *not* zeroed — the blend tree must keep running to reach the rest pose.
 
 ### 4.2 Combat
 
@@ -432,20 +441,33 @@ roar, and ground fire patches as a lasting hazard.
   `IsBreathingFire`, `IsRoaring`, `attackMode` (which paw), neck weights
   (5 segments at 0.05/0.10/0.20/0.30/0.35), jaw rotation
   range -106.534 → -125. Inputs: mouse for swipe, hold for fire breath,
-  KeyCode.R for roar.
-- `DragonFireBreathDamage` — owner-driven `Physics.OverlapSphereNonAlloc` +
-  cone filter. Damage is per-tick; **burn time is decoupled from tick
-  interval** (a single tick can apply N seconds of burn so DOT continues
-  after the breath stops).
+  KeyCode.R for roar. `SetBreathingFireClientRpc` delegates to a shared
+  `ApplyFireBreathVisualState(bool)`; `OnNetworkSpawn` calls the same helper
+  on remotes when `netIsBreathingFire.Value` is already true so late joiners
+  catch up to an in-progress breath (mirrors the `animator.Play("BlendFly")`
+  late-join pattern in `DragonAnimatorController`).
+- `FireBreathParticleHandler` — sits on every `ParticleSystem` in the fire-
+  breath VFX whose **Collision module is enabled**. `OnParticleCollision`
+  pulls events via `GetCollisionEvents` and forwards `(intersection, normal)`
+  to the bound `DragonFireBreathDamage` and `GroundFireSpawner`. Only the
+  owner binds receivers — remote clients still simulate VFX locally so they
+  see flame, but their handlers stay unbound and inert (no duplicated damage /
+  patch RPCs from each spectator).
+- `DragonFireBreathDamage` — receives per-particle hits via
+  `HandleParticleHit(other, point)`. Adds the hit `NetworkObjectId` to a
+  per-tick `HashSet`, flushes one `ServerRpc` per `tickRate` with all unique
+  receivers (dedupes 50 particles on one zombie down to one tick of damage).
+  Damage is per-tick; **burn time is decoupled from tick interval** so a
+  single tick can apply N seconds of burn and DOT continues after the breath
+  stops.
 - `DragonHitboxManager` — animation-event-driven paw hitbox enable/disable
   (mirrors `HitboxController`'s pattern but specialised for paws so it can
   also hit dragon-only crit zones).
-- `GroundFireSpawner` — bullet-decal pattern. While `IsBreathingFire`, owner
-  raycasts forward along the breath cone every `spawnInterval`, fires a
-  `ServerRpc` with the hit point + normal, server spawns into pool + fans out
-  a `ClientRpc` so every client spawns from its own pool. Travel delay
-  (`hitDistance / flameStreamSpeed`) makes the patch appear *after* the
-  visible flame stream reaches it.
+- `GroundFireSpawner` — receives per-particle hits via
+  `HandleParticleHit(point, normal)`. Throttled by `spawnInterval`, fires a
+  `ServerRpc` with `(spawnPos, normal)`, server fan-outs `ClientRpc` so every
+  client spawns from its own local `GroundFirePool`. No raycast, no travel-
+  delay math — particle position IS the spawn point.
 
 #### Data flow
 ```
@@ -454,25 +476,34 @@ Owner holds left-mouse:
     → IsBreathingFire = true
     → DragonAnimatorController.UpdateNetworkVariables
         → netIsBreathingFire = true → animator Crossfade to fire breath state
-    → DragonFireBreathDamage.Update (owner only)
-        → OverlapSphereNonAlloc(origin, range)
-        → for each hit: cone angle gate → DamageReceiver.ApplyProjectileDamage
-                                       → BurnStatus.Ignite(burnTime)
-    → GroundFireSpawner.Update (owner only)
-        → forward raycast → ServerRpc(spawnPos, normal)
-            → SpawnLocally on host + ClientRpc → SpawnLocally on every client
-            → GroundFirePool.SpawnAt(...) returns a pooled patch
-            → patch.Init(config, sourceRef)
+    → SetBreathingFireClientRpc(true) on every client
+        → ApplyFireBreathVisualState: animator bool + VFX prefab spawn + SFX
+        → on owner only: bind FireBreathParticleHandler instances on each
+          collision-enabled PS in the spawned VFX
+
+  Per particle collision (owner's VFX only, every frame):
+    FireBreathParticleHandler.OnParticleCollision
+      → DragonFireBreathDamage.HandleParticleHit(other, point)
+          accumulates unique NetworkObjectIds in per-tick HashSet
+      → GroundFireSpawner.HandleParticleHit(point, normal)
+          spawnInterval-throttled → ServerRpc(spawnPos, normal)
+                → ClientRpc fanout → GroundFirePool.SpawnAt(...) on each client
+                → patch.Init(config, sourceRef)
+
+  Every tickRate seconds (DragonFireBreathDamage):
+    flush HashSet → one ServerRpc with all NetObjectIds
+      → server: ApplyProjectileDamage + BurnStatus.Ignite per receiver
 ```
 
 #### Network contract
 - `netIsBreathingFire`, `netIsRoar`, neck/jaw `NetworkVariable`s are
   owner-write so remote dragons mirror the head pose.
 - Damage is server-authoritative through `DamageReceiver.ApplyProjectileDamage`
-  (server-only API). The owner does the raycast/cone/sphere check, collects
-  candidate `NetworkObjectId`s, and sends them through
-  `DragonFireBreathDamage.RequestFireDamageServerRpc` (line 142,
-  `RequireOwnership = true`). The ServerRpc body resolves each ID, calls
+  (server-only API). The owner's VFX particles are the source of truth for
+  hit candidates (`OnParticleCollision`). `DragonFireBreathDamage` collects
+  unique `NetworkObjectId`s in a per-tick `HashSet` and flushes one
+  `RequestFireDamageServerRpc` (`RequireOwnership = true`) every `tickRate`
+  seconds with the full list. The ServerRpc body resolves each ID, calls
   `ApplyProjectileDamage` and `BurnStatus.Ignite` on the server. So a
   non-host dragon owner deals damage correctly — at the cost of one
   ServerRpc round-trip per tick (4 Hz today, so the latency is invisible).
@@ -487,11 +518,23 @@ Owner holds left-mouse:
   (local pool + RPC fanout, NetworkObjectReference for source).
 
 #### Gotchas
-- `DragonFireBreathDamage` and `GroundFireSpawner` both raycast forward; if
-  you change one's "forward" definition (cam vs. fireOrigin), the other
-  drifts. The convention today: `inFlight ? cam.forward : fireOrigin.forward`.
-- `flameStreamSpeed` must be > 0 or the system divides by zero (defensive
-  branch present at `GroundFireSpawner.cs:95`).
+- The fire-breath VFX prefab particle systems must have **Collision module
+  enabled, Type = World, "Send Collision Messages" on**, with the layer mask
+  including ground + character/zombie layers and Collision Quality = High
+  (Medium can miss thin colliders on small fast particles). If the VFX is
+  rebuilt without these, damage and ground patches both silently stop.
+- Range is now whatever `startSpeed * startLifetime` gives the particles —
+  there is no `coneRange` knob. Increase either to extend reach; the
+  collision footprint follows automatically.
+- Only the **owner** binds `FireBreathParticleHandler` receivers. If you ever
+  bind on remotes (e.g. by moving the bind into `ApplyFireBreathVisualState`
+  unconditionally), every spectator will fire damage/patch RPCs — N-clients
+  worth of duplicated damage.
+- `GroundFirePatch` adds a kinematic Rigidbody in `Awake` if missing.
+  `OnTriggerStay` requires at least one of the two parties to have a
+  Rigidbody, and NavMesh-driven NPCs (zombies) don't have one. Removing the
+  kinematic-RB add silently re-breaks zombie fire damage; player damage will
+  keep working because CharacterController carries its own dispatch path.
 - Roar is keyed to `KeyCode.R` (Old Input System) while combat is on `Input
   System` (`InputSnapshot`). This split is intentional but easy to miss.
 
@@ -621,9 +664,12 @@ drain, crouch-and-slide).
   facing. Jump grace `jumpGraceTime = 0.12 s`; dodge/dodge-step suppress
   jumps mid-anim.
 - `HumanoidController` — adds `CrouchAndSlide`, `SpeedLogic` with combat-mode
-  override, `Walk` with strafe in combat mode (transform faces camera; uses
-  `transform.forward` / `transform.right` for strafe), `SprintStaminaDrain`
-  via `combatController.ConsumeStaminaExternal`,
+  override, `Walk` with strafe gated by
+  `inCombat && (bowAimDraw || !sprinting)`. Strafe applies for sword/walk and
+  whenever the bow is drawing or aiming; sprint in combat falls through to
+  forward locomotion (regardless of weapon) so the rule system plays a
+  forward run clip. `SprintStaminaDrain` via
+  `combatController.ConsumeStaminaExternal`,
   `combatController.SetStaminaRegenPausedExternal`.
 - `PlayerController` — trivial wiring: TPS + InputController references only.
 - `InputController` — owns `InputSnapshot` (struct of all per-frame booleans
@@ -700,11 +746,20 @@ locks, witcher-style combo chains, hit-reaction interrupts, and death freezing.
   `all: List<RuleCondition>`), `ComboProfile`/`ComboStep`.
 - `AnimationSetBase` — `ClipEntry { key, ClipTransition, useRootMotion }` with
   dictionary lookup. `IsRootMotion(key)` returns a HashSet check.
-- `CombatLocomotionMixer` — 2D Cartesian blend trees per weapon slot
-  (`WeaponLocomotionProfile` with 8-direction walk/run clip keys). Dodge and
-  dodge-step have cardinal-direction mixers built from the same set.
-  `WantsControl` guards (`isMoving`, not dodging/step/mounted, slot has
-  mixer). `UpdateAndPlay` does `Vector2.SmoothDamp` and sets the parameter.
+- `CombatLocomotionMixer` — 2D Cartesian blend trees for in-combat
+  locomotion. Two profile shapes:
+    - `WeaponLocomotionProfile` (sword/fists/etc., one per non-bow slot):
+      a single 8-direction *walk* mixer. Sprint is **not** handled here —
+      it falls through to the rule system for a forward run clip.
+    - `BowLocomotionProfile` (slot 2 only): two 8-direction mixers, `noAim`
+      and `aim`. `SelectMixer` picks based on whether the bow is drawing or
+      aiming, with a fallback to whichever variant is built.
+  Dodge and dodge-step have separate cardinal-direction mixers.
+  `WantsControl(activeWeaponSlot, isMoving, isDodging, isBlocking,
+  isBowDrawing, isBowAiming, isMounted, isDodgeStep, isSprinting)` short-
+  circuits false on `isSprinting` (any weapon) so sprint always falls
+  through. `UpdateAndPlay(layer, moveInput, activeWeaponSlot, bowAimDraw)`
+  smooth-damps the parameter and plays the selected mixer.
 - `AnimationEventRelay` — relays Animation Events to subscribers
   (`HitboxEnable/Disable`, `EquipComplete/HolsterComplete`, `FootstepLeft/Right`,
   generic `OnCustomEvent` for custom keys).
@@ -714,7 +769,7 @@ locks, witcher-style combo chains, hit-reaction interrupts, and death freezing.
 RuleAnimancerDriver.LateUpdate:
   if dead → skip
   if hitReaction active → skip rule eval
-  bow spine IK applied if combat state == BowAiming
+  bow spine IK applied if slot==2 && (BowDrawing || BowAiming)
   evaluate rules per layer (highest priority wins) — Attack > Action > Base
   apply maskOverride if any
   set applyRootMotion from clip flag
@@ -768,12 +823,18 @@ slot equip/holster and hitbox lifecycles.
 ### Key classes
 - `CombatController` — `CombatState { None, Dodging, Blocking, BowDrawing,
   BowAiming, Dead }`. Stamina-gated dodge (15 cost, 0.5 s duration, 0.25 s
-  iframes). DodgeStep coroutine with camera-relative boost. Bow:
-  `BeginBowDraw` snapshots `_bowAimStaminaAtStart`; `UpdateBowAim` drains
-  per-second; `FireArrow` server-raycasts the camera ray to an aim point and
-  sends `RequestFireArrowServerRpc`. Block angle 120°, damage reduction 80%,
-  stamina per hit. `SetRemoteCombatState` for puppets. `CanAttack` /
-  `ConsumeAttackStamina` API consumed by the driver.
+  iframes). DodgeStep coroutine with camera-relative boost — gated on
+  `!_input.modifiedHeld` (no dodge-step while sprinting) and on the bow not
+  being equipped. Bow: `BeginBowDraw` snapshots `_bowAimStaminaAtStart`;
+  `UpdateBowAim` drains per-second; `FireArrow` server-raycasts the camera
+  ray to an aim point and sends `RequestFireArrowServerRpc`. Block angle
+  120°, damage reduction 80%, stamina per hit. `SetRemoteCombatState` for
+  puppets. `CanAttack` / `ConsumeAttackStamina` API consumed by the driver.
+  `IsBowEquipped` helper checks `WeaponType.Bow` on the active weapon.
+  `enableFistCombat` Inspector flag (default false): when off, unarmed
+  primary press is a no-op — `HandleIdleInput` skips the fist-mode toggle
+  and `CanAttack` returns false on slot 0. Used to soft-disable melee
+  while client-side testing of locomotion changes is pending.
 - `WeaponManager` — slots `0/1/2` (fists / primary melee / bow).
   `NetworkVariable<int> _activeSlot` server-write. `EquipState
   { Idle, Equipping, Holstering }` machine. `BeginTransition` holsters first
