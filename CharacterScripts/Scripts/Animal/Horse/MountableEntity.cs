@@ -438,15 +438,11 @@ public class MountableEntity : NetworkBehaviour
     private void SetMounted(bool mounted)
     {
         if (_rb == null) return;
-        if (mounted)
-        {
-            // Release all constraints — horse can move freely
-            _rb.constraints = RigidbodyConstraints.FreezeRotation;
-        }
-        else
-        {
-            // Freeze everything — horse won't slide but stays non-kinematic
-            _rb.constraints = RigidbodyConstraints.FreezeAll;
-        }
+        // Always FreezeRotation. We previously slammed FreezeAll on dismount to keep
+        // the horse from drifting, but that also blocked decay (instant stop instead
+        // of glide-down) and trapped the horse mid-air on a mid-jump dismount.
+        // The controller's no-input branch + OnAnimatorMove zeroing X/Z velocity
+        // keep the riderless horse stationary on the ground without freezing it.
+        _rb.constraints = RigidbodyConstraints.FreezeRotation;
     }
 }

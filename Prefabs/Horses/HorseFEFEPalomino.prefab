@@ -29189,7 +29189,7 @@ GameObject:
   - component: {fileID: 6228776858945924092}
   - component: {fileID: 8492595077462393131}
   - component: {fileID: 8337269490943181100}
-  - component: {fileID: 5746317765162019978}
+  - component: {fileID: 7533480006556260506}
   - component: {fileID: 744209661902066041}
   - component: {fileID: 3437069541815000585}
   - component: {fileID: 3574270051004995904}
@@ -29288,7 +29288,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3977344742
+  GlobalObjectIdHash: 3918426735
   InScenePlacedSourceGlobalObjectIdHash: 3977344742
   DeferredDespawnTick: 0
   Ownership: 1
@@ -29301,7 +29301,7 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &5746317765162019978
+--- !u!114 &7533480006556260506
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -29310,9 +29310,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 6924946066918734381}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a4ac5e9a22702ea47af9ade535b55fd8, type: 3}
+  m_Script: {fileID: 11500000, guid: 21f4cc3a2072c294ea250e6888ed6692, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DragonGroundController
+  m_EditorClassIdentifier: Assembly-CSharp::HorseGroundController
   ShowTopMostFoldoutHeaderGroup: 1
   ignoreOwnershipForTesting: 0
   debugRespawnPoint: {fileID: 3688187825780924052}
@@ -29321,7 +29321,7 @@ MonoBehaviour:
   groundAlignment: {fileID: 3437069541815000585}
   animator: {fileID: 6228776858945924092}
   rb: {fileID: 8492595077462393131}
-  cam: {fileID: 0}
+  cam: {fileID: 3688187825780924052}
   forwardAxis: Vertical
   strafeAxis: Horizontal
   jumpKey: 32
@@ -29330,27 +29330,28 @@ MonoBehaviour:
   jumpUpAnimationDuration: 0.8
   jumpAnimationDuration: 1.18
   rootMotionOnJump: 1
-  rootMotionOnCliff: 1
+  rootMotionOnCliff: 0
   rootMotionOnFalling: 0
   rootMotionOnLanding: 1
-  walkSpeed: 2
-  trotSpeed: 4
-  runSpeed: 10
-  turnSmoothTime: 1
-  turnHeadAngle: 15
+  walkSpeed: 5
+  trotSpeed: 8
+  runSpeed: 14
+  turnSmoothTime: 0.1
+  turnHeadAngle: 18
   trotToggleKey: 116
-  turnAngleSmoothing: 8
-  gaitSmoothSpeed: 0.5
+  turnAngleSmoothing: 5
+  gaitSmoothSpeed: 2
   minInputHoldTime: 0.15
-  walkTurnRate: 120
-  trotTurnRate: 150
-  sprintTurnRate: 180
+  walkTurnRate: 90
+  trotTurnRate: 120
+  sprintTurnRate: 160
   airTurnRate: 120
-  useRootMotion: 1
-  useFakeGravity: 1
+  useRootMotion: 0
+  useFakeGravity: 0
   fakeGravity: 20
-  maxFallSpeed: 8
-  cliffFallPush: 7
+  maxFallSpeed: 30
+  cliffFallPush: 2
+  mountableEntity: {fileID: 4274509267589655821}
 --- !u!114 &744209661902066041
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -29432,7 +29433,7 @@ MonoBehaviour:
   isGroundedDebug: 0
   isFallingDebug: 0
   frontPawsGroundedDebug: 0
-  groundController: {fileID: 5746317765162019978}
+  groundController: {fileID: 0}
   isWalkingDebug: 0
   isRunningDebug: 0
   thrust: 0
@@ -29462,7 +29463,7 @@ MonoBehaviour:
   riderLayer:
     serializedVersion: 2
     m_Bits: 64
-  groundController: {fileID: 5746317765162019978}
+  groundController: {fileID: 0}
   movingSpeedThreshold: 0.15
   speedSmoothing: 0.6
 --- !u!114 &8137885655436785383
@@ -29478,9 +29479,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MountInputController
   ShowTopMostFoldoutHeaderGroup: 1
-  mountableEntity: {fileID: 4274509267589655821}
-  groundController: {fileID: 5746317765162019978}
-  animatorController: {fileID: 5240064784636943766}
   useAIWhenUnmounted: 0
 --- !u!135 &588748163117256920
 SphereCollider:
@@ -29516,7 +29514,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DragonAnimatorController
   ShowTopMostFoldoutHeaderGroup: 1
-  groundController: {fileID: 5746317765162019978}
+  groundController: {fileID: 0}
   groundingSystem: {fileID: 744209661902066041}
   animator: {fileID: 6228776858945924092}
 --- !u!114 &5590533695434361852

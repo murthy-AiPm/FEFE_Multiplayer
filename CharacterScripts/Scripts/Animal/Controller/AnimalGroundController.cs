@@ -24,6 +24,7 @@ public class AnimalGroundController : NetworkBehaviour
     [SerializeField] protected Animator animator;
     [SerializeField] protected Rigidbody rb;
     [SerializeField] protected Transform cam;
+    [SerializeField] protected MountableEntity mountableEntity;
 
     [Header("Input")]
     [SerializeField] private string forwardAxis = "Vertical";
@@ -131,6 +132,8 @@ public class AnimalGroundController : NetworkBehaviour
             rb = GetComponentInParent<Rigidbody>();
         if (cam == null)
             cam = Camera.main?.transform;
+        if (mountableEntity == null)
+            mountableEntity = GetComponent<MountableEntity>();
 
         jumpForwardHash = Animator.StringToHash("JumpForward");
         jumpUpHash = Animator.StringToHash("JumpUp");
@@ -291,12 +294,37 @@ public class AnimalGroundController : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// Gate for keyboard/mouse input reading. Returns true to suppress input.
+    /// If a MountableEntity is attached (horses), input is gated on mount state
+    /// + ownership — bulletproof source of truth. Otherwise (dragons) falls
+    /// back to the legacy `_ignoreInput` flag.
+    /// </summary>
+    protected virtual bool IsInputSuppressed()
+    {
+        if (mountableEntity != null)
+        {
+            if (!mountableEntity.IsMounted) return true;
+            bool isOnline = NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
+            if (isOnline && !IsOwner) return true;
+            return false;
+        }
+        return _ignoreInput;
+    }
+
     private void HandleGroundMovement()
     {
+        // Lazy-resolve the camera. The horse exists in the scene before any player
+        // (and their MainCamera) spawns, so Camera.main was null in Awake. Retry
+        // here so rotation picks up the player's camera once it's available.
+        if (cam == null)
+            cam = Camera.main?.transform;
+
         bool paused = PauseMenu.IsPaused;
-        float vertical = (_ignoreInput || paused) ? 0f : Input.GetAxisRaw(forwardAxis);
-        float horizontal = (_ignoreInput || paused) ? 0f : Input.GetAxisRaw(strafeAxis);
-        bool sprint = !_ignoreInput && !paused && Input.GetKey(sprintKey);
+        bool suppressed = IsInputSuppressed();
+        float vertical = (suppressed || paused) ? 0f : Input.GetAxisRaw(forwardAxis);
+        float horizontal = (suppressed || paused) ? 0f : Input.GetAxisRaw(strafeAxis);
+        bool sprint = !suppressed && !paused && Input.GetKey(sprintKey);
         Vector2 input = new Vector2(horizontal, vertical);
         bool hasInput = input.magnitude > 0.1f;
 
@@ -385,13 +413,13 @@ public class AnimalGroundController : NetworkBehaviour
         }
 
         // Jump animation (Space) - just plays animation, stays grounded
-        if (!paused && Input.GetKey(jumpKey) && groundingSystem.IsGrounded /*&& !isPlayingJump*/)
+        if (!paused && !suppressed && Input.GetKey(jumpKey) && groundingSystem.IsGrounded /*&& !isPlayingJump*/)
         {
             TriggerJumpAnimation();
         }
 
         // Takeoff (C) - lifts animal up (subclass handles flight handoff)
-        if (!paused && Input.GetKey(takeoffKey) && groundingSystem.IsGrounded && CanTakeoff())
+        if (!paused && !suppressed && Input.GetKey(takeoffKey) && groundingSystem.IsGrounded && CanTakeoff())
         {
             BeginTakeoff();
         }
@@ -470,7 +498,9 @@ public class AnimalGroundController : NetworkBehaviour
     /// </summary>
     private void HandleAirSteering()
     {
-        if (_ignoreInput || cam == null || rb == null) return;
+        if (IsInputSuppressed() || rb == null) return;
+        if (cam == null) cam = Camera.main?.transform;
+        if (cam == null) return;
 
         float vertical   = Input.GetAxisRaw(forwardAxis);
         float horizontal = Input.GetAxisRaw(strafeAxis);
@@ -600,7 +630,6 @@ public class AnimalGroundController : NetworkBehaviour
     private void OnBecameGrounded()
     {
         isActive = true;
-        _ignoreInput = false;
         ClearState();
         OnLanded();
 
@@ -667,7 +696,16 @@ public class AnimalGroundController : NetworkBehaviour
                     rb.linearVelocity = delta / Time.deltaTime;
                 }
                 else
-                    rb.linearVelocity = Vector3.zero;
+                {
+                    // Animator is idle — zero only horizontal velocity. Preserve Y
+                    // so gravity can pull the rigidbody down (e.g. after a mid-air
+                    // dismount when the jump animation has ended). Without this,
+                    // root-motion-driven animals hover indefinitely.
+                    Vector3 v = rb.linearVelocity;
+                    v.x = 0f;
+                    v.z = 0f;
+                    rb.linearVelocity = v;
+                }
             }
             else
                 _pendingRootMotion += animator.deltaPosition;
@@ -678,20 +716,7 @@ public class AnimalGroundController : NetworkBehaviour
 
     public void ClearInputState() => ClearState();
 
-    private bool _ignoreInput;
-
-    public void StopGradually()
-    {
-        GaitSpeed = 0f;
-        IsWalking = false;
-        IsRunning = false;
-        ForwardSpeed = 0f;
-        if (rb != null)
-        {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-        }
-    }
+    protected bool _ignoreInput;
 
     private void ClearState()
     {

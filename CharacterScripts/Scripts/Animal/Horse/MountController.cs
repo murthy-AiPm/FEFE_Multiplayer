@@ -310,14 +310,6 @@ public class MountController : NetworkBehaviour
 
             transform.position = position;
 
-            if (currentMount != null)
-            {
-                var horseController = currentMount.GetComponentInChildren<AnimalGroundController>();
-                Debug.Log($"[MountController] horseController found: {horseController != null} on {currentMount.name}");
-                if (horseController != null)
-                    horseController.StopGradually();
-            }
-
             if (weaponManager != null && combatController != null && !combatController.allowMountedCombat)
             {
                 if (weaponManager.ActiveSlot != 0)

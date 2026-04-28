@@ -153,13 +153,6 @@ public class AnimalAnimatorController : NetworkBehaviour
             }
         }
 
-        // Ramp GaitSpeed to zero when ground controller is disabled (e.g. after dismount)
-        if (groundController != null && !groundController.enabled && netGaitSpeed.Value > 0.01f)
-        {
-            if (IsOwner)
-                netGaitSpeed.Value = Mathf.MoveTowards(netGaitSpeed.Value, 0f, 2f * Time.deltaTime);
-        }
-
         // ─── Everyone reads NetworkVariables → Animator ──
 
         // Shared
