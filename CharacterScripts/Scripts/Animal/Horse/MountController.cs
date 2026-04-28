@@ -281,8 +281,6 @@ public class MountController : NetworkBehaviour
             if (footsteps != null)
                 footsteps.enabled = false;
         }
-
-        Debug.Log($"[MountController] Mount complete (IsOwner: {IsOwner})");
     }
 
     [ClientRpc]
@@ -330,8 +328,6 @@ public class MountController : NetworkBehaviour
 
             currentMount = null;
         }
-
-        Debug.Log($"[MountController] Dismount complete (IsOwner: {IsOwner})");
     }
 
     /// <summary>

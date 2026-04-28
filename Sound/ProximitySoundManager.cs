@@ -59,7 +59,6 @@ public class ProximitySoundManager : NetworkBehaviour
         if (listener != null)
         {
             listenerTransform = listener.transform;
-            Debug.Log($"[ProximitySoundManager] Listener found: {listener.gameObject.name}");
         }
         else
         {

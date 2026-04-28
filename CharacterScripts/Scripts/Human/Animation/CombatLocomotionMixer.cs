@@ -150,7 +150,6 @@ public class CombatLocomotionMixer : MonoBehaviour
             if (walk != null)
             {
                 _mixersBySlot[profile.weaponSlot] = walk;
-                Debug.Log($"[CombatLocomotionMixer] Built walk mixer for slot {profile.weaponSlot}");
             }
         }
 
@@ -166,11 +165,6 @@ public class CombatLocomotionMixer : MonoBehaviour
                 bowProfile.aimLeft, bowProfile.aimRight,
                 bowProfile.aimFwdLeft, bowProfile.aimFwdRight,
                 bowProfile.aimBackLeft, bowProfile.aimBackRight);
-
-            if (_bowNoAimMixer != null || _bowAimMixer != null)
-                Debug.Log($"[CombatLocomotionMixer] Built bow mixers " +
-                          $"(noAim: {(_bowNoAimMixer != null ? "OK" : "NONE")}, " +
-                          $"aim: {(_bowAimMixer != null ? "OK" : "NONE")})");
         }
 
         // Build dodge mixers (4 cardinal directions each)

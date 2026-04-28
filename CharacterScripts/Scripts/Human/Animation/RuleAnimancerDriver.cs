@@ -264,9 +264,6 @@ public class RuleAnimancerDriver : MonoBehaviour
         if (_isPlayingHitReaction)
             return;
 
-        // DEBUG: log when attack layer is stuck locked
-        if (IsLayerLocked(AnimLayer.Attack) && ctx.snapshot.primaryDown)
-            Debug.Log($"[LateUpdate] Attack layer LOCKED while primaryDown, lockedState={_lockedState.GetValueOrDefault(AnimLayer.Attack)?.Clip?.name ?? "null"}");
         // Bow aim spine rotation
         // For the local owner: use Camera.main pitch directly.
         // For remote puppets: use the synced RemoteAimPitch from the owner.
@@ -554,7 +551,6 @@ public class RuleAnimancerDriver : MonoBehaviour
         // Stamina check
         if (combatController != null && !combatController.CanAttack())
         {
-            if (down) Debug.Log($"[HandleWitcherAttacks] BLOCKED by CanAttack, state={combatController.State}");
             return false;
         }
       
@@ -573,7 +569,6 @@ public class RuleAnimancerDriver : MonoBehaviour
         // Not attacking — start a new attack on click
         if (down)
         {
-            Debug.Log($"[HandleWitcherAttacks] STARTING attack, isDead={_isDead}, hitReaction={_isPlayingHitReaction}");
             bool heavy = ctx.Modified;
             SnapRotationToCamera(); // Face camera direction on each attack
             return StartSequentialAttack(ctx, heavy);

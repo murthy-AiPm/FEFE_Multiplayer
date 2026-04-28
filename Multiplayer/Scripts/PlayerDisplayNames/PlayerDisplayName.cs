@@ -32,8 +32,6 @@ public class PlayerNameDisplay : MonoBehaviour
             canvas.worldCamera = Camera.main;
         }
 
-        Debug.Log($"[PlayerNameDisplay] Found player: {player.name}, NetworkObjectId: {player.NetworkObjectId}");
-
         UpdateNameDisplay(player.PlayerName.Value);
         player.PlayerName.OnValueChanged += OnNameChanged;
     }

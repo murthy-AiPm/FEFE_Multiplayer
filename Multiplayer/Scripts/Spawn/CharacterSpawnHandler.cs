@@ -156,7 +156,6 @@ public class CharacterSpawnHandler : NetworkBehaviour
         // -1 or invalid means they haven't selected yet
         if (characterIndex < 0)
         {
-            Debug.Log($"[CharacterSpawnHandler] Client {clientId} hasn't selected a character yet - waiting for selection");
             // Don't spawn - they'll use LateJoinCharacterSelectUI in the Game scene
             return;
         }
@@ -166,8 +165,6 @@ public class CharacterSpawnHandler : NetworkBehaviour
 
     private void SpawnPlayerCharacter(ulong clientId, int characterIndex)
     {
-        Debug.Log($"[CharacterSpawnHandler] Spawning character {characterIndex} for client {clientId}");
-
         if (characterIndex < 0 || characterIndex >= characterDatabase.CharacterCount)
             characterIndex = 0;
 
@@ -186,7 +183,6 @@ public class CharacterSpawnHandler : NetworkBehaviour
         if (networkObject != null)
         {
             networkObject.SpawnAsPlayerObject(clientId);
-            Debug.Log($"[CharacterSpawnHandler] Spawned {characterData.characterName} for client {clientId}");
 
             // Notify the client that spawn was successful
             NotifySpawnSuccessClientRpc(new ClientRpcParams
@@ -216,8 +212,6 @@ public class CharacterSpawnHandler : NetworkBehaviour
     private void RequestLateJoinSpawnServerRpc(int characterIndex, ServerRpcParams rpcParams = default)
     {
         ulong clientId = rpcParams.Receive.SenderClientId;
-
-        Debug.Log($"[CharacterSpawnHandler] Late join request: Client {clientId} wants character {characterIndex}");
 
         // Validate character index
         if (characterIndex < 0 || characterIndex >= characterDatabase.CharacterCount)
@@ -258,8 +252,6 @@ public class CharacterSpawnHandler : NetworkBehaviour
     [ClientRpc]
     private void NotifySpawnSuccessClientRpc(ClientRpcParams rpcParams = default)
     {
-        Debug.Log("[CharacterSpawnHandler] Spawn successful!");
-
         // Find and notify the late join UI
         var lateJoinUI = FindObjectOfType<LateJoinCharacterSelectUI>();
         if (lateJoinUI != null)

@@ -124,8 +124,6 @@ public class MountableEntity : NetworkBehaviour
 
     private void OnRiderChanged(ulong oldValue, ulong newValue)
     {
-        Debug.Log($"[MountableEntity] RiderId changed from {oldValue} to {newValue}. IsMounted: {IsMounted}");
-
         // If someone mounted/dismounted, update local cache
         if (newValue == 0)
         {
@@ -140,7 +138,6 @@ public class MountableEntity : NetworkBehaviour
             if (NetworkManager.Singleton.ConnectedClients.TryGetValue(actualClientId, out var client))
             {
                 currentRider = client.PlayerObject?.gameObject;
-                Debug.Log($"[MountableEntity] Found rider for client {actualClientId}: {currentRider?.name}");
             }
         }
     }
@@ -152,8 +149,6 @@ public class MountableEntity : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     public void RequestMountServerRpc(ulong requestingClientId, ServerRpcParams rpcParams = default)
     {
-        Debug.Log($"[MountableEntity] RequestMountServerRpc called - requestingClientId: {requestingClientId}, IsMounted: {IsMounted}, riderId.Value: {riderId.Value}");
-
         // Validate: is mount available?
         if (IsMounted)
         {
@@ -187,7 +182,6 @@ public class MountableEntity : NetworkBehaviour
         // Execute mount
         // IMPORTANT: Store (clientId + 1) to avoid riderId=0 collision
         // (0 means unmounted, so host clientId 0 would not trigger change)
-        Debug.Log($"[MountableEntity] Setting riderId.Value from {riderId.Value} to {requestingClientId + 1}");
         riderId.Value = requestingClientId + 1;
         SetMounted(true);
         // Debug.Log($"[MountableEntity] riderId.Value is now: {riderId.Value}, IsMounted: {IsMounted}");
@@ -210,8 +204,7 @@ public class MountableEntity : NetworkBehaviour
         {
             // Parent the rider under this mount's NetworkObject (replicates to all clients).
             // worldPositionStays=true so we can snap to saddle in world space next.
-            bool parented = riderNetObj.TrySetParent(NetworkObject, true);
-            Debug.Log($"[MountableEntity] Rider TrySetParent result: {parented}");
+            riderNetObj.TrySetParent(NetworkObject, true);
 
             // Snap rider to saddle for everyone.
             if (saddlePoint != null)
@@ -304,8 +297,6 @@ public class MountableEntity : NetworkBehaviour
 
         // Notify rider to complete dismount
         mountController.CompleteDismountClientRpc(dismountPosition);
-
-        Debug.Log($"[MountableEntity] Client {requestingClientId} dismounted");
     }
 
     /// <summary>

@@ -28,8 +28,6 @@ public class NetworkServer : IDisposable
         // Host is always clientId 0
         clientIdToAuth[0] = userData.userAuthId;
         authIdToUserData[userData.userAuthId] = userData;
-
-        Debug.Log($"[NetworkServer] Added host data: {userData.userName} (AuthId: {userData.userAuthId})");
     }
 
     private void ApprovalCheck(
@@ -65,9 +63,6 @@ public class NetworkServer : IDisposable
 
     public UserData GetUserDataByClientID(ulong clientId)
     {
-        Debug.Log($"[NetworkServer] GetUserDataByClientID called for clientId: {clientId}");
-        Debug.Log($"[NetworkServer] clientIdToAuth contains: {string.Join(", ", clientIdToAuth.Keys)}");
-
         if (clientIdToAuth.TryGetValue(clientId, out string authID))
         {
             if (authIdToUserData.TryGetValue(authID, out UserData data))

@@ -170,8 +170,6 @@ public class BallistaOperator : NetworkBehaviour
         // Disable normal player controls
         if (thirdPersonController != null) thirdPersonController.enabled = false;
         if (combatController != null) combatController.enabled = false;
-
-        Debug.Log("[BallistaOperator] Mounted ballista");
     }
 
     [ClientRpc]
@@ -193,8 +191,6 @@ public class BallistaOperator : NetworkBehaviour
 
         // Return to idle animation
         // animancerDriver?.PlayIdle(); // wire up when needed
-
-        Debug.Log("[BallistaOperator] Dismounted ballista");
     }
 
     /// <summary>
@@ -204,7 +200,6 @@ public class BallistaOperator : NetworkBehaviour
     public void OnFired()
     {
         // animancerDriver?.PlayBallistaFire(); // wire up when anim is ready
-        Debug.Log("[BallistaOperator] Fire animation triggered");
     }
 
     // ─── IK ───

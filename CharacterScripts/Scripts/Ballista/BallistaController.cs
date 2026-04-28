@@ -180,7 +180,6 @@ public class BallistaController : NetworkBehaviour
 
     private void OnOperatorChanged(ulong oldVal, ulong newVal)
     {
-        Debug.Log($"[BallistaController] Operator changed: {oldVal} -> {newVal}");
     }
 
     // ─── ServerRpcs ───
@@ -213,8 +212,6 @@ public class BallistaController : NetworkBehaviour
 
         // Notify operator
         operator_.CompleteMountClientRpc(NetworkObjectId);
-
-        Debug.Log($"[BallistaController] Client {clientId} mounted ballista");
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -237,8 +234,6 @@ public class BallistaController : NetworkBehaviour
         NetworkObject.ChangeOwnership(NetworkManager.ServerClientId);
 
         operator_?.CompleteDismountClientRpc();
-
-        Debug.Log($"[BallistaController] Client {clientId} dismounted ballista");
     }
 
     [ServerRpc(RequireOwnership = false)]
