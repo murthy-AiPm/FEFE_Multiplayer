@@ -29435,11 +29435,10 @@ MonoBehaviour:
   groundController: {fileID: 5746317765162019978}
   isWalkingDebug: 0
   isRunningDebug: 0
-  airSpeed: 0
+  thrust: 0
   groundDistance: 0
-  rollAngle: 0
+  flightPitch: 0
   velocity: {x: 0, y: 0, z: 0}
-  stamina: 0
 --- !u!114 &4274509267589655821
 MonoBehaviour:
   m_ObjectHideFlags: 0

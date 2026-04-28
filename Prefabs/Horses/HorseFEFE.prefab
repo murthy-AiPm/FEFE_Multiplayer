@@ -530,11 +530,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea760d79f5e1a8a4ab481764e01b1252, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DragonCinemachineModeSwitcher
+  ShowTopMostFoldoutHeaderGroup: 1
   flight: {fileID: 0}
   grounding: {fileID: 8455803096756853017}
   groundCam: {fileID: 0}
   flightCam: {fileID: 0}
   diveCam: {fileID: 0}
+  ownerActivePriority: 15
+  ownerInactivePriority: 5
+  nonOwnerPriority: 0
 --- !u!114 &8053885880734668724
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -559,11 +563,10 @@ MonoBehaviour:
   groundController: {fileID: 2598117054184361289}
   isWalkingDebug: 0
   isRunningDebug: 0
-  airSpeed: 0
+  thrust: 0
   groundDistance: 0
-  rollAngle: 0
+  flightPitch: 0
   velocity: {x: 0, y: 0, z: 0}
-  stamina: 0
 --- !u!114 &5671146383869180643
 MonoBehaviour:
   m_ObjectHideFlags: 0

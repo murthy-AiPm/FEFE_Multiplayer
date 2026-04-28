@@ -51,6 +51,10 @@ public class CombatController : NetworkBehaviour
     [SerializeField] public bool allowMountedCombat = false;
     [SerializeField] private MountController mountController;
 
+    [Header("Fist Combat")]
+    [Tooltip("Enable unarmed fist combat. When false, pressing primary while unarmed does nothing.")]
+    [SerializeField] private bool enableFistCombat = false;
+
     [Header("Dodge")]
     [SerializeField] private float dodgeSpeed = 8f;
     [SerializeField] private float dodgeDuration = 0.5f;
@@ -254,7 +258,7 @@ public class CombatController : NetworkBehaviour
         }
 
         // Fist mode: first attack while unarmed activates fist combat mode
-        if (weaponManager.ActiveSlot == 0 && !IsFistCombatMode && _input.primaryDown)
+        if (enableFistCombat && weaponManager.ActiveSlot == 0 && !IsFistCombatMode && _input.primaryDown)
         {
             IsFistCombatMode = true;
             // The attack itself will still be handled by RuleAnimancerDriver
@@ -593,8 +597,14 @@ public class CombatController : NetworkBehaviour
         if (State == CombatState.Dodging || State == CombatState.Dead) return false;
         if (State == CombatState.Blocking) return false; // must release block first
 
-        // Check stamina
         var weapon = weaponManager.ActiveWeapon;
+
+        // Block unarmed attacks entirely when fist combat is disabled.
+        // (Note: ActiveWeapon for slot 0 may still return loadout.fistWeapon,
+        // so check the slot, not the weapon reference.)
+        if (weaponManager.ActiveSlot == 0 && !enableFistCombat) return false;
+
+        // Check stamina
         float cost = weapon != null ? weapon.staminaCostLight : fistStaminaCost;
         var stamina = vitalManager?.GetVital("stamina");
         if (stamina != null && stamina.Current < cost) return false;

@@ -5770,6 +5770,7 @@ MonoBehaviour:
   - weaponName: Sword
     singleAttackKeys:
     - Attack/Sword/Light1
+    - Attack/Sword/Light2
     lightComboKeys: []
     heavyComboKeys:
     - Attack/Sword/Heavy
