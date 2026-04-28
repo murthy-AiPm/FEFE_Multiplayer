@@ -156,13 +156,16 @@ public class HumanoidController : ThirdPersonController
     {
         CameraCalculations(out float targetAngle, out float angle);
 
-        bool inCombat   = playerController.inputController.isCombatMode;
-        bool sprinting  = isModified;
-        bool bowAimDraw = combatController != null && (combatController.IsBowDrawing || combatController.IsBowAiming);
-        // Strafe-style movement only when in combat AND (bow drawn/aiming OR walking).
-        // Combat sprint falls through to forward locomotion so the character runs
-        // in the move direction like non-combat mode.
-        bool useStrafe  = inCombat && (bowAimDraw || !sprinting);
+        bool inCombat    = playerController.inputController.isCombatMode;
+        bool sprinting   = isModified;
+        bool bowEquipped = combatController != null && combatController.IsBowEquipped;
+        bool bowAimDraw  = combatController != null && (combatController.IsBowDrawing || combatController.IsBowAiming);
+        // Strafe-style movement only when in combat AND one of:
+        //   - bow drawn/aiming (always strafe so you can sidestep while aiming)
+        //   - non-bow weapon walking (sword/fists at walk speed strafe)
+        // Combat sprint with a non-bow weapon, or bow equipped but not drawn,
+        // falls through to forward locomotion (face movement direction).
+        bool useStrafe   = inCombat && (bowAimDraw || (!bowEquipped && !sprinting));
 
         if (useStrafe)
         {

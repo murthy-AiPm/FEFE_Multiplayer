@@ -6380,22 +6380,22 @@ MonoBehaviour:
     runBackLeft: 
     runBackRight: 
   - weaponSlot: 2
-    walkFwd: Bow/Walk/Front
-    walkBack: Bow/Walk/Back
-    walkLeft: Bow/Walk/Left
-    walkRight: Bow/Walk/Right
+    walkFwd: Bow/Aim/Walk/Front
+    walkBack: Bow/Aim/Walk/Back
+    walkLeft: Bow/Aim/Walk/Left
+    walkRight: Bow/Aim/Walk/Right
     walkFwdLeft: 
     walkFwdRight: 
     walkBackLeft: 
     walkBackRight: 
-    runFwd: Sword/Run
-    runBack: Sword/Run/Back
-    runLeft: Sword/Run/Left
-    runRight: Sword/Run/Right
-    runFwdLeft: Sword/Run/Front/Left
-    runFwdRight: Sword/Run/Front/Right
-    runBackLeft: Sword/Run/Back/Left
-    runBackRight: Sword/Run/Back/Right
+    runFwd: 
+    runBack: 
+    runLeft: 
+    runRight: 
+    runFwdLeft: 
+    runFwdRight: 
+    runBackLeft: 
+    runBackRight: 
   dodgeFwd: Dodge/Front
   dodgeBack: Dodge/Back
   dodgeLeft: Dodge/Left

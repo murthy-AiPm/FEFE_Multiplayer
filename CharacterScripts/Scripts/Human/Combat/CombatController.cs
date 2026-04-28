@@ -84,6 +84,7 @@ public class CombatController : NetworkBehaviour
     public bool IsBlocking => State == CombatState.Blocking;
     public bool IsBowDrawing => State == CombatState.BowDrawing;
     public bool IsBowAiming => State == CombatState.BowAiming;
+    public bool IsBowEquipped => weaponManager != null && weaponManager.GetActiveWeaponType() == WeaponType.Bow;
     public bool IsDead => State == CombatState.Dead;
     public bool IsFistCombatMode { get; private set; }
 
