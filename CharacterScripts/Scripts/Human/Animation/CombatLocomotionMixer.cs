@@ -3,10 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using Animancer;
 
-/// <summary>//
-/// Drives 2D Cartesian blend trees for combat locomotion (walk + run),
-/// dodge rolls, and dodge steps.
-/// Supports multiple weapon profiles (sword, bow, etc.) each with their own clip keys.
+/// <summary>
+/// Drives 2D Cartesian blend trees for combat locomotion, dodge rolls, and dodge steps.
+///
+/// Two profile shapes:
+///   - WeaponLocomotionProfile (sword/fists/etc.): one 8-direction walk mixer per slot.
+///     Sprint is not handled by the mixer — the rule system plays a forward run.
+///   - BowLocomotionProfile (slot 2): one 8-direction "no-aim" mixer and one "aim" mixer.
+///     Selection switches on bowDrawing/bowAiming. Sprint with bow also falls through
+///     to the rule system (same behavior as sword + sprint).
+///
 /// Network-friendly: sync a single Vector2 for the blend parameter.
 /// </summary>
 public class CombatLocomotionMixer : MonoBehaviour
@@ -14,8 +20,13 @@ public class CombatLocomotionMixer : MonoBehaviour
     [Header("Animation Set (same one the driver uses)")]
     [SerializeField] private AnimationSetBase animationSet;
 
-    [Header("Weapon Locomotion Profiles")]
+    [Header("Weapon Locomotion Profiles (non-bow)")]
+    [Tooltip("One profile per non-bow weapon slot (1 = sword, 0 = fists, etc.). " +
+             "Slot 2 (bow) uses BowLocomotionProfile below.")]
     [SerializeField] private List<WeaponLocomotionProfile> weaponProfiles = new List<WeaponLocomotionProfile>();
+
+    [Header("Bow Locomotion Profile (slot 2)")]
+    [SerializeField] private BowLocomotionProfile bowProfile = new BowLocomotionProfile();
 
     [Header("Dodge Clip Keys (4 cardinal directions)")]
     [SerializeField] private string dodgeFwd   = "Dodge/Front";
@@ -36,7 +47,9 @@ public class CombatLocomotionMixer : MonoBehaviour
     [SerializeField] private float dodgeFadeDuration = 0.08f;
 
     // ── Runtime ──
-    private Dictionary<int, MixerPair> _mixersBySlot;
+    private Dictionary<int, CartesianMixerState> _mixersBySlot;
+    private CartesianMixerState _bowNoAimMixer;
+    private CartesianMixerState _bowAimMixer;
     private CartesianMixerState _dodgeMixer;
     private CartesianMixerState _dodgeStepMixer;
     private bool _initialized;
@@ -63,7 +76,8 @@ public class CombatLocomotionMixer : MonoBehaviour
     [Serializable]
     public class WeaponLocomotionProfile
     {
-        [Tooltip("Which weapon slot this profile applies to (1 = sword, 2 = bow).")]
+        [Tooltip("Which weapon slot this profile applies to (1 = sword, 0 = fists, etc.). " +
+                 "Slot 2 (bow) uses BowLocomotionProfile.")]
         public int weaponSlot = 1;
 
         [Header("Walk Clip Keys (8 directions — leave empty to skip diagonals)")]
@@ -75,29 +89,37 @@ public class CombatLocomotionMixer : MonoBehaviour
         public string walkFwdRight  = "Sword/Strafe/Front/Right";
         public string walkBackLeft  = "Sword/Strafe/Back/Left";
         public string walkBackRight = "Sword/Strafe/Back/Right";
-
-        [Header("Run Clip Keys (8 directions — leave empty to skip diagonals)")]
-        public string runFwd       = "Sword/Run";
-        public string runBack      = "Sword/Run/Back";
-        public string runLeft      = "Sword/Run/Left";
-        public string runRight     = "Sword/Run/Right";
-        public string runFwdLeft   = "";
-        public string runFwdRight  = "";
-        public string runBackLeft  = "Sword/Run/BackLeft";
-        public string runBackRight = "";
     }
 
-    private class MixerPair
+    [Serializable]
+    public class BowLocomotionProfile
     {
-        public CartesianMixerState walk;
-        public CartesianMixerState run;
+        [Header("No-Aim Clip Keys (bow held, not drawn) — 8 directions")]
+        public string noAimFwd       = "Bow/Walk/Front";
+        public string noAimBack      = "Bow/Walk/Back";
+        public string noAimLeft      = "Bow/Walk/Left";
+        public string noAimRight     = "Bow/Walk/Right";
+        public string noAimFwdLeft   = "";
+        public string noAimFwdRight  = "";
+        public string noAimBackLeft  = "";
+        public string noAimBackRight = "";
+
+        [Header("Aim Clip Keys (drawing or aiming) — 8 directions")]
+        public string aimFwd       = "Bow/Aim/Walk/Front";
+        public string aimBack      = "Bow/Aim/Walk/Back";
+        public string aimLeft      = "Bow/Aim/Walk/Left";
+        public string aimRight     = "Bow/Aim/Walk/Right";
+        public string aimFwdLeft   = "";
+        public string aimFwdRight  = "";
+        public string aimBackLeft  = "";
+        public string aimBackRight = "";
     }
 
     // ───────────────────── Init ─────────────────────
 
     /// <summary>
     /// Must be called after AnimancerComponent is available (e.g. from the driver's Awake).
-    /// Builds mixers for each weapon profile and dodge/dodge step mixers.
+    /// Builds mixers for each weapon profile, the bow profile, and dodge/dodge step mixers.
     /// </summary>
     public void Initialize(AnimancerComponent animancer)
     {
@@ -108,37 +130,56 @@ public class CombatLocomotionMixer : MonoBehaviour
             return;
         }
 
-        // Build weapon locomotion mixers
-        _mixersBySlot = new Dictionary<int, MixerPair>();
+        // Build non-bow weapon mixers (one walk mixer per slot)
+        _mixersBySlot = new Dictionary<int, CartesianMixerState>();
 
         foreach (var profile in weaponProfiles)
         {
-            var pair = new MixerPair
+            if (profile.weaponSlot == 2)
             {
-                walk = BuildMixer(profile.walkFwd, profile.walkBack,
-                    profile.walkLeft, profile.walkRight,
-                    profile.walkFwdLeft, profile.walkFwdRight,
-                    profile.walkBackLeft, profile.walkBackRight),
-
-                run = BuildMixer(profile.runFwd, profile.runBack,
-                    profile.runLeft, profile.runRight,
-                    profile.runFwdLeft, profile.runFwdRight,
-                    profile.runBackLeft, profile.runBackRight),
-            };
-
-            if (pair.walk != null || pair.run != null)
-            {
-                _mixersBySlot[profile.weaponSlot] = pair;
-                Debug.Log($"[CombatLocomotionMixer] Built locomotion mixer for slot {profile.weaponSlot}" +
-                          $" (walk: {(pair.walk != null ? "OK" : "NONE")}, run: {(pair.run != null ? "OK" : "NONE")})");
+                Debug.LogWarning("[CombatLocomotionMixer] Slot 2 should use BowLocomotionProfile, " +
+                                 "not WeaponLocomotionProfile — entry skipped.");
+                continue;
             }
+
+            var walk = BuildMixer(profile.walkFwd, profile.walkBack,
+                profile.walkLeft, profile.walkRight,
+                profile.walkFwdLeft, profile.walkFwdRight,
+                profile.walkBackLeft, profile.walkBackRight);
+
+            if (walk != null)
+            {
+                _mixersBySlot[profile.weaponSlot] = walk;
+                Debug.Log($"[CombatLocomotionMixer] Built walk mixer for slot {profile.weaponSlot}");
+            }
+        }
+
+        // Build bow mixers (no-aim and aim variants)
+        if (bowProfile != null)
+        {
+            _bowNoAimMixer = BuildMixer(bowProfile.noAimFwd, bowProfile.noAimBack,
+                bowProfile.noAimLeft, bowProfile.noAimRight,
+                bowProfile.noAimFwdLeft, bowProfile.noAimFwdRight,
+                bowProfile.noAimBackLeft, bowProfile.noAimBackRight);
+
+            _bowAimMixer = BuildMixer(bowProfile.aimFwd, bowProfile.aimBack,
+                bowProfile.aimLeft, bowProfile.aimRight,
+                bowProfile.aimFwdLeft, bowProfile.aimFwdRight,
+                bowProfile.aimBackLeft, bowProfile.aimBackRight);
+
+            if (_bowNoAimMixer != null || _bowAimMixer != null)
+                Debug.Log($"[CombatLocomotionMixer] Built bow mixers " +
+                          $"(noAim: {(_bowNoAimMixer != null ? "OK" : "NONE")}, " +
+                          $"aim: {(_bowAimMixer != null ? "OK" : "NONE")})");
         }
 
         // Build dodge mixers (4 cardinal directions each)
         _dodgeMixer = BuildCardinalMixer(dodgeFwd, dodgeBack, dodgeLeft, dodgeRight, "Dodge");
         _dodgeStepMixer = BuildCardinalMixer(dodgeStepFwd, dodgeStepBack, dodgeStepLeft, dodgeStepRight, "DodgeStep");
 
-        _initialized = _mixersBySlot.Count > 0 || _dodgeMixer != null || _dodgeStepMixer != null;
+        _initialized = _mixersBySlot.Count > 0
+            || _bowNoAimMixer != null || _bowAimMixer != null
+            || _dodgeMixer != null || _dodgeStepMixer != null;
     }
 
     private CartesianMixerState BuildCardinalMixer(string fwd, string back, string left, string right, string label)
@@ -215,32 +256,29 @@ public class CombatLocomotionMixer : MonoBehaviour
         if (isDodgeStep) return false;
         if (isMounted) return false;
 
-        // Sword strafes only at walk speed. Sprinting falls through to rules for a
-        // forward-only run animation.
-        if (activeWeaponSlot == 1 && isSprinting) return false;
+        // Combat sprint always falls through to rules for a forward-only run.
+        // Applies to bow too — bow + sprint plays the rule-based forward run,
+        // matching sword + sprint behavior.
+        if (isSprinting) return false;
 
-        // Bow only strafes while drawing or aiming. Walking around with bow equipped
-        // but not drawn falls through to the rule system for a forward-facing combat run.
-        if (activeWeaponSlot == 2 && !isBowDrawing && !isBowAiming) return false;
+        if (activeWeaponSlot == 2)
+            return _bowNoAimMixer != null || _bowAimMixer != null;
 
         return _mixersBySlot.ContainsKey(activeWeaponSlot);
     }
 
     /// <summary>
-    /// Plays the appropriate locomotion mixer (walk or run) on the given layer.
+    /// Plays the appropriate locomotion mixer on the given layer.
     /// Call every frame when WantsControl() is true.
     /// </summary>
     public void UpdateAndPlay(AnimancerLayer layer, Vector2 moveInput,
-                              bool isSprinting, int activeWeaponSlot)
+                              int activeWeaponSlot, bool bowAimDraw)
     {
-        if (!_mixersBySlot.TryGetValue(activeWeaponSlot, out var pair))
-            return;
+        CartesianMixerState target = SelectMixer(activeWeaponSlot, bowAimDraw);
+        if (target == null) return;
 
         _smoothParam = Vector2.SmoothDamp(_smoothParam, moveInput,
             ref _paramVelocity, parameterSmoothTime);
-
-        var target = isSprinting && pair.run != null ? pair.run : pair.walk;
-        if (target == null) return;
 
         target.Parameter = _smoothParam;
 
@@ -249,6 +287,20 @@ public class CombatLocomotionMixer : MonoBehaviour
             layer.Play(target, fadeDuration);
             _activeMixer = target;
         }
+    }
+
+    private CartesianMixerState SelectMixer(int activeWeaponSlot, bool bowAimDraw)
+    {
+        if (activeWeaponSlot == 2)
+        {
+            // Prefer the requested aim/no-aim variant; fall back to whichever exists
+            // if the matching one is missing.
+            if (bowAimDraw)
+                return _bowAimMixer ?? _bowNoAimMixer;
+            return _bowNoAimMixer ?? _bowAimMixer;
+        }
+
+        return _mixersBySlot.TryGetValue(activeWeaponSlot, out var m) ? m : null;
     }
 
     // ───────────────────── Dodge / Dodge Step API ─────────────────────

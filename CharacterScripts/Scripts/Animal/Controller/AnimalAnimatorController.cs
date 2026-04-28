@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 
@@ -70,6 +71,11 @@ public class AnimalAnimatorController : NetworkBehaviour
     private float nextNetworkUpdateTime;
     private const float FLOAT_EPSILON = 0.01f; // Only update floats if change > this
 
+    // Parameter hashes that actually exist on this instance's Animator.
+    // Used to skip SetBool/SetFloat calls for params the controller doesn't define,
+    // which would otherwise spam "Parameter does not exist" warnings.
+    private HashSet<int> _knownParamHashes;
+
     protected virtual void Awake()
     {
         if (animator == null)
@@ -93,6 +99,43 @@ public class AnimalAnimatorController : NetworkBehaviour
         turnSpeedHash = Animator.StringToHash("TurnSpeed");
         turnAngleHash = Animator.StringToHash("TurnAngle");
         gaitSpeedHash = Animator.StringToHash("GaitSpeed");
+
+        // Build the set of parameter hashes this Animator actually has so the
+        // SafeSet helpers can skip writes for missing ones.
+        _knownParamHashes = new HashSet<int>();
+        if (animator != null)
+        {
+            foreach (var p in animator.parameters)
+                _knownParamHashes.Add(p.nameHash);
+        }
+    }
+
+    /// <summary>SetBool that silently skips if the parameter isn't on this Animator.</summary>
+    protected void SafeSetBool(int hash, bool value)
+    {
+        if (_knownParamHashes != null && _knownParamHashes.Contains(hash))
+            animator.SetBool(hash, value);
+    }
+
+    /// <summary>SetFloat that silently skips if the parameter isn't on this Animator.</summary>
+    protected void SafeSetFloat(int hash, float value)
+    {
+        if (_knownParamHashes != null && _knownParamHashes.Contains(hash))
+            animator.SetFloat(hash, value);
+    }
+
+    /// <summary>SetInteger that silently skips if the parameter isn't on this Animator.</summary>
+    protected void SafeSetInteger(int hash, int value)
+    {
+        if (_knownParamHashes != null && _knownParamHashes.Contains(hash))
+            animator.SetInteger(hash, value);
+    }
+
+    /// <summary>SetTrigger that silently skips if the parameter isn't on this Animator.</summary>
+    protected void SafeSetTrigger(int hash)
+    {
+        if (_knownParamHashes != null && _knownParamHashes.Contains(hash))
+            animator.SetTrigger(hash);
     }
 
     protected virtual void LateUpdate()
@@ -120,26 +163,26 @@ public class AnimalAnimatorController : NetworkBehaviour
         // ─── Everyone reads NetworkVariables → Animator ──
 
         // Shared
-        animator.SetBool(isGroundedHash, netIsGrounded.Value);
-        animator.SetFloat(forwardSpeedHash, netForwardSpeed.Value);
+        SafeSetBool(isGroundedHash, netIsGrounded.Value);
+        SafeSetFloat(forwardSpeedHash, netForwardSpeed.Value);
 
         // Ground
-        animator.SetBool(isWalkingHash, netIsWalking.Value);
-        animator.SetBool(isRunningHash, netIsRunning.Value);
-        //animator.SetBool(isPlayingJumpHash, netIsPlayingJump.Value);
-       // animator.SetBool(isTakingOffHash, netIsTakingOff.Value);
-        animator.SetBool(isTurningLeftHash, netIsTurningLeft.Value);
-        animator.SetBool(isTurningRightHash, netIsTurningRight.Value);
-        animator.SetFloat(turnSpeedHash, netTurnSpeed.Value);
+        SafeSetBool(isWalkingHash, netIsWalking.Value);
+        SafeSetBool(isRunningHash, netIsRunning.Value);
+        //SafeSetBool(isPlayingJumpHash, netIsPlayingJump.Value);
+        //SafeSetBool(isTakingOffHash, netIsTakingOff.Value);
+        SafeSetBool(isTurningLeftHash, netIsTurningLeft.Value);
+        SafeSetBool(isTurningRightHash, netIsTurningRight.Value);
+        SafeSetFloat(turnSpeedHash, netTurnSpeed.Value);
         if (IsOwner)
         {
-            animator.SetFloat(gaitSpeedHash, groundController.GaitSpeed);
-            animator.SetFloat(turnAngleHash, groundController.TurnAngle);
+            SafeSetFloat(gaitSpeedHash, groundController.GaitSpeed);
+            SafeSetFloat(turnAngleHash, groundController.TurnAngle);
         }
         else
         {
-            animator.SetFloat(gaitSpeedHash, netGaitSpeed.Value);
-            animator.SetFloat(turnAngleHash, netTurnAngle.Value);
+            SafeSetFloat(gaitSpeedHash, netGaitSpeed.Value);
+            SafeSetFloat(turnAngleHash, netTurnAngle.Value);
         }
     }
 

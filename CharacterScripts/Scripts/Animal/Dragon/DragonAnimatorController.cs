@@ -28,6 +28,7 @@ public class DragonAnimatorController : AnimalAnimatorController
     private int thrustHash;
     private int yawHash;
     private int flightPitchHash;
+    private int flightRollHash;
     private int isRoarHash;
 
     // ─── Animator Parameter Hashes (Swim) ────────────────
@@ -55,6 +56,8 @@ public class DragonAnimatorController : AnimalAnimatorController
     private NetworkVariable<float> netFlightYaw = new NetworkVariable<float>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<float> netFlightPitch = new NetworkVariable<float>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<float> netFlightRoll = new NetworkVariable<float>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     // ─── NetworkVariables (Swim) ──────────────────────────
@@ -89,6 +92,7 @@ public class DragonAnimatorController : AnimalAnimatorController
         thrustHash        = Animator.StringToHash("Thrust");
         yawHash           = Animator.StringToHash("Yaw");
         flightPitchHash   = Animator.StringToHash("Pitch");
+        flightRollHash    = Animator.StringToHash("Roll");
 
         // Cache combat hashes
         isRoarHash        = Animator.StringToHash("IsRoar");
@@ -117,6 +121,7 @@ public class DragonAnimatorController : AnimalAnimatorController
                 animator.SetFloat(thrustHash, netFlightThrust.Value);
                 animator.SetFloat(yawHash, netFlightYaw.Value);
                 animator.SetFloat(flightPitchHash, netFlightPitch.Value);
+                animator.SetFloat(flightRollHash, netFlightRoll.Value);
             }
             else if (netIsSwimming.Value)
             {
@@ -164,6 +169,7 @@ public class DragonAnimatorController : AnimalAnimatorController
             animator.SetFloat(thrustHash, netFlightThrust.Value);
             animator.SetFloat(yawHash, netFlightYaw.Value);
             animator.SetFloat(flightPitchHash, netFlightPitch.Value);
+            animator.SetFloat(flightRollHash, netFlightRoll.Value);
         }
 
         // ─── Swim params ─────────────────────────────────
@@ -222,6 +228,12 @@ public class DragonAnimatorController : AnimalAnimatorController
             netFlightPitch.Value = flightPitch;
         if (flightPitch == 0f && netFlightPitch.Value != 0f)
             netFlightPitch.Value = 0f;
+
+        float flightRoll = flightController.FlightRoll;
+        if (Mathf.Abs(netFlightRoll.Value - flightRoll) > FLOAT_EPSILON)
+            netFlightRoll.Value = flightRoll;
+        if (flightRoll == 0f && netFlightRoll.Value != 0f)
+            netFlightRoll.Value = 0f;
 
         // ─── Swim variables ──────────────────────────────
         if (swimController != null)

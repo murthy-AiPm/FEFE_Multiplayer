@@ -72,10 +72,10 @@ public class MountInputController : NetworkBehaviour
         {
             groundController.enabled = shouldBeActive;
 
-            if (shouldBeActive)
-                Debug.Log($"[MountInputController] Ground controller ENABLED - Rider {mountableEntity.RiderId} now controls horse");
-            else
-                Debug.Log("[MountInputController] Ground controller DISABLED - Horse is idle");
+            //if (shouldBeActive)
+            //    Debug.Log($"[MountInputController] Ground controller ENABLED - Rider {mountableEntity.RiderId} now controls horse");
+            //else
+            //    //Debug.Log("[MountInputController] Ground controller DISABLED - Horse is idle");
         }
     }
 

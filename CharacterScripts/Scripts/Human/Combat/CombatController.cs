@@ -244,8 +244,10 @@ public class CombatController : NetworkBehaviour
             return;
         }
 
-        // Dodge step: alt in combat mode
-        if (_input.dodgeDown && inCombat && !IsDodgeStep && activeWeaponType != WeaponType.Bow)
+        // Dodge step: alt in combat mode (disabled while sprinting or while bow equipped)
+        if (_input.dodgeDown && inCombat && !IsDodgeStep
+            && activeWeaponType != WeaponType.Bow
+            && !_input.modifiedHeld)
         {
             TryDodgeStep();
             return;

@@ -358,7 +358,12 @@ public class RuleAnimancerDriver : MonoBehaviour
             // Start dodge mixer (once per dodge)
             if (ctx.Dodging && combatMixer.HasDodgeMixer && !_dodgeMixerStartedThisDodge)
             {
-                var mixerState = combatMixer.PlayDodge(_baseLayer, ctx.snapshot.move);
+                // While sprinting in a direction the body already faces movement,
+                // so always play the front-dodge clip — its root motion will carry
+                // the dodge forward in the same direction the player is running.
+                bool sprintInDir = ctx.Modified && ctx.snapshot.move.sqrMagnitude > 0.01f;
+                Vector2 dodgeInput = sprintInDir ? new Vector2(0f, 1f) : ctx.snapshot.move;
+                var mixerState = combatMixer.PlayDodge(_baseLayer, dodgeInput);
                 if (mixerState != null)
                 {
                     _dodgeMixerStartedThisDodge = true;
@@ -389,7 +394,7 @@ public class RuleAnimancerDriver : MonoBehaviour
                 ctx.ActiveWeaponSlot, ctx.Moving, ctx.Dodging,
                 ctx.Blocking, ctx.BowDrawing, ctx.BowAiming, ctx.IsMounted, ctx.IsDodgeStep, ctx.Modified))
         {
-            combatMixer.UpdateAndPlay(_baseLayer, ctx.snapshot.move, ctx.Modified, ctx.ActiveWeaponSlot);
+            combatMixer.UpdateAndPlay(_baseLayer, ctx.snapshot.move, ctx.ActiveWeaponSlot, ctx.BowDrawing || ctx.BowAiming);
             _rootMotionActive = false;
             if (_animator != null) _animator.applyRootMotion = false;
             mixerActive = true;
