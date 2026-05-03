@@ -1541,3 +1541,65 @@ OPEN QUESTIONS (still in design doc):
    head, scorched torso) — animation/VFX work, separate pass.
  * Empty-stamina danger-window UI cue.
  * Non-Ranger vital visibility (deferred design thread).
+
+═══════════════════════════════════════════════════════════════
+2026-05-03 — Wing-flap-gated stamina drain + DragonWingActivityTracker extraction
+
+ROOT CAUSE
+ High-thrust flight stamina drain was gated only on `Mathf.Abs(thrust) > highThrustThreshold`
+ in DragonStaminaController, which stays true during a wings-tucked dive (player holds
+ forward/down with thrust ~0.8 but no actual wing work). Result: the dragon paid stamina
+ for diving — the cheapest, most efficient flight maneuver in the kit.
+
+ The "are the wings actually flapping" signal already existed inside DragonSoundPlayer
+ (smoothed wing-bone angular velocity, threshold 80 deg/sec, runs in LateUpdate on all
+ peers) but it was a private field used only to gate flap audio.
+
+FILES CHANGED
+ + CharacterScripts/Scripts/Animal/Dragon/DragonWingActivityTracker.cs   (new)
+ ~ Sound/DragonSoundPlayer.cs                                            (delegate to tracker)
+ ~ CharacterScripts/Scripts/Animal/Dragon/DragonStaminaController.cs     (gate drain on tracker)
+
+FIX
+ 1. Extracted wing-bone tracking into a dedicated MonoBehaviour
+    `DragonWingActivityTracker`. Plain MonoBehaviour, not NetworkBehaviour — pure local
+    computation from animator-driven bone, runs on every peer. Public:
+      - `WingActivity` (smoothed deg/sec)
+      - `IsFlapping`   (activity > flapThreshold; returns true when wingBone is null
+                       so consumers fall back to pre-tracker behavior)
+      - `FlapThreshold`
+    Defaults match the previous DragonSoundPlayer values: threshold=80, smoothing=8.
+
+ 2. DragonSoundPlayer no longer owns wing tracking. Removed:
+      - wingBone / wingMotionThreshold / wingMotionSmoothing fields
+      - _wingActivity / _lastWingRotation private state
+      - the LateUpdate that sampled the bone
+    Replaced with `[SerializeField] DragonWingActivityTracker wingActivityTracker`,
+    auto-found in Awake. Flap-sound gate now reads `!wingActivityTracker.IsFlapping`.
+
+ 3. DragonStaminaController gained a `wingActivityTracker` ref and gates the high-thrust
+    flight drain on `wingsFlapping`:
+      bool wingsFlapping = wingActivityTracker == null || wingActivityTracker.IsFlapping;
+      if (inFlight && Mathf.Abs(thrust) > highThrustThreshold && wingsFlapping)
+          drain += highThrustDrainRate * CostScale(_wings);
+    Fire-breath drain is unchanged (just `firebreathing`, no wing gate).
+
+INSPECTOR WIREUP REQUIRED (manual)
+ On the dragon prefab root (DragonPlayer_Network):
+  - Add component: DragonWingActivityTracker
+  - Drag the same wing bone (formerly on DragonSoundPlayer.wingBone) into its
+    `wingBone` field. Threshold/smoothing default to 80 / 8.
+  - DragonSoundPlayer and DragonStaminaController auto-find the tracker via
+    GetComponent in Awake, so their `wingActivityTracker` Inspector fields can be
+    left empty (or wired explicitly for clarity).
+ Removed serialized values that Unity will silently drop on next import:
+  wingBone, wingMotionThreshold, wingMotionSmoothing on DragonSoundPlayer.
+
+NOTES
+ * IsFlapping defaults to true when no wing bone is wired so a missing/unwired tracker
+   doesn't silently disable flap audio or stamina drain. Both consumers degrade to the
+   pre-refactor behavior in that case.
+ * The tracker runs on every peer (no IsOwner guard) so the server's animator-driven
+   wing motion is what gates the server-authoritative drain — consistent with how
+   DragonSoundPlayer's gate already worked.
+

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 /// <summary>
 /// Local HUD for the dragon player. Drives one horizontal stamina fill and three
@@ -27,12 +28,23 @@ public class DragonUI : MonoBehaviour
     [Tooltip("Circular torso HP fill. Image type = Filled / Radial.")]
     [SerializeField] private Image torsoFill;
 
+    [Header("Thrust Readout")]
+    [Tooltip("Optional. TMP text that displays the dragon's current flight thrust as a percentage (e.g. '70%' / '-30%'). Leave null to disable.")]
+    [SerializeField] private TMP_Text thrustText;
+    [Tooltip("Source of the thrust value. Auto-found via GetComponentInParent in OnEnable if left null.")]
+    [SerializeField] private DragonAnimatorController dragonAnimatorController;
+    [Tooltip("Format string applied to thrust percent (signed integer). Use '{0}%' for '70%' / '-30%'.")]
+    [SerializeField] private string thrustFormat = "{0}%";
+
     private bool _subscribed;
     private bool _firstPaintDone;
+    private int _lastThrustPercent = int.MinValue;
 
     private void OnEnable()
     {
         if (vitalManager != null) Subscribe(vitalManager);
+        if (dragonAnimatorController == null)
+            dragonAnimatorController = GetComponentInParent<DragonAnimatorController>();
     }
 
     private void OnDisable()
@@ -42,6 +54,8 @@ public class DragonUI : MonoBehaviour
 
     private void Update()
     {
+        UpdateThrustText();
+
         // VitalManager.OnNetworkSpawn populates _vitals later than DragonUI.OnEnable,
         // so the initial PaintAll in Subscribe sees null vitals and zeroes all fills.
         // Retry until at least one vital is resolvable, then paint once and stop.
@@ -54,6 +68,16 @@ public class DragonUI : MonoBehaviour
 
         PaintAll();
         _firstPaintDone = true;
+    }
+
+    private void UpdateThrustText()
+    {
+        if (thrustText == null || dragonAnimatorController == null) return;
+
+        int pct = Mathf.RoundToInt(dragonAnimatorController.NetFlightThrust * 100f);
+        if (pct == _lastThrustPercent) return;
+        _lastThrustPercent = pct;
+        thrustText.text = string.Format(thrustFormat, pct);
     }
 
     /// <summary>Wire a VitalManager at runtime (e.g. for a HUD that lives outside the dragon prefab).</summary>

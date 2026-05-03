@@ -478,8 +478,14 @@ MonoBehaviour:
     category: 1
     clips:
     - {fileID: 8300000, guid: 0669bdc9a9b129646acc2192dd31a88e, type: 3}
+    - {fileID: 8300000, guid: 6304dc1ae60c1e540963d7ee1439e855, type: 3}
+    - {fileID: 8300000, guid: a91235cdb3f3ed243a1e2d7d3e08ef8c, type: 3}
+    - {fileID: 8300000, guid: 4ac1fb43560d2a94cbe7cd5663c2b251, type: 3}
+    - {fileID: 8300000, guid: cc514bdde5bded94985ccea6bdb32d99, type: 3}
+    - {fileID: 8300000, guid: 0eabd65dd714af84791b5fbe9e8b8a21, type: 3}
+    - {fileID: 8300000, guid: 69558834d279c8d469f4643a26593cee, type: 3}
     volume: {x: 0.8, y: 1}
-    pitch: {x: 0.95, y: 1.05}
+    pitch: {x: 0.8817774, y: 1.2367144}
     overrideDistance: 0
     customMinDistance: 0
     customMaxDistance: 0

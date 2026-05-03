@@ -22,11 +22,18 @@ public class DragonStaminaController : NetworkBehaviour
     [SerializeField] private DragonAnimatorController dragonAnimatorController;
     [SerializeField] private DragonCombatController combatController;
     [SerializeField] private AnimalGroundingSystem groundingSystem;
+    [Tooltip("Used to gate flight stamina drain on real wing motion. A wings-tucked dive at high thrust should not drain stamina. Auto-found on the same GameObject if left null.")]
+    [SerializeField] private DragonWingActivityTracker wingActivityTracker;
 
     [Header("Stamina Drain (per second)")]
     [SerializeField] private float fireBreathDrainRate = 80f;
+    [Tooltip("Peak flight drain rate (per second) when effort = 1. effort = |thrust| × flapEffort, so a hover (thrust≈0) and a tucked dive (flap≈0) both pay zero, while a hard-flap sprint pays this full rate.")]
     [SerializeField] private float highThrustDrainRate = 50f;
-    [Tooltip("FlightThrust above this drains stamina. Below = free cruise/glide/hover.")]
+    [Tooltip("Wing angular velocity (deg/sec) at or below which flap effort = 0. Glide / lazy cruise. Tune against DragonWingActivityTracker.WingActivity in playtest.")]
+    [SerializeField] private float lazyFlapDegPerSec = 60f;
+    [Tooltip("Wing angular velocity (deg/sec) at which flap effort = 1. Hard climb / sprint flap. Anything between this and the lazy threshold scales linearly.")]
+    [SerializeField] private float hardFlapDegPerSec = 200f;
+    [Tooltip("Stamina-depleted thrust cap and airborne-regen tier boundary (NOT used for drain anymore — drain is effort-driven).")]
     [SerializeField] private float highThrustThreshold = 0.7f;
     [Tooltip("Sprint gait threshold (NetGaitSpeed > this = sprinting).")]
     [SerializeField] private float sprintGaitThreshold = 0.9f;
@@ -51,6 +58,14 @@ public class DragonStaminaController : NetworkBehaviour
     [Tooltip("Pause head/wings/torso auto-regen while sprinting / firebreathing / airborne. Recovery requires landing + idle.")]
     [SerializeField] private bool gateZoneRegen = true;
 
+    [Header("Firebreath Lockout (anti-chatter)")]
+    [Tooltip("After stamina hits zero while firebreathing, the breath is locked out until stamina climbs back above this amount. Prevents the sub-second restart loop where regen briefly raises stamina above zero, breath restarts, drains, and stops again — perceived as continuous sound and a fluttering jaw.")]
+    [SerializeField] private float fireBreathRearmStamina = 100f;
+
+    [Header("Flight Thrust Cap Smoothing")]
+    [Tooltip("Seconds to ease the max flight thrust between 1.0 and highThrustThreshold when stamina depletes/recovers. 0 = instant snap (old behavior). 0.5 = half-second smooth bog-down — the animator's Thrust param transitions through the blend tree instead of jerking.")]
+    [SerializeField] private float thrustCapEaseSeconds = 0.5f;
+
     [Header("Network Throttle")]
     [Tooltip("How often accumulated continuous drain/regen flushes to VitalManager. Lower = smoother UI but more sync traffic.")]
     [SerializeField] private float flushInterval = 0.05f;
@@ -64,11 +79,22 @@ public class DragonStaminaController : NetworkBehaviour
     private float _regenCooldown;
     private float _nextFlushTime;
 
+    // Firebreath lockout. Tracked on every peer (not just server) so the owner-side
+    // CanFireBreath gate in DragonCombatController stays consistent with the server.
+    // Both peers compute it from the synced _stamina.Current, so they agree without an
+    // extra NetworkVariable.
+    private bool _fireBreathLockedOut;
+
+    // Smoothed cap fed to DragonFlightController so the thrust clamp eases between
+    // 1.0 and highThrustThreshold instead of snapping. Eased per-frame on every peer
+    // (only the owner reads it via the flight controller, but stateless to maintain).
+    private float _smoothedMaxFlightThrust = 1f;
+
     // ─── Public Read API (any client) ────────────────────
-    public bool CanFireBreath => _stamina == null || !_stamina.IsDepleted;
+    public bool CanFireBreath => _stamina == null || (!_stamina.IsDepleted && !_fireBreathLockedOut);
     public bool MeleeReducedDamage => _stamina != null && _stamina.IsDepleted;
     public bool WingsBroken => _wings != null && _wings.IsDepleted;
-    public float MaxFlightThrust => (_stamina != null && _stamina.IsDepleted) ? highThrustThreshold : 1f;
+    public float MaxFlightThrust => _smoothedMaxFlightThrust;
     public float StaminaNormalized => _stamina != null ? _stamina.Normalized : 0f;
 
     private void Awake()
@@ -77,6 +103,7 @@ public class DragonStaminaController : NetworkBehaviour
         if (dragonAnimatorController == null) dragonAnimatorController = GetComponent<DragonAnimatorController>();
         if (combatController == null) combatController = GetComponent<DragonCombatController>();
         if (groundingSystem == null) groundingSystem = GetComponentInChildren<AnimalGroundingSystem>();
+        if (wingActivityTracker == null) wingActivityTracker = GetComponent<DragonWingActivityTracker>();
     }
 
     public override void OnNetworkSpawn()
@@ -96,6 +123,29 @@ public class DragonStaminaController : NetworkBehaviour
 
     private void Update()
     {
+        // Firebreath lockout is computed on EVERY peer (not just server) from the
+        // synced stamina so the owner-side CanFireBreath check sees the same state.
+        // Latches on depletion, clears once stamina recovers above the rearm threshold.
+        if (_stamina != null)
+        {
+            if (_stamina.IsDepleted) _fireBreathLockedOut = true;
+            else if (_stamina.Current >= fireBreathRearmStamina) _fireBreathLockedOut = false;
+
+            // Smooth the flight thrust cap toward its target instead of snapping. Owner's
+            // DragonFlightController reads MaxFlightThrust per-frame; a soft ease makes the
+            // animator's Thrust param transition through the blend tree gracefully.
+            float targetCap = _stamina.IsDepleted ? highThrustThreshold : 1f;
+            if (thrustCapEaseSeconds > 0.001f)
+            {
+                float easeRate = (1f - highThrustThreshold) / thrustCapEaseSeconds;
+                _smoothedMaxFlightThrust = Mathf.MoveTowards(_smoothedMaxFlightThrust, targetCap, easeRate * Time.deltaTime);
+            }
+            else
+            {
+                _smoothedMaxFlightThrust = targetCap;
+            }
+        }
+
         // All math is server-authoritative.
         if (!IsServer || vitalManager == null || vitalManager.IsDead) return;
 
@@ -111,11 +161,24 @@ public class DragonStaminaController : NetworkBehaviour
         bool sprinting    = dragonAnimatorController != null && dragonAnimatorController.NetGaitSpeed > sprintGaitThreshold;
 
         // ── 1. Active stamina drain ──
+        // Flight drain = peakRate × |thrust| × flapEffort × CostScale(wings).
+        // Hover (thrust≈0) and tucked dive (flap≈0) both pay zero.
+        // Hard climb / sprint with full flap pays the full rate.
+        // Tracker null/unwired falls back to flapEffort=1 so a missing ref doesn't
+        // silently kill the drain.
         float drain = 0f;
         if (firebreathing)
             drain += fireBreathDrainRate * CostScale(_head);
-        if (inFlight && Mathf.Abs(thrust) > highThrustThreshold)
-            drain += highThrustDrainRate * CostScale(_wings);
+        if (inFlight)
+        {
+            float thrustMag = Mathf.Clamp01(Mathf.Abs(thrust));
+            float flapEffort = wingActivityTracker != null
+                ? Mathf.Clamp01(Mathf.InverseLerp(lazyFlapDegPerSec, hardFlapDegPerSec, wingActivityTracker.WingActivity))
+                : 1f;
+            float effort = thrustMag * flapEffort;
+            if (effort > 0f)
+                drain += highThrustDrainRate * effort * CostScale(_wings);
+        }
 
         if (drain > 0f)
         {
@@ -130,16 +193,11 @@ public class DragonStaminaController : NetworkBehaviour
         }
         else if (!firebreathing && !sprinting && _stamina.Current < _stamina.Max)
         {
-            float baseRate;
-            if (grounded)
-                baseRate = regenGroundedIdleRate;
-            else if (Mathf.Abs(thrust) <= highThrustThreshold)
-                baseRate = regenAirborneLowRate;
-            else
-                baseRate = 0f; // airborne high-thrust: no stamina recovery
-
-            if (baseRate > 0f)
-                _regenAccum += baseRate * RegenScale(_torso) * dt;
+            // _regenCooldown gates "while paying" — any drain frame resets it to regenDelay,
+            // so reaching this branch already means we're not spending. Tier purely on grounded
+            // vs airborne: idle on the ground recovers fastest, hover/glide/dive recovers slower.
+            float baseRate = grounded ? regenGroundedIdleRate : regenAirborneLowRate;
+            _regenAccum += baseRate * RegenScale(_torso) * dt;
         }
 
         // ── 3. Flush accumulated drain/regen at throttle interval ──

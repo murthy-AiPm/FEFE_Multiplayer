@@ -45,14 +45,10 @@ public class DragonSoundPlayer : NetworkBehaviour
     [SerializeField] private string tailSweepSound = "Dragon_TailSweep";
 
     [Header("Wing Flap Motion Gate")]
-    [Tooltip("Wing bone to track for flap motion detection. Drag a wing bone here — ideally near the shoulder where flap rotation is largest.")]
-    [SerializeField] private Transform wingBone;
+    [Tooltip("Tracker that measures wing-bone angular velocity. Used to gate the wing flap sound during glides/dives. Auto-found from this GameObject in Awake if left null.")]
+    [SerializeField] private DragonWingActivityTracker wingActivityTracker;
     [Tooltip("Sound name that will be gated by wing motion. Must match the string used in animation events.")]
     [SerializeField] private string wingFlapSoundName = "WingFlap";
-    [Tooltip("Minimum smoothed wing angular velocity (deg/sec) to allow wing flap sounds. 80 works for the default dragon rig (glide peaks at ~30, flap bottoms at ~160).")]
-    [SerializeField] private float wingMotionThreshold = 80f;
-    [Tooltip("Smoothing factor for wing motion. Higher = more responsive to sudden motion changes, lower = smoother average.")]
-    [SerializeField] private float wingMotionSmoothing = 8f;
     [Tooltip("Minimum seconds between wing flap sounds. Suppresses duplicate events that fire when multiple flap clips in a blend tree both have animation events. Should be well below the natural flap cadence (~1.2s) — 0.25s is a safe default.")]
     [SerializeField] private float wingFlapDebounce = 0.25f;
     [Tooltip("Log every wing flap PlaySound event with frame number, gate result, wing activity, and IsOwner. Two log lines on the same/adjacent frame = doubling. TURN OFF FOR SHIPPING.")]
@@ -75,8 +71,6 @@ public class DragonSoundPlayer : NetworkBehaviour
     private AudioSource _fireBreathSourceA;
     private AudioSource _fireBreathSourceB;
     private AudioSource _activeFireBreathSource;
-    private Quaternion _lastWingRotation;
-    private float _wingActivity; // smoothed angular velocity in deg/sec
     private float _lastWingFlapTime = -999f;
     private float _lastFootstepTime = -999f;
 
@@ -84,7 +78,7 @@ public class DragonSoundPlayer : NetworkBehaviour
     {
         if (flightController == null) flightController = GetComponent<DragonFlightController>();
         if (groundController == null) groundController = GetComponent<AnimalGroundController>();
-        if (wingBone != null) _lastWingRotation = wingBone.localRotation;
+        if (wingActivityTracker == null) wingActivityTracker = GetComponent<DragonWingActivityTracker>();
     }
 
     private void Update()
@@ -98,24 +92,7 @@ public class DragonSoundPlayer : NetworkBehaviour
             UpdateFireBreathCrossfade();
     }
 
-    // ─── Wing Motion Tracking ───
-
-    /// <summary>
-    /// Runs on ALL clients (not just owner) so gating works for remote dragons too.
-    /// LateUpdate so we read the wing bone AFTER the animator has written to it.
-    /// </summary>
-    private void LateUpdate()
-    {
-        if (wingBone == null) return;
-
-        Quaternion current = wingBone.localRotation;
-        float deltaAngle = Quaternion.Angle(_lastWingRotation, current);
-        float angularVelocity = deltaAngle / Mathf.Max(Time.deltaTime, 0.0001f);
-
-        // Low-pass filter the angular velocity so single-frame dips at flap apex don't kill the sound
-        _wingActivity = Mathf.Lerp(_wingActivity, angularVelocity, wingMotionSmoothing * Time.deltaTime);
-        _lastWingRotation = current;
-    }
+    // Wing motion tracking lives in DragonWingActivityTracker (same GameObject).
 
     // ─── Flight State Transitions ───
 
@@ -338,16 +315,18 @@ public class DragonSoundPlayer : NetworkBehaviour
         if (ProximitySoundManager.Instance == null) return;
 
         // Motion gate + debounce for wing flap sounds.
-        // Gate: ignore events during glide / descent (low wing activity).
+        // Gate: ignore events during glide / descent (tracker reports IsFlapping=false).
         // Debounce: suppress duplicate events from blend-tree clips that both carry the wing flap event.
         bool isWingFlap = soundName == wingFlapSoundName;
-        bool gated = isWingFlap && wingBone != null && _wingActivity < wingMotionThreshold;
+        bool gated = isWingFlap && wingActivityTracker != null && !wingActivityTracker.IsFlapping;
         bool debounced = isWingFlap && !gated && (Time.time - _lastWingFlapTime) < wingFlapDebounce;
 
         if (debugWingFlapLogs && isWingFlap)
         {
             string status = gated ? "GATED" : debounced ? "DEBOUNCED" : "PLAYED";
-           // Debug.Log($"[WingFlap] frame={Time.frameCount} t={Time.time:F3} owner={IsOwner} activity={_wingActivity:F1} threshold={wingMotionThreshold} sinceLast={(Time.time - _lastWingFlapTime):F3} {status} on {gameObject.name}");
+            float activity = wingActivityTracker != null ? wingActivityTracker.WingActivity : 0f;
+            float threshold = wingActivityTracker != null ? wingActivityTracker.FlapThreshold : 0f;
+           // Debug.Log($"[WingFlap] frame={Time.frameCount} t={Time.time:F3} owner={IsOwner} activity={activity:F1} threshold={threshold} sinceLast={(Time.time - _lastWingFlapTime):F3} {status} on {gameObject.name}");
         }
 
         if (gated || debounced) return;
