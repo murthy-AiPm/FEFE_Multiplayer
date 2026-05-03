@@ -101,7 +101,8 @@ public class BallistaArrow : NetworkBehaviour
         {
             var critZone = other.GetComponent<CritZoneMarker>();
             float critMultiplier = critZone != null ? critZone.DamageMultiplier : 0f;
-            damageReceiver.ApplyProjectileDamage(damage, transform.position, critMultiplier);
+            string zoneVitalID = critZone != null ? critZone.ZoneName : null;
+            damageReceiver.ApplyProjectileDamage(damage, transform.position, critMultiplier, zoneVitalID);
         }
         else
         {

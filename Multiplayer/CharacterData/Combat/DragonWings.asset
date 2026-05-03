@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 27f1d0f5e3b792d49825a5bef54d5317, type: 3}
-  m_Name: Dragon_Stamina
+  m_Name: DragonWings
   m_EditorClassIdentifier: Assembly-CSharp::VitalDefinition
-  vitalName: stamina
-  vitalID: stamina
-  maxValue: 1000
-  startValue: 1000
-  regenEnabled: 0
-  regenRate: 100
-  regenDelay: 1
-  regenOnlyWhenGrounded: 0
+  vitalName: wings
+  vitalID: wings
+  maxValue: 500
+  startValue: 500
+  regenEnabled: 1
+  regenRate: 50
+  regenDelay: 5
+  regenOnlyWhenGrounded: 1
   clampAtZero: 1
   killOnDepleted: 0

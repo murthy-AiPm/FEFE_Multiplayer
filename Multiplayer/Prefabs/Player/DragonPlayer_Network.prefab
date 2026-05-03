@@ -864,7 +864,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CritZoneMarker
   damageMultiplier: 5
-  zoneName: Head
+  zoneName: head
 --- !u!1 &1712461836808213696
 GameObject:
   m_ObjectHideFlags: 0
@@ -1838,7 +1838,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CritZoneMarker
   damageMultiplier: 2
-  zoneName: LWing
+  zoneName: wings
 --- !u!1 &3119396858633905749
 GameObject:
   m_ObjectHideFlags: 0
@@ -2593,6 +2593,7 @@ GameObject:
   - component: {fileID: 6383749237311440250}
   - component: {fileID: 4020146954436915029}
   - component: {fileID: 1870768142333918887}
+  - component: {fileID: 3975560439548563791}
   m_Layer: 12
   m_Name: Canvas
   m_TagString: Untagged
@@ -2683,6 +2684,23 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &3975560439548563791
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4481436520064912583}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d55113ae8aaa0bd41aa94b0f938cfb4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DragonUI
+  vitalManager: {fileID: -7962891897276758031}
+  staminaFill: {fileID: 4658080929140386506}
+  headFill: {fileID: 7297375775952752263}
+  wingsFill: {fileID: 6562097412025903204}
+  torsoFill: {fileID: 8136215975000767807}
 --- !u!1 &4551708238541384946
 GameObject:
   m_ObjectHideFlags: 0
@@ -2754,7 +2772,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CritZoneMarker
   damageMultiplier: 2
-  zoneName: RWing
+  zoneName: wings
 --- !u!1 &4700324621708818297
 GameObject:
   m_ObjectHideFlags: 0
@@ -3965,7 +3983,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.87364656, g: 0.12001101, b: 0.9308176, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -4451,7 +4469,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CritZoneMarker
   damageMultiplier: 1
-  zoneName: Chest
+  zoneName: torso
 --- !u!1 &7405144604186011539
 GameObject:
   m_ObjectHideFlags: 0
@@ -5833,6 +5851,7 @@ GameObject:
   - component: {fileID: 692041439902515234}
   - component: {fileID: -8493373264538071150}
   - component: {fileID: -4205619173964242213}
+  - component: {fileID: -6128813149110121115}
   m_Layer: 3
   m_Name: DragonPlayer_Network
   m_TagString: Untagged
@@ -5924,7 +5943,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 48177541
+  GlobalObjectIdHash: 1353946614
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -5977,6 +5996,7 @@ MonoBehaviour:
   animator: {fileID: 8804854363994131359}
   rb: {fileID: 4213641409919773835}
   cam: {fileID: 0}
+  mountableEntity: {fileID: 0}
   forwardAxis: Vertical
   strafeAxis: Horizontal
   jumpKey: 32
@@ -6005,6 +6025,10 @@ MonoBehaviour:
   useFakeGravity: 0
   fakeGravity: 20
   maxFallSpeed: 30
+  fakeGravityLandHeight: 0.1
+  fakeGravityGroundMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
   cliffFallPush: 2
   flightController: {fileID: 358013097769894201}
   dragonFakeGravity: 20
@@ -6034,6 +6058,7 @@ MonoBehaviour:
   animator: {fileID: 8804854363994131359}
   cam: {fileID: 0}
   swimController: {fileID: 5974085032444721806}
+  staminaController: {fileID: 0}
   thrustAccelRate: 0.5
   thrustDecelRate: 0.5
   thrustMin: -1
@@ -6376,6 +6401,10 @@ MonoBehaviour:
   vitalManager: {fileID: -7962891897276758031}
   combatController: {fileID: 0}
   weaponManager: {fileID: 0}
+  defaultVitalID: health
+  critStaminaVitalID: stamina
+  critToStaminaRatio: 1
+  exhaustionKillEnabled: 1
   blockDamageReduction: 0
   blockAngle: 0
   blockStaminaRatio: 0
@@ -6397,8 +6426,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VitalManager
   ShowTopMostFoldoutHeaderGroup: 1
   vitalDefinitions:
-  - {fileID: 11400000, guid: bbc04139ebb33514fab1afbb26621a02, type: 2}
-  - {fileID: 11400000, guid: 495d4bd1698c00c46b5c031ad0a733b0, type: 2}
+  - {fileID: 11400000, guid: 6f6e9cc40a008774d94b527ea64b121b, type: 2}
+  - {fileID: 11400000, guid: f7a1b3c9d2e54f08a1b2c3d4e5f60718, type: 2}
+  - {fileID: 11400000, guid: d9c3d5e1f4a7612a23d4e5f607182930, type: 2}
+  - {fileID: 11400000, guid: e8b2c4d0e3f6501912c3d4e5f6071829, type: 2}
   tpsController: {fileID: 0}
   animalGroundingSystem: {fileID: -1625138427473786608}
   debugHealth: 0
@@ -6421,6 +6452,7 @@ MonoBehaviour:
   flightController: {fileID: 358013097769894201}
   rb: {fileID: 4213641409919773835}
   cam: {fileID: 0}
+  staminaController: {fileID: 0}
   spineBone: {fileID: 6834720352492521363}
   spine1Bone: {fileID: 8123714689142491674}
   spine2Bone: {fileID: 5688100995211649117}
@@ -6496,6 +6528,9 @@ MonoBehaviour:
   hitResetDelay: 0.8
   debugLogging: 1
   debugKeypadTesting: 1
+  debugHeadDamage: 100
+  debugWingsDamage: 100
+  debugTorsoDamage: 100
 --- !u!114 &2950672030226061884
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6590,3 +6625,32 @@ MonoBehaviour:
   footstepSoundName: DragonFootstep
   footstepDebounce: 0.1
   debugFootstepLogs: 1
+--- !u!114 &-6128813149110121115
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4ad6e2f5b876b1b34e5f60718293041, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DragonStaminaController
+  ShowTopMostFoldoutHeaderGroup: 1
+  vitalManager: {fileID: -7962891897276758031}
+  dragonAnimatorController: {fileID: 5717321971698247251}
+  combatController: {fileID: -7800844257033982807}
+  groundingSystem: {fileID: -1625138427473786608}
+  fireBreathDrainRate: 80
+  highThrustDrainRate: 50
+  highThrustThreshold: 0.7
+  sprintGaitThreshold: 0.9
+  meleeDrainPerAttack: 50
+  regenGroundedIdleRate: 80
+  regenAirborneLowRate: 30
+  regenDelay: 1
+  curveThreshold: 0.5
+  curveFloor: 0.3
+  gateZoneRegen: 1
+  flushInterval: 0.05

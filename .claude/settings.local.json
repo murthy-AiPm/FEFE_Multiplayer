@@ -4,7 +4,8 @@
       "Bash(awk 'NR<=1 || /^## / || /^### /' /c/UnityProjects/FEFE_Multiplayer/Assets/FEFE/CLAUDE.md)",
       "Bash(git diff *)",
       "Bash(git rm *)",
-      "Bash(awk '/&3527948456195885263/,/^---/' \"/c/UnityProjects/FEFE_Multiplayer/Assets/FEFE/Prefabs/VFX/FireGround/GroundFirePatch.prefab\")"
+      "Bash(awk '/&3527948456195885263/,/^---/' \"/c/UnityProjects/FEFE_Multiplayer/Assets/FEFE/Prefabs/VFX/FireGround/GroundFirePatch.prefab\")",
+      "WebFetch(domain:www.dinofracture.com)"
     ]
   }
 }

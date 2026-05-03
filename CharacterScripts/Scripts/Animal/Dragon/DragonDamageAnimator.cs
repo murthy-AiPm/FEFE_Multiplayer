@@ -54,9 +54,15 @@ public class DragonDamageAnimator : NetworkBehaviour
 
     [Header("Debug")]
     [SerializeField] private bool debugLogging = false;
-    [Tooltip("Enable keypad testing: Hit = 8/2/4/6 (FB/LR, supports diagonals), " +
-             "Death = 7(-1)/1(-0.5)/3(+0.5)/9(+1), Kill = 5, Reset = 0. REMOVE BEFORE SHIPPING.")]
+    [Tooltip("Enable keypad testing: Numpad 1/2/3 = damage head/wings/torso, " +
+             "Numpad 5 = instant kill, Numpad 0 = reset. REMOVE BEFORE SHIPPING.")]
     [SerializeField] private bool debugKeypadTesting = false;
+    [Tooltip("Damage applied per Numpad-1 press (head).")]
+    [SerializeField] private float debugHeadDamage = 100f;
+    [Tooltip("Damage applied per Numpad-2 press (wings).")]
+    [SerializeField] private float debugWingsDamage = 100f;
+    [Tooltip("Damage applied per Numpad-3 press (torso).")]
+    [SerializeField] private float debugTorsoDamage = 100f;
 
     // Animator param hashes
     private static readonly int Hash_GotHit  = Animator.StringToHash("GotHit");
@@ -162,31 +168,13 @@ public class DragonDamageAnimator : NetworkBehaviour
             ApplyDeathFallGravity();
             CheckDeathFallGround();
         }
-        else if (_isDead && IsOwner && !_deathFalling)
-        {
-            Debug.Log($"[DragonDamageAnimator] Dead but NOT deathFalling. FlightMode={animator?.GetBool(Hash_FlightMode)}, vel={rb?.linearVelocity}");
-        }
 
         // ── DEBUG KEYPAD TESTING — REMOVE BEFORE SHIPPING ──
-        if (debugKeypadTesting && IsOwner && animator != null)
+        if (debugKeypadTesting && IsOwner)
         {
-            float hitFB = 0f;
-            float hitLR = 0f;
-            bool hitPressed = false;
-
-            if (Input.GetKeyDown(KeyCode.Keypad8)) { hitFB += 1f; hitPressed = true; }
-            if (Input.GetKeyDown(KeyCode.Keypad2)) { hitFB -= 1f; hitPressed = true; }
-            if (Input.GetKeyDown(KeyCode.Keypad4)) { hitLR -= 1f; hitPressed = true; }
-            if (Input.GetKeyDown(KeyCode.Keypad6)) { hitLR += 1f; hitPressed = true; }
-
-            if (hitPressed)
-                DebugTriggerHit(hitFB, hitLR);
-
-            if (Input.GetKeyDown(KeyCode.Keypad7)) DebugTriggerDeath(-1f);
-            if (Input.GetKeyDown(KeyCode.Keypad1)) DebugTriggerDeath(-0.5f);
-            if (Input.GetKeyDown(KeyCode.Keypad3)) DebugTriggerDeath(0.5f);
-            if (Input.GetKeyDown(KeyCode.Keypad9)) DebugTriggerDeath(1f);
-
+            if (Input.GetKeyDown(KeyCode.Keypad1)) DebugDamageVital("head",  debugHeadDamage);
+            if (Input.GetKeyDown(KeyCode.Keypad2)) DebugDamageVital("wings", debugWingsDamage);
+            if (Input.GetKeyDown(KeyCode.Keypad3)) DebugDamageVital("torso", debugTorsoDamage);
             if (Input.GetKeyDown(KeyCode.Keypad5)) DebugInstantKill();
             if (Input.GetKeyDown(KeyCode.Keypad0)) ResetDeathState();
         }
@@ -194,48 +182,50 @@ public class DragonDamageAnimator : NetworkBehaviour
 
     // ── DEBUG HELPERS — REMOVE BEFORE SHIPPING ──
 
-    private void DebugTriggerHit(float fb, float lr)
+    private void DebugDamageVital(string vitalID, float amount)
     {
         if (_isDead) return;
-
-        // For debug, simulate an attacker position based on FB/LR direction
-        Vector3 attackDir = transform.forward * fb + transform.right * lr;
-        Vector3 fakeAttackerPos = transform.position + attackDir.normalized * 5f;
-
-        TriggerHit(fb, lr, fakeAttackerPos);
-
+        if (vitalManager == null) return;
+        if (IsServer)
+        {
+            vitalManager.ApplyDamage(vitalID, amount);
+        }
+        else
+        {
+            DebugDamageVitalServerRpc(vitalID, amount);
+        }
         if (debugLogging)
-            Debug.Log($"[DragonDamageAnimator] DEBUG Hit FB={fb:F1} LR={lr:F1}");
+            Debug.Log($"[DragonDamageAnimator] DEBUG damage {amount} → {vitalID}");
     }
 
-    private void DebugTriggerDeath(float lr)
+    [ServerRpc]
+    private void DebugDamageVitalServerRpc(string vitalID, float amount)
     {
-        if (_isDead) return;
-        _isDead = true;
-        animator.SetFloat(Hash_DeathLR, lr);
-        animator.SetBool(Hash_IsDead, true);
-        _hitResetTimer = -1f;
-        animator.SetBool(Hash_GotHit, false);
-        if (debugLogging)
-            Debug.Log($"[DragonDamageAnimator] DEBUG Death LR={lr:F1}");
+        if (vitalManager != null)
+            vitalManager.ApplyDamage(vitalID, amount);
     }
 
     private void DebugInstantKill()
     {
         if (_isDead) return;
-        if (vitalManager != null)
+        if (vitalManager == null) return;
+        if (IsServer)
         {
-            vitalManager.ApplyDamage("health", 99999f);
-            if (debugLogging)
-                Debug.Log("[DragonDamageAnimator] DEBUG Instant kill via VitalManager");
+            vitalManager.TriggerDeath();
         }
         else
         {
-            // Fallback if no VitalManager — trigger death animation directly
-            DebugTriggerDeath(Random.value > 0.5f ? 1f : -1f);
-            if (debugLogging)
-                Debug.Log("[DragonDamageAnimator] DEBUG Instant kill (no VitalManager, direct anim)");
+            DebugInstantKillServerRpc();
         }
+        if (debugLogging)
+            Debug.Log("[DragonDamageAnimator] DEBUG instant kill");
+    }
+
+    [ServerRpc]
+    private void DebugInstantKillServerRpc()
+    {
+        if (vitalManager != null)
+            vitalManager.TriggerDeath();
     }
 
     // ─── Shared hit trigger logic ───
@@ -301,7 +291,6 @@ public class DragonDamageAnimator : NetworkBehaviour
             if (animator != null)
                 animator.SetBool(Hash_FlightMode, true);
             _deathFalling = true;
-            Debug.Log($"[DragonDamageAnimator] _deathFalling=TRUE, FlightMode on animator={animator?.GetBool(Hash_FlightMode)}");
         }
 
         // Freeze horizontal velocity but allow vertical (gravity)
@@ -314,9 +303,6 @@ public class DragonDamageAnimator : NetworkBehaviour
         // Unsuspend alignment (owner only)
         if (IsOwner && groundAlignment != null)
             groundAlignment.SuspendAlignment = false;
-
-        if (debugLogging)
-            Debug.Log($"[DragonDamageAnimator] Death LR={deathLR:F2}, deathFalling={_deathFalling}");
     }
 
     // ─── Respawn ───
@@ -447,7 +433,6 @@ public class DragonDamageAnimator : NetworkBehaviour
             deathFallGroundDistance, deathFallGroundMask))
         {
             Debug.DrawLine(origin, hit.point, Color.red);
-            Debug.Log($"[DragonDamageAnimator] GROUND HIT! distance={hit.distance:F1}, collider={hit.collider.name}");
 
             _deathFalling = false;
             DeathImpactServerRpc();

@@ -206,6 +206,19 @@ public class VitalManager : NetworkBehaviour
     }
 
     /// <summary>
+    /// Force-trigger death from outside the auto kill-on-deplete path.
+    /// Used by exhaustion-kill (crit-on-empty-stamina) so we don't have to fake-deplete a vital.
+    /// Idempotent — repeated calls do nothing once dead.
+    /// </summary>
+    public void TriggerDeath()
+    {
+        if (!IsServer) return;
+        if (_isDead) return;
+        _isDead = true;
+        OnDeath?.Invoke();
+    }
+
+    /// <summary>
     /// Respawn: reset all vitals to start values. Server only.
     /// </summary>
     public void ResetAllVitals()

@@ -17,6 +17,16 @@ public class DamageReceiver : NetworkBehaviour
     [SerializeField] private CombatController combatController;
     [SerializeField] private WeaponManager weaponManager;
 
+    [Header("Damage Routing")]
+    [Tooltip("Vital ID used when an incoming hit has no zone routing. Humans = \"health\". Dragon = \"torso\".")]
+    [SerializeField] private string defaultVitalID = "health";
+    [Tooltip("Vital ID drained by critical hits (proportional to final damage). Empty = disabled. Dragon uses \"stamina\".")]
+    [SerializeField] private string critStaminaVitalID = "";
+    [Tooltip("Stamina drained per unit of final crit damage. e.g. 1.0 = 1:1, 0.5 = half.")]
+    [SerializeField] private float critToStaminaRatio = 1f;
+    [Tooltip("If true, a crit landing while critStaminaVital is at zero kills this entity (exhaustion kill).")]
+    [SerializeField] private bool exhaustionKillEnabled = false;
+
     [Header("Block Settings")]
     [Tooltip("Percentage of damage absorbed when blocking (0-1)")]
     [SerializeField] private float blockDamageReduction = 0.8f;
@@ -139,16 +149,35 @@ public class DamageReceiver : NetworkBehaviour
     /// accumulates stagger damage. When stagger crosses the threshold, fires the hit reaction
     /// animation and resets the accumulator.
     /// MUST be called on the server only.
+    ///
+    /// zoneVitalID: optional per-zone vital routing key (e.g. "head", "wings"). Null/empty
+    /// falls back to defaultVitalID. Crit-zone projectiles supply this from CritZoneMarker.ZoneName.
     /// </summary>
-    public void ApplyProjectileDamage(float damage, Vector3 attackerPosition, float critMultiplier = 0f)
+    public void ApplyProjectileDamage(float damage, Vector3 attackerPosition, float critMultiplier = 0f, string zoneVitalID = null)
     {
         if (!IsServer) return;
 
         // Crit multiplier scales both health damage and stagger accumulation
         float finalDamage = critMultiplier > 0f ? damage * critMultiplier : damage;
 
+        string targetVitalID = string.IsNullOrEmpty(zoneVitalID) ? defaultVitalID : zoneVitalID;
+
         if (vitalManager != null)
-            vitalManager.ApplyDamage("health", finalDamage);
+            vitalManager.ApplyDamage(targetVitalID, finalDamage);
+
+        // Crit also drains stamina (exhaustion kill setup).
+        if (critMultiplier > 0f && !string.IsNullOrEmpty(critStaminaVitalID) && vitalManager != null)
+        {
+            vitalManager.ApplyDamage(critStaminaVitalID, finalDamage * critToStaminaRatio);
+
+            // Exhaustion kill: crit landed while stamina at zero (after drain).
+            if (exhaustionKillEnabled)
+            {
+                var staminaVital = vitalManager.GetVital(critStaminaVitalID);
+                if (staminaVital != null && staminaVital.IsDepleted)
+                    vitalManager.TriggerDeath();
+            }
+        }
 
         // Stagger accumulation: only crit-zone hits (critMultiplier > 0) contribute.
         // Non-crit hits (critMultiplier == 0) deal base damage but never trigger hit anim.
@@ -198,7 +227,7 @@ public class DamageReceiver : NetworkBehaviour
         }
 
         if (vitalManager != null)
-            vitalManager.ApplyDamage("health", finalDamage);
+            vitalManager.ApplyDamage(defaultVitalID, finalDamage);
 
         NotifyHitClientRpc(finalDamage, hitPoint, wasBlocking, attackerObj.transform.position);
     }

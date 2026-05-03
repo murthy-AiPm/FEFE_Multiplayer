@@ -1182,3 +1182,362 @@ HORSE FAKE-GRAVITY LANDING PREDICT — WIP (started, not smooth yet):
      `SetMounted` always FreezeRotation (never FreezeAll).
    - CharacterScripts/Scripts/Animal/Controller/AnimalAnimatorController.cs
      Removed gait-ramp-when-disabled workaround (LateUpdate).
+
+═══════════════════════════════════════════════════════════════
+ 28th-April-2026 — Dragon vitals design (health & stamina)
+═══════════════════════════════════════════════════════════════
+
+DRAGON VITALS DESIGN — WIP (design only, no code yet):
+ * Design conversation only — no implementation this session. Captured
+   in design/FEFE_Design.md under new "## Dragon — Vitals (Health &
+   Stamina)" section, between "Dragon Attack Commitment" and the Phase
+   descriptions.
+ * Core model: stamina (fuel, never lethal) + three independent health
+   zones (head, wings, torso). Two zones can kill (head, torso); wings
+   cripple but cannot kill.
+ * Stamina drains: thrust > ~0.7, fire breath, effective melee.
+   Regenerates faster grounded idle/walk, slower airborne low-thrust,
+   zero during sprint / firebreath / melee.
+ * Cross-vital effects:
+   - Head damaged → fire breath costs more stamina.
+   - Wings damaged → high-thrust flight costs more stamina; low-speed
+     glide/hover stays free regardless of wing HP.
+   - Wings at 0 → forced ground combat. Wings regen normally during
+     retreat, so flight is technically recoverable.
+   - Torso damaged → stamina regen slows (threshold + floor: full above
+     ~50% torso, ramps to ~30% floor at 0). Affects ONLY stamina regen,
+     NOT zone HP regen.
+ * Recovery loop: zones regen when dragon is idle and not fighting /
+   running / breathing fire. Dragon must physically disengage. No
+   respawn — match ends on dragon death; timer favors dragon stalling.
+ * Damage routing: existing CritZoneMarker system (head/wings tagged
+   with damageMultiplier; torso is the default for any untagged hit).
+   Burn DOT routing deferred.
+ * Implementation direction (when we code it):
+   - Reuse VitalManager / Vital / VitalDefinition pipeline (humans
+     already use this). Dragon = 4 vitals: stamina, head HP, wings HP,
+     torso HP.
+   - Cross-vital effects live in dragon controllers that read the
+     vitals, NOT inside the vital pipeline itself.
+   - Owner-write NetworkVariable, matching DragonAnimatorController
+     pattern. Anti-cheat hardening revisited post pre-alpha.
+ * Open tuning questions (in design doc): exact pool sizes, regen
+   rates, drain rates, crit multipliers, threshold values; final
+   "high speed" threshold (0.5 vs 0.7); burn DOT routing; damaged-zone
+   visual feedback.
+ * Files changed:
+   - design/FEFE_Design.md
+     New "## Dragon — Vitals (Health & Stamina)" section.
+   - design/ToDo.md
+     This entry.
+ * Next session: implementation pass — extend VitalDefinition usage
+   for the dragon prefab, wire dragon controllers to read head / wings
+   / torso / stamina, route damage through CritZoneMarker into the
+   right vital, plumb the cross-vital costs (firebreath, flight thrust,
+   stamina regen) through the existing controllers.
+
+DRAGON VITALS DESIGN — FOLLOW-UP DECISIONS:
+ * Cross-vital cost curve shape (head→firebreath, wings→flight) —
+   matches torso→regen shape (threshold + floor), but inverted (cost
+   rises as HP falls). Per-zone threshold/floor values are Inspector-
+   tweakable; v1 uses the same values as the torso curve for
+   simplicity.
+ * "Idle / not fighting" detection for ZONE regen — meaningful
+   tightening from earlier draft. Zone HP regenerates only when:
+   grounded + idle/walking + not breathing fire + not in melee + not
+   sprinting. STAMINA regen has its own (looser) rules — stamina can
+   regen airborne at low thrust, but zone HP cannot.
+   Design implication: dragon must commit to a LANDING to heal its
+   body. Defenders can hunt for the dragon's "nest" / safe landing
+   zone — real spatial play, not just an HP bar.
+ * Zero-stamina behavior — fire breath hard-gated (cannot initiate);
+   melee remains possible but with reduced damage; high-thrust flight
+   caps at the no-cost ceiling (~0.7).
+ * Vital visibility (HUD) — added new sub-section to FEFE_Design.md.
+   Dragon player sees all four vitals at all times. Ranger reads
+   dragon's vitals at any range using the existing telescope (already
+   part of Ranger kit). Other defenders (Warden, Artificer, Commander)
+   can only read vitals when dragon is GROUNDED + close + using a
+   telescope-equivalent. Specifics still open: tool acquisition for
+   non-Rangers, exact close-range threshold, info granularity (full
+   four vitals vs. subset), Commander war-room map read.
+ * Files changed:
+   - design/FEFE_Design.md
+     Added zero-stamina behavior bullets to Stamina section. Added
+     cross-vital cost curve paragraph after the torso→regen scaling
+     paragraph. Replaced Recovery Loop body with the tighter idle
+     definition (grounded required). Added new "### Vital Visibility
+     (HUD)" sub-section before the open-questions list. Updated
+     open-questions checklist (3 items checked off, 1 added for the
+     non-Ranger visibility thread).
+   - design/ToDo.md
+     This follow-up entry.
+
+DRAGON VITALS DESIGN — EXHAUSTION KILL (THIRD KILL PATH):
+ * Dragon player HUD is BUILT. Dragon sees stamina + zone health
+   (head, wings, torso) at all times. Was an open question; now
+   answered.
+ * NEW MECHANIC — defender attacks can drain dragon stamina:
+   - ONLY critical hits (head / wing colliders tagged with
+     CritZoneMarker) drain stamina. Torso hits do not.
+   - Drain is proportional to FINAL damage dealt (post crit-multiplier).
+     So head crits drain more stamina than wing crits naturally,
+     because head's damageMultiplier is higher. Heavy crits drain more
+     than chip crits.
+   - BurnStatus DOT does NOT drain stamina (only direct crit impact
+     does). Confirmed: dragons can't burn dragons; "no dragon-on-
+     dragon dogfights" anyway.
+ * NEW KILL CONDITION — exhaustion kill:
+   - When a critical hit lands and stamina is ≤ 0 AFTER the crit's
+     own drain is applied, the dragon dies.
+   - Order of operations: (1) crit lands → (2) zone HP reduced by
+     damage × multiplier → (3) stamina reduced by amount proportional
+     to final damage → (4) death check on stamina ≤ 0.
+   - This means a heavy crit on a low-stamina dragon can be lethal
+     in a single hit (the crit kills "on the way down"). No one-hit
+     grace period at zero. The dragon's safety margin is the size of
+     its current stamina pool.
+   - This is a THIRD kill path alongside head=0 and torso=0. Each
+     kill path now creates a distinct strategic shape:
+       Head focus  = burst kill (high-multiplier path)
+       Torso focus = attrition kill (slow path)
+       Exhaustion  = pressure-the-dragon path (force firebreath /
+                     high-thrust spending, then crit closes it out)
+   - Cross-vital effects FEED the exhaustion kill: head damage →
+     firebreath costs more stamina, wings damage → flight costs more
+     stamina, torso damage → stamina regen is slower. Damage to ANY
+     zone now pushes toward exhaustion, not just toward its own
+     zone-zero kill. This is why the design feels tight — every
+     defender contribution matters even if they're not landing the
+     final blow.
+ * Stamina now describes "Lethal in combination with a crit" instead
+   of "Never lethal" (earlier wording was wrong post-exhaustion-kill).
+ * Files changed:
+   - design/FEFE_Design.md
+     Stamina section: split drains into "dragon actions" vs "defender
+     attacks" (new); replaced "Never lethal" line with "Lethal in
+     combination with a crit". Three Health Zones lead-in: changed
+     "Two paths to a kill" to "Three paths". Added new "### Exhaustion
+     Kill — The Third Kill Path" sub-section between Three Health
+     Zones table and Wings at Zero. Damage Routing: added crit→stamina
+     bullet + burn-DOT-no-stamina note. Vital Visibility: confirmed
+     dragon HUD is built. Open Questions: checked off zone-bleed
+     question and dragon-HUD question; added new item for empty-
+     stamina danger-window feedback.
+   - design/ToDo.md
+     This entry.
+ * Next discussion thread (user-flagged): non-Ranger vital visibility
+   — what tool the Warden / Artificer / Commander use to read dragon
+   vitals when grounded + close, exact close-range threshold, info
+   granularity (full four vitals vs. subset), Commander war-room map
+   read.
+
+30th-April-2026
+DESTRUCTIBLE WALLS — DINOFRACTURE EVALUATION (PARKED FOR LATER):
+ * User asked whether DinoFracture
+   (https://www.dinofracture.com/doc/latest/index.html) could give us
+   pre-authored destructible castle walls. Reviewed the asset's
+   quickstart + tutorials. Outcome: good fit, idea parked for later
+   testing — not on the active backlog.
+ * Why it fits the "preauthored, not complex" requirement:
+   - Pre-Fractured Geometry component fractures the mesh in-editor
+     and saves chunks as a prefab under FractureMeshes/. Zero runtime
+     fracture cost.
+   - Drop-in helpers: Fracture On Collision, Explode On Fracture,
+     Play Sound On Fracture. All Inspector-tweakable (matches our
+     "serialize everything" rule).
+   - Custom slice planes produce cleaner masonry-style breaks than
+     the default Voronoi shatter — better for walls.
+   - Auto convex colliders + rigidbodies per chunk.
+ * The catch — zero multiplayer awareness. Asset docs make no
+   mention of NGO/Mirror/Photon. Without a wrapper, every client
+   sees different rubble physics and remotes still see an intact
+   wall.
+ * Recommended NGO integration (when we pick this up):
+   - DestructibleWallNetwork : NetworkBehaviour per wall segment,
+     holding NetworkVariable<bool> netIsDestroyed (Owner = server).
+   - Damage source (ballista arrow / firebreath / melee) calls
+     BreakServerRpc(impactPoint, force) → server flips NetVar →
+     BreakClientRpc fans out → each client disables intact mesh +
+     collider, instantiates the pre-fractured prefab locally, applies
+     AddExplosionForce at impactPoint. Chunks are non-networked,
+     cosmetic-only.
+   - Late-join: OnNetworkSpawn reads netIsDestroyed and spawns the
+     wall in its broken (settled) state — same pattern as
+     DragonAnimatorController.OnNetworkSpawn forcing BlendFly.
+   - Pool the chunk prefabs, mirroring GroundFirePool, so repeated
+     destruction doesn't Instantiate-spike.
+   - Keep Num Pieces / Num Iterations low (≈3/3 → 27 chunks per
+     wall) so ~10 simultaneous broken walls stay cheap.
+ * Why parked: Phase 0 priorities are dragon vitals, AI tiers, and
+   the special-building system. Revisit destructible walls once
+   those are stable.
+ * Files changed:
+   - design/FEFE_Design.md
+     New "## Parking Lot — Future Tech to Evaluate" section appended
+     after Global Open Questions, with the destructible-walls /
+     DinoFracture entry (goal, asset, scope, NGO integration sketch,
+     why parked).
+   - design/ToDo.md
+     This entry.
+
+═══════════════════════════════════════════════════════════════
+ 2nd-May-2026 — Dragon vitals — implementation pass
+═══════════════════════════════════════════════════════════════
+
+DRAGON VITALS — INITIAL IMPLEMENTATION (no scene work yet, code-only):
+ * Translated the design doc's Dragon Vitals spec into running code on
+   top of the existing VitalManager / Vital / VitalDefinition pipeline
+   (humans already use this; reused without changes to Vital.cs).
+ * Four vitals on the dragon: stamina + three zones (head, wings,
+   torso). Head and torso are kill vitals (killOnDepleted=true);
+   wings is not (cripples but doesn't kill). Stamina has its own
+   exhaustion-kill path via DamageReceiver (see below).
+ * Cross-vital math (firebreath cost ↑ with head damage, flight cost ↑
+   with wings damage, stamina regen ↓ with torso damage) lives in a
+   new dragon-only DragonStaminaController, NOT in the base Vital
+   pipeline — keeps the shared pipeline character-agnostic.
+ * Damage routing reuses the existing CritZoneMarker. Promoted the
+   marker's existing-but-unused `zoneName` field to a routing key.
+   No CritZoneMarker code change — head colliders get
+   zoneName="head", wing colliders zoneName="wings". Untagged hits
+   route to defaultVitalID on DamageReceiver (set "torso" for the
+   dragon prefab; remains "health" for humans).
+ * Exhaustion kill: when a crit lands, DamageReceiver drains stamina
+   proportional to final damage (critToStaminaRatio, default 1:1).
+   If stamina is depleted after the drain, fires a new
+   VitalManager.TriggerDeath() helper. No fake-deplete-a-vital hack.
+
+CROSS-AUTHOR STATE READING (server vs owner):
+ * DragonStaminaController runs server-only (where ApplyDamage lives)
+   but needs to read owner-driven state (firebreath active, flight
+   thrust, gait/sprint). Solution matches existing pattern: owner
+   pushes via NetworkVariable (already done for these), and we
+   exposed public Net* read accessors on the existing components so
+   the server can read them on remote-owned dragons:
+   - DragonCombatController.NetIsBreathingFire
+   - DragonAnimatorController.NetFlightMode, NetFlightThrust
+   - AnimalAnimatorController.NetGaitSpeed
+   No new NetworkVariables added — just public surfacing of values
+   that were already synced.
+
+OWNER-FACING GATES (hard caps):
+ * CanFireBreath false at zero stamina → DragonCombatController gates
+   firebreath input (mid-breath stamina depletion releases firebreath
+   on the next input frame because Input.GetKey + CanFireBreath()
+   re-evaluate every frame in HandleCombatInput).
+ * MaxFlightThrust drops to highThrustThreshold (~0.7) at zero
+   stamina → DragonFlightController clamps _rmThrust each frame.
+ * WingsBroken (wings vital depleted) → DragonFlightController
+   refuses EnterFlight() and force-ExitFlight() if currently flying.
+   Wings auto-regen via standard zone-regen path; flight unlocks
+   once back above zero.
+
+REGEN GATING:
+ * Stamina auto-regen DISABLED on the Dragon_Stamina asset
+   (regenEnabled=0, regenOnlyWhenGrounded=0). DragonStaminaController
+   drives stamina restore manually each tick with full state
+   awareness (grounded/airborne, thrust band, torso-curve scaling).
+   Accumulates locally, flushes to VitalManager at 20 Hz to avoid
+   per-frame NetworkList traffic.
+ * Zone HP auto-regen STAYS ON in the asset, but
+   DragonStaminaController calls SetRegenPaused(true) on head/wings/
+   torso whenever the dragon is airborne, sprinting, or breathing
+   fire. Recovery only resumes after landing + idle. Standard
+   regenDelay=5 inside Vital handles "recently damaged" cooldown.
+
+CURVES:
+ * Two curve helpers (CostScale, RegenScale) inside
+   DragonStaminaController. Both are threshold + floor:
+     above curveThreshold (default 0.5) → multiplier = 1.0
+     below threshold → linearly ramps to curveFloor (default 0.3) at HP=0
+     CostScale returns 1/multiplier (cost rises ~3.33x at zero HP)
+     RegenScale returns multiplier directly (regen drops to 30% at zero HP)
+   Single threshold/floor pair shared across head/wings/torso for v1
+   per design ("we let the threshold and floor values match the torso
+   curve for simplicity at v1; per-zone tuning lives on the Inspector
+   and gets dialled in playtest"). If we want per-zone curves later,
+   split the field into three pairs.
+
+FILES CHANGED:
+ * NEW assets (Multiplayer/CharacterData/Combat/):
+   - DragonHead.asset (+ .meta)        — vitalID="head",  300 HP, killOnDepleted, regenRate=30, regenOnlyWhenGrounded
+   - DragonWings.asset (+ .meta)       — vitalID="wings", 500 HP, NOT killOnDepleted, regenRate=50, regenOnlyWhenGrounded
+   - DragonTorso.asset (+ .meta)       — vitalID="torso", 1000 HP, killOnDepleted, regenRate=50, regenOnlyWhenGrounded
+   (Existing DragonHealth.asset is now orphan — leave or delete in Unity once prefab is rewired.)
+ * MODIFIED assets:
+   - Multiplayer/CharacterData/Combat/Dragon_Stamina.asset
+     regenEnabled: 0 (manual via DragonStaminaController),
+     regenOnlyWhenGrounded: 0 (controller handles grounded/airborne
+     tier itself).
+ * NEW script:
+   - CharacterScripts/Scripts/Animal/Dragon/DragonStaminaController.cs (+ .meta)
+     Server-side cross-vital math. Public API: CanFireBreath,
+     MaxFlightThrust, WingsBroken, MeleeReducedDamage, StaminaNormalized,
+     OnMeleeAttackServer().
+ * MODIFIED scripts:
+   - CharacterScripts/Scripts/Human/Combat/DamageReceiver.cs
+     Added defaultVitalID, critStaminaVitalID, critToStaminaRatio,
+     exhaustionKillEnabled fields. ApplyProjectileDamage now takes
+     optional zoneVitalID, routes by zone, drains stamina on crit,
+     triggers exhaustion-kill via VitalManager.TriggerDeath().
+     RequestDamageServerRpc (sword path) routes via defaultVitalID.
+   - CharacterScripts/Scripts/Human/Combat/VitalManager.cs
+     Added TriggerDeath() public server-only helper.
+   - CharacterScripts/Scripts/Ballista/BallistaArrow.cs
+     Passes critZone.ZoneName through to ApplyProjectileDamage.
+   - CharacterScripts/Scripts/Animal/Controller/AnimalAnimatorController.cs
+     Public NetGaitSpeed accessor.
+   - CharacterScripts/Scripts/Animal/Dragon/DragonAnimatorController.cs
+     Public NetFlightMode, NetFlightThrust accessors.
+   - CharacterScripts/Scripts/Animal/Dragon/DragonCombatController.cs
+     Public NetIsBreathingFire accessor. CanFireBreath() consults
+     DragonStaminaController. MeleeAttackServerRpc drains stamina.
+   - CharacterScripts/Scripts/Animal/Dragon/DragonFlightController.cs
+     EnterFlight blocked when WingsBroken. Mid-flight forced ExitFlight
+     when wings break. Per-frame thrust clamp uses MaxFlightThrust.
+   - CharacterScripts/Scripts/Animal/Dragon/DragonUI.cs
+     Replaced one-fill MonoBehaviour with four-fill MonoBehaviour:
+     stamina horizontal + head/wings/torso radial. Subscribes to
+     VitalManager.OnVitalChanged. Legacy SetStamina(current,max)
+     preserved. Auto-find via [SerializeField] vitalManager OR
+     runtime BindVitalManager(vm) for scene-Canvas wiring.
+
+PREFAB WORK STILL TO DO IN UNITY (next session):
+ * On DragonPlayer_Network prefab — VitalManager component:
+   replace vitalDefinitions array entries with the four new assets
+   in this order: Dragon_Stamina, DragonHead, DragonWings, DragonTorso.
+   (Order doesn't actually matter functionally — vitals are looked up
+   by string ID — but matching this order keeps the Inspector tidy.)
+ * Add DragonStaminaController component to the dragon prefab root
+   (sibling of VitalManager, DragonAnimatorController, etc.).
+   References auto-find via GetComponent in Awake but verify in
+   Inspector. Tune drain/regen rates against playtest.
+ * On DamageReceiver:
+     defaultVitalID = "torso"
+     critStaminaVitalID = "stamina"
+     critToStaminaRatio = 1.0 (start)
+     exhaustionKillEnabled = true
+ * Author CritZoneMarker on the head + wing colliders:
+     head colliders → zoneName = "head"
+     wing colliders → zoneName = "wings"
+   Existing DamageMultiplier values stay (they're per-collider).
+ * Wire DragonUI fills (head/wings/torso/stamina Image references)
+   on the HUD. If HUD is inside the dragon prefab, set the
+   vitalManager field directly. If HUD is on a scene Canvas,
+   call BindVitalManager(localDragon.GetComponent<VitalManager>())
+   from whatever finds the local-owner dragon (typical owner-aware
+   spawn callback).
+
+OPEN QUESTIONS (still in design doc):
+ * All numeric tuning — stamina pool, drain/regen rates, curve
+   threshold/floor, melee drain per attack, critToStaminaRatio,
+   high-thrust threshold (0.5 vs 0.7). All Inspector-tweakable;
+   tune in playtest.
+ * Burn DOT routing (deferred per design — currently routes to
+   defaultVitalID = "torso" via DamageReceiver fallback path,
+   no stamina drain because critMultiplier=0).
+ * Visual feedback for damaged zones (broken-wing flap anim, smoking
+   head, scorched torso) — animation/VFX work, separate pass.
+ * Empty-stamina danger-window UI cue.
+ * Non-Ranger vital visibility (deferred design thread).

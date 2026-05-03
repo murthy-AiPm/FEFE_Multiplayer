@@ -73,6 +73,11 @@ public class DragonAnimatorController : AnimalAnimatorController
 
     private const float FLOAT_EPSILON = 0.01f;
 
+    /// <summary>Server-readable flight mode — works on remote-owned dragons.</summary>
+    public bool NetFlightMode => netFlightMode.Value;
+    /// <summary>Server-readable flight thrust — works on remote-owned dragons.</summary>
+    public float NetFlightThrust => netFlightThrust.Value;
+
     protected override void Awake()
     {
         base.Awake();

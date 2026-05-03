@@ -66,6 +66,9 @@ public class AnimalAnimatorController : NetworkBehaviour
     private NetworkVariable<float> netGaitSpeed = new NetworkVariable<float>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
+    /// <summary>Server-readable gait speed (0=idle, 0.33=walk, 0.66=trot, 1=sprint). Source-of-truth from owner.</summary>
+    public float NetGaitSpeed => netGaitSpeed.Value;
+
     // ─── Throttling ──────────────────────────────────────
     private const float NETWORK_UPDATE_INTERVAL = 0.05f; // 20 updates/sec instead of 60
     private float nextNetworkUpdateTime;

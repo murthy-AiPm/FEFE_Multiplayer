@@ -18,6 +18,8 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private Animator animator;
     [SerializeField] private Transform cam;
     [SerializeField] private DragonSwimController swimController;
+    [Tooltip("Optional — when set, FlightThrust is clamped to MaxFlightThrust at zero stamina, and EnterFlight is blocked when wings are broken.")]
+    [SerializeField] private DragonStaminaController staminaController;
 
     [Header("Root Motion Flight")]
     [Tooltip("Rate thrust ramps UP per second while W is held.")]
@@ -158,6 +160,8 @@ public class DragonFlightController : NetworkBehaviour
             swimController = GetComponentInParent<DragonSwimController>();
         if (rb == null)
             rb = GetComponent<Rigidbody>();
+        if (staminaController == null)
+            staminaController = GetComponent<DragonStaminaController>();
 
         thrustHash        = Animator.StringToHash("Thrust");
         yawHash           = Animator.StringToHash("Yaw");
@@ -228,6 +232,13 @@ public class DragonFlightController : NetworkBehaviour
             return;
         }
 
+        // Wings broken mid-flight — forced descent.
+        if (staminaController != null && staminaController.WingsBroken)
+        {
+            ExitFlight();
+            return;
+        }
+
         UpdateRootMotionFlight(Time.deltaTime);
 
         EnforceMinAltitude();
@@ -247,6 +258,8 @@ public class DragonFlightController : NetworkBehaviour
     {
         // Don't enter flight while swimming
         if (IsSwimmingActive()) return;
+        // Wings at zero — flight is locked until they regen.
+        if (staminaController != null && staminaController.WingsBroken) return;
         isActive = true;
         isHoverMode = false;
         _rmThrust = 1f;
@@ -344,7 +357,11 @@ public class DragonFlightController : NetworkBehaviour
             _rmThrust += thrustAccelRate * dt;
         if (Input.GetKey(KeyCode.S))
             _rmThrust -= thrustDecelRate * dt;
-        _rmThrust = Mathf.Clamp(_rmThrust, thrustMin, thrustMax);
+        // Stamina exhaustion caps high-thrust — dragon falls to glide/cruise speed when empty.
+        float maxThrustForFrame = staminaController != null
+            ? Mathf.Min(thrustMax, staminaController.MaxFlightThrust)
+            : thrustMax;
+        _rmThrust = Mathf.Clamp(_rmThrust, thrustMin, maxThrustForFrame);
 
         // ── Yaw ──
         float targetYaw = Mathf.Clamp(horizontal, -1f, 1f);

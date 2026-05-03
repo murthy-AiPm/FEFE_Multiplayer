@@ -220,6 +220,146 @@ The dragon cannot cripple the city through casual strafing runs. To significantl
 
 ---
 
+## Dragon — Vitals (Health & Stamina)
+
+The dragon's combat readiness is governed by **two distinct resources**: **stamina** (a fuel pool that gates abilities) and **three health zones** (head, wings, torso) that take damage independently and produce different gameplay consequences.
+
+**Design philosophy:** stamina is fuel, not life. Running out of stamina disables abilities; only zone HP can kill the dragon. Damage to body zones doesn't just deplete a kill bar — it reshapes how expensive the dragon's abilities are to use. The result is a fight where defenders coordinate to attack *specific* zones for *specific* tactical effects, and the dragon player has a real reason to disengage and recover instead of fighting to the last drop.
+
+### Stamina (Fuel)
+
+A single shared pool. Drains during high-effort actions, regenerates when the dragon disengages.
+
+**Drains stamina (dragon actions):**
+- Flight thrust above ~0.7 (high-speed flight; cruise / glide / hover is free)
+- Fire breath
+- Effective melee attacks
+
+**Drains stamina (defender attacks):**
+- **Critical hits only.** A defender hit on a `CritZoneMarker` zone (head or wings) drains stamina **proportional to the final damage dealt** (post crit-multiplier). Heavier crits drain more stamina than chip crits; head crits drain more than wing crits because the head multiplier is higher. Torso (non-crit) hits do **not** drain stamina.
+- `BurnStatus` DOT does **not** drain stamina — the crit-stamina cost is paid once on impact, not on every DOT tick. (Dragons don't have dragon-on-dragon dogfights anyway, and "dragons can't burn" — so this is moot in practice.)
+
+**Regenerates stamina:**
+- Airborne at low thrust (slower regen rate)
+- Grounded and idle / walking (faster regen rate)
+- Zero regen during ground sprint, fire breath, or melee
+
+**Lethal in combination with a crit (exhaustion kill).** Stamina at zero is not lethal on its own — the dragon can still fly slowly, walk, exist. But if a critical hit lands while stamina is at zero (or the crit's own drain pushes stamina to zero on that same hit), the dragon dies. See **Exhaustion Kill** below.
+
+**Zero-stamina behavior:**
+- **Fire breath:** cannot be initiated. Hard gate.
+- **Melee:** still possible, but does **reduced damage**. The dragon can flail in desperation, but the bite/claw isn't lethal.
+- **High-thrust flight:** cannot be sustained — thrust caps at the no-cost ceiling (~0.7), so the dragon drops to glide / cruise speed.
+
+### Three Health Zones
+
+| Zone | Profile | Crit Multiplier | Kill Condition? | Damage Effect |
+|---|---|---|---|---|
+| **Head** | Small, hard to hit | High | **Yes** — head HP at 0 = death | Damaged head increases stamina cost of fire breath |
+| **Wings** | Medium target | Mid | **No** — but wings at 0 force ground combat (recoverable via regen) | Damaged wings increase stamina cost of high-thrust flight; low-speed flight (glide/hover) remains free regardless of wing HP |
+| **Torso** | Large, easy to hit | Low | **Yes** — torso HP at 0 = death | Damaged torso slows stamina regen (stamina regen only — zone regen is unaffected) |
+
+**Three paths to a kill, plus a debuff path.** Head is the high-value crit target — small, hard to hit, but each successful hit hurts disproportionately. Torso is the "default" damage target — easy to land on, but low multiplier means progress is slow. Wings can't kill *directly*, but disabling them strips the dragon of its mobility and forces ground combat. **The third kill path is the exhaustion kill** (see below) — drain the dragon's stamina, then land a crit while it's empty. Each of head, torso, wings, and exhaustion creates a distinct strategic shape for the fight.
+
+**Torso → stamina regen scaling: threshold + floor.** Stamina regen runs at full rate while torso HP is above ~50%, then ramps down as torso falls toward 0, with a floor of ~30% of normal regen. This rewards smart disengagement at any HP level (the dragon always has a recovery path) while still creating real late-fight pressure. Zone HP regeneration is *independent* of torso damage — torso governs fuel only, not healing.
+
+**Cross-vital cost curves: same shape, per-zone tuning.** Head → firebreath cost and wings → high-thrust flight cost both follow the same **threshold + floor** shape as torso → regen, but inverted (cost *rises* as HP falls). For simplicity at v1 we let the threshold and floor values *match* the torso curve; per-zone tuning lives on the Inspector and gets dialled in playtest.
+
+### Exhaustion Kill — The Third Kill Path
+
+When a critical hit lands and the dragon's stamina is at zero **after the crit's stamina drain is applied**, the dragon dies. This is the exhaustion kill.
+
+**The rule (order of operations):**
+1. Critical hit lands on a head or wing collider (`CritZoneMarker`).
+2. Zone HP is reduced by `damage × damageMultiplier`.
+3. Stamina is reduced by an amount proportional to the final damage dealt.
+4. **Death check:** if stamina ≤ 0 after step 3, dragon dies.
+
+This means a heavy crit on a low-stamina dragon can be the killing blow on the way down — stamina at 5 + crit drains 5 → dragon dies on that hit. There's no one-hit grace period at zero. The dragon's safety margin is *the size of its current stamina pool*; once that buffer is gone, the next crit is potentially fatal.
+
+**Strategic shape this creates:**
+- **The Ranger's role gains a new beat.** Beyond "land enough crits to deplete a zone," there is now "watch the dragon's stamina via telescope, wait for the empty-stamina window, and close it out with a crit." A cinematic moment.
+- **Cross-vital effects feed the exhaustion kill.** Head damage → firebreath costs more stamina. Wings damage → high-thrust flight costs more stamina. Torso damage → stamina regen is slower. Damage to *any* zone now pushes the dragon toward exhaustion, not just toward its own zone-zero kill.
+- **The dragon must protect stamina aggressively.** Pre-rule, low stamina was a "can't push" state. Post-rule, low stamina is a "could die to the next arrow" state. The dragon player has to bank stamina before committing to firebreath / high-thrust / melee, not just react when it runs dry.
+- **Sustained pressure pays off.** Defenders who keep the dragon engaged — forcing it to fire-breath, forcing it to high-thrust away — bleed its stamina. Even if their individual hits don't crit, they're setting up the Ranger's kill shot.
+
+**Note on burn DOT:** burn ticks do not drain stamina (see Stamina section above), so a dragon ignited by a fire bolt cannot be "DOT'd into the exhaustion window." Only direct crit hits drain stamina.
+
+### Wings at Zero — Forced Ground Combat
+
+When wing HP hits zero, the dragon is forced to land and committed to ground combat for as long as wings remain at zero. Wings regenerate normally during retreat, so flight is technically recoverable, but in a tight match a wing-broken dragon will rarely return to the sky — escaping on the ground is slower and more exposed than escaping by flight, so the recovery window is hard to earn.
+
+This connects directly to **Dragon Attack Commitment** above: a wing-broken dragon caught mid-commitment is exactly the Warden's signature opportunity window in Phase 3.
+
+### Recovery Loop — Disengage to Recover
+
+Zones regenerate when the dragon is **grounded, idle, and not actively fighting**. All of these must be true:
+- **Grounded** — landing is required. Airborne dragons do not heal zones, even at zero thrust.
+- **Idle or walking** — sprinting blocks regen. Walking is fine.
+- **Not breathing fire**
+- **Not in melee**
+
+Note that **stamina regen has looser rules** — see the Stamina section above. Stamina can regen airborne at low thrust, but zone HP cannot. This is the asymmetry that drives the spatial play: the dragon can top up its fuel mid-glide, but to actually *heal its body* it has to commit to a landing.
+
+The dragon must physically disengage to recover. Standing in the city and brawling with defenders does not heal it. Landing somewhere quiet does.
+
+This loop creates the match's natural tempo:
+
+> Dragon attacks → takes zone damage → fuel pool effectively shrinks (head/wings) or regen slows (torso) → dragon must disengage → during retreat, both stamina and zone HP recover → defenders use the lull to rebuild fortifications, heal, reposition → dragon re-engages.
+
+**No respawn.** Dragon death ends the match. The match timer favors the dragon stalling — every minute of retreat is a minute closer to dragon victory by timeout. This frames the recovery loop as a real tactical decision for both sides: the dragon is paying time to gain HP, and the defenders are buying time at the cost of pressure.
+
+### Damage Routing
+
+Damage is attributed to a zone via the existing `CritZoneMarker` system:
+- Head and wing colliders are tagged with `CritZoneMarker`, each carrying their own `damageMultiplier`
+- Torso is the default — any hit not on a tagged zone routes to torso HP
+- Critical hits (head / wing) also drain stamina proportional to the final damage dealt; torso hits do not. See the Stamina section and Exhaustion Kill above.
+
+**Burn DOT routing** (`BurnStatus` damage attribution to a specific zone vs. spread across zones) is **deferred** — to be revisited once the vital system is in. Burn DOT does not drain stamina.
+
+### Vital Visibility (HUD)
+
+Vital information is **asymmetric** between the dragon and the defenders, and asymmetric *between* defender roles. This makes intelligence-gathering a real gameplay activity, not a HUD freebie.
+
+**Dragon player:** sees all four vitals (stamina, head HP, wings HP, torso HP) at all times on their HUD — built. The dragon knows their own body. Stamina display is especially important now that the exhaustion kill is in play: the dragon player needs to read the empty-stamina window to know when they're a single crit away from death.
+
+**Ranger:** can read the dragon's vitals at any range — flying or grounded — using the **telescope** (already part of the Ranger's core kit; see *Ranger* section below). This is the Ranger's signature intel role: the only defender with continuous awareness of the dragon's condition. Locational damage state (which zones are hurt) is what makes the Ranger's "focus fire on wings" / "head is exposed" callouts meaningful to the rest of the team.
+
+**Other defenders (Warden, Artificer, Commander):** can only read the dragon's vitals when:
+- The dragon is **grounded**, AND
+- The dragon is **close enough**, AND
+- The defender is using a telescope or equivalent tool
+
+This means non-Ranger players have effectively *no* read on the dragon's vitals during normal aerial combat. They rely on Ranger callouts (or pings via the Commander) for situational awareness, and only get direct visibility once the dragon lands near them — typically during a forced landing or in Phase 3 when wings are broken.
+
+**Open questions (visibility) — needs more discussion:**
+- Do non-Rangers share the Ranger's telescope, get their own (Artificer-crafted?), or use a different mechanism (e.g., a generic "spyglass" item that's universal but lower-resolution than the Ranger's)?
+- Exact "close enough" threshold for non-Ranger reads.
+- Do non-Rangers see all four vitals or only a subset (e.g., just torso for a high-level "is the dragon dying?" read, with full zone breakdown reserved for the Ranger)?
+- Does the Commander get a special read via the war-room map, or is the Commander on the same footing as Warden/Artificer here?
+
+### Implementation Direction
+
+- **Reuse the existing `VitalManager` / `Vital` / `VitalDefinition` pipeline** that humans already use. The dragon will have four vitals: stamina, head HP, wings HP, torso HP. Cross-vital effects (head→firebreath cost, wings→flight cost, torso→stamina regen rate) live in the dragon controllers that read these vitals, not in the vital pipeline itself.
+- **Authority model:** owner-write `NetworkVariable`, matching the existing `DragonAnimatorController` pattern. Anti-cheat hardening can be revisited post pre-alpha.
+
+### Open Questions (Dragon Vitals)
+
+- [x] Curve shape for head→firebreath cost and wings→flight cost — match torso curve (threshold + floor), per-zone Inspector tweak.
+- [x] "Idle / not fighting" detection — grounded + idle/walking + not firebreathing + not in melee + not sprinting.
+- [x] Zero-stamina behavior — firebreath hard-gated; melee possible but reduced damage.
+- [x] Zone HP loss bleed into stamina — crit hits drain stamina proportional to final damage; torso hits do not. Crit landing on a zero-stamina dragon = exhaustion kill (third kill path).
+- [x] Dragon HUD — built. Dragon player sees all four vitals.
+- [ ] Numeric tuning — pool sizes, regen rates, drain rates, crit multipliers, threshold values, crit→stamina ratio. Tuned in-game.
+- [ ] Exact stamina threshold for "high speed" — 0.5 vs 0.7. Pin down once the system is in.
+- [ ] Burn DOT routing — single zone (whichever was hit) vs. spread across zones. (Confirmed: does not drain stamina.)
+- [ ] Visual feedback for damaged zones — broken wing flapping anim, smoking head, scorched scales, etc.
+- [ ] Visual / audio feedback for entering the empty-stamina danger window (the dragon player needs a clear "you are one crit away from death" cue).
+- [ ] Non-Ranger vital visibility — tool, range threshold, info granularity (see *Vital Visibility* above).
+
+---
+
 ### Phase 1 — Planning (5–10 min)
 
 City is quiet. Defenders set up; dragon may do light reconnaissance.
@@ -636,3 +776,14 @@ Horse-drawn wagons with ballistae mounted on top — summoned Tesla-style to the
 - [ ] Resource economy — what resources exist, how are they gathered, who manages them
 - [ ] Win/lose conditions per phase — specifics of "city falls" and "dragon dies"
 - [ ] 4 vs fewer scaling — which role is optional if a player drops?
+
+## Parking Lot — Future Tech to Evaluate
+
+Ideas captured for later prototyping. Not on the active backlog; revisit when current pillar systems are stable.
+
+### Destructible castle walls (pre-authored)
+- **Goal:** Dragon firebreath / repeated ballista impacts visibly break sections of the city walls during a siege. Reinforces the "city is being destroyed" tension and gives the Artificer's wall-repair role real meaning.
+- **Candidate asset:** [DinoFracture](https://www.dinofracture.com/doc/latest/index.html). Supports pre-fractured geometry generated in-editor (zero runtime fracture cost), drop-in `Fracture On Collision` / `Explode On Fracture` / `Play Sound On Fracture` helpers, custom slice planes (cleaner masonry breaks than Voronoi shatter), auto-generated convex colliders + rigidbodies per chunk.
+- **Scope target:** Modular pre-fractured wall segments only. Not skinned-mesh fracture, not runtime fracture, not gameplay-relevant chunks. Debris is cosmetic.
+- **Multiplayer integration sketch (NGO):** DinoFracture has no networking. Wrap each wall segment in a `DestructibleWallNetwork : NetworkBehaviour` holding `NetworkVariable<bool> netIsDestroyed`. Damage source calls `BreakServerRpc(impactPoint, force)` → server flips NetVar → `BreakClientRpc` swaps the intact mesh for the locally-instantiated fractured prefab and applies `AddExplosionForce`. Chunks stay non-networked. Late-join: `OnNetworkSpawn` reads `netIsDestroyed` and spawns the wall already in its broken (settled) state. Pool the chunk prefabs (mirror `GroundFirePool`).
+- **Why parked:** Asset cost + integration work, and current Phase 0 priorities are dragon vitals, AI tiers, and the special-building system. Pick this up once those are stable and we want environmental feedback.

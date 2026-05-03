@@ -32,6 +32,8 @@ public class DragonCombatController : NetworkBehaviour
     [SerializeField] private DragonFlightController flightController;
     [SerializeField] private Rigidbody rb;
     [SerializeField] private Transform cam;
+    [Tooltip("Optional — when set, firebreath is blocked at zero stamina and melee drains stamina on impact.")]
+    [SerializeField] private DragonStaminaController staminaController;
 
     [Header("Spine Bones (for melee upper body twist)")]
     [SerializeField] private Transform spineBone;
@@ -193,6 +195,8 @@ public class DragonCombatController : NetworkBehaviour
             fireBreathDamage = GetComponentInChildren<DragonFireBreathDamage>();
         if (groundFireSpawner == null)
             groundFireSpawner = GetComponentInChildren<GroundFireSpawner>();
+        if (staminaController == null)
+            staminaController = GetComponentInParent<DragonStaminaController>();
 
         _currentJawZ = jawClosedZ;
     }
@@ -333,9 +337,11 @@ public class DragonCombatController : NetworkBehaviour
         return groundController == null || groundController.GaitSpeed <= stationaryThreshold;
     }
 
-    /// <summary>True when fire breath is allowed — stationary on ground OR in flight.</summary>
+    /// <summary>True when fire breath is allowed — stationary on ground OR in flight, and stamina available.</summary>
     private bool CanFireBreath()
     {
+        // Hard gate at zero stamina — design: firebreath cannot be initiated when empty.
+        if (staminaController != null && !staminaController.CanFireBreath) return false;
         if (flightController != null && flightController.IsFlightMode) return true;
         return IsStationary();
     }
@@ -615,6 +621,8 @@ public class DragonCombatController : NetworkBehaviour
     [ServerRpc]
     private void MeleeAttackServerRpc()
     {
+        if (staminaController != null)
+            staminaController.OnMeleeAttackServer();
         MeleeAttackClientRpc();
     }
 
@@ -699,6 +707,8 @@ public class DragonCombatController : NetworkBehaviour
     /// <summary>0=none, 1=melee, 2=firebreath</summary>
     public int AttackMode      => _attackMode;
     public bool IsBreathingFire => _isBreathingFire;
+    /// <summary>Network-synced firebreath flag — server-readable on remote-owned dragons (where IsBreathingFire is owner-only).</summary>
+    public bool NetIsBreathingFire => netIsBreathingFire.Value;
     public float TwistAngle    => _currentTwistAngle;
     public float HeadYaw       => _currentHeadYaw;
     public float HeadPitch     => _currentHeadPitch;
