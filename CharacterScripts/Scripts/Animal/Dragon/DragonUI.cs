@@ -28,6 +28,7 @@ public class DragonUI : MonoBehaviour
     [SerializeField] private Image torsoFill;
 
     private bool _subscribed;
+    private bool _firstPaintDone;
 
     private void OnEnable()
     {
@@ -37,6 +38,22 @@ public class DragonUI : MonoBehaviour
     private void OnDisable()
     {
         Unsubscribe();
+    }
+
+    private void Update()
+    {
+        // VitalManager.OnNetworkSpawn populates _vitals later than DragonUI.OnEnable,
+        // so the initial PaintAll in Subscribe sees null vitals and zeroes all fills.
+        // Retry until at least one vital is resolvable, then paint once and stop.
+        if (!_subscribed || _firstPaintDone || vitalManager == null) return;
+
+        if (vitalManager.GetVital("stamina") == null
+            && vitalManager.GetVital("head") == null
+            && vitalManager.GetVital("wings") == null
+            && vitalManager.GetVital("torso") == null) return;
+
+        PaintAll();
+        _firstPaintDone = true;
     }
 
     /// <summary>Wire a VitalManager at runtime (e.g. for a HUD that lives outside the dragon prefab).</summary>
@@ -61,6 +78,7 @@ public class DragonUI : MonoBehaviour
         if (!_subscribed || vitalManager == null) return;
         vitalManager.OnVitalChanged -= HandleVitalChanged;
         _subscribed = false;
+        _firstPaintDone = false;
     }
 
     private void HandleVitalChanged(string vitalID, float newVal, float oldVal)

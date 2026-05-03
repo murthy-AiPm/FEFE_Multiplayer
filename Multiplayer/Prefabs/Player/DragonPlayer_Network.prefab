@@ -1102,7 +1102,7 @@ GameObject:
   - component: {fileID: 2598045086344016534}
   - component: {fileID: 8136215975000767807}
   m_Layer: 12
-  m_Name: Wings
+  m_Name: Head
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1178,7 +1178,7 @@ GameObject:
   - component: {fileID: 7423287647243645843}
   - component: {fileID: 7297375775952752263}
   m_Layer: 12
-  m_Name: Image
+  m_Name: W-Image
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2189,7 +2189,7 @@ GameObject:
   - component: {fileID: 5475317289626424711}
   - component: {fileID: 2760335378714426461}
   m_Layer: 12
-  m_Name: Head
+  m_Name: Wings
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2698,9 +2698,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DragonUI
   vitalManager: {fileID: -7962891897276758031}
   staminaFill: {fileID: 4658080929140386506}
-  headFill: {fileID: 7297375775952752263}
-  wingsFill: {fileID: 6562097412025903204}
-  torsoFill: {fileID: 8136215975000767807}
+  headFill: {fileID: 8136215975000767807}
+  wingsFill: {fileID: 2760335378714426461}
+  torsoFill: {fileID: 6562097412025903204}
 --- !u!1 &4551708238541384946
 GameObject:
   m_ObjectHideFlags: 0
@@ -3799,7 +3799,7 @@ GameObject:
   - component: {fileID: 7481468814534834810}
   - component: {fileID: 3665106747214506639}
   m_Layer: 12
-  m_Name: Image
+  m_Name: T-Image
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4176,7 +4176,7 @@ GameObject:
   - component: {fileID: 1628543115990986639}
   - component: {fileID: 6289036575278095007}
   m_Layer: 12
-  m_Name: Image
+  m_Name: H-Image
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5943,7 +5943,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1353946614
+  GlobalObjectIdHash: 48177541
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1

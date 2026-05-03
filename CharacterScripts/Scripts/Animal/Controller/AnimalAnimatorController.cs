@@ -226,7 +226,16 @@ public class AnimalAnimatorController : NetworkBehaviour
             if (Mathf.Abs(netTurnAngle.Value - turnAngle) > FLOAT_EPSILON)
                 netTurnAngle.Value = turnAngle;
 
-            if (groundController.enabled)
+            // Airborne: gait is meaningless and groundController stops updating
+            // GaitSpeed (HandleGroundMovement early-returns when !isActive), so the
+            // last grounded value would stick. Force to 0 so consumers like
+            // DragonStaminaController don't see a stale "sprinting" flag in flight.
+            if (groundingSystem != null && !groundingSystem.IsGrounded)
+            {
+                if (netGaitSpeed.Value != 0f)
+                    netGaitSpeed.Value = 0f;
+            }
+            else if (groundController.enabled)
             {
                 float gaitSpeed = groundController.GaitSpeed;
                 // Force zero through without epsilon check so animator doesn't stick at stale value
