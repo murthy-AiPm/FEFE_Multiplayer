@@ -2043,3 +2043,56 @@ FIX
  useCombatRootMotion=true. If combat root motion is false, the NavMeshAgent is
  stopped and cannot keep sliding the orc toward the target during the attack.
 
+2026-05-07 - Orc dual-wield weapon hitbox support
+
+ROOT CAUSE
+ OrcAI only exposed one weaponHitbox, which is not enough for dual-wield orcs.
+ Using one oversized hitbox for both weapons would make left/right swings
+ inaccurate and hard to tune.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added offHandWeaponHitbox.
+     - Added OrcWeaponHitboxSelection enum: MainHand, OffHand, Both.
+     - Added hitboxSelection to OrcAttackOption so each attack chooses which
+       hand's hitbox is active.
+     - Both hitboxes initialize with the same NetworkObject owner and optional
+       WeaponData. Attack context is pushed to both before a swing; only the
+       selected hitbox or hitboxes enable during the damage window.
+
+FIX
+ Dual-wield orcs can now wire one HitboxController per weapon. In the attacks
+ array, set hitboxSelection to MainHand for right-hand swings, OffHand for
+ left-hand swings, or Both for crossing / dual-slash animations.
+
+2026-05-07 - Orc animation-event hitbox windows
+
+ROOT CAUSE
+ Inspector timing fields for hitboxEnableDelay/hitboxActiveTime were hard to
+ tune against actual sword contact frames, especially for dual-wield attack
+ clips. Animation events are the existing project pattern for precise melee
+ windows (humans and dragon paw hitboxes already use this style).
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added useAnimationEventsForHitboxes (default true).
+     - Added animation-event callable methods: HitboxEnable/Disable,
+       MainHandHitboxEnable/Disable, OffHandHitboxEnable/Disable,
+       BothHitboxesEnable/Disable.
+     - Timer-based hitbox windows now act as fallback only when
+       useAnimationEventsForHitboxes is false.
+     - Event methods are server-gated so client-side animation events do not
+       produce duplicate damage requests.
+ + CharacterScripts/Scripts/Orc/OrcAnimationEventRelay.cs
+ + CharacterScripts/Scripts/Orc/OrcAnimationEventRelay.cs.meta
+     - Relay for the Animator GameObject. Unity animation events call methods
+       on the Animator object, and the relay forwards them to OrcAI on the root.
+
+FIX
+ Add OrcAnimationEventRelay to the same GameObject as the orc Animator. On attack
+ clips, place events at the contact frames:
+   - HitboxEnable / HitboxDisable to use OrcAI.attack.hitboxSelection
+   - MainHandHitboxEnable / MainHandHitboxDisable for right-hand-only windows
+   - OffHandHitboxEnable / OffHandHitboxDisable for left-hand-only windows
+   - BothHitboxesEnable / BothHitboxesDisable for dual-hit windows
+

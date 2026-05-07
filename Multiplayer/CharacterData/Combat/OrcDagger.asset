@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 813b90964227683478e1e7691c7a7da6, type: 3}
+  m_Name: OrcDagger
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponData
+  weaponName: OrcDagger
+  weaponType: 1
+  weaponPrefab: {fileID: 8989030437900976531, guid: cc4c732c60ed40145a7ef2776bfcd58d, type: 3}
+  weaponProfileName: OrcDagger
+  baseDamage: 10
+  heavyDamageMultiplier: 2
+  attackRange: 2
+  staminaCostLight: 10
+  staminaCostHeavy: 25
+  blockStaminaCost: 5
+  arrowPrefab: {fileID: 0}
+  arrowSpeed: 40
+  drawTime: 0.8
+  holsterBone: Spine_Holster
+  holsterLocalPos: {x: 0, y: 0, z: 0}
+  holsterLocalRot: {x: 0, y: 0, z: 0}
+  hitboxLength: 1
+  hitboxRadius: 0.15
+  hitboxOffset: {x: 0, y: 0, z: 0}
