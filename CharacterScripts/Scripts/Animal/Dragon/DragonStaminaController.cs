@@ -66,6 +66,11 @@ public class DragonStaminaController : NetworkBehaviour
     [Tooltip("Seconds to ease the max flight thrust between 1.0 and highThrustThreshold when stamina depletes/recovers. 0 = instant snap (old behavior). 0.5 = half-second smooth bog-down — the animator's Thrust param transitions through the blend tree instead of jerking.")]
     [SerializeField] private float thrustCapEaseSeconds = 0.5f;
 
+    [Header("Flight Climb Pitch Cap (exhaustion)")]
+    [Tooltip("Max nose-up pitch (0..1) the dragon can apply when stamina is depleted. Diving (negative pitch) is unaffected. Set lower to make exhaustion physically prevent climbing.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float exhaustedMaxClimbPitch = 0.3f;
+
     [Header("Network Throttle")]
     [Tooltip("How often accumulated continuous drain/regen flushes to VitalManager. Lower = smoother UI but more sync traffic.")]
     [SerializeField] private float flushInterval = 0.05f;
@@ -85,16 +90,20 @@ public class DragonStaminaController : NetworkBehaviour
     // extra NetworkVariable.
     private bool _fireBreathLockedOut;
 
-    // Smoothed cap fed to DragonFlightController so the thrust clamp eases between
-    // 1.0 and highThrustThreshold instead of snapping. Eased per-frame on every peer
-    // (only the owner reads it via the flight controller, but stateless to maintain).
+    // Smoothed caps fed to DragonFlightController so the thrust + climb-pitch clamps
+    // ease toward their exhaustion targets instead of snapping. Eased per-frame on
+    // every peer (only the owner reads them via the flight controller, but stateless
+    // to maintain).
     private float _smoothedMaxFlightThrust = 1f;
+    private float _smoothedMaxClimbPitch = 1f;
 
     // ─── Public Read API (any client) ────────────────────
     public bool CanFireBreath => _stamina == null || (!_stamina.IsDepleted && !_fireBreathLockedOut);
     public bool MeleeReducedDamage => _stamina != null && _stamina.IsDepleted;
     public bool WingsBroken => _wings != null && _wings.IsDepleted;
     public float MaxFlightThrust => _smoothedMaxFlightThrust;
+    /// <summary>Cap on nose-up pitch (0..1). Eases toward exhaustedMaxClimbPitch at zero stamina, back to 1 on recovery. Negative pitch (diving) is never capped — read this value as the upper bound only.</summary>
+    public float MaxClimbPitch => _smoothedMaxClimbPitch;
     public float StaminaNormalized => _stamina != null ? _stamina.Normalized : 0f;
 
     private void Awake()
@@ -131,18 +140,26 @@ public class DragonStaminaController : NetworkBehaviour
             if (_stamina.IsDepleted) _fireBreathLockedOut = true;
             else if (_stamina.Current >= fireBreathRearmStamina) _fireBreathLockedOut = false;
 
-            // Smooth the flight thrust cap toward its target instead of snapping. Owner's
-            // DragonFlightController reads MaxFlightThrust per-frame; a soft ease makes the
-            // animator's Thrust param transition through the blend tree gracefully.
-            float targetCap = _stamina.IsDepleted ? highThrustThreshold : 1f;
+            // Smooth the flight thrust + climb-pitch caps toward their depletion targets
+            // instead of snapping. Owner's DragonFlightController reads both per-frame;
+            // soft eases make the animator's Thrust + Pitch params transition through the
+            // blend trees gracefully. Both caps share thrustCapEaseSeconds so the
+            // exhaustion event reads as one coherent bog-down.
+            bool depleted = _stamina.IsDepleted;
+            float targetThrustCap = depleted ? highThrustThreshold : 1f;
+            float targetPitchCap  = depleted ? exhaustedMaxClimbPitch : 1f;
             if (thrustCapEaseSeconds > 0.001f)
             {
-                float easeRate = (1f - highThrustThreshold) / thrustCapEaseSeconds;
-                _smoothedMaxFlightThrust = Mathf.MoveTowards(_smoothedMaxFlightThrust, targetCap, easeRate * Time.deltaTime);
+                float capEaseDt = Time.deltaTime;
+                float thrustEaseRate = (1f - highThrustThreshold) / thrustCapEaseSeconds;
+                float pitchEaseRate  = (1f - exhaustedMaxClimbPitch) / thrustCapEaseSeconds;
+                _smoothedMaxFlightThrust = Mathf.MoveTowards(_smoothedMaxFlightThrust, targetThrustCap, thrustEaseRate * capEaseDt);
+                _smoothedMaxClimbPitch   = Mathf.MoveTowards(_smoothedMaxClimbPitch,   targetPitchCap,  pitchEaseRate  * capEaseDt);
             }
             else
             {
-                _smoothedMaxFlightThrust = targetCap;
+                _smoothedMaxFlightThrust = targetThrustCap;
+                _smoothedMaxClimbPitch   = targetPitchCap;
             }
         }
 

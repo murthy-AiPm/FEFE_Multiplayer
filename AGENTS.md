@@ -28,7 +28,7 @@ might invalidate an in-flight playtest build.
 
 ## Paths & conventions
 
-- Project root: `Assets/FEFE` (this directory loads CLAUDE.md every session).
+- Project root: `Assets/FEFE` (this directory loads AGENTS.md every session).
 - Layout:
   - `CharacterScripts/Scripts/Animal/Controller` — animal base classes (Animal* prefix).
   - `CharacterScripts/Scripts/Animal/Dragon` — dragon-specific (Dragon* prefix).
@@ -41,7 +41,7 @@ might invalidate an in-flight playtest build.
 - `design/ToDo.md` is an append-only session log. **Tail-read it before appending.**
   New entries go at the bottom of the file. Each entry: date header, root cause, files changed, fix.
 - All other `.md` docs live under `design/` (ARCHITECTURE, FEFE_Design, FEFE_NPC_Architecture, ToDo).
-  Only `CLAUDE.md` stays at the `Assets/FEFE/` root so Claude Code auto-loads it each session.
+  Only `AGENTS.md` stays at the `Assets/FEFE/` root so Codex auto-loads it each session.
   New `.md` files go in `design/` by default.
 - For new files use the filesystem write tools. Unity-style "create asset" tools have failed silently in this project — do not rely on them.
 

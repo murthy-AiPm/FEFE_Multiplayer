@@ -231,7 +231,7 @@ The dragon's combat readiness is governed by **two distinct resources**: **stami
 A single shared pool. Drains during high-effort actions, regenerates when the dragon disengages.
 
 **Drains stamina (dragon actions):**
-- Flight thrust above ~0.7 (high-speed flight; cruise / glide / hover is free)
+- **Effort-based flight drain.** Drain rate = `peakRate × |thrust| × flapEffort × wingsCostScale`. The pair (thrust × flap) means **work pays, gravity is free**: hover (thrust ≈ 0) costs nothing even with hard flapping; a tucked dive (flap ≈ 0) costs nothing even at full thrust input; steep climb at moderate thrust drains proportionally; full-power sprint with active flap drains at the peak rate. `flapEffort` is `InverseLerp(lazyFlapDegPerSec, hardFlapDegPerSec, wingActivity)` — the dragon's actual wing-bone angular velocity, measured by `DragonWingActivityTracker`.
 - Fire breath
 - Effective melee attacks
 
@@ -240,16 +240,18 @@ A single shared pool. Drains during high-effort actions, regenerates when the dr
 - `BurnStatus` DOT does **not** drain stamina — the crit-stamina cost is paid once on impact, not on every DOT tick. (Dragons don't have dragon-on-dragon dogfights anyway, and "dragons can't burn" — so this is moot in practice.)
 
 **Regenerates stamina:**
-- Airborne at low thrust (slower regen rate)
-- Grounded and idle / walking (faster regen rate)
-- Zero regen during ground sprint, fire breath, or melee
+- **Anywhere not currently draining.** A 1-second cooldown gates regen — every drain frame resets it, so the dragon must stop spending for ≥ 1 second before regen kicks in. Once gated open, the rate depends only on grounded vs airborne:
+  - Grounded and idle / walking: faster regen rate (`regenGroundedIdleRate`).
+  - Airborne (any thrust, including a tucked dive): slower regen rate (`regenAirborneLowRate`).
+- Zero regen during ground sprint or fire breath (these latch the cooldown open).
 
 **Lethal in combination with a crit (exhaustion kill).** Stamina at zero is not lethal on its own — the dragon can still fly slowly, walk, exist. But if a critical hit lands while stamina is at zero (or the crit's own drain pushes stamina to zero on that same hit), the dragon dies. See **Exhaustion Kill** below.
 
 **Zero-stamina behavior:**
-- **Fire breath:** cannot be initiated. Hard gate.
+- **Fire breath:** hard gate, with hysteresis. Cannot be initiated at zero, and once depleted it stays locked out until stamina recovers above `fireBreathRearmStamina` (~10% of pool). Without the rearm threshold, regen pulses chatter the breath on/off below human reaction time and the player hears continuous sound + a fluttering jaw.
 - **Melee:** still possible, but does **reduced damage**. The dragon can flail in desperation, but the bite/claw isn't lethal.
-- **High-thrust flight:** cannot be sustained — thrust caps at the no-cost ceiling (~0.7), so the dragon drops to glide / cruise speed.
+- **High-thrust flight:** cannot be sustained — thrust caps at the no-cost ceiling (~0.7) and **eases smoothly** between full and capped over `thrustCapEaseSeconds` (~0.5s) so the animator's Thrust param walks through the blend tree instead of snapping. The dragon visibly bogs down to glide / cruise speed.
+- **Climbing:** capped. Positive (nose-up) pitch is clamped to `exhaustedMaxClimbPitch` (~0.3), eased on the same window as the thrust cap. Diving (negative pitch) is unaffected — gravity is its own reward. Camera and head tracking remain free; only the body's pitch input is capped, so the visual reads as "head straining up, body won't follow." An exhausted dragon physically cannot climb hard until it recovers.
 
 ### Three Health Zones
 
@@ -299,7 +301,7 @@ Zones regenerate when the dragon is **grounded, idle, and not actively fighting*
 - **Not breathing fire**
 - **Not in melee**
 
-Note that **stamina regen has looser rules** — see the Stamina section above. Stamina can regen airborne at low thrust, but zone HP cannot. This is the asymmetry that drives the spatial play: the dragon can top up its fuel mid-glide, but to actually *heal its body* it has to commit to a landing.
+Note that **stamina regen has looser rules** — see the Stamina section above. Stamina can regen airborne at any thrust as long as the dragon isn't actively spending (e.g. mid-glide, mid-dive, or hovering still), but zone HP cannot. This is the asymmetry that drives the spatial play: the dragon can top up its fuel in the air, but to actually *heal its body* it has to commit to a landing.
 
 The dragon must physically disengage to recover. Standing in the city and brawling with defenders does not heal it. Landing somewhere quiet does.
 

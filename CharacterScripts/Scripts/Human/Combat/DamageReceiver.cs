@@ -49,6 +49,7 @@ public class DamageReceiver : NetworkBehaviour
     // Events
     public System.Action<float, Vector3> OnDamageReceived;
     public System.Action<float, Vector3> OnDamageBlocked;
+    public System.Action<float, Vector3> OnDamageParried;
     public System.Action OnDeath;
 
     /// <summary>Fired on all clients when a hit lands (not blocked). Subscriber plays hit reaction animation.</summary>
@@ -109,6 +110,10 @@ public class DamageReceiver : NetworkBehaviour
         if (combatController != null && combatController.IsInvincible)
             return;
 
+        var defenseProvider = GetComponentInParent<IDamageDefenseProvider>();
+        if (defenseProvider != null && defenseProvider.IsDefenseInvincible)
+            return;
+
         bool isBlocking = combatController != null &&
                           combatController.State == CombatController.CombatState.Blocking;
 
@@ -120,12 +125,14 @@ public class DamageReceiver : NetworkBehaviour
             attackFromFront = angle < blockAngle * 0.5f;
         }
 
-        if (isBlocking && attackFromFront)
+        // NPC defense is resolved authoritatively on the server. Human blocking
+        // keeps the existing local feedback path for responsiveness.
+        if (defenseProvider == null && isBlocking && attackFromFront)
         {
             float blockedAmount = hitInfo.GetDamage() * blockDamageReduction;
             OnDamageBlocked?.Invoke(blockedAmount, hitInfo.hitPoint);
         }
-        else
+        else if (defenseProvider == null)
         {
             OnDamageReceived?.Invoke(hitInfo.GetDamage(), hitInfo.hitPoint);
         }
@@ -194,7 +201,12 @@ public class DamageReceiver : NetworkBehaviour
             }
         }
 
-        NotifyHitClientRpc(finalDamage, attackerPosition, false, attackerPosition, triggerHitAnimation);
+        NotifyHitWithDefenseClientRpc(
+            finalDamage,
+            attackerPosition,
+            (byte)DamageDefenseResult.None,
+            attackerPosition,
+            triggerHitAnimation);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -214,8 +226,13 @@ public class DamageReceiver : NetworkBehaviour
             return;
 
         float finalDamage = rawDamage;
+        DamageDefenseResult defenseResult = EvaluateServerDefense(attackerObj, rawDamage, hitPoint, wasBlocking);
 
-        if (wasBlocking)
+        if (defenseResult == DamageDefenseResult.Parry)
+        {
+            finalDamage = 0f;
+        }
+        else if (defenseResult == DamageDefenseResult.Block)
         {
             finalDamage *= (1f - blockDamageReduction);
 
@@ -226,20 +243,27 @@ public class DamageReceiver : NetworkBehaviour
             }
         }
 
-        if (vitalManager != null)
+        var defenseProvider = GetComponentInParent<IDamageDefenseProvider>();
+        defenseProvider?.OnServerDefenseResolved(defenseResult, rawDamage, finalDamage, hitPoint, attackerObj);
+
+        if (vitalManager != null && finalDamage > 0f)
             vitalManager.ApplyDamage(defaultVitalID, finalDamage);
 
-        NotifyHitClientRpc(finalDamage, hitPoint, wasBlocking, attackerObj.transform.position);
+        NotifyHitWithDefenseClientRpc(finalDamage, hitPoint, (byte)defenseResult, attackerObj.transform.position);
     }
 
     [ClientRpc]
-    private void NotifyHitClientRpc(float damage, Vector3 hitPoint, bool wasBlocked, Vector3 attackerPosition, bool triggerHitAnimation = true)
+    private void NotifyHitWithDefenseClientRpc(float damage, Vector3 hitPoint, byte defenseResultValue, Vector3 attackerPosition, bool triggerHitAnimation = true)
     {
         _hitStunTimer = hitStunDuration;
 
         _lastAttackerPosition = attackerPosition;
 
-        if (wasBlocked)
+        DamageDefenseResult defenseResult = (DamageDefenseResult)defenseResultValue;
+
+        if (defenseResult == DamageDefenseResult.Parry)
+            OnDamageParried?.Invoke(damage, hitPoint);
+        else if (defenseResult == DamageDefenseResult.Block)
             OnDamageBlocked?.Invoke(damage, hitPoint);
         else
         {
@@ -247,6 +271,27 @@ public class DamageReceiver : NetworkBehaviour
             if (triggerHitAnimation)
                 OnPlayHitAnimation?.Invoke(attackerPosition);
         }
+    }
+
+    private DamageDefenseResult EvaluateServerDefense(NetworkObject attackerObj, float rawDamage, Vector3 hitPoint, bool clientBlockingHint)
+    {
+        var defenseProvider = GetComponentInParent<IDamageDefenseProvider>();
+        if (defenseProvider != null)
+        {
+            return defenseProvider.EvaluateDefense(attackerObj, hitPoint, rawDamage);
+        }
+
+        bool isBlocking = combatController != null &&
+                          combatController.State == CombatController.CombatState.Blocking;
+
+        // Preserve the existing human block path for remote-owner sync latency,
+        // but still recompute the frontal cone on the server.
+        if (!isBlocking && !clientBlockingHint)
+            return DamageDefenseResult.None;
+
+        Vector3 toAttacker = (attackerObj.transform.position - transform.position).normalized;
+        float angle = Vector3.Angle(transform.forward, toAttacker);
+        return angle < blockAngle * 0.5f ? DamageDefenseResult.Block : DamageDefenseResult.None;
     }
 
     // ─── Death ───

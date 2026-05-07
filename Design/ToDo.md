@@ -1603,3 +1603,333 @@ NOTES
    wing motion is what gates the server-authoritative drain — consistent with how
    DragonSoundPlayer's gate already worked.
 
+═══════════════════════════════════════════════════════════════
+2026-05-03 — Stamina drain/regen rework + exhaustion smoothing + thrust % HUD
+
+Continued from the wing-tracker extraction earlier in the day. After playtesting
+the binary thrust > 0.7 drain gate, walked through five connected refinements.
+
+ROOT CAUSES (one paragraph each)
+
+ 1. Hover/dive paid the wrong amount of stamina. Wings-tucked dive at 90% thrust
+    was free (✓ from the wing-flap gate fix), but a hard-flap hover at 0% thrust
+    cost full stamina, and a steep 50% climb cost nothing. Thrust threshold alone
+    was the wrong axis — the real cost signal is "wings doing work to push the
+    dragon" which is approximated well by |thrust| × flapEffort.
+
+ 2. Stamina didn't regen on a tucked dive. The airborne regen branch was gated on
+    `|thrust| <= highThrustThreshold` from the old drain logic. Under the new
+    effort-based drain, a dive (thrust 0.9, flap 0) drains nothing AND regens
+    nothing. Stale gate.
+
+ 3. Firebreath sound + jaw stuttered at zero stamina. Owner-side per-frame check
+    was correct (`CanFireBreath` returned false on `IsDepleted`), but as soon as
+    regen pushed stamina above 0 (1s after last drain), CanFireBreath flipped
+    true and breath restarted. Sub-second restart loop was perceived as continuous
+    sound and a fluttering jaw.
+
+ 4. Flight anim jerked at the moment of exhaustion. `MaxFlightThrust` was a
+    binary 1.0 → 0.7 snap, so `_rmThrust` clamp transitioned in one frame and the
+    Mecanim Thrust param moved through the blend tree as a step.
+
+ 5. At zero stamina the dragon could still climb hard. `_rmPitch` was driven
+    purely from camera angle, no exhaustion-aware cap. Player could pull the
+    nose up to +1 (full climb) at the depleted-thrust ceiling and gain altitude
+    almost as well as at full power.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Animal/Dragon/DragonStaminaController.cs
+     • Drain formula: peakRate × |thrust| × flapEffort × CostScale(wings).
+       New SerializeFields: lazyFlapDegPerSec (60), hardFlapDegPerSec (200).
+       highThrustThreshold no longer used for drain (still used for stamina-cap
+       and regen tier — left in place for those).
+     • Regen: dropped the `|thrust| <= highThrustThreshold` gate. _regenCooldown
+       already gates "while paying"; airborne tier picks regenAirborneLowRate
+       whenever the cooldown has elapsed.
+     • Firebreath lockout: new `_fireBreathLockedOut` bool latches on depletion,
+       clears once stamina recovers above `fireBreathRearmStamina` (default 100).
+       CanFireBreath now requires both `!IsDepleted` AND `!_fireBreathLockedOut`.
+       Maintained on every peer (Update runs above the IsServer guard for this
+       block) so owner and server agree without an extra NetworkVariable.
+     • Smoothed `MaxFlightThrust`: replaced binary getter with
+       `_smoothedMaxFlightThrust` eased toward 1f or highThrustThreshold each
+       frame. New SerializeField `thrustCapEaseSeconds` (default 0.5) controls
+       the ease window.
+     • Smoothed `MaxClimbPitch`: new public property that eases between 1f and
+       `exhaustedMaxClimbPitch` (default 0.3) using the same ease window.
+       Caps positive pitch only — diving (negative) is never capped.
+ ~ CharacterScripts/Scripts/Animal/Dragon/DragonFlightController.cs
+     • After computing `_rmPitchTarget` from camera, clamp positive side to
+       `staminaController.MaxClimbPitch`. Dive untouched; camera + head tracking
+       untouched. The animator pitch input is the only thing capped, so the
+       feel is "head straining up, body won't follow" rather than a yanked view.
+ ~ CharacterScripts/Scripts/Animal/Dragon/DragonUI.cs
+     • New TMP_Text `thrustText` field with auto-find for
+       `dragonAnimatorController` (GetComponentInParent in OnEnable).
+       Per-frame `UpdateThrustText` reads `NetFlightThrust`, formats as a signed
+       integer percent (default `"{0}%"`). Cached `_lastThrustPercent` so the
+       text only writes on change.
+
+FIXES (cross-referenced to root causes)
+
+ 1. Drain formula
+    if (inFlight)
+    {
+        float thrustMag  = Mathf.Clamp01(Mathf.Abs(thrust));
+        float flapEffort = wingActivityTracker != null
+            ? Mathf.Clamp01(Mathf.InverseLerp(lazyFlapDegPerSec, hardFlapDegPerSec, wingActivityTracker.WingActivity))
+            : 1f;
+        float effort = thrustMag * flapEffort;
+        if (effort > 0f)
+            drain += highThrustDrainRate * effort * CostScale(_wings);
+    }
+    Behavior table (verified in playtest):
+      Hover hard      thrust 0     flap 1.0  → effort 0      → no drain
+      Tucked dive     thrust 0.9   flap 0    → effort 0      → no drain
+      Slight climb    thrust 0.05  flap 1.0  → effort 0.05   → trickle
+      Steep climb     thrust 0.5   flap 1.0  → effort 0.5    → half rate
+      Sprint cruise   thrust 1.0   flap 1.0  → effort 1.0    → full rate
+      Lazy cruise     thrust 0.3   flap 0.2  → effort 0.06   → tiny
+
+ 2. Regen cleanup — single-line change:
+    OLD: `if (grounded) ... else if (|thrust| <= cap) ... else 0`
+    NEW: `baseRate = grounded ? regenGroundedIdleRate : regenAirborneLowRate;`
+    Cooldown already gates "currently paying", so the thrust split was redundant
+    and wrong (blocked dive regen).
+
+ 3. Firebreath lockout (anti-chatter)
+    Per-peer Update block:
+        if (_stamina.IsDepleted) _fireBreathLockedOut = true;
+        else if (_stamina.Current >= fireBreathRearmStamina) _fireBreathLockedOut = false;
+    With default rearm = 100 and airborne regen = 30/s, the dragon waits ~3.3s
+    after depletion (1s cooldown + 2.3s regen) before firebreath comes back.
+    Grounded ~2.25s.
+
+ 4. Smoothed thrust cap
+    `_smoothedMaxFlightThrust` Mathf.MoveTowards toward
+    (IsDepleted ? highThrustThreshold : 1f) at rate
+    `(1 - highThrustThreshold) / thrustCapEaseSeconds` per second. Owner's
+    flight controller clamps `_rmThrust` to this each frame, so the animator
+    Thrust param walks smoothly through the blend tree.
+
+ 5. Climb pitch cap
+    Same pattern as the thrust cap, sharing `thrustCapEaseSeconds`. Smoothed
+    cap eases between 1.0 and `exhaustedMaxClimbPitch` (default 0.3). In
+    DragonFlightController, after computing _rmPitchTarget from camera:
+        if (staminaController != null)
+        {
+            float climbCap = staminaController.MaxClimbPitch;
+            if (_rmPitchTarget > climbCap) _rmPitchTarget = climbCap;
+        }
+    Dive (negative) untouched. Camera + head tracking unchanged.
+
+INSPECTOR WIREUP REQUIRED (manual)
+ On the dragon prefab root (DragonPlayer_Network):
+  - Drag a TMP_Text into DragonUI.thrustText (the field already existed in the
+    user's scene before this code change — the script just needed wiring).
+  - DragonUI.dragonAnimatorController auto-finds via GetComponentInParent,
+    leave empty unless DragonUI lives outside the dragon prefab hierarchy.
+ New tunables added to DragonStaminaController (defaults in parens):
+  - lazyFlapDegPerSec (60), hardFlapDegPerSec (200)        — drain effort curve
+  - fireBreathRearmStamina (100)                           — firebreath rearm
+  - thrustCapEaseSeconds (0.5)                             — exhaustion ease
+  - exhaustedMaxClimbPitch (0.3)                           — climb cap @ depletion
+
+NOTES & GOTCHAS
+ * `dt` name collision: the per-peer Update block sits above the server-only
+   block which declares `float dt = Time.deltaTime;`. C# rejects re-declaring
+   `dt` in a nested scope when the same name exists in any enclosing scope
+   (CS0136), even if the outer declaration appears later in the method. Inner
+   ease block uses `capEaseDt` to avoid the conflict.
+ * Both caps share `thrustCapEaseSeconds` so depletion reads as ONE coherent
+   bog-down event rather than two separate transitions.
+ * Cap smoothing runs on every peer for stateless reasons but is only consumed
+   by the owner's flight controller. Remote-client values don't matter.
+
+DEFERRED — REVISIT LATER
+ * Force-camera-correction on stamina exhaustion. Considered as Option B for
+   the climb-pitch fix (rotate the player's view downward when depleted). Not
+   implemented — yanking a mouse-controlled camera is risky UX. Option A
+   (cap pitch input only, leave camera free) shipped instead. If the animator
+   "head straining up, body won't follow" look is too subtle in playtest,
+   revisit with a soft camera-pitch nudge — slow rate so it feels like the
+   dragon's head pulling the camera, not a snap.
+
+═══════════════════════════════════════════════════════════════
+2026-05-04 — Orc AI design session (no code yet, pickup point for next session)
+
+Design discussion only. No source files changed except design docs.
+
+CONTEXT
+ Started designing the orc AI. The Phase 0→1 pivot needs orcs as the primary
+ enemy type (FEFE_Design.md → 7DaysTillDawn_Design.md). Current state of NPC
+ AI in the project: BearAI.cs is shipping and being repurposed for zombies;
+ nothing for orcs.
+
+DECISIONS LOCKED
+ 1. Spawn-on-arrival, NOT abstract simulation. Orc camps exist as data
+    records (location, member count, alive/dead state); GameObjects only
+    instantiate when a player enters the zone. Skips the active-zone abstract-
+    tick system from FEFE_NPC_Architecture.md (that doc was scoped to the
+    prior FEFE direction).
+ 2. Phase 1 ceiling = 20-orc squad. Typical camp 6-8.
+ 3. Use Mecanim + NetworkAnimator (NOT Animancer). Matches BearAI's pattern.
+ 4. NavMesh for pathfinding — designed for scale. Path planning split from
+    locomotion: agent.updatePosition/updateRotation = false; root motion
+    drives position via OnAnimatorMove (BearAI's existing pattern).
+ 5. Architecture: clone BearAI → OrcAI as a fork (not subclass). Static
+    _attackerCounts dictionary survives the fork — mixed zombie+orc crowd
+    control still works.
+ 6. Inspector toggle: [SerializeField] bool useRootMotion (one-line at top
+    of OnAnimatorMove, falls back to NavMeshAgent's own movement when off).
+ 7. Per-orc AI structure: HFSM at top (Patrol/Combat/Flee/Stagger/Dead) +
+    Utility AI inside Combat for action selection (Block / Parry / Attack /
+    Reposition / Approach / Jump). Flat enum FSM does not scale to the orc
+    feature list (~12 states with N×N transitions).
+ 8. Squad-level intelligence (formation slots, morale, retreat triggers)
+    lives in a separate OrcSquadCoordinator entity, networked at squad
+    granularity.
+
+UPDATED SCALE PARAMETERS (late in session — affects networking architecture)
+ Game design now anticipates:
+   - 4-5 players, each fighting ~20 orcs (= ~100 orcs total)
+   - Each player commanding 10-20 NPCs (= 50-100 commanded NPCs)
+   - Players in DIFFERENT locations (interest management filters cross-zone)
+ Reframed: relevant metric is ENTITIES VISIBLE PER CLIENT, not world total.
+   - Typical week case: ~40-50 entities per client. NGO comfortable.
+   - Climax (Day-7 siege): convergence event, ~100-150 entities visible.
+     This is the only meaningful stress case. Squad-level rep + custom anim
+     sync target this case.
+ Two-tier orc AI decided:
+   - Tactical orc (week encounters): HFSM + Utility AI, individual NetworkObjects.
+   - Crowd orc (climax): GPU-instanced crowd asset (candidate: Enemy Masses
+     Standard, asset evaluation deferred to climax work). Wave-state synced,
+     instances rendered locally, ~5-10 squad entities + ~100 local instances.
+     Climax networked entity count drops ~200 → ~30-50.
+ NGO/FishNet decision deferred to convergence-test gate. Optimizations in
+ priority: (1) Interest management - typical-case savior; (2) Custom anim
+ sync; (3) Squad-level replication; (4) Tick-rate scaling.
+
+DOCS UPDATED
+ ~ Design/OrcAI.md      — full Phase 1 design, BearAI clone plan, HFSM/Utility
+                          structure, layered architecture (squad coord +
+                          individual + action execution).
+ ~ Design/ARCHITECTURE.md — new section 20 "NPC AI" documenting BearAI's
+                          path-planning/locomotion split, _attackerCounts
+                          static, fragility notes, plus a forecast block
+                          for the orc plan. Discovery summary bumped to 21.
+ ~ Design/7DaysTillDawn_Design.md — new "The Day-7 Siege" section with wave
+                          shape (Probe/Main/Breach/Final), scope targets
+                          (300-500 concurrent crowd, ~1000-1500 spawned,
+                          60-80 networked tactical), behaviors (wall
+                          scale, destruction, giants, archery aggregation),
+                          three real cost ceilings.
+ + Design/EnemyMasses_Asset.md — new dedicated asset doc. Confirmed feature
+                          set from gitbook docs (5000+ render, per-instance
+                          damage/death, NavMesh primary, Mecanim+Crowd
+                          Animator). BYO networking workstream
+                          (INetworkSkillAuthority / DamageAuthority /
+                          CommandAuthority interfaces, ~1-2 weeks NGO bridge).
+                          Two paid deps: GPUI Pro + Crowd Animator Addon.
+                          10 numbered eval prototype targets. Wall climb
+                          supported per author YouTube demos (validate
+                          during eval). API quick reference extracted.
+
+NEXT SESSION PICKUP
+ Phased v1 → v4 plan in OrcAI.md. v1 starts here:
+   1. Clone BearAI.cs → OrcAI.cs in CharacterScripts/Scripts/Orc/.
+   2. Author OrcAnimations.controller (humanoid clips) with same Mecanim
+      params as BearAI: Speed (float), Attack (trigger), Dead (bool).
+   3. Inspector-rename biteHitbox → weaponHitbox; wire to a HitboxController
+      on the sword/axe child.
+   4. Add useRootMotion bool toggle at top of OnAnimatorMove.
+   5. Test: one orc, flat plain, NavMesh baked, player runs in.
+ Decisions still open BEFORE squad work begins:
+   - Detection LoS raycast vs pure radius (BearAI uses pure radius — orcs
+     in walled terrain will sense through walls). Cheap to add.
+   - applyRootMotion per-clip via SMB vs always-on globally.
+   - Weapon for v1: single sword? sword+shield? mixed loadouts later.
+ Big architectural decision deferred until v3 (squad work):
+   - Stress test required BEFORE committing to the 200-260 entity scope on
+     NGO. FEFE_NPC_Architecture.md already flagged this; the scale update
+     this session makes it urgent. Build the stress test (5 clients, 200
+     dummy networked entities, 20 minutes) before squad replication design.
+
+2026-05-07 - Orc Phase 1.5 HFSM combat implementation
+
+ROOT CAUSE
+ Phase 1 had not been implemented yet, but the simple BearAI-style "one attack"
+ orc would be a throwaway step. The faster path is to create the first OrcAI
+ directly with the Phase 1.5 combat vocabulary: attack selection, block, parry,
+ reposition, recover, stagger, and death, while keeping BearAI's server-owned
+ NavMesh/root-motion pattern.
+
+FILES CHANGED
+ + CharacterScripts/Scripts/Orc/OrcAI.cs
+     - New server-authoritative tactical orc controller. Uses top-level
+       Patrol/Combat/Stagger/Dead state and sub-states Idle/Wander/Return/
+       Approach/Reposition/Attack/Block/Parry/Recover/Stagger/Dead.
+     - Serialized OrcAttackOption array drives attackIndex, range, weight,
+       duration, cooldown, hitbox timing, and heavy/light context.
+     - Keeps BearAI patterns: NavMeshAgent plans, optional root motion applies
+       movement in OnAnimatorMove, manual gravity, separation nudge, leash,
+       target detection, attacker-count crowd gate, VitalManager death hook,
+       DamageReceiver events, and NetworkAnimator-friendly Animator params.
+     - Animator contract: Speed, Dead, CombatState, AttackIndex, Attack, Block,
+       Parry, Stagger.
+ + CharacterScripts/Scripts/Orc.meta
+ + CharacterScripts/Scripts/Orc/OrcAI.cs.meta
+ + CharacterScripts/Scripts/Human/Combat/IDamageDefenseProvider.cs
+ + CharacterScripts/Scripts/Human/Combat/IDamageDefenseProvider.cs.meta
+     - New small defense-provider interface and DamageDefenseResult enum so
+       NPCs can expose server-authoritative block/parry without pretending to
+       be CombatController.
+ ~ CharacterScripts/Scripts/Human/Combat/DamageReceiver.cs
+     - Added OnDamageParried event.
+     - Server damage RPC now asks IDamageDefenseProvider first. Parry resolves
+       to zero damage; block resolves through the existing block reduction and
+       stamina cost path.
+     - Existing human block path remains supported, with the frontal cone
+       recomputed on the server.
+
+FIX
+ One orc can now be wired as a tactical enemy prefab: add OrcAI, NavMeshAgent,
+ NetworkObject, NetworkAnimator, Animator, VitalManager, DamageReceiver, and a
+ weapon HitboxController. The AI chooses between valid weighted attacks,
+ defensive block/parry responses when the target appears to attack, reposition
+ when crowded too close, and recovers back to approach.
+
+INSPECTOR / UNITY WIREUP REQUIRED
+ - Create/wire OrcAnimations.controller with Animator params:
+   Speed(float), Dead(bool), CombatState(int), AttackIndex(int),
+   Attack(trigger), Block(bool), Parry(trigger), Stagger(trigger).
+ - Assign playerLayer, groundLayer, weaponHitbox, optional WeaponData, colliders
+   to disable on death, and attack option timings/ranges.
+ - Test on host with a baked NavMesh. No .csproj/.sln exists in this folder, so
+   compile/import validation must happen in Unity.
+
+2026-05-07 - Orc animator controller setup utility
+
+ROOT CAUSE
+ Hand-wiring one Animator transition per attack makes the Animator look like the
+ state machine, but the intended HFSM lives in OrcAI. The Animator should stay a
+ dumb playback graph: OrcAI chooses Attack/Block/Parry/Stagger, then Animator
+ plays the matching clip.
+
+FILES CHANGED
+ + Editor/OrcAnimatorControllerSetup.cs
+ + Editor/OrcAnimatorControllerSetup.cs.meta
+
+FIX
+ Added a Unity editor menu command: Window/FEFE/Setup Orc Animator Controller.
+ It loads Assets/FEFE/Animations/OrcAnimations.controller, ensures the required
+ OrcAI parameters, reuses/creates the Attack state, puts an "Orc AttackIndex
+ Tree" BlendTree on it driven by AttackIndex, and creates Any State transitions
+ for Attack, Block, Parry, Stagger, and Dead. Attack/Parry/Stagger return to
+ locomotion by exit time; Block returns when Block is false.
+
+NOTES
+ The tool preserves the existing Attack clip as AttackIndex 0 if one is already
+ assigned. Extra attack clips, plus Block/Parry/Stagger clips, still need to be
+ assigned in the Animator after running the tool.
+

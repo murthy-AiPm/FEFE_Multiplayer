@@ -382,6 +382,14 @@ public class DragonFlightController : NetworkBehaviour
             float pitchSign = invertY ? 1f : -1f;
             _rmPitchTarget = Mathf.Clamp(pitchSign * camPitch / flightPitchClamp, -1f, 1f);
         }
+        // Stamina exhaustion caps the climb side of pitch (positive = nose-up). Diving
+        // (negative) is unaffected — gravity does the work, no wing cost. Camera and
+        // head tracking are untouched; only the animator pitch input is clamped.
+        if (staminaController != null)
+        {
+            float climbCap = staminaController.MaxClimbPitch;
+            if (_rmPitchTarget > climbCap) _rmPitchTarget = climbCap;
+        }
         _rmPitch = Mathf.MoveTowards(_rmPitch, _rmPitchTarget, pitchSmoothSpeed * dt);
 
         // ── Roll (one-shot, locked for rollDuration, then cooldown; forward

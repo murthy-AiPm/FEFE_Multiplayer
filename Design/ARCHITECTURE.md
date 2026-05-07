@@ -568,9 +568,108 @@ parameters synced to remotes.
 
 ### 4.4 Sound
 
-`DragonSoundPlayer` — wing-flap motion-gated, fire-breath crossfade between
-two AudioSources (`fireBreathLoopMaxClipDuration = 3 s` because the loop point
-isn't seamless), plays through `ProximitySoundManager`. See §11.
+`DragonSoundPlayer` — fire-breath crossfade between two AudioSources
+(`fireBreathLoopMaxClipDuration = 3 s` because the loop point isn't seamless),
+plays through `ProximitySoundManager`. The wing-flap sound gate consults
+`DragonWingActivityTracker.IsFlapping` (see §4.5) so glide / dive frames don't
+fire flap audio. See §11.
+
+### 4.5 Vitals & Stamina
+
+#### Responsibility
+Cross-vital math for the dragon: drives stamina drain/regen during flight
+and abilities, scales costs/regen by zone HP, exposes owner-readable gates
+that downstream controllers (flight, combat) consult to enforce exhaustion
+behavior. Sits on top of the cross-character vital pipeline in §10 — does
+not own the vital pool; reads `Vital`s from `VitalManager`.
+
+#### Key classes
+- `DragonStaminaController` — `NetworkBehaviour`. Server-authoritative drain
+  and regen accumulators flushed to `VitalManager` at `flushInterval` (50 ms).
+  Public read API consumed by the rest of the dragon stack (callable on every
+  peer; lockout/cap state is computed locally from synced `_stamina.Current`):
+    - `CanFireBreath` — `!IsDepleted && !_fireBreathLockedOut`
+    - `MeleeReducedDamage` — true at zero stamina
+    - `WingsBroken` — true when wing zone HP at 0
+    - `MaxFlightThrust` — smoothed cap, eases between `1f` and
+      `highThrustThreshold` over `thrustCapEaseSeconds`. Owner's
+      `DragonFlightController` clamps `_rmThrust` to this each frame.
+    - `MaxClimbPitch` — smoothed cap, eases between `1f` and
+      `exhaustedMaxClimbPitch` (~0.3) on the same window. Owner's flight
+      controller clamps positive `_rmPitchTarget` to this; negative pitch
+      (diving) is unaffected.
+    - `StaminaNormalized` — for HUD readout.
+- `DragonWingActivityTracker` — plain `MonoBehaviour` (not networked).
+  Samples `wingBone.localRotation` in `LateUpdate` on every peer, reports
+  smoothed angular velocity (`WingActivity`, deg/sec) and a binary
+  `IsFlapping`. Consumed by:
+    - `DragonStaminaController` — `flapEffort` term in the flight drain
+      formula.
+    - `DragonSoundPlayer` — gates the wing-flap sound during glides/dives.
+  Defaults `flapThreshold = 80`, `smoothing = 8`. `IsFlapping` returns `true`
+  when `wingBone` is null so consumers fall back to pre-tracker behavior if
+  the Inspector reference is missing.
+
+#### Drain formula (effort-based flight)
+```
+effort = clamp01(|thrust|) × invLerp(lazyFlapDegPerSec, hardFlapDegPerSec, wingActivity)
+drain  = peakRate × effort × CostScale(wings)
+```
+"Work pays, gravity is free": hover (thrust ≈ 0) → no drain even with hard
+flapping; tucked dive (flap ≈ 0) → no drain even at full thrust; climb at
+moderate thrust + active flap → proportional drain. `peakRate` is
+`highThrustDrainRate` (named for legacy reasons — now the rate at full effort).
+Fire-breath drain is independent (`fireBreathDrainRate × CostScale(head)`,
+no wing gate).
+
+#### Regen
+Server-side tick adds to `_regenAccum` whenever:
+- `_regenCooldown` has elapsed (1 s grace after most recent drain frame), AND
+- not firebreathing, not sprinting (`NetGaitSpeed > 0.9`), AND
+- `Current < Max`.
+
+Tier picked by grounded vs airborne only — there is no thrust gate. Drain
+frames latch the cooldown open, so any time the dragon stops paying it
+recovers automatically (mid-glide, mid-dive, hovering still, on the ground).
+
+#### Firebreath lockout (anti-chatter)
+Without hysteresis, a depleted dragon's regen tick raises stamina above 0
+within 1–2 frames of being available, `CanFireBreath` flips true, breath
+restarts, drain immediately depletes again — a sub-second restart loop heard
+as continuous sound and a fluttering jaw. Fix: latch `_fireBreathLockedOut`
+on `IsDepleted`, clear when `Current >= fireBreathRearmStamina` (~10% of
+pool). Maintained on every peer so owner and server agree without a
+NetworkVariable.
+
+#### Cap smoothing (exhaustion ease)
+`MaxFlightThrust` and `MaxClimbPitch` are not binary — both `MoveTowards`
+their depletion targets at a rate of `(1 − target) / thrustCapEaseSeconds`
+per second. Sharing the ease window means depletion reads as one coherent
+bog-down event in the animator (Thrust + Pitch both walk through the blend
+tree instead of stepping). Owner-only consumer (flight controller); remote
+clients maintain their own smoothed values for free but nothing reads them.
+
+#### Network contract
+- Server runs `Update`; the per-peer block (lockout + cap smoothing) sits
+  ABOVE the `IsServer` guard so every peer maintains the lockout and the
+  smoothed caps from the synced `_stamina.Current`.
+- Drain / regen accumulators are server-only. Flushed via `VitalManager`
+  whose `_syncedValues` `NetworkList<float>` propagates to all clients.
+- Zone HP regen pause (`_head.SetRegenPaused(zonesLocked)` etc.) is server-
+  authoritative — `gateZoneRegen = true` ties zone recovery to the
+  "grounded + idle + not firebreathing" state.
+
+#### Gotchas
+- `NetGaitSpeed` going stale at takeoff would freeze stamina regen with
+  "still sprinting" — `AnimalAnimatorController.UpdateNetworkVariables`
+  forces `netGaitSpeed = 0` while airborne (see §3 Gotchas).
+- The per-peer Update block declares smoothing locals (`capEaseDt`); the
+  server-only block below declares its own `dt = Time.deltaTime`. C# rejects
+  re-declaring `dt` in a nested scope when an enclosing scope owns the
+  same name (CS0136), so the smoothing block uses a different local name.
+- `DragonWingActivityTracker` runs on every peer with no `IsOwner` guard
+  because the server-authoritative drain reads `WingActivity` and needs a
+  valid measurement on the server's animator-driven bone.
 
 ---
 
@@ -1579,13 +1678,133 @@ NetworkVariables; they cost bandwidth and version-pin runtime to data.
 
 ---
 
-## 20. Discovery summary
+## 20. NPC AI
 
-- **Subsystems documented:** 14 (Application & Session Lifecycle, Character
+### Responsibility
+Server-authoritative AI for non-player characters — currently a single shipping
+implementation (`BearAI`, used as the zombie AI) and a planned, more complex
+orc AI (see `design/OrcAI.md`).
+
+### Key classes (existing)
+
+- `BearAI` (`CharacterScripts/Scripts/Bear/BearAI.cs`) — complete NPC AI used
+  for zombies. ~790 lines, `NetworkBehaviour`, `[RequireComponent(NavMeshAgent,
+  NetworkObject)]`. Six-state flat enum FSM:
+  `Idle → Wander → Chase → Attack → Return → Dead`. AI logic gated on
+  `if (!IsServer) return;`.
+- `EnemySurroundCoordinator` (`CharacterScripts/Scripts/Bear/`) — **stub**.
+  File contents are a comment marker noting the class was replaced by the
+  simpler crowd-wait approach inside `BearAI`. Safe to delete. Kept here so
+  it isn't rediscovered as live code.
+
+### How BearAI is wired
+
+**Path planning vs locomotion are split.** This is the canonical pattern for
+NPCs that need both pathfinding and root-motion-driven animation:
+
+```csharp
+// OnNetworkSpawn:
+agent.updatePosition = false;
+agent.updateRotation = false;            // agent plans only — does NOT move the transform
+agent.avoidancePriority = Random.Range(20, 80);  // spread RVO priorities
+
+// OnAnimatorMove (server only):
+Vector3 rootPosition = animator.rootPosition;   // root motion drives position
+// + manual gravity raycast (groundCheckDistance + 0.5f)
+// + separation nudge (OverlapSphereNonAlloc on neighbours)
+agent.nextPosition = rootPosition;       // tell agent where the body is
+transform.position = rootPosition;       // apply
+```
+
+The Animator drives motion; NavMeshAgent only plans paths. The body's
+authoritative position is fed back into the agent via `nextPosition` so the
+next path query is correct. This keeps animations clean at the cost of
+manual gravity / separation.
+
+**Crowd control is a server-side static dictionary.** `BearAI._attackerCounts`
+is `static Dictionary<Transform, int>` — process-wide, not per-NPC. Each
+attacker registers when entering Attack state and unregisters on death /
+target-loss. `IsCrowded()` blocks extras (default `maxAttackersPerTarget = 4`),
+`FindLessContestedTarget()` retargets when overwhelmed. The static-ness means
+the same dictionary works across mixed enemy types attacking the same target
+(zombies + orcs counted together). It is server-only state, so no networking.
+
+**Detection is throttled.** `_detectionInterval = 0.25s` — `FindNearestPlayer`
+returns the cached `currentTarget` between intervals to avoid per-frame
+`OverlapSphere` cost. Pure radius detection, no LoS raycast.
+
+**Animation sync via NetworkAnimator.** Animator parameters are `Speed` (float,
+smoothed in via `SetFloat(hash, value, 0.15f, dt)`), `Attack` (trigger), `Dead`
+(bool). State-driven: `Speed` is mapped per-FSM-state (`Idle = 0`, `Wander = 0.5`,
+`Chase = 1`, `Attack = 0`).
+
+**Hitbox flow.** `HitboxController` on the bite child. `Invoke(nameof(EnableBiteHitbox), hitboxEnableDelay)`
+opens it `hitboxEnableDelay` after the attack starts; `hitboxActiveDuration`
+closes it. Damage routes through the standard `DamageReceiver` pipeline.
+
+**Death flow.** `vitalManager.OnDeath` event → `SetState(Dead)` →
+`agent.enabled = false`, `animator.SetBool(deadHash, true)`,
+`DisableCollidersClientRpc()` so each client locally drops the capsule and
+crit-zone colliders. No respawn.
+
+### Net-visible state and ownership
+
+- NetworkObject is server-owned (`Ownership = 1` on the prefab — server
+  authority). All clients receive the standard `NetworkTransform` + the
+  `NetworkAnimator` parameter snapshot. Client-side has no AI logic.
+- For one-shot effects spawned by AI (sounds, VFX), the same ServerRpc →
+  ClientRpc fan-out used elsewhere applies. `BearAI` uses
+  `DisableCollidersClientRpc` for death-time collider drops; sounds run on
+  the server's local `AnimalSoundPlayer` and propagate via animation events.
+
+### Fragile / known-careful
+
+- **`_attackerCounts` is process-wide static.** A bug that fails to
+  unregister on an edge-case death path leaks entries forever. Always pair
+  every `RegisterAttacker` with an `UnregisterAttacker` on every transition
+  out of Attack/Chase that loses the target.
+- **NavMeshAgent + `agent.speed = 100f`.** BearAI sets agent speed very high
+  to prevent NavMesh from clamping root motion. Side effect: agent's own
+  velocity-based avoidance is effectively disabled, leaving RVO + the manual
+  separation nudge as the only avoidance. Don't expect agent.velocity to
+  match the actual body velocity.
+- **Manual gravity is one-way.** The downward raycast snaps to ground or
+  accumulates `_verticalVelocity`. There is no upward force — if a knock-up
+  effect is added later, this gravity model will fight it. The dragon's hit
+  pipeline solved this with an SMB; orcs may need the same.
+- **Detection is line-of-sight-blind.** `OverlapSphereNonAlloc` against
+  `playerLayer`. Bears (and zombies, which inherit this AI) sense players
+  through walls. Acceptable for zombies; the planned orc AI will need a LoS
+  raycast added to detection.
+
+### Planned extension — orc AI (`design/OrcAI.md`)
+
+The orc AI is a **fork-and-extend** of `BearAI`, not a subclass. The shared
+static `_attackerCounts` dictionary works correctly across the fork (mixed
+zombie + orc encounters share crowd-control). Forking lets each AI evolve
+independently without a coupling tax.
+
+Forecast complexity (from `OrcAI.md`):
+- Block, parry, multiple attack styles (driven by Mecanim sub-states + decision logic).
+- Squad-level coordination (formation slots around target, casualty-driven flee).
+- NavMesh OffMeshLinks for jump-over-obstacle.
+- HFSM (top-level state) + utility-scored combat decisions (block / parry /
+  attack / reposition) replacing BearAI's flat enum FSM.
+- Squad coordinator entity (one per squad) holding slot assignments and
+  morale state, networked at squad granularity not orc granularity (matching
+  the squad-level replication principle in `FEFE_NPC_Architecture.md`).
+
+Until the orc work begins, `BearAI` is the only NPC AI in the codebase.
+
+---
+
+## 21. Discovery summary
+
+- **Subsystems documented:** 15 (Application & Session Lifecycle, Character
   Selection & Spawning, Animal Locomotion base, Dragon, Horse & Mount, Human
   Locomotion, Human Animation, Human Combat, Network Synchronization, Vitals
   & Status Effects, Ballista, Camera & Owner Visibility, Proximity Sound,
-  Respawn & Death UI).
+  Respawn & Death UI, NPC AI).
 - **Total document length:** ~1100 lines.
 - **Top 3 weaknesses to address first:**
   1. Hardcoded **5 m melee max range** in `DamageReceiver.RequestDamageServerRpc`

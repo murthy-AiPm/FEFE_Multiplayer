@@ -6084,7 +6084,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1353946614
+  GlobalObjectIdHash: 48177541
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -6784,7 +6784,9 @@ MonoBehaviour:
   wingActivityTracker: {fileID: 788855867563866710}
   fireBreathDrainRate: 80
   highThrustDrainRate: 50
-  highThrustThreshold: 0.7
+  lazyFlapDegPerSec: 60
+  hardFlapDegPerSec: 200
+  highThrustThreshold: 0.6
   sprintGaitThreshold: 0.9
   meleeDrainPerAttack: 50
   regenGroundedIdleRate: 80
@@ -6793,6 +6795,9 @@ MonoBehaviour:
   curveThreshold: 0.5
   curveFloor: 0.3
   gateZoneRegen: 1
+  fireBreathRearmStamina: 100
+  thrustCapEaseSeconds: 0.5
+  exhaustedMaxClimbPitch: 0.3
   flushInterval: 0.05
 --- !u!114 &788855867563866710
 MonoBehaviour:
