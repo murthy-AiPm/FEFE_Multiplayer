@@ -1901,7 +1901,7 @@ FIX
 
 INSPECTOR / UNITY WIREUP REQUIRED
  - Create/wire OrcAnimations.controller with Animator params:
-   Speed(float), Dead(bool), CombatState(int), AttackIndex(int),
+   Speed(float), Dead(bool), CombatState(int), AttackIndex(float),
    Attack(trigger), Block(bool), Parry(trigger), Stagger(trigger).
  - Assign playerLayer, groundLayer, weaponHitbox, optional WeaponData, colliders
    to disable on death, and attack option timings/ranges.
@@ -1932,4 +1932,114 @@ NOTES
  The tool preserves the existing Attack clip as AttackIndex 0 if one is already
  assigned. Extra attack clips, plus Block/Parry/Stagger clips, still need to be
  assigned in the Animator after running the tool.
+
+2026-05-07 - Orc animator parameter type fix
+
+ROOT CAUSE
+ Unity BlendTree blend parameters must be floats. The first setup utility made
+ AttackIndex an int because OrcAI conceptually chooses an integer attack slot,
+ which produced: "BlendTree uses parameter AttackIndex which is not float type."
+ The user's controller also had a Block transition reporting an incompatible
+ condition type, which means the parameter had likely been created with the
+ wrong type before the bool transition was added.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Writes AttackIndex with Animator.SetFloat instead of SetInteger.
+ ~ Editor/OrcAnimatorControllerSetup.cs
+     - Ensures AttackIndex is a Float parameter.
+     - EnsureParameter now repairs wrong parameter types by removing and
+       recreating the parameter instead of only logging a warning.
+
+FIX
+ Rerun Window/FEFE/Setup Orc Animator Controller in Unity. The tool will recreate
+ AttackIndex as Float and Block as Bool if needed, clearing both Animator errors.
+
+2026-05-07 - Orc root motion split for in-place locomotion and combat lunge clips
+
+ROOT CAUSE
+ The first OrcAI used one global useRootMotion toggle. The user's orc pack has
+ in-place walk/run clips but combat clips with root motion, so the global toggle
+ was the wrong shape: enabled broke locomotion, disabled ignored combat lunges.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Replaced the single useRootMotion field with useLocomotionRootMotion
+       (default false) and useCombatRootMotion (default true).
+     - NavMeshAgent.updatePosition now changes when the HFSM state changes.
+       Idle/Wander/Return/Approach/Reposition use the locomotion setting;
+       Attack/Parry/Stagger/Dead use the combat setting; Block/Recover remain
+       code/NavMesh controlled.
+
+FIX
+ Set useLocomotionRootMotion=false and useCombatRootMotion=true for the current
+ orc animations. NavMeshAgent drives walking/running while combat clips can move
+ the body through Animator root motion.
+
+2026-05-07 - Orc attack cancel when target dodges out
+
+ROOT CAUSE
+ With combat root motion enabled, Attack stayed active for the full clip even
+ when the player dodged far outside the selected attack's reach. The orc kept
+ playing the attack animation and root motion made it look like the orc floated
+ after the player instead of abandoning the whiff and chasing again.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added attackCancelDistanceBuffer, locomotionStatePath, and
+       attackCancelFade Inspector fields.
+     - UpdateAttack now cancels the attack if target distance exceeds
+       activeAttack.maxRange + attackCancelDistanceBuffer.
+     - Cancel clears pending hitbox invoke, disables hitbox, unregisters the
+       active attacker slot, briefly cools down the attack, crossfades to
+       locomotion, and returns the HFSM to Approach.
+
+FIX
+ Default cancel buffer is 1.2m beyond the attack's maxRange. For a 2.4m attack,
+ the orc cancels and chases if the target gets beyond ~3.6m during the attack.
+ If your locomotion state is renamed, update locomotionStatePath on OrcAI.
+
+2026-05-07 - Orc attack cancel re-engage delay
+
+ROOT CAUSE
+ The attack cancel fired and returned to Approach, but decisionTimer was often
+ already ready to evaluate again, so the orc could immediately choose another
+ attack after the locomotion crossfade. That made the cancel look ineffective.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added attackCancelReengageDelay (default 0.75s).
+     - Cancelled attacks now set decisionTimer and the cancelled attack's
+       cooldown to at least the re-engage delay.
+     - Cancelling also resets the Attack trigger before crossfading to
+       locomotion, avoiding stale trigger re-entry.
+
+FIX
+ After a whiff cancel, the orc must chase/reposition for a short window before
+ it can select another attack. Tune attackCancelReengageDelay upward if it still
+ retries too fast.
+
+2026-05-07 - Orc NavMesh sliding during attack fix
+
+ROOT CAUSE
+ Even with useCombatRootMotion disabled, Attack set agent.updatePosition=true
+ because the state was not using root motion. ResetPath alone did not hard-stop
+ the NavMeshAgent, so residual path/velocity could continue moving the orc while
+ the attack animation played. This looked like the orc sliding and attacking
+ while chasing.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added StopAgent/ResumeAgent helpers.
+     - Idle and committed action states (Attack/Block/Parry/Recover/Stagger/
+       Dead) now hard-stop the NavMeshAgent: isStopped=true, ResetPath,
+       velocity zero, nextPosition synced to transform.
+     - Movement states (Wander/Return/Approach/Reposition) resume the agent.
+     - Attack distance cancel no longer interrupts once the hitbox is active,
+       so a valid committed swing can finish its damage window.
+
+FIX
+ During attack, movement now comes from combat root motion only when
+ useCombatRootMotion=true. If combat root motion is false, the NavMeshAgent is
+ stopped and cannot keep sliding the orc toward the target during the attack.
 

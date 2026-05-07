@@ -19,7 +19,7 @@ public static class OrcAnimatorControllerSetup
         EnsureParameter(controller, "Speed", AnimatorControllerParameterType.Float);
         EnsureParameter(controller, "Dead", AnimatorControllerParameterType.Bool);
         EnsureParameter(controller, "CombatState", AnimatorControllerParameterType.Int);
-        EnsureParameter(controller, "AttackIndex", AnimatorControllerParameterType.Int);
+        EnsureParameter(controller, "AttackIndex", AnimatorControllerParameterType.Float);
         EnsureParameter(controller, "Attack", AnimatorControllerParameterType.Trigger);
         EnsureParameter(controller, "Block", AnimatorControllerParameterType.Bool);
         EnsureParameter(controller, "Parry", AnimatorControllerParameterType.Trigger);
@@ -71,12 +71,18 @@ public static class OrcAnimatorControllerSetup
 
     private static void EnsureParameter(AnimatorController controller, string name, AnimatorControllerParameterType type)
     {
-        foreach (var p in controller.parameters)
+        var parameters = controller.parameters;
+        for (int i = parameters.Length - 1; i >= 0; i--)
         {
+            var p = parameters[i];
             if (p.name == name)
             {
-                if (p.type != type)
-                    Debug.LogWarning($"[OrcAnimatorControllerSetup] Parameter '{name}' exists with type {p.type}; expected {type}.");
+                if (p.type == type)
+                    return;
+
+                controller.RemoveParameter(i);
+                Debug.Log($"[OrcAnimatorControllerSetup] Recreated parameter '{name}' as {type}.");
+                controller.AddParameter(name, type);
                 return;
             }
         }

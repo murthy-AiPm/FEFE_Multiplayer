@@ -58,7 +58,10 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     [SerializeField] private float arrivalThreshold = 1.5f;
 
     [Header("Movement")]
-    [SerializeField] private bool useRootMotion = true;
+    [Tooltip("Use animation root motion for idle/walk/run/reposition states. Leave off when locomotion clips are in-place.")]
+    [SerializeField] private bool useLocomotionRootMotion = false;
+    [Tooltip("Use animation root motion for committed combat clips such as attacks, parries, staggers, and death.")]
+    [SerializeField] private bool useCombatRootMotion = true;
     [SerializeField] private float walkSpeed = 2f;
     [SerializeField] private float runSpeed = 6f;
     [SerializeField] private float rotationSpeed = 6f;
@@ -76,6 +79,13 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     {
         new OrcAttackOption { attackIndex = 0, maxRange = 2.4f, weight = 1f }
     };
+    [Tooltip("If the target moves this far beyond the active attack max range, cancel the attack and chase again.")]
+    [SerializeField] private float attackCancelDistanceBuffer = 1.2f;
+    [Tooltip("Seconds after a cancelled attack before the orc may choose another attack.")]
+    [SerializeField] private float attackCancelReengageDelay = 0.75f;
+    [Tooltip("Animator state path to fade to when an attack is cancelled. Existing controller uses the Locomtion typo.")]
+    [SerializeField] private string locomotionStatePath = "Base Layer.Locomtion";
+    [SerializeField] private float attackCancelFade = 0.08f;
 
     [Header("Block")]
     [Range(0f, 1f)]
@@ -191,7 +201,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
         if (agent != null)
         {
-            agent.updatePosition = !useRootMotion;
+            agent.updatePosition = !ShouldUseRootMotionForState(OrcState.Patrol, OrcSubState.Idle);
             agent.updateRotation = false;
             agent.avoidancePriority = Random.Range(20, 80);
             agent.speed = walkSpeed;
@@ -245,7 +255,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
     private void OnAnimatorMove()
     {
-        if (!IsServer || !useRootMotion || animator == null || agent == null) return;
+        if (!IsServer || !ShouldUseRootMotionForCurrentState() || animator == null || agent == null) return;
 
         agent.speed = 100f;
         Vector3 rootPosition = animator.rootPosition;
@@ -436,7 +446,15 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     {
         stateTimer -= Time.deltaTime;
         if (currentTarget != null)
+        {
+            if (ShouldCancelAttackForDistance())
+            {
+                CancelAttackAndApproach();
+                return;
+            }
+
             RotateToward(currentTarget.position - transform.position);
+        }
 
         if (stateTimer <= 0f)
         {
@@ -602,6 +620,9 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         SubState = newSubState;
         stateInitialized = true;
 
+        if (agent != null && agent.enabled)
+            agent.updatePosition = !ShouldUseRootMotionForCurrentState();
+
         if (animator != null)
             animator.SetInteger(combatStateHash, (int)newSubState);
 
@@ -609,30 +630,34 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         {
             case OrcSubState.Idle:
                 stateTimer = Random.Range(idleMinTime, idleMaxTime);
-                agent.ResetPath();
+                StopAgent();
                 break;
 
             case OrcSubState.Wander:
+                ResumeAgent();
                 break;
 
             case OrcSubState.Return:
                 UnregisterAttacker();
                 currentTarget = null;
+                ResumeAgent();
                 break;
 
             case OrcSubState.Approach:
+                ResumeAgent();
                 break;
 
             case OrcSubState.Reposition:
                 stateTimer = repositionDuration;
+                ResumeAgent();
                 break;
 
             case OrcSubState.Attack:
                 stateTimer = activeAttack != null ? activeAttack.duration : 1f;
-                agent.ResetPath();
+                StopAgent();
                 if (animator != null)
                 {
-                    animator.SetInteger(attackIndexHash, activeAttack != null ? activeAttack.attackIndex : 0);
+                    animator.SetFloat(attackIndexHash, activeAttack != null ? activeAttack.attackIndex : 0f);
                     animator.SetTrigger(attackHash);
                 }
                 weaponHitbox?.SetAttackContext(activeAttack != null ? activeAttack.attackIndex : 0, activeAttack != null && activeAttack.isHeavy);
@@ -642,7 +667,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
             case OrcSubState.Block:
                 stateTimer = blockDuration;
-                agent.ResetPath();
+                StopAgent();
                 if (animator != null)
                     animator.SetBool(blockHash, true);
                 break;
@@ -650,19 +675,19 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             case OrcSubState.Parry:
                 stateTimer = parryDuration;
                 parryActiveTimer = parryActiveWindow;
-                agent.ResetPath();
+                StopAgent();
                 if (animator != null)
                     animator.SetTrigger(parryHash);
                 break;
 
             case OrcSubState.Recover:
                 stateTimer = 0.2f;
-                agent.ResetPath();
+                StopAgent();
                 break;
 
             case OrcSubState.Stagger:
                 stateTimer = 0.45f;
-                agent.ResetPath();
+                StopAgent();
                 DisableWeaponHitbox();
                 if (animator != null)
                     animator.SetTrigger(staggerHash);
@@ -671,7 +696,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             case OrcSubState.Dead:
                 UnregisterAttacker();
                 currentTarget = null;
-                agent.ResetPath();
+                StopAgent();
                 agent.enabled = false;
                 DisableWeaponHitbox();
                 if (animator != null)
@@ -680,6 +705,24 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 DisableCollidersClientRpc();
                 break;
         }
+    }
+
+    private void StopAgent()
+    {
+        if (agent == null || !agent.enabled) return;
+
+        agent.isStopped = true;
+        agent.ResetPath();
+        agent.velocity = Vector3.zero;
+        agent.nextPosition = transform.position;
+    }
+
+    private void ResumeAgent()
+    {
+        if (agent == null || !agent.enabled) return;
+
+        agent.isStopped = false;
+        agent.nextPosition = transform.position;
     }
 
     private bool ValidateCombatTarget()
@@ -713,15 +756,47 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             case OrcSubState.Return:
             case OrcSubState.Reposition:
                 animSpeed = 0.5f;
-                if (!useRootMotion && agent != null) agent.speed = walkSpeed;
+                if (!ShouldUseRootMotionForCurrentState() && agent != null) agent.speed = walkSpeed;
                 break;
             case OrcSubState.Approach:
                 animSpeed = 1f;
-                if (!useRootMotion && agent != null) agent.speed = runSpeed;
+                if (!ShouldUseRootMotionForCurrentState() && agent != null) agent.speed = runSpeed;
                 break;
         }
 
         animator.SetFloat(speedHash, animSpeed, 0.15f, Time.deltaTime);
+    }
+
+    private bool ShouldUseRootMotionForCurrentState()
+    {
+        return ShouldUseRootMotionForState(State, SubState);
+    }
+
+    private bool ShouldUseRootMotionForState(OrcState state, OrcSubState subState)
+    {
+        if (state == OrcState.Dead)
+            return useCombatRootMotion;
+
+        switch (subState)
+        {
+            case OrcSubState.Idle:
+            case OrcSubState.Wander:
+            case OrcSubState.Return:
+            case OrcSubState.Approach:
+            case OrcSubState.Reposition:
+                return useLocomotionRootMotion;
+
+            case OrcSubState.Attack:
+            case OrcSubState.Parry:
+            case OrcSubState.Stagger:
+            case OrcSubState.Dead:
+                return useCombatRootMotion;
+
+            case OrcSubState.Block:
+            case OrcSubState.Recover:
+            default:
+                return false;
+        }
     }
 
     private void EnableWeaponHitbox()
@@ -738,6 +813,41 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (weaponHitbox != null)
             weaponHitbox.DisableHitbox();
         hitboxActive = false;
+    }
+
+    private bool ShouldCancelAttackForDistance()
+    {
+        if (currentTarget == null || activeAttack == null)
+            return false;
+
+        if (hitboxActive)
+            return false;
+
+        float cancelDistance = activeAttack.maxRange + attackCancelDistanceBuffer;
+        float distance = Vector3.Distance(transform.position, currentTarget.position);
+        return distance > cancelDistance;
+    }
+
+    private void CancelAttackAndApproach()
+    {
+        CancelInvoke(nameof(EnableWeaponHitbox));
+        DisableWeaponHitbox();
+        UnregisterAttacker();
+
+        if (activeAttack != null)
+            activeAttack.cooldownTimer = Mathf.Max(activeAttack.cooldownTimer, attackCancelReengageDelay);
+
+        decisionTimer = Mathf.Max(decisionTimer, attackCancelReengageDelay);
+
+        if (animator != null)
+        {
+            animator.ResetTrigger(attackHash);
+            if (!string.IsNullOrEmpty(locomotionStatePath))
+                animator.CrossFade(locomotionStatePath, attackCancelFade, 0);
+        }
+
+        activeAttack = null;
+        SetState(OrcState.Combat, OrcSubState.Approach);
     }
 
     public DamageDefenseResult EvaluateDefense(NetworkObject attacker, Vector3 hitPoint, float rawDamage)

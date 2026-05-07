@@ -6602,7 +6602,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkAnimator
   ShowTopMostFoldoutHeaderGroup: 1
   TransitionStateInfoList: []
-  m_Animator: {fileID: 0}
+  m_Animator: {fileID: 7715249245129300593}
 --- !u!114 &444293176737661353
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6616,7 +6616,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VitalManager
   ShowTopMostFoldoutHeaderGroup: 1
-  vitalDefinitions: []
+  vitalDefinitions:
+  - {fileID: 11400000, guid: 0892d54e46a64254cb46d9d23dbe5f88, type: 2}
   tpsController: {fileID: 0}
   animalGroundingSystem: {fileID: 0}
   debugHealth: 0
@@ -6634,7 +6635,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DamageReceiver
   ShowTopMostFoldoutHeaderGroup: 1
-  isPlayer: 1
+  isPlayer: 0
   vitalManager: {fileID: 0}
   combatController: {fileID: 0}
   weaponManager: {fileID: 0}
@@ -6671,20 +6672,21 @@ MonoBehaviour:
   idleMinTime: 2
   idleMaxTime: 5
   arrivalThreshold: 1.5
-  useRootMotion: 1
+  useLocomotionRootMotion: 0
+  useCombatRootMotion: 1
   walkSpeed: 2
-  runSpeed: 6
+  runSpeed: 4
   rotationSpeed: 6
-  preferredCombatDistance: 2.2
+  preferredCombatDistance: 1
   repositionDistance: 1.4
   repositionDuration: 0.7
   decisionInterval: 0.2
   targetAttackReactDistance: 3
-  frontalDefenseAngle: 130
+  frontalDefenseAngle: 120
   attacks:
   - attackIndex: 0
     minRange: 0
-    maxRange: 2.4
+    maxRange: 1
     weight: 1
     duration: 1.1
     cooldown: 1.2
@@ -6693,22 +6695,26 @@ MonoBehaviour:
     isHeavy: 0
   - attackIndex: 1
     minRange: 0
-    maxRange: 2.4
-    weight: 1
-    duration: 1.1
-    cooldown: 1.2
-    hitboxEnableDelay: 0.25
-    hitboxActiveTime: 0.3
-    isHeavy: 1
-  - attackIndex: 2
-    minRange: 0
-    maxRange: 2.4
+    maxRange: 1
     weight: 1
     duration: 1.1
     cooldown: 1.2
     hitboxEnableDelay: 0.25
     hitboxActiveTime: 0.3
     isHeavy: 0
+  - attackIndex: 2
+    minRange: 0
+    maxRange: 1
+    weight: 1
+    duration: 1.1
+    cooldown: 1.2
+    hitboxEnableDelay: 0.25
+    hitboxActiveTime: 0.3
+    isHeavy: 1
+  attackCancelDistanceBuffer: 0.1
+  attackCancelReengageDelay: 0.75
+  locomotionStatePath: Base Layer.Locomotion
+  attackCancelFade: 0.08
   blockChance: 0.35
   blockDuration: 0.9
   blockCooldown: 1.4
