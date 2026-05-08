@@ -6,6 +6,7 @@ using UnityEngine.AI;
 [System.Serializable]
 public class OrcAttackOption
 {
+    public string name = "";
     public int attackIndex;
     public float minRange = 0f;
     public float maxRange = 2.5f;
@@ -747,20 +748,41 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     {
         if (currentTarget == null || !IsTargetAlive(currentTarget))
         {
-            UnregisterAttacker();
-            SetState(OrcState.Patrol, OrcSubState.Return);
+            HandleInvalidCombatTarget();
             return false;
         }
 
         float distToHome = Vector3.Distance(transform.position, homePosition);
         if (distToHome > leashRadius)
         {
-            UnregisterAttacker();
-            SetState(OrcState.Patrol, OrcSubState.Return);
+            HandleInvalidCombatTarget();
             return false;
         }
 
         return true;
+    }
+
+    private void HandleInvalidCombatTarget()
+    {
+        CancelInvoke(nameof(EnableSelectedWeaponHitbox));
+        DisableWeaponHitbox();
+
+        activeAttack = null;
+        attackHitboxWindowStarted = false;
+        postAttackBlockActive = false;
+        nextBlockDuration = -1f;
+
+        if (animator != null)
+        {
+            animator.ResetTrigger(attackHash);
+            animator.SetBool(blockHash, false);
+
+            if (SubState == OrcSubState.Attack && !string.IsNullOrEmpty(locomotionStatePath))
+                animator.CrossFade(locomotionStatePath, attackCancelFade, 0);
+        }
+
+        UnregisterAttacker();
+        SetState(OrcState.Patrol, OrcSubState.Return);
     }
 
     private void UpdateAnimatorSpeed()

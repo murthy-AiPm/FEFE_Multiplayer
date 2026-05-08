@@ -16,7 +16,7 @@ MonoBehaviour:
   weaponType: 1
   weaponPrefab: {fileID: 8989030437900976531, guid: cc4c732c60ed40145a7ef2776bfcd58d, type: 3}
   weaponProfileName: OrcDagger
-  baseDamage: 1
+  baseDamage: 10
   heavyDamageMultiplier: 2
   attackRange: 2
   staminaCostLight: 10

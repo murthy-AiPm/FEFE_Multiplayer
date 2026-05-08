@@ -2248,3 +2248,36 @@ FIX
  OrcAI no longer emits CombatState 8 / Recover. The combat loop is now Attack or
  Parry into Block/guard, then back to Approach.
 
+2026-05-08 - Orc attack exits when target dies
+
+ROOT CAUSE
+ The post-attack animator path expects Attack to flow into Block, but target
+ death/leash invalidation can happen while Attack is still playing. In that path
+ OrcAI went straight to Return without running attack completion, so the
+ animator could remain visually stuck in Attack with Block false.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added HandleInvalidCombatTarget.
+     - Target loss now cancels pending hitbox invokes, disables weapon hitboxes,
+       clears attack/block animation state, clears post-attack block bookkeeping,
+       and crossfades Attack back to locomotion before returning home.
+
+FIX
+ If an orc's target dies or the leash invalidates during an attack, the orc exits
+ the attack animation cleanly and returns to locomotion/Return instead of waiting
+ for the Attack -> Block path.
+
+2026-05-08 - Orc attack option inspector labels
+
+ROOT CAUSE
+ OrcAttackOption entries were identified only by attackIndex and tuning values,
+ which made larger attack lists hard to scan in the Inspector.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added a blank name field to OrcAttackOption.
+
+FIX
+ Each attack option can now be labeled in the Inspector for easier tuning.
+
