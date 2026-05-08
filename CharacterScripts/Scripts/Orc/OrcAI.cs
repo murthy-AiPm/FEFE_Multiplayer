@@ -31,6 +31,13 @@ public enum OrcWeaponHitboxSelection
     Both
 }
 
+public enum OrcPatrolMode
+{
+    Wander,
+    Loop,
+    PingPong
+}
+
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(NetworkObject))]
 public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
@@ -94,6 +101,10 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     [SerializeField] private float outOfViewRangedAlertWindow = 4f;
 
     [Header("Patrol")]
+    [SerializeField] private OrcPatrolMode patrolMode = OrcPatrolMode.Wander;
+    [SerializeField] private Transform[] patrolPoints;
+    [SerializeField] private bool randomizePatrolStartPoint = true;
+    [SerializeField] private Vector2 patrolWaitTimeRange = new Vector2(1f, 3f);
     [SerializeField] private float wanderRadius = 10f;
     [SerializeField] private float idleMinTime = 2f;
     [SerializeField] private float idleMaxTime = 5f;
@@ -187,6 +198,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     [SerializeField] private Color investigateRadiusGizmoColor = new Color(0.75f, 0f, 1f, 0.2f);
     [SerializeField] private Color wanderRadiusGizmoColor = new Color(0f, 1f, 0f, 0.2f);
     [SerializeField] private Color preferredCombatDistanceGizmoColor = new Color(1f, 0.5f, 0f, 0.3f);
+    [SerializeField] private Color patrolRouteGizmoColor = new Color(0.25f, 0.8f, 1f, 0.8f);
 
     private static readonly Dictionary<Transform, int> _attackerCounts = new Dictionary<Transform, int>();
     private static readonly List<OrcAI> _serverOrcs = new List<OrcAI>();
@@ -223,6 +235,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private float directRangedHitPriorityTimer;
     private float outOfViewRangedAlertTimer;
     private int outOfViewRangedAlertCount;
+    private int currentPatrolPointIndex;
+    private int patrolDirection = 1;
     private bool hitboxActive;
     private bool attackHitboxWindowStarted;
     private bool mainHandHitboxActive;
@@ -291,6 +305,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (vitalManager != null)
             vitalManager.OnDeath += OnDeath;
 
+        InitializePatrolRoute();
         SetState(OrcState.Patrol, OrcSubState.Idle);
     }
 
@@ -495,15 +510,14 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                         return;
                     }
 
-                    Vector3 wanderPoint = GetRandomWanderPoint();
-                    if (wanderPoint != Vector3.zero)
+                    if (TryGetNextPatrolDestination(out Vector3 patrolDestination))
                     {
-                        agent.SetDestination(wanderPoint);
+                        agent.SetDestination(patrolDestination);
                         SetState(OrcState.Patrol, OrcSubState.Wander);
                     }
                     else
                     {
-                        stateTimer = Random.Range(idleMinTime, idleMaxTime);
+                        stateTimer = GetPatrolWaitDuration();
                     }
                 }
                 break;
@@ -823,7 +837,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         switch (newSubState)
         {
             case OrcSubState.Idle:
-                stateTimer = Random.Range(idleMinTime, idleMaxTime);
+                stateTimer = GetPatrolWaitDuration();
                 StopAgent();
                 break;
 
@@ -1778,6 +1792,105 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         return count >= maxAttackersPerTarget;
     }
 
+    private void InitializePatrolRoute()
+    {
+        patrolDirection = 1;
+        if (!HasPatrolPoints())
+        {
+            currentPatrolPointIndex = 0;
+            return;
+        }
+
+        currentPatrolPointIndex = randomizePatrolStartPoint
+            ? Random.Range(0, patrolPoints.Length)
+            : 0;
+
+        if (patrolMode == OrcPatrolMode.PingPong &&
+            currentPatrolPointIndex >= patrolPoints.Length - 1)
+        {
+            patrolDirection = -1;
+        }
+    }
+
+    private bool TryGetNextPatrolDestination(out Vector3 destination)
+    {
+        destination = Vector3.zero;
+
+        if (patrolMode == OrcPatrolMode.Wander || !HasPatrolPoints())
+        {
+            destination = GetRandomWanderPoint();
+            return destination != Vector3.zero;
+        }
+
+        for (int i = 0; i < patrolPoints.Length; i++)
+        {
+            currentPatrolPointIndex = Mathf.Clamp(currentPatrolPointIndex, 0, patrolPoints.Length - 1);
+            Transform point = patrolPoints[currentPatrolPointIndex];
+            AdvancePatrolPointIndex();
+            if (point == null) continue;
+
+            destination = GetPatrolPointPosition(point);
+            return true;
+        }
+
+        return false;
+    }
+
+    private Vector3 GetPatrolPointPosition(Transform point)
+    {
+        if (NavMesh.SamplePosition(point.position, out NavMeshHit hit, arrivalThreshold * 2f, NavMesh.AllAreas))
+            return hit.position;
+
+        return point.position;
+    }
+
+    private void AdvancePatrolPointIndex()
+    {
+        if (!HasPatrolPoints())
+            return;
+
+        if (patrolMode == OrcPatrolMode.Loop)
+        {
+            currentPatrolPointIndex = (currentPatrolPointIndex + 1) % patrolPoints.Length;
+            return;
+        }
+
+        if (patrolMode == OrcPatrolMode.PingPong)
+        {
+            if (patrolPoints.Length <= 1)
+                return;
+
+            if (currentPatrolPointIndex >= patrolPoints.Length - 1)
+                patrolDirection = -1;
+            else if (currentPatrolPointIndex <= 0)
+                patrolDirection = 1;
+
+            currentPatrolPointIndex = Mathf.Clamp(
+                currentPatrolPointIndex + patrolDirection,
+                0,
+                patrolPoints.Length - 1);
+        }
+    }
+
+    private bool HasPatrolPoints()
+    {
+        return patrolPoints != null &&
+               patrolPoints.Length > 0 &&
+               patrolMode != OrcPatrolMode.Wander;
+    }
+
+    private float GetPatrolWaitDuration()
+    {
+        if (HasPatrolPoints())
+        {
+            float min = Mathf.Min(patrolWaitTimeRange.x, patrolWaitTimeRange.y);
+            float max = Mathf.Max(patrolWaitTimeRange.x, patrolWaitTimeRange.y);
+            return Random.Range(Mathf.Max(0f, min), Mathf.Max(0f, max));
+        }
+
+        return Random.Range(idleMinTime, idleMaxTime);
+    }
+
     private Vector3 GetRandomWanderPoint()
     {
         for (int i = 0; i < 10; i++)
@@ -1995,5 +2108,40 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
         Gizmos.color = preferredCombatDistanceGizmoColor;
         Gizmos.DrawWireSphere(transform.position, preferredCombatDistance);
+
+        DrawPatrolRouteGizmos();
+    }
+
+    private void DrawPatrolRouteGizmos()
+    {
+        if (patrolPoints == null || patrolPoints.Length == 0 || patrolMode == OrcPatrolMode.Wander)
+            return;
+
+        Gizmos.color = patrolRouteGizmoColor;
+        Transform firstPoint = null;
+        Transform previousPoint = null;
+
+        for (int i = 0; i < patrolPoints.Length; i++)
+        {
+            Transform point = patrolPoints[i];
+            if (point == null) continue;
+
+            Gizmos.DrawSphere(point.position, 0.2f);
+            if (firstPoint == null)
+                firstPoint = point;
+
+            if (previousPoint != null)
+                Gizmos.DrawLine(previousPoint.position, point.position);
+
+            previousPoint = point;
+        }
+
+        if (patrolMode == OrcPatrolMode.Loop &&
+            firstPoint != null &&
+            previousPoint != null &&
+            firstPoint != previousPoint)
+        {
+            Gizmos.DrawLine(previousPoint.position, firstPoint.position);
+        }
     }
 }

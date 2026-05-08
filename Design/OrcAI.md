@@ -228,10 +228,13 @@ Cover behavior is deferred. When cover points exist, this same ranged-hit branch
 Predefined patrol routes are the other immediate basic. Random wander is useful for animals, but orc camps and village patrols need authored intent.
 
 Patrol v1:
-- Add optional patrol points to `OrcAI` or a small `OrcPatrolRoute` component.
-- If points exist, use them instead of random wander.
-- Support loop and ping-pong modes.
-- Use an Inspector-tweakable wait time at each point.
+- `OrcAI` exposes `OrcPatrolMode`: `Wander`, `Loop`, and `PingPong`.
+- `Wander` uses the existing random NavMesh point behavior around home.
+- `Loop` follows authored `patrolPoints` in order and wraps back to the first valid point.
+- `PingPong` follows authored `patrolPoints` forward, then reverses back through the same route.
+- Authored routes use `patrolWaitTimeRange` at each point.
+- `randomizePatrolStartPoint` can stagger orcs placed on the same route.
+- If no valid points exist, route modes fall back to Wander.
 - Preserve the current home/leash behavior so combat cannot drag an orc forever.
 
 Prefer a small route component if multiple orcs should share one path. A squad can later assign staggered indices on the same route so the group does not stack on one waypoint.

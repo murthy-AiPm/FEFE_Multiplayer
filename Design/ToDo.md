@@ -2569,6 +2569,31 @@ FIX
  pursueRadiusFromHome, the orc runs home to alert instead of chasing and then
  walking back.
 
+2026-05-08 - Orc authored patrol modes
+
+ROOT CAUSE
+ OrcAI only supported random wander around home, which made camp guards and
+ road patrols feel un-authored. The next patrol pass needed Inspector-selected
+ modes without disturbing the existing investigation/pursuit override flow.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added OrcPatrolMode with Wander, Loop, and PingPong.
+     - Added patrolPoints, randomizePatrolStartPoint, and patrolWaitTimeRange.
+     - Idle patrol destination selection now uses authored route points when
+       patrolMode is Loop or PingPong, falling back to random wander when no
+       valid route exists.
+     - Loop wraps through authored points; PingPong reverses at route ends.
+     - Added patrol route gizmos with patrolRouteGizmoColor.
+ ~ Design/OrcAI.md
+     - Updated predefined patrol pattern design with the implemented modes and
+       fields.
+
+FIX
+ Orcs can now be configured in the Inspector as wandering guards, loop patrols,
+ or ping-pong patrols while alert, investigation, pursuit, and return-home
+ behavior continue to override calm patrol movement.
+
 2026-05-08 - Orc gizmo colors inspector tuning
 
 ROOT CAUSE
