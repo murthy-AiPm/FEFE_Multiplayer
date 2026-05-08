@@ -168,6 +168,16 @@ Week and siege are different problems with different solutions. Two distinct orc
 
 Tactical orcs are detailed, expensive, and few. Crowd orcs are deliberately less individually expressive but render and simulate cheaply at large counts. The Day-7 horde mixes both — crowd as the bulk, tactical as the standout threats embedded inside it.
 
+Current tactical roster:
+- **Grunt** - baseline melee orc.
+- **Berserker** - aggressive pressure melee orc.
+- **Skirmisher** - mobile flank/harass melee orc.
+- **Archer** - ranged orc, deferred until melee squads work.
+- **Assassin** - priority-target / stealth-flavored orc, deferred.
+- **Giant** - boss-scale tactical siege unit, deferred.
+
+The next tactical-orc pass focuses only on Grunt, Berserker, and Skirmisher. "Leader" is not a separate orc type; it is a squad role/modifier applied to an existing tactical orc, usually a Grunt at first. The immediate basics are line-of-sight detection and predefined patrol patterns so camps and village patrols stop feeling like radius-triggered wanderers.
+
 See `design/OrcAI.md` for full orc AI design.
 
 ---

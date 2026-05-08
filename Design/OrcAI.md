@@ -1,6 +1,6 @@
 # Orc AI — Design (work in progress)
 
-*Created: 2026-05-03. Last updated: 2026-05-04.*
+*Created: 2026-05-03. Last updated: 2026-05-08.*
 
 ---
 
@@ -131,17 +131,105 @@ Likely use: root motion ON for attack/hit/death clips, OFF for locomotion. The t
 
 ### Open v1 questions
 
-- [ ] Detection: pure radius, or radius + line-of-sight raycast? LoS adds one cast per orc per tick — fine for one, watch for 20.
+- [x] Detection direction: use radius + line-of-sight raycast. Pure radius detects through walls and is too blunt for patrol/camp play. LoS should be implemented as a basic server-side visibility gate with Inspector-tweakable eye height, target height, obstacle mask, and detection tick interval.
 - [ ] Tick rate: AI logic at every frame or throttled (10–20 Hz)? Per `FEFE_NPC_Architecture.md` recommendation, throttle distant agents. v1 single orc can run every frame; design the seam now.
 - [ ] Animation set: do we use the same `HumanoidAnimationSet` and rule clips as the player, or author orc-specific clips? Reusing works — orc model retargets to the humanoid rig — but feel may suffer.
 - [ ] NavMesh baking: static-mesh bake at build, or `NavMeshSurface` runtime bake to handle destructible terrain (castle walls collapsing, ground fire)? Static is cheaper; runtime is required if mid-fight terrain changes need to repath.
 
 ---
 
+## Phase 2: Tactical Orc Basics, Archetypes, and Squad Seeds
+
+Goal: turn the working single tactical orc into small, readable encounter groups without jumping to full commander AI. The immediate implementation focus is still basic movement/perception: line of sight, predefined patrol patterns, and simple archetype tuning.
+
+### Tactical roster
+
+Keep the tactical roster small:
+
+1. **Grunt**
+2. **Berserker**
+3. **Skirmisher**
+4. **Archer**
+5. **Assassin**
+6. **Giant**
+
+Only Grunt, Berserker, and Skirmisher are in scope for the next implementation pass. Archer adds ranged combat, Assassin adds stealth/priority-target logic, and Giant is a boss-scale tactical unit; all three should wait until melee squads are stable.
+
+### In-scope archetypes
+
+**Grunt** is the baseline orc. It should use the current `OrcAI` tuning: medium speed, medium health, normal attack cadence, moderate block/parry, and straightforward approach behavior. Grunts fill the front line and teach the player what normal orcs do.
+
+**Berserker** is pressure. It should still use the same core `OrcAI`, but with higher speed or aggression, lower defense, lower block/parry chance, shorter attack cooldowns, and dual-wield or chain-style attack options. Berserkers are allowed to feel reckless.
+
+**Skirmisher** is movement. It should prefer side approaches, quick attacks, and disengage/reposition behavior over standing in the main dogpile. This is the first archetype that benefits from squad-assigned roles, but the first pass can be mostly tuning plus more frequent repositioning.
+
+Implementation direction: start with prefab variants / serialized tuning on `OrcAI`. If variants become hard to maintain, add an `OrcArchetypeDefinition` ScriptableObject later to apply movement, defense, attack-table, and squad-role defaults. Do not split into separate AI scripts until an archetype needs behavior the base controller cannot express cleanly.
+
+### Leader as squad modifier
+
+Add an orc leader concept, but do not add "Leader" as a seventh orc type. A leader is a squad modifier/role applied to an existing archetype, usually a Grunt at first.
+
+Leader v1 behavior:
+- Uses normal `OrcAI` combat.
+- Acts as the squad's optional anchor for home/leash/patrol.
+- Shares alert state with nearby squad members.
+- Helps choose or broadcast the squad's main target.
+- Has no special attacks in the first pass.
+
+Leader death should weaken coordination, not break the squad. A simple first version can make skirmishers stop flanking, reduce alert sharing, or make damaged/low-confidence members hesitate or retreat later. If no leader is assigned, the squad still works from its spawn/home anchor.
+
+### Line of sight
+
+LoS is the next basic AI feature. It should replace pure radius detection as the normal target-acquisition gate while keeping radius as the cheap broad phase.
+
+Server-side detection flow:
+1. Use `OverlapSphereNonAlloc` on `playerLayer` as the broad phase.
+2. Reject dead targets via existing `DamageReceiver.IsDead` / `VitalManager.IsDead` checks.
+3. Raycast from an orc eye point to a target aim point.
+4. Reject the target if the ray hits an obstacle before the target.
+5. Keep the existing detection throttle; expose all distances, heights, masks, and intervals in the Inspector.
+
+Suggested fields:
+- `useLineOfSight`
+- `eyeHeight`
+- `targetAimHeight`
+- `lineOfSightObstacleMask`
+- `lineOfSightMaxDistance` or reuse `detectionRadius`
+- `loseSightGraceTime`
+
+`loseSightGraceTime` matters because instant target drops feel twitchy around corners. A short grace window lets an alerted orc keep chasing briefly after the player breaks sight, while patrol acquisition still respects LoS.
+
+### Predefined patrol patterns
+
+Predefined patrol routes are the other immediate basic. Random wander is useful for animals, but orc camps and village patrols need authored intent.
+
+Patrol v1:
+- Add optional patrol points to `OrcAI` or a small `OrcPatrolRoute` component.
+- If points exist, use them instead of random wander.
+- Support loop and ping-pong modes.
+- Use an Inspector-tweakable wait time at each point.
+- Preserve the current home/leash behavior so combat cannot drag an orc forever.
+
+Prefer a small route component if multiple orcs should share one path. A squad can later assign staggered indices on the same route so the group does not stack on one waypoint.
+
+### Squad behavior seed
+
+Do not build full squad tactics yet. The first useful `OrcSquadController` can be tiny:
+- Roster of `OrcAI` members.
+- Optional leader reference.
+- Shared home anchor.
+- Shared alert state.
+- Shared current target.
+- Optional patrol route assignment.
+
+Once that works, layer in engagement roles: grunts occupy main attack slots, berserkers chase/pressure, skirmishers flank. Keep all of this server-only; individual orcs already replicate through their NetworkObjects and animator sync.
+
+---
+
 ## Out of scope for Phase 1 (for later)
 
-- Squad behavior (formation, target assignment, leader/follower, retreat-on-low-HP).
+- Full squad behavior (formation, target assignment, leader/follower, retreat-on-low-HP).
 - Camp set-piece staging (ambush from trees, charge from gate).
-- Mixed orc loadouts (archer, shaman, brute) — single archetype first.
+- Archer, Assassin, and Giant archetypes.
 - Active-zone abstract simulation — explicitly skipped via the spawn-on-arrival decision.
 - 20v20 combat performance tuning — once one orc works, then 5, then 20.

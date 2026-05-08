@@ -2281,3 +2281,29 @@ FILES CHANGED
 FIX
  Each attack option can now be labeled in the Inspector for easier tuning.
 
+2026-05-08 - Tactical orc phase 2 planning
+
+ROOT CAUSE
+ Phase 1.5 produced a working tactical OrcAI, but the next work needed a smaller
+ roster and a concrete basics-first direction before adding more behavior. The
+ design also needed to clarify that an orc leader is a squad role/modifier, not
+ a seventh archetype.
+
+FILES CHANGED
+ ~ Design/OrcAI.md
+     - Added Phase 2 planning for Grunt, Berserker, and Skirmisher.
+     - Recorded the full tactical roster: Grunt, Berserker, Skirmisher, Archer,
+       Assassin, Giant.
+     - Defined Leader as a squad modifier applied to an existing archetype.
+     - Locked the next basics to line-of-sight detection and predefined patrol
+       patterns before full squad tactics.
+ ~ Design/7DaysTillDawn_Design.md
+     - Added the reduced tactical roster to the Orcs section.
+     - Noted that Archer, Assassin, and Giant are deferred until melee squads
+       are stable.
+
+FIX
+ The design docs now point the next implementation pass toward LoS, authored
+ patrol routes, and simple Grunt/Berserker/Skirmisher tuning, with squad leader
+ behavior kept intentionally lightweight.
+
