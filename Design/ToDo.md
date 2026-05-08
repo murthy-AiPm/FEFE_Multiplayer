@@ -2136,3 +2136,45 @@ FIX
  after the hitbox disable event, or keep a small pause when an attack needs a
  deliberate recovery beat.
 
+2026-05-07 - Orc pre-hitbox attack cancel
+
+ROOT CAUSE
+ The animation-event hitbox completion fix disabled distance-based attack cancel
+ for all event-driven attacks. That kept disable-hitbox events authoritative, but
+ it also meant an orc would stay committed even when the player escaped before
+ the weapon hitbox window had opened.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added allowAnimationEventAttackCancelBeforeHitbox.
+     - Added attackHitboxWindowStarted tracking.
+     - Distance cancel now works for animation-event attacks only before the
+       first hitbox enable event; once a hitbox opens, the attack finishes from
+       the disable event.
+
+FIX
+ Orc attacks can be interrupted when the target dodges away before contact,
+ while active/finished hitbox windows still use animation events as the source
+ of truth.
+
+2026-05-07 - Orc mid-swing attack cancel
+
+ROOT CAUSE
+ Animation-event attacks could only distance-cancel before the first hitbox
+ enable event. Once a hitbox opened, the attack was committed until the disable
+ event, so a player who escaped during the active swing could still force the
+ orc to finish the full sequence.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added allowAnimationEventAttackCancelAfterHitbox.
+     - Event-driven attack distance cancel now supports pre-hitbox and
+       post-hitbox windows separately.
+     - Mid-swing cancel still calls CancelAttackAndApproach, which disables
+       weapon hitboxes immediately before returning to Approach.
+
+FIX
+ Orcs can cancel a swing after HitboxEnable when the target moves beyond
+ activeAttack.maxRange + attackCancelDistanceBuffer. Disable the new toggle if a
+ specific attack should always commit once its damage window starts.
+

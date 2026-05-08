@@ -89,10 +89,14 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     {
         new OrcAttackOption { attackIndex = 0, maxRange = 2.4f, weight = 1f }
     };
-    [Tooltip("Timer-hitbox fallback only. Animation-event attacks finish from the hitbox disable event instead of distance cancelling.")]
+    [Tooltip("How far beyond the active attack max range the target can move before the orc cancels the attack.")]
     [SerializeField] private float attackCancelDistanceBuffer = 1.2f;
-    [Tooltip("Timer-hitbox fallback only. Seconds after a cancelled attack before the orc may choose another attack.")]
+    [Tooltip("Seconds after a cancelled attack before the orc may choose another attack.")]
     [SerializeField] private float attackCancelReengageDelay = 0.75f;
+    [Tooltip("For animation-event attacks, allow distance cancel before the first hitbox enable event.")]
+    [SerializeField] private bool allowAnimationEventAttackCancelBeforeHitbox = true;
+    [Tooltip("For animation-event attacks, allow distance cancel after the hitbox has opened. Cancelling immediately disables weapon hitboxes.")]
+    [SerializeField] private bool allowAnimationEventAttackCancelAfterHitbox = true;
     [Tooltip("Animator state path to fade to when an attack is cancelled. Existing controller uses the Locomtion typo.")]
     [SerializeField] private string locomotionStatePath = "Base Layer.Locomtion";
     [SerializeField] private float attackCancelFade = 0.08f;
@@ -173,6 +177,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private float hitboxTimer;
     private float verticalVelocity;
     private bool hitboxActive;
+    private bool attackHitboxWindowStarted;
     private bool mainHandHitboxActive;
     private bool offHandHitboxActive;
     private bool registeredAsAttacker;
@@ -463,7 +468,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         stateTimer -= Time.deltaTime;
         if (currentTarget != null)
         {
-            if (!useAnimationEventsForHitboxes && ShouldCancelAttackForDistance())
+            if (ShouldCancelAttackForDistance())
             {
                 CancelAttackAndApproach();
                 return;
@@ -668,6 +673,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                     ? Mathf.Max(0.1f, animationEventAttackTimeout)
                     : activeAttack != null ? activeAttack.duration : 1f;
                 StopAgent();
+                attackHitboxWindowStarted = false;
                 if (animator != null)
                 {
                     animator.SetFloat(attackIndexHash, activeAttack != null ? activeAttack.attackIndex : 0f);
@@ -887,6 +893,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (!IsServer || hitbox == null || SubState != OrcSubState.Attack) return;
 
         hitbox.EnableHitbox();
+        attackHitboxWindowStarted = true;
         SetHitboxActiveFlag(hitbox, true);
 
         if (!useAnimationEventsForHitboxes)
@@ -936,6 +943,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             activeAttack.cooldownTimer = activeAttack.cooldown;
 
         activeAttack = null;
+        attackHitboxWindowStarted = false;
         SetState(OrcState.Combat, OrcSubState.Recover);
     }
 
@@ -975,7 +983,15 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (currentTarget == null || activeAttack == null)
             return false;
 
-        if (hitboxActive)
+        if (useAnimationEventsForHitboxes && attackHitboxWindowStarted && !allowAnimationEventAttackCancelAfterHitbox)
+        {
+            return false;
+        }
+
+        if (useAnimationEventsForHitboxes && !attackHitboxWindowStarted && !allowAnimationEventAttackCancelBeforeHitbox)
+            return false;
+
+        if (!useAnimationEventsForHitboxes && hitboxActive)
             return false;
 
         float cancelDistance = activeAttack.maxRange + attackCancelDistanceBuffer;
@@ -1002,6 +1018,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         }
 
         activeAttack = null;
+        attackHitboxWindowStarted = false;
         SetState(OrcState.Combat, OrcSubState.Approach);
     }
 
