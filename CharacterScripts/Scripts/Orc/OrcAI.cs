@@ -38,6 +38,13 @@ public enum OrcPatrolMode
     PingPong
 }
 
+public enum OrcArchetype
+{
+    Grunt,
+    Berserker,
+    Skirmisher
+}
+
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(NetworkObject))]
 public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
@@ -63,6 +70,9 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         Stagger,
         Dead
     }
+
+    [Header("Archetype")]
+    [SerializeField] private OrcArchetype archetype = OrcArchetype.Grunt;
 
     [Header("Detection")]
     [Tooltip("Close-range awareness bubble. Targets inside this range are detected even outside the vision cone.")]
@@ -255,17 +265,90 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private Vector3 lastKnownTargetPosition;
     private Vector3 rangedThreatPosition;
     private Transform awarenessTarget;
+    private OrcSquadController squad;
+    private bool hasExternalHomeAnchor;
 
     public OrcState State { get; private set; } = OrcState.Patrol;
     public OrcSubState SubState { get; private set; } = OrcSubState.Idle;
 
+    public OrcArchetype Archetype => archetype;
+    public bool IsGrunt => archetype == OrcArchetype.Grunt;
+    public bool IsBerserker => archetype == OrcArchetype.Berserker;
+    public bool IsSkirmisher => archetype == OrcArchetype.Skirmisher;
+    public OrcSquadController Squad => squad;
+    public Transform CurrentTarget => currentTarget;
+    public Vector3 HomePosition => homePosition;
+    public bool IsAlive => State != OrcState.Dead;
+    public bool HasCombatTarget => currentTarget != null && IsTargetAlive(currentTarget);
+
     public bool IsDefenseInvincible => false;
+
+    public void SetSquad(OrcSquadController newSquad)
+    {
+        if (!CanAcceptServerCoordination()) return;
+
+        squad = newSquad;
+    }
+
+    public void SetHomeAnchor(Vector3 home)
+    {
+        if (!CanAcceptServerCoordination()) return;
+
+        homePosition = home;
+        hasExternalHomeAnchor = true;
+    }
+
+    public void SetPatrolRoute(OrcPatrolMode mode, Transform[] points, bool randomizeStartPoint)
+    {
+        if (!CanAcceptServerCoordination()) return;
+
+        patrolMode = mode;
+        patrolPoints = points;
+        randomizePatrolStartPoint = randomizeStartPoint;
+        InitializePatrolRoute();
+    }
+
+    public void ReceiveSharedTarget(Transform target, Vector3 alertSourcePosition, bool strongCoordination)
+    {
+        if (!CanAcceptServerCoordination() || !IsAlive || target == null) return;
+        if (currentTarget != null || !IsTargetAlive(target)) return;
+
+        float targetDistanceFromHome = Vector3.Distance(homePosition, target.position);
+        if (targetDistanceFromHome > pursueRadiusFromHome)
+        {
+            if (strongCoordination)
+                BeginAlertReturnHome(alertSourcePosition);
+            return;
+        }
+
+        BeginPursueRangedAttacker(target);
+    }
+
+    public void ReceiveSharedAlert(Vector3 alertPosition, Transform target, bool strongCoordination)
+    {
+        if (!CanAcceptServerCoordination() || !IsAlive) return;
+
+        if (target != null)
+        {
+            ReceiveSharedTarget(target, alertPosition, strongCoordination);
+            return;
+        }
+
+        if (strongCoordination && investigateRadiusFromHome > 0f)
+            BeginInvestigateRangedSource(alertPosition);
+    }
+
+    private bool CanAcceptServerCoordination()
+    {
+        return NetworkManager.Singleton == null || NetworkManager.Singleton.IsServer;
+    }
 
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
 
-        homePosition = transform.position;
+        if (!hasExternalHomeAnchor)
+            homePosition = transform.position;
         if (IsServer && !_serverOrcs.Contains(this))
             _serverOrcs.Add(this);
 

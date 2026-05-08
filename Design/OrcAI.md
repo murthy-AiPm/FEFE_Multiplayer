@@ -165,6 +165,8 @@ Only Grunt, Berserker, and Skirmisher are in scope for the next implementation p
 
 Implementation direction: start with prefab variants / serialized tuning on `OrcAI`. If variants become hard to maintain, add an `OrcArchetypeDefinition` ScriptableObject later to apply movement, defense, attack-table, and squad-role defaults. Do not split into separate AI scripts until an archetype needs behavior the base controller cannot express cleanly.
 
+Implemented first step (2026-05-08): `OrcAI` now exposes a serialized `OrcArchetype` identity field with `Grunt`, `Berserker`, and `Skirmisher`, plus read-only helper properties for squad logic. This does **not** auto-apply tuning yet; prefab variants still own their Inspector values for speed, defense chance, attacks, hitboxes, and reposition settings.
+
 ### Leader as squad modifier
 
 Add an orc leader concept, but do not add "Leader" as a seventh orc type. A leader is a squad modifier/role applied to an existing archetype, usually a Grunt at first.
@@ -250,6 +252,8 @@ Do not build full squad tactics yet. The first useful `OrcSquadController` can b
 - Optional patrol route assignment.
 
 Once that works, layer in engagement roles: grunts occupy main attack slots, berserkers chase/pressure, skirmishers flank. Keep all of this server-only; individual orcs already replicate through their NetworkObjects and animator sync.
+
+Implemented first step (2026-05-08): `OrcSquadController` is a server-side scene component with a serialized roster, optional leader, shared home anchor, optional shared patrol route, and target broadcast. It polls member `OrcAI` instances for an active combat target and shares that target to nearby alive squadmates. If a leader is assigned and dies, alert sharing still works but uses `leaderlessAlertRadiusMultiplier` to weaken coordination. Individual orcs still keep their own LoS, leash, attacker-count, and less-contested-target behavior, so multiple visible players/NPCs can still split the fight instead of every orc blindly dogpiling the squad target.
 
 ---
 

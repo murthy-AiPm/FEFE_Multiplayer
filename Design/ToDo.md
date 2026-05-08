@@ -2692,3 +2692,60 @@ FIX
  Humanoid parry animation should now be visible/reliable, and parry success
  should be less timing-sensitive in networked play.
 
+2026-05-08 - Orc archetype identity field
+
+ROOT CAUSE
+ The next tactical orc phase needs Grunt, Berserker, and Skirmisher variants,
+ but the code had no explicit identity for prefab variants or future squad
+ logic to query without inferring behavior from tuning values.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added OrcArchetype with Grunt, Berserker, and Skirmisher.
+     - Added a serialized archetype field on OrcAI, defaulting to Grunt.
+     - Added read-only Archetype, IsGrunt, IsBerserker, and IsSkirmisher
+       helpers for prefab/squad logic.
+ ~ Design/OrcAI.md
+     - Documented that archetype is currently identity only; prefab variants
+       still own Inspector tuning.
+
+FIX
+ Orc prefabs can now declare their tactical archetype in the Inspector, and
+ future squad behavior can branch on explicit orc identity without splitting
+ the AI into separate scripts or introducing archetype ScriptableObjects early.
+
+2026-05-08 - Orc squad seed controller
+
+ROOT CAUSE
+ Tactical orcs could individually detect and balance attacker counts, but camp
+ groups had no shared alert/home layer. One orc spotting a player did not give
+ nearby squadmates a clean way to wake up, and future leader/skirmisher logic
+ needed explicit squad hooks instead of reaching into OrcAI private state.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added read-only squad-facing accessors for current target, home
+       position, squad reference, alive state, and combat-target presence.
+     - Added server-side SetSquad, SetHomeAnchor, SetPatrolRoute,
+       ReceiveSharedTarget, and ReceiveSharedAlert hooks.
+     - Preserved externally assigned squad home anchors across OnNetworkSpawn.
+ + CharacterScripts/Scripts/Orc/OrcSquadController.cs
+     - Added a server-side squad component with serialized roster, optional
+       leader, shared home anchor, optional shared patrol route, and target
+       broadcast interval/radius.
+     - Broadcasts an active member/leader target to nearby alive members while
+       leaving OrcAI's existing LoS, leash, attacker-count, and retarget logic
+       in control after the wake-up.
+     - Leader death weakens target sharing through leaderlessAlertRadiusMultiplier
+       instead of breaking the squad.
+ + CharacterScripts/Scripts/Orc/OrcSquadController.cs.meta
+ ~ Design/OrcAI.md
+     - Documented the implemented squad seed behavior and its intentional
+       limits.
+
+FIX
+ Orc camps can now be wired as lightweight squads: one alerted member can wake
+ nearby squadmates around a shared home/patrol setup, while multiple visible
+ players or friendly NPCs can still naturally split targets through the
+ existing per-orc target-balancing behavior.
+

@@ -6980,6 +6980,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OrcAI
   ShowTopMostFoldoutHeaderGroup: 1
+  archetype: 2
   closeDetectionRadius: 4
   viewDistance: 15
   viewAngle: 110
@@ -6998,6 +6999,18 @@ MonoBehaviour:
     m_Bits: 4294967295
   investigateRadiusFromHome: 35
   rangedHitGuardDuration: 1.5
+  reactToNearbyRangedImpacts: 1
+  directRangedHitPriorityDuration: 1
+  outOfViewRangedAlertReturnThreshold: 2
+  outOfViewRangedAlertWindow: 4
+  patrolMode: 0
+  patrolPoints:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  randomizePatrolStartPoint: 1
+  patrolWaitTimeRange: {x: 1, y: 3}
   wanderRadius: 10
   idleMinTime: 2
   idleMaxTime: 5
@@ -7061,6 +7074,7 @@ MonoBehaviour:
   parryDuration: 0.65
   parryActiveWindow: 0.22
   parryCooldown: 2
+  parryDamage: 0
   useAnimationEventsForHitboxes: 1
   animationEventAttackTimeout: 3
   weaponHitbox: {fileID: 1005750298559799297}
@@ -7081,6 +7095,13 @@ MonoBehaviour:
   agent: {fileID: 8956042190453040210}
   animalSoundPlayer: {fileID: 0}
   showGizmos: 1
+  viewDistanceGizmoColor: {r: 1, g: 1, b: 0, a: 0.2}
+  closeDetectionGizmoColor: {r: 0, g: 0.75, b: 1, a: 0.35}
+  pursueRadiusGizmoColor: {r: 1, g: 1, b: 1, a: 0.2}
+  investigateRadiusGizmoColor: {r: 0.2295596, g: 0.5545849, b: 1, a: 0.2}
+  wanderRadiusGizmoColor: {r: 0, g: 1, b: 0, a: 0.2}
+  preferredCombatDistanceGizmoColor: {r: 1, g: 0.5, b: 0, a: 0.3}
+  patrolRouteGizmoColor: {r: 0.25, g: 0.8, b: 1, a: 0.8}
 --- !u!136 &8154649476447612921
 CapsuleCollider:
   m_ObjectHideFlags: 0
