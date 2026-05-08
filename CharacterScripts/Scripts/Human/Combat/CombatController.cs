@@ -18,7 +18,7 @@ using Unity.Cinemachine;
 ///   
 /// CombatController sets flags that RuleAnimancerDriver reads via AnimationContext.
 /// </summary>
-public class CombatController : NetworkBehaviour
+public class CombatController : NetworkBehaviour, IDamageDefenseProvider
 {
     public enum CombatState
     {
@@ -27,7 +27,8 @@ public class CombatController : NetworkBehaviour
         Blocking,
         BowDrawing,
         BowAiming,
-        Dead
+        Dead,
+        Parrying
     }
 
     [Header("Dependencies")]
@@ -71,6 +72,16 @@ public class CombatController : NetworkBehaviour
 
     [Header("Block")]
     [SerializeField] private float blockStaminaDrain = 3f; // per second while holding block (unused — kept for reference)
+    [SerializeField] private float blockAngle = 120f;
+
+    [Header("Parry")]
+    [SerializeField] private float parryDuration = 0.35f;
+    [SerializeField] private float parryActiveWindow = 0.18f;
+    [SerializeField] private float parryCooldown = 0.8f;
+    [SerializeField] private float parryStaminaCost = 10f;
+    [SerializeField] private float parryAngle = 120f;
+    [Tooltip("Extra server-side validation time to absorb RPC/state-sync latency.")]
+    [SerializeField] private float parryServerValidationPadding = 0.15f;
 
     [Header("Bow Aim")]
     [SerializeField] private float bowAimStaminaDrain = 5f; // per second while holding aim
@@ -90,6 +101,8 @@ public class CombatController : NetworkBehaviour
     public bool IsBowAiming => State == CombatState.BowAiming;
     public bool IsBowEquipped => weaponManager != null && weaponManager.GetActiveWeaponType() == WeaponType.Bow;
     public bool IsDead => State == CombatState.Dead;
+    public bool IsParrying => State == CombatState.Parrying;
+    public bool IsDefenseInvincible => false;
     public bool IsFistCombatMode { get; private set; }
 
     // Timing
@@ -98,6 +111,10 @@ public class CombatController : NetworkBehaviour
     private float _dodgeCooldownTimer;
     private float _iFrameTimer;
     private float _bowDrawTimer;
+    private float _parryTimer;
+    private float _parryActiveTimer;
+    private float _parryActiveUntilTime;
+    private float _parryCooldownTimer;
     private Vector3 _dodgeDirection;
 
     // Bow aim stamina tracking (client-side, avoids ServerRpc sync lag)
@@ -112,6 +129,8 @@ public class CombatController : NetworkBehaviour
     public event Action OnDodgeStarted;
     public event Action OnBlockStarted;
     public event Action OnBlockEnded;
+    public event Action OnParryStarted;
+    public event Action OnParryEnded;
 
     public override void OnNetworkSpawn()
     {
@@ -222,6 +241,10 @@ public class CombatController : NetworkBehaviour
                 UpdateBlock();
                 break;
 
+            case CombatState.Parrying:
+                UpdateParry();
+                break;
+
             case CombatState.BowDrawing:
                 UpdateBowDraw();
                 break;
@@ -265,8 +288,16 @@ public class CombatController : NetworkBehaviour
             //return;
         }
 
-        // Block: secondary held + primary melee equipped
+        // Parry starts on secondary press; holding secondary after the window becomes block.
         var weaponType = activeWeaponType;
+        if (_input.secondaryDown && weaponManager.ActiveSlot == 1 &&
+            (weaponType == WeaponType.OneHanded || weaponType == WeaponType.TwoHanded))
+        {
+            TryParry();
+            return;
+        }
+
+        // Block fallback for an already-held secondary input.
         if (_input.secondaryHeld && weaponManager.ActiveSlot == 1 &&
             (weaponType == WeaponType.OneHanded || weaponType == WeaponType.TwoHanded))
         {
@@ -454,6 +485,77 @@ public class CombatController : NetworkBehaviour
         }
     }
 
+    // ─── Parry ───
+
+    private void TryParry()
+    {
+        if (animancerDriver != null && animancerDriver.IsLocked)
+            return;
+
+        if (_parryCooldownTimer > 0f)
+        {
+            BeginBlock();
+            return;
+        }
+
+        if (vitalManager != null)
+        {
+            var stamina = vitalManager.GetVital("stamina");
+            if (stamina != null && stamina.Current < parryStaminaCost)
+            {
+                BeginBlock();
+                return;
+            }
+
+            ConsumeStamina(parryStaminaCost);
+        }
+
+        BeginParry(true);
+        if (!IsServer)
+            BeginParryServerRpc();
+    }
+
+    private void BeginParry(bool playAnimation)
+    {
+        _parryTimer = parryDuration;
+        _parryActiveTimer = parryActiveWindow;
+        _parryActiveUntilTime = Time.time + parryActiveWindow + parryServerValidationPadding;
+        _parryCooldownTimer = parryCooldown;
+
+        SetState(CombatState.Parrying);
+
+        if (playAnimation)
+            animancerDriver?.PlayParry();
+
+        OnParryStarted?.Invoke();
+    }
+
+    [ServerRpc]
+    private void BeginParryServerRpc()
+    {
+        if (State == CombatState.Dead)
+            return;
+
+        BeginParry(false);
+    }
+
+    private void UpdateParry()
+    {
+        _parryTimer -= Time.deltaTime;
+        if (_parryActiveTimer > 0f)
+            _parryActiveTimer -= Time.deltaTime;
+
+        if (_parryTimer > 0f)
+            return;
+
+        OnParryEnded?.Invoke();
+
+        if (_input.secondaryHeld)
+            BeginBlock();
+        else
+            SetState(CombatState.None);
+    }
+
     // ─── Bow ───
 
     private void BeginBowDraw()
@@ -596,6 +698,7 @@ public class CombatController : NetworkBehaviour
     {
         if (State == CombatState.Dodging || State == CombatState.Dead) return false;
         if (State == CombatState.Blocking) return false; // must release block first
+        if (State == CombatState.Parrying) return false;
 
         var weapon = weaponManager.ActiveWeapon;
 
@@ -700,6 +803,9 @@ public class CombatController : NetworkBehaviour
     {
         if (_dodgeCooldownTimer > 0f)
             _dodgeCooldownTimer -= Time.deltaTime;
+
+        if (_parryCooldownTimer > 0f)
+            _parryCooldownTimer -= Time.deltaTime;
     }
 
     private void HandleDeath()
@@ -715,7 +821,7 @@ public class CombatController : NetworkBehaviour
     /// </summary>
     public bool IsActionLocked()
     {
-        return State == CombatState.Dodging;
+        return State == CombatState.Dodging || State == CombatState.Parrying;
     }
 
     /// <summary>
@@ -724,6 +830,7 @@ public class CombatController : NetworkBehaviour
     public bool IsSlowMovement()
     {
         return State == CombatState.Blocking ||
+               State == CombatState.Parrying ||
                State == CombatState.BowAiming ||
                State == CombatState.BowDrawing;
     }
@@ -735,13 +842,21 @@ public class CombatController : NetworkBehaviour
     {
         return State == CombatState.BowAiming ||
                State == CombatState.BowDrawing ||
-               State == CombatState.Blocking;
+               State == CombatState.Blocking ||
+               State == CombatState.Parrying;
     }
-    public void SetRemoteCombatState(bool dodging, bool blocking, bool bowDrawing, bool bowAiming, bool fistCombatMode, bool dodgeStep)
+    public void SetRemoteCombatState(bool dodging, bool blocking, bool bowDrawing, bool bowAiming, bool fistCombatMode, bool dodgeStep, bool parrying)
     {
         if (IsOwner) return;
 
         if (dodging) State = CombatState.Dodging;
+        else if (parrying)
+        {
+            if (State != CombatState.Parrying)
+                BeginParry(true);
+            else
+                State = CombatState.Parrying;
+        }
         else if (blocking) State = CombatState.Blocking;
         else if (bowDrawing) State = CombatState.BowDrawing;
         else if (bowAiming) State = CombatState.BowAiming;
@@ -759,6 +874,10 @@ public class CombatController : NetworkBehaviour
         _dodgeCooldownTimer = 0f;
         _iFrameTimer = 0f;
         _bowDrawTimer = 0f;
+        _parryTimer = 0f;
+        _parryActiveTimer = 0f;
+        _parryActiveUntilTime = 0f;
+        _parryCooldownTimer = 0f;
         IsDodgeStep = false;
         if (vcam != null && defaultCamTarget != null)
         {
@@ -795,5 +914,47 @@ public class CombatController : NetworkBehaviour
     private void SetStaminaRegenPausedServerRpc(bool paused)
     {
         vitalManager?.SetStaminaRegenPaused(paused);
+    }
+
+    public DamageDefenseResult EvaluateDefense(NetworkObject attacker, Vector3 hitPoint, float rawDamage)
+    {
+        if (attacker == null)
+            return DamageDefenseResult.None;
+
+        if (State == CombatState.Parrying && Time.time <= _parryActiveUntilTime &&
+            IsAttackerInDefenseCone(attacker.transform, parryAngle))
+            return DamageDefenseResult.Parry;
+
+        if (State == CombatState.Blocking && IsAttackerInDefenseCone(attacker.transform, blockAngle))
+            return DamageDefenseResult.Block;
+
+        return DamageDefenseResult.None;
+    }
+
+    public void OnServerDefenseResolved(
+        DamageDefenseResult result,
+        float rawDamage,
+        float finalDamage,
+        Vector3 hitPoint,
+        NetworkObject attacker)
+    {
+        if (result == DamageDefenseResult.Parry)
+        {
+            _parryActiveTimer = 0f;
+            _parryActiveUntilTime = 0f;
+        }
+    }
+
+    private bool IsAttackerInDefenseCone(Transform attacker, float angle)
+    {
+        if (attacker == null)
+            return false;
+
+        Vector3 toAttacker = attacker.position - transform.position;
+        toAttacker.y = 0f;
+        if (toAttacker.sqrMagnitude < 0.001f)
+            return true;
+
+        return Vector3.Angle(transform.forward, toAttacker.normalized) < angle * 0.5f;
     }
 }

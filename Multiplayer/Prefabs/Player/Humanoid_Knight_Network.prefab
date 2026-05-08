@@ -5750,6 +5750,8 @@ MonoBehaviour:
   cancelFade: 0.06
   activeHitbox: {fileID: 0}
   hitReactionKey: Hit
+  parryKey: Parry/Sword
+  parryFadeOutDelay: 0.35
   deathAnimationKey: Death
   hitTurnLerpSpeed: 720
   actionLayerMask: {fileID: 0}
@@ -6169,6 +6171,12 @@ MonoBehaviour:
   dodgeStepBoostSpeed: 4
   dodgeStepBoostDuration: 0.15
   blockStaminaDrain: 3
+  blockAngle: 120
+  parryDuration: 0.35
+  parryActiveWindow: 0.3
+  parryCooldown: 0.8
+  parryStaminaCost: 10
+  parryAngle: 120
   bowAimStaminaDrain: 5
   fistStaminaCost: 8
 --- !u!114 &6854998894812114630

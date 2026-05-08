@@ -31,6 +31,8 @@ public struct InputSnapshot
 
     // Double-tap Space = evade/roll
     public bool evadeDown;
+
+    public bool secondaryDown; // edge: pressed this frame
 }
 
 public class InputController : MonoBehaviour
@@ -139,6 +141,7 @@ public class InputController : MonoBehaviour
             modifiedHeld = Input.GetButton("Modified"),
             actionHeld = Input.GetButton("Action"),
             secondaryHeld = Input.GetButton("SecondaryAttack"),
+            secondaryDown = Input.GetButtonDown("SecondaryAttack"),
 
             jumpDown = Input.GetButtonDown("Jump"),
             jumpHeld = Input.GetButton("Jump"),

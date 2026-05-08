@@ -905,3 +905,14 @@ MonoBehaviour:
       _Speed: 0.8
       _NormalizedStartTime: NaN
     useRootMotion: 1
+  - key: Parry/Sword
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes: []
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 5457690334268165388, guid: b69f2460657cb9941aada1e9b6a0a350, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 1

@@ -59,6 +59,7 @@ public class DamageReceiver : NetworkBehaviour
     public System.Action<float, Vector3> OnDamageReceived;
     public System.Action<float, Vector3> OnDamageBlocked;
     public System.Action<float, Vector3> OnDamageParried;
+    public System.Action<Vector3> OnParryStaggered;
     /// <summary>Server-only hook for physical ranged hits that should alert AI.</summary>
     public System.Action<float, Vector3, Vector3, NetworkObject> OnRangedDamageReceived;
     public System.Action OnDeath;
@@ -262,6 +263,9 @@ public class DamageReceiver : NetworkBehaviour
         if (defenseResult == DamageDefenseResult.Parry)
         {
             finalDamage = 0f;
+            var attackerReceiver = attackerObj.GetComponentInParent<DamageReceiver>();
+            if (attackerReceiver != null)
+                attackerReceiver.StaggerFromParryServer(transform.position);
         }
         else if (defenseResult == DamageDefenseResult.Block)
         {
@@ -326,6 +330,26 @@ public class DamageReceiver : NetworkBehaviour
     }
 
     // ─── Death ───
+
+    public void StaggerFromParryServer(Vector3 parrySourcePosition)
+    {
+        if (!IsServer || IsDead)
+            return;
+
+        OnParryStaggered?.Invoke(parrySourcePosition);
+        StaggerFromParryClientRpc(parrySourcePosition);
+    }
+
+    [ClientRpc]
+    private void StaggerFromParryClientRpc(Vector3 parrySourcePosition)
+    {
+        if (IsDead)
+            return;
+
+        _hitStunTimer = hitStunDuration;
+        _lastAttackerPosition = parrySourcePosition;
+        OnPlayHitAnimation?.Invoke(parrySourcePosition);
+    }
 
     private void HandleDeath()
     {

@@ -2611,3 +2611,84 @@ FILES CHANGED
 FIX
  Orc gizmo colors are now Inspector-tweakable, including pursueRadiusGizmoColor.
 
+2026-05-08 - Humanoid parry and parried-attacker stagger
+
+ROOT CAUSE
+ Humanoid defenders had block and hit reaction plumbing, and enemies already
+ exposed block/parry through IDamageDefenseProvider, but the human combat path
+ had no parry state or way to stagger the attacker when a defender or enemy
+ parried a melee hit.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Human/Controller/InputController.cs
+     - Added secondaryDown to InputSnapshot so tap-secondary can start parry
+       while hold-secondary remains block.
+ ~ CharacterScripts/Scripts/Human/Combat/CombatController.cs
+     - Appended CombatState.Parrying to preserve existing enum order.
+     - Implemented IDamageDefenseProvider for humanoid block/parry defense.
+     - Added Inspector-tweakable parry duration, active window, cooldown,
+       stamina cost, and angle.
+     - Tap secondary with melee equipped starts parry; holding secondary after
+       the parry duration flows into normal block.
+ ~ CharacterScripts/Scripts/Human/Animation/RuleAnimancerDriver.cs
+     - Added PlayParry with a serialized parryKey, defaulting to existing
+       Sword/Block until a dedicated parry clip is assigned.
+ ~ CharacterScripts/Scripts/Human/Combat/DamageReceiver.cs
+     - Parried melee hits still deal zero damage.
+     - When a defender/enemy parries, the attacker receives a parry stagger
+       ClientRpc that reuses the existing human hit reaction Animancer bridge.
+ ~ Multiplayer/Scripts/NetworkPlayerMovement/New/AnimanerNetSync.cs
+     - Synced humanoid parry state to remote puppets and the server.
+
+FIX
+ Humanoid players can now parry from melee guard input with server-authoritative
+ zero-damage defense, and an attacker whose melee strike is parried plays the
+ existing stagger/hit reaction through Animancer.
+
+2026-05-08 - Orc parry stagger hook and parry damage
+
+ROOT CAUSE
+ The initial humanoid parry pass staggered humanoid attackers through
+ DamageReceiver's client hit-reaction event, but OrcAI drives stagger through
+ its own server state machine and was not subscribed to that callback. Orc
+ parry also had no damage knob for future archetypes.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Human/Combat/DamageReceiver.cs
+     - Added server-side OnParryStaggered event.
+     - StaggerFromParryServer now invokes the server event before broadcasting
+       the client hit reaction.
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Subscribes to OnParryStaggered and forces the existing OrcState.Stagger /
+       OrcSubState.Stagger path.
+     - Added serialized parryDamage under Parry, default 0.
+     - Successful orc parries apply parryDamage to the attacker when tuned
+       above zero.
+
+FIX
+ Player parries now push orcs into their authored stagger state, and orc parries
+ have an Inspector damage value ready for archetype-specific tuning while
+ remaining zero-damage by default.
+
+2026-05-08 - Humanoid parry reliability fix
+
+ROOT CAUSE
+ Parry animation was played directly on the Animancer Action layer but the
+ layer was not locked, so the normal LateUpdate Action cleanup could fade it
+ out almost immediately. Parry defense also depended on the 20 Hz remote combat
+ state sync, which made a short active window feel inconsistent under network
+ timing.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Human/Animation/RuleAnimancerDriver.cs
+     - PlayParry now temporarily locks the Action layer and clears the lock
+       after parryFadeOutDelay before fading out.
+ ~ CharacterScripts/Scripts/Human/Combat/CombatController.cs
+     - Added parryServerValidationPadding for Inspector tuning.
+     - Owner parry now sends BeginParryServerRpc immediately so server-side
+       defense validation does not wait for the 20 Hz animation state sync.
+
+FIX
+ Humanoid parry animation should now be visible/reliable, and parry success
+ should be less timing-sensitive in networked play.
+

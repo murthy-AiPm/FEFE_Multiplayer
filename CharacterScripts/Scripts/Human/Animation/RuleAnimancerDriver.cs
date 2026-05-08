@@ -31,6 +31,11 @@ public class RuleAnimancerDriver : MonoBehaviour
     [SerializeField] private string hitReactionKey = "Hit/Flinch";
     private bool _isPlayingHitReaction = false;
 
+    [Header("Parry")]
+    [Tooltip("Key in AnimationSet for the humanoid parry clip.")]
+    [SerializeField] private string parryKey = "Sword/Block";
+    [SerializeField] private float parryFadeOutDelay = 0.35f;
+
     [Header("Death & Respawn")]
     [Tooltip("Key in AnimationSet for the death clip. Root motion OFF recommended.")]
     [SerializeField] private string deathAnimationKey = "Death/Fall";
@@ -1141,6 +1146,53 @@ public class RuleAnimancerDriver : MonoBehaviour
     {
         defaultWeaponName = profileName;
     }
+
+    public void PlayParry()
+    {
+        if (_isDead) return;
+        if (!animationSet.TryGet(parryKey, out var transition)
+            || transition == null
+            || transition.Clip == null)
+        {
+            Debug.LogWarning($"[Parry] Key '{parryKey}' not found in AnimationSet.");
+            return;
+        }
+
+        if (IsLayerLocked(AnimLayer.Attack))
+            CancelCurrentAttack();
+
+        _actionLayer.SetMask(actionLayerMask);
+        var state = _actionLayer.Play(transition, actionFade);
+        state.Time = 0f;
+
+        bool wantRoot = allowRootMotion && animationSet.IsRootMotion(parryKey);
+        _rootMotionActive = wantRoot;
+        if (_animator != null)
+            _animator.applyRootMotion = wantRoot;
+
+        _isLocked[AnimLayer.Action] = true;
+        _lockedState[AnimLayer.Action] = state;
+
+        StopCoroutine(nameof(ParryRoutine));
+        StartCoroutine(ParryRoutine(state));
+    }
+
+    private System.Collections.IEnumerator ParryRoutine(AnimancerState state)
+    {
+        yield return new WaitForSeconds(parryFadeOutDelay);
+
+        if (_lockedState.TryGetValue(AnimLayer.Action, out var lockedState) && lockedState == state)
+        {
+            _isLocked[AnimLayer.Action] = false;
+            _lockedState[AnimLayer.Action] = null;
+        }
+
+        if (_actionLayer.CurrentState == state)
+            _actionLayer.StartFade(0f, layerFadeOutDuration);
+
+        DisableRootMotion();
+    }
+
     /// <summary>
     /// Call this from your damage/health system (or a ClientRpc) when this
     /// character takes a hit. Plays the flinch animation on the Base layer

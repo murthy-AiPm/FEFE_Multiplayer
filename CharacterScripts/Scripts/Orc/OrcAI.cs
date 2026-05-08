@@ -158,6 +158,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     [SerializeField] private float parryDuration = 0.65f;
     [SerializeField] private float parryActiveWindow = 0.22f;
     [SerializeField] private float parryCooldown = 2f;
+    [SerializeField] private float parryDamage = 0f;
 
     [Header("Hitbox")]
     [Tooltip("When true, attack clips control hitbox windows through animation events. When false, OrcAI uses the attack option timing fields.")]
@@ -282,6 +283,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             damageReceiver.OnDamageReceived += HandleDamageReceived;
             damageReceiver.OnDamageBlocked += HandleDamageBlocked;
             damageReceiver.OnDamageParried += HandleDamageParried;
+            damageReceiver.OnParryStaggered += HandleParryStaggered;
             damageReceiver.OnRangedDamageReceived += HandleRangedDamageReceived;
         }
 
@@ -322,6 +324,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             damageReceiver.OnDamageReceived -= HandleDamageReceived;
             damageReceiver.OnDamageBlocked -= HandleDamageBlocked;
             damageReceiver.OnDamageParried -= HandleDamageParried;
+            damageReceiver.OnParryStaggered -= HandleParryStaggered;
             damageReceiver.OnRangedDamageReceived -= HandleRangedDamageReceived;
         }
 
@@ -1518,6 +1521,20 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         {
             parryCooldownTimer = parryCooldown;
             parryActiveTimer = 0f;
+
+            if (parryDamage > 0f && attacker != null)
+            {
+                var attackerReceiver = attacker.GetComponentInParent<DamageReceiver>();
+                var sourceObject = GetComponent<NetworkObject>();
+                attackerReceiver?.ApplyProjectileDamage(
+                    parryDamage,
+                    transform.position,
+                    0f,
+                    null,
+                    hitPoint,
+                    sourceObject,
+                    false);
+            }
         }
         else if (result == DamageDefenseResult.Block)
         {
@@ -1926,6 +1943,14 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         }
 
         if (SubState == OrcSubState.Attack || SubState == OrcSubState.Block || SubState == OrcSubState.Parry) return;
+        SetState(OrcState.Stagger, OrcSubState.Stagger);
+    }
+
+    private void HandleParryStaggered(Vector3 parrySourcePosition)
+    {
+        animalSoundPlayer?.PlayHitSound();
+        if (!IsServer || State == OrcState.Dead) return;
+
         SetState(OrcState.Stagger, OrcSubState.Stagger);
     }
 
