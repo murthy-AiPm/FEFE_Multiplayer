@@ -76,6 +76,10 @@ public class RespawnController : NetworkBehaviour
         if (vitalManager != null)
             vitalManager.ResetAllVitals();
 
+        var damageReceiver = GetComponentInChildren<DamageReceiver>(true);
+        if (damageReceiver != null)
+            damageReceiver.RestoreAfterRespawn();
+
         // Clear any active burn so respawned character isn't on fire
         var burnStatus = GetComponent<BurnStatus>();
         if (burnStatus != null)
@@ -87,6 +91,10 @@ public class RespawnController : NetworkBehaviour
     [ClientRpc]
     private void NotifyRespawnClientRpc(Vector3 spawnPos, Quaternion spawnRot)
     {
+        var damageReceiver = GetComponentInChildren<DamageReceiver>(true);
+        if (damageReceiver != null)
+            damageReceiver.RestoreAfterRespawn();
+
         // Show renderers
         foreach (var r in GetComponentsInChildren<Renderer>())
             r.enabled = true;

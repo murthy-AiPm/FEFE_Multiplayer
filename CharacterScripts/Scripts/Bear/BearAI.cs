@@ -589,16 +589,10 @@ public class BearAI : NetworkBehaviour
 
             var receiver = col.GetComponentInParent<DamageReceiver>();
             if (receiver == null) continue;
+            if (receiver.IsDead) continue;
 
             Transform t = receiver.transform;
             if (t == currentTarget) continue;
-
-            var vitals = col.GetComponentInParent<VitalManager>();
-            if (vitals != null)
-            {
-                var health = vitals.GetVital("health");
-                if (health != null && health.Current <= 0f) continue;
-            }
 
             _attackerCounts.TryGetValue(t, out int c);
             if (c < bestCount)
@@ -654,15 +648,9 @@ public class BearAI : NetworkBehaviour
 
             var receiver = col.GetComponentInParent<DamageReceiver>();
             if (receiver == null) continue;
+            if (receiver.IsDead) continue;
 
             Transform targetRoot = receiver.transform;
-
-            var vitals = col.GetComponentInParent<VitalManager>();
-            if (vitals != null)
-            {
-                var health = vitals.GetVital("health");
-                if (health != null && health.Current <= 0f) continue;
-            }
 
             if (!candidates.Contains(targetRoot))
                 candidates.Add(targetRoot);
@@ -701,8 +689,12 @@ public class BearAI : NetworkBehaviour
     {
         if (target == null) return false;
 
+        var receiver = target.GetComponentInParent<DamageReceiver>();
+        if (receiver != null && receiver.IsDead) return false;
+
         var vitals = target.GetComponentInParent<VitalManager>();
         if (vitals == null) return true; // No vitals = assume alive
+        if (vitals.IsDead) return false;
 
         var health = vitals.GetVital("health");
         return health == null || health.Current > 0f;

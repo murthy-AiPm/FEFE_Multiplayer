@@ -6159,6 +6159,7 @@ MonoBehaviour:
   aimFOV: 40
   allowMountedCombat: 0
   mountController: {fileID: 390209779912540638}
+  enableFistCombat: 0
   dodgeSpeed: 8
   dodgeDuration: 0.5
   dodgeStaminaCost: 15
@@ -6187,10 +6188,18 @@ MonoBehaviour:
   vitalManager: {fileID: 1702300467690810362}
   combatController: {fileID: 929657025235045054}
   weaponManager: {fileID: 4819312757928810008}
+  defaultVitalID: health
+  critStaminaVitalID: stamina
+  critToStaminaRatio: 1
+  exhaustionKillEnabled: 0
   blockDamageReduction: 0.8
   blockAngle: 120
   blockStaminaRatio: 0.5
   hitStunDuration: 0.2
+  disableCollidersOnDeath: 1
+  collidersToDisableOnDeath: []
+  autoFindCollidersToDisableOnDeath: 1
+  keepTriggerCollidersOnDeath: 1
   staggerThreshold: 200
   staggerDecayRate: 50
   staggerDecayDelay: 2

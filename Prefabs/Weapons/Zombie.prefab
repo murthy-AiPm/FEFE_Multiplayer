@@ -669,7 +669,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CritZoneMarker
   damageMultiplier: 20
-  zoneName: ZombieHead
+  zoneName: health
 --- !u!1 &1344189828013955880
 GameObject:
   m_ObjectHideFlags: 0
@@ -2054,7 +2054,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CritZoneMarker
   damageMultiplier: 1
-  zoneName: Body
+  zoneName: health
 --- !u!65 &1585914934519226126
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2357,7 +2357,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3438025234
+  GlobalObjectIdHash: 303730626
   InScenePlacedSourceGlobalObjectIdHash: 3821608182
   DeferredDespawnTick: 0
   Ownership: 1
@@ -2489,10 +2489,18 @@ MonoBehaviour:
   vitalManager: {fileID: 796216624645616193}
   combatController: {fileID: 0}
   weaponManager: {fileID: 0}
+  defaultVitalID: health
+  critStaminaVitalID: 
+  critToStaminaRatio: 1
+  exhaustionKillEnabled: 0
   blockDamageReduction: 0.8
   blockAngle: 120
   blockStaminaRatio: 0.5
   hitStunDuration: 0.2
+  disableCollidersOnDeath: 1
+  collidersToDisableOnDeath: []
+  autoFindCollidersToDisableOnDeath: 1
+  keepTriggerCollidersOnDeath: 1
   staggerThreshold: 200
   staggerDecayRate: 50
   staggerDecayDelay: 2

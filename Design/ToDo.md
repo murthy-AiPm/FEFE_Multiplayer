@@ -2178,3 +2178,30 @@ FIX
  activeAttack.maxRange + attackCancelDistanceBuffer. Disable the new toggle if a
  specific attack should always commit once its damage window starts.
 
+2026-05-07 - Dead players no longer stay targetable
+
+ROOT CAUSE
+ Player death disabled controllers and started the respawn flow, but the physical
+ hit colliders stayed enabled and DamageReceiver continued accepting hits. BearAI
+ and OrcAI also relied mostly on a direct health vital lookup, so a dead target
+ with active colliders could remain detectable and keep receiving attack/hit
+ feedback.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Human/Combat/DamageReceiver.cs
+     - Added IsDead.
+     - Dead receivers now reject local, melee RPC, and projectile damage.
+     - Added death-collider handling: enabled non-trigger child colliders are
+       disabled on death and restored on respawn.
+ ~ CharacterScripts/Scripts/Shared/RespawnController.cs
+     - Restores DamageReceiver death colliders on server and clients at respawn.
+ ~ CharacterScripts/Scripts/Human/Combat/HitboxController.cs
+     - Skips dead DamageReceivers before hit callbacks are fired.
+ ~ CharacterScripts/Scripts/Bear/BearAI.cs
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Target validity now respects DamageReceiver.IsDead / VitalManager.IsDead.
+
+FIX
+ Dead players stop being valid NPC targets, stop receiving melee/projectile
+ damage, and lose their physical hit colliders until respawn reenables them.
+

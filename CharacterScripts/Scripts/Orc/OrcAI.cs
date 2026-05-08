@@ -1163,8 +1163,12 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     {
         if (target == null) return false;
 
+        var receiver = target.GetComponentInParent<DamageReceiver>();
+        if (receiver != null && receiver.IsDead) return false;
+
         var vitals = target.GetComponentInParent<VitalManager>();
         if (vitals == null) return true;
+        if (vitals.IsDead) return false;
 
         var health = vitals.GetVital("health");
         return health == null || health.Current > 0f;

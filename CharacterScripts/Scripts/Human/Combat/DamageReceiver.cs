@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -38,6 +39,14 @@ public class DamageReceiver : NetworkBehaviour
     [Header("Hit Feedback")]
     [SerializeField] private float hitStunDuration = 0.2f;
 
+    [Header("Death Collision")]
+    [Tooltip("Disable physical hit colliders while dead so NPCs and weapons stop targeting the corpse.")]
+    [SerializeField] private bool disableCollidersOnDeath = true;
+    [Tooltip("Optional explicit colliders to disable on death. Leave empty to auto-disable enabled non-trigger child colliders.")]
+    [SerializeField] private Collider[] collidersToDisableOnDeath;
+    [SerializeField] private bool autoFindCollidersToDisableOnDeath = true;
+    [SerializeField] private bool keepTriggerCollidersOnDeath = true;
+
     [Header("Stagger (Projectile Crit Zones)")]
     [Tooltip("Accumulated stagger damage from crit-zone projectile hits needed to trigger a hit reaction animation.")]
     [SerializeField] private float staggerThreshold = 200f;
@@ -63,8 +72,10 @@ public class DamageReceiver : NetworkBehaviour
     // Stagger accumulation (server only)
     private float _staggerAccumulated;
     private float _timeSinceLastCritHit;
+    private readonly List<Collider> _disabledDeathColliders = new List<Collider>();
 
     public bool IsHitStunned => _hitStunTimer > 0f;
+    public bool IsDead => vitalManager != null && vitalManager.IsDead;
 
     private void Awake()
     {
@@ -107,6 +118,9 @@ public class DamageReceiver : NetworkBehaviour
 
     public void OnHitLocal(HitInfo hitInfo)
     {
+        if (IsDead)
+            return;
+
         if (combatController != null && combatController.IsInvincible)
             return;
 
@@ -163,6 +177,7 @@ public class DamageReceiver : NetworkBehaviour
     public void ApplyProjectileDamage(float damage, Vector3 attackerPosition, float critMultiplier = 0f, string zoneVitalID = null)
     {
         if (!IsServer) return;
+        if (IsDead) return;
 
         // Crit multiplier scales both health damage and stagger accumulation
         float finalDamage = critMultiplier > 0f ? damage * critMultiplier : damage;
@@ -218,6 +233,9 @@ public class DamageReceiver : NetworkBehaviour
         ServerRpcParams rpcParams = default)
     {
         if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(attackerNetId, out var attackerObj))
+            return;
+
+        if (IsDead)
             return;
 
         float dist = Vector3.Distance(attackerObj.transform.position, transform.position);
@@ -317,6 +335,7 @@ public class DamageReceiver : NetworkBehaviour
                 mount.ForceServerDismount();
         }
 
+        SetDeathCollidersEnabled(false);
         NotifyDeathClientRpc();
 
         if (IsServer && isPlayer)
@@ -330,6 +349,8 @@ public class DamageReceiver : NetworkBehaviour
     [ClientRpc]
     private void NotifyDeathClientRpc()
     {
+        SetDeathCollidersEnabled(false);
+
         // Human controllers
         var input = GetComponentInChildren<InputController>();
         if (input != null) input.enabled = false;
@@ -355,6 +376,55 @@ public class DamageReceiver : NetworkBehaviour
             if (deathScreen != null)
                 deathScreen.Show(GetComponent<NetworkObject>());
         }
+    }
+
+    public void RestoreAfterRespawn()
+    {
+        SetDeathCollidersEnabled(true);
+    }
+
+    private void SetDeathCollidersEnabled(bool enabled)
+    {
+        if (!disableCollidersOnDeath)
+            return;
+
+        if (enabled)
+        {
+            for (int i = 0; i < _disabledDeathColliders.Count; i++)
+            {
+                if (_disabledDeathColliders[i] != null)
+                    _disabledDeathColliders[i].enabled = true;
+            }
+
+            _disabledDeathColliders.Clear();
+            return;
+        }
+
+        foreach (var col in GetDeathColliders())
+        {
+            if (col == null || !col.enabled || ShouldKeepColliderOnDeath(col))
+                continue;
+
+            col.enabled = false;
+            if (!_disabledDeathColliders.Contains(col))
+                _disabledDeathColliders.Add(col);
+        }
+    }
+
+    private IEnumerable<Collider> GetDeathColliders()
+    {
+        if (collidersToDisableOnDeath != null && collidersToDisableOnDeath.Length > 0)
+            return collidersToDisableOnDeath;
+
+        if (autoFindCollidersToDisableOnDeath)
+            return GetComponentsInChildren<Collider>(true);
+
+        return System.Array.Empty<Collider>();
+    }
+
+    private bool ShouldKeepColliderOnDeath(Collider col)
+    {
+        return keepTriggerCollidersOnDeath && col.isTrigger;
     }
 
 }

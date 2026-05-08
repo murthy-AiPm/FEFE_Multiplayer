@@ -141,6 +141,10 @@ public class HitboxController : MonoBehaviour
                     continue;
             }
 
+            var receiver = hit.collider.GetComponentInParent<DamageReceiver>();
+            if (receiver != null && receiver.IsDead)
+                continue;
+
             // Skip already hit this swing (per root object, not per collider)
             if (_alreadyHit.Contains(hitRoot))
                 continue;
@@ -162,7 +166,6 @@ public class HitboxController : MonoBehaviour
             OnHitDetected?.Invoke(hitInfo);
 
             // Also check for DamageReceiver on the hit object
-            var receiver = hit.collider.GetComponentInParent<DamageReceiver>();
             if (receiver != null)
             {
                 receiver.OnHitLocal(hitInfo);
