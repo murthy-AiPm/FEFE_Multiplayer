@@ -6704,6 +6704,10 @@ MonoBehaviour:
   blockAngle: 120
   blockStaminaRatio: 0.5
   hitStunDuration: 0.2
+  disableCollidersOnDeath: 1
+  collidersToDisableOnDeath: []
+  autoFindCollidersToDisableOnDeath: 1
+  keepTriggerCollidersOnDeath: 1
   staggerThreshold: 200
   staggerDecayRate: 50
   staggerDecayDelay: 2
@@ -6773,8 +6777,11 @@ MonoBehaviour:
     hitboxSelection: 2
   attackCancelDistanceBuffer: 1
   attackCancelReengageDelay: 0.75
+  allowAnimationEventAttackCancelBeforeHitbox: 1
+  allowAnimationEventAttackCancelAfterHitbox: 1
   locomotionStatePath: Base Layer.Locomotion
   attackCancelFade: 0.08
+  attackRecoverDuration: 1.5
   blockChance: 0.35
   blockDuration: 0.9
   blockCooldown: 1.4
@@ -6783,6 +6790,7 @@ MonoBehaviour:
   parryActiveWindow: 0.22
   parryCooldown: 2
   useAnimationEventsForHitboxes: 1
+  animationEventAttackTimeout: 3
   weaponHitbox: {fileID: 1005750298559799297}
   offHandWeaponHitbox: {fileID: 8674338702878243208}
   weaponData: {fileID: 11400000, guid: 3f593b1e08d26d04a909b60c9fa140b7, type: 2}

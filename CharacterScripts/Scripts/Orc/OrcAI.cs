@@ -51,7 +51,6 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         Attack,
         Block,
         Parry,
-        Recover,
         Stagger,
         Dead
     }
@@ -100,8 +99,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     [Tooltip("Animator state path to fade to when an attack is cancelled. Existing controller uses the Locomtion typo.")]
     [SerializeField] private string locomotionStatePath = "Base Layer.Locomtion";
     [SerializeField] private float attackCancelFade = 0.08f;
-    [Tooltip("Pause after an attack completes before returning to Approach. Set to 0 to avoid the visible idle-like Recover beat.")]
-    [SerializeField] private float attackRecoverDuration = 0.2f;
+    [Tooltip("After an attack finishes, hold real Block during the attack cooldown.")]
+    [SerializeField] private bool blockDuringAttackCooldown = true;
 
     [Header("Block")]
     [Range(0f, 1f)]
@@ -176,10 +175,12 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private float parryActiveTimer;
     private float hitboxTimer;
     private float verticalVelocity;
+    private float nextBlockDuration = -1f;
     private bool hitboxActive;
     private bool attackHitboxWindowStarted;
     private bool mainHandHitboxActive;
     private bool offHandHitboxActive;
+    private bool postAttackBlockActive;
     private bool registeredAsAttacker;
     private bool stateInitialized;
     private Vector3 repositionTarget;
@@ -434,9 +435,6 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             case OrcSubState.Parry:
                 UpdateParry();
                 break;
-            case OrcSubState.Recover:
-                UpdateRecover();
-                break;
         }
     }
 
@@ -489,8 +487,12 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
         if (stateTimer <= 0f)
         {
-            blockCooldownTimer = blockCooldown;
-            SetState(OrcState.Combat, OrcSubState.Recover);
+            if (postAttackBlockActive)
+                postAttackBlockActive = false;
+            else
+                blockCooldownTimer = blockCooldown;
+
+            SetState(OrcState.Combat, OrcSubState.Approach);
         }
     }
 
@@ -504,15 +506,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         {
             parryCooldownTimer = parryCooldown;
             parryActiveTimer = 0f;
-            SetState(OrcState.Combat, OrcSubState.Recover);
+            BeginBlock(blockDuration, true);
         }
-    }
-
-    private void UpdateRecover()
-    {
-        stateTimer -= Time.deltaTime;
-        if (stateTimer <= 0f)
-            SetState(OrcState.Combat, OrcSubState.Approach);
     }
 
     private void UpdateStagger()
@@ -539,7 +534,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
             if (blockCooldownTimer <= 0f && Random.value <= blockChance)
             {
-                SetState(OrcState.Combat, OrcSubState.Block);
+                BeginBlock(blockDuration, false);
                 return true;
             }
         }
@@ -602,6 +597,13 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     {
         activeAttack = attack;
         SetState(OrcState.Combat, OrcSubState.Attack);
+    }
+
+    private void BeginBlock(float duration, bool fromAttackCooldown)
+    {
+        nextBlockDuration = Mathf.Max(0f, duration);
+        postAttackBlockActive = fromAttackCooldown;
+        SetState(OrcState.Combat, OrcSubState.Block);
     }
 
     private void BeginReposition()
@@ -686,7 +688,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 break;
 
             case OrcSubState.Block:
-                stateTimer = blockDuration;
+                stateTimer = nextBlockDuration >= 0f ? nextBlockDuration : blockDuration;
+                nextBlockDuration = -1f;
                 StopAgent();
                 if (animator != null)
                     animator.SetBool(blockHash, true);
@@ -698,11 +701,6 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 StopAgent();
                 if (animator != null)
                     animator.SetTrigger(parryHash);
-                break;
-
-            case OrcSubState.Recover:
-                stateTimer = Mathf.Max(0f, attackRecoverDuration);
-                StopAgent();
                 break;
 
             case OrcSubState.Stagger:
@@ -813,7 +811,6 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 return useCombatRootMotion;
 
             case OrcSubState.Block:
-            case OrcSubState.Recover:
             default:
                 return false;
         }
@@ -942,9 +939,14 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (activeAttack != null)
             activeAttack.cooldownTimer = activeAttack.cooldown;
 
+        float cooldownDuration = activeAttack != null ? activeAttack.cooldown : 0f;
         activeAttack = null;
         attackHitboxWindowStarted = false;
-        SetState(OrcState.Combat, OrcSubState.Recover);
+
+        if (blockDuringAttackCooldown && cooldownDuration > 0f)
+            BeginBlock(cooldownDuration, true);
+        else
+            SetState(OrcState.Combat, OrcSubState.Approach);
     }
 
     private void InitializeWeaponHitbox(HitboxController hitbox)

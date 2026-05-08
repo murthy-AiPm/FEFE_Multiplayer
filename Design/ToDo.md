@@ -2205,3 +2205,46 @@ FIX
  Dead players stop being valid NPC targets, stop receiving melee/projectile
  damage, and lose their physical hit colliders until respawn reenables them.
 
+2026-05-08 - Orc blocks during attack cooldown
+
+ROOT CAUSE
+ After an attack completed, OrcAI went through Recover/Approach while the attack
+ option cooldown ticked down. Without a dedicated recovery animation this could
+ show awkward idle, and it did not communicate that the orc was guarding between
+ swings.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added blockDuringAttackCooldown.
+     - Added BeginBlock(duration, fromAttackCooldown).
+     - Attack completion can now enter real Block for the attack cooldown
+       duration.
+     - Post-attack Block returns directly to Approach when its cooldown guard
+       ends, while normal utility Block still uses block cooldown and Recover.
+
+FIX
+ Orcs can hold the existing block/guard animation during attack cooldown, and
+ because this is the real Block state, frontal hits are reduced during that
+ guard window.
+
+2026-05-08 - Orc Recover state removed
+
+ROOT CAUSE
+ Recover was still present as a generic post-action pause, but the current orc
+ combat direction uses Block/guard as the between-action reset. Recover could
+ still route the animator back toward idle/locomotion and made the state graph
+ harder to reason about.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Removed Recover from OrcSubState.
+     - Removed UpdateRecover and all SetState calls to Recover.
+     - Block now returns directly to Approach when its timer ends.
+     - Parry now routes into Block/guard when its parry window finishes.
+     - Attack fallback now returns to Approach if post-attack block is disabled
+       or has no cooldown duration.
+
+FIX
+ OrcAI no longer emits CombatState 8 / Recover. The combat loop is now Attack or
+ Parry into Block/guard, then back to Approach.
+
