@@ -59,6 +59,8 @@ public class DamageReceiver : NetworkBehaviour
     public System.Action<float, Vector3> OnDamageReceived;
     public System.Action<float, Vector3> OnDamageBlocked;
     public System.Action<float, Vector3> OnDamageParried;
+    /// <summary>Server-only hook for physical ranged hits that should alert AI.</summary>
+    public System.Action<float, Vector3, Vector3, NetworkObject> OnRangedDamageReceived;
     public System.Action OnDeath;
 
     /// <summary>Fired on all clients when a hit lands (not blocked). Subscriber plays hit reaction animation.</summary>
@@ -174,18 +176,29 @@ public class DamageReceiver : NetworkBehaviour
     /// zoneVitalID: optional per-zone vital routing key (e.g. "head", "wings"). Null/empty
     /// falls back to defaultVitalID. Crit-zone projectiles supply this from CritZoneMarker.ZoneName.
     /// </summary>
-    public void ApplyProjectileDamage(float damage, Vector3 attackerPosition, float critMultiplier = 0f, string zoneVitalID = null)
+    public void ApplyProjectileDamage(
+        float damage,
+        Vector3 attackerPosition,
+        float critMultiplier = 0f,
+        string zoneVitalID = null,
+        Vector3? hitPoint = null,
+        NetworkObject attackerObject = null,
+        bool triggerRangedAlert = false)
     {
         if (!IsServer) return;
         if (IsDead) return;
 
         // Crit multiplier scales both health damage and stagger accumulation
         float finalDamage = critMultiplier > 0f ? damage * critMultiplier : damage;
+        Vector3 damagePoint = hitPoint ?? attackerPosition;
 
         string targetVitalID = string.IsNullOrEmpty(zoneVitalID) ? defaultVitalID : zoneVitalID;
 
         if (vitalManager != null)
             vitalManager.ApplyDamage(targetVitalID, finalDamage);
+
+        if (triggerRangedAlert)
+            OnRangedDamageReceived?.Invoke(finalDamage, damagePoint, attackerPosition, attackerObject);
 
         // Crit also drains stamina (exhaustion kill setup).
         if (critMultiplier > 0f && !string.IsNullOrEmpty(critStaminaVitalID) && vitalManager != null)
@@ -218,7 +231,7 @@ public class DamageReceiver : NetworkBehaviour
 
         NotifyHitWithDefenseClientRpc(
             finalDamage,
-            attackerPosition,
+            damagePoint,
             (byte)DamageDefenseResult.None,
             attackerPosition,
             triggerHitAnimation);

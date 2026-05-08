@@ -94,6 +94,16 @@ public class BallistaArrow : NetworkBehaviour
         }
 
 
+        NetworkObject shooterNetObj = null;
+        Vector3 attackerPosition = transform.position - transform.forward;
+        if (_shooterNetObjId != ulong.MaxValue &&
+            NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(_shooterNetObjId, out shooterNetObj))
+        {
+            attackerPosition = shooterNetObj.transform.position;
+        }
+
+        bool hitOrc = other.GetComponentInParent<OrcAI>() != null;
+
         // Try to deal damage through DamageReceiver
         // Crit-zone hits accumulate stagger damage; when threshold is crossed, hit reaction fires
         var damageReceiver = other.GetComponentInParent<DamageReceiver>();
@@ -102,7 +112,15 @@ public class BallistaArrow : NetworkBehaviour
             var critZone = other.GetComponent<CritZoneMarker>();
             float critMultiplier = critZone != null ? critZone.DamageMultiplier : 0f;
             string zoneVitalID = critZone != null ? critZone.ZoneName : null;
-            damageReceiver.ApplyProjectileDamage(damage, transform.position, critMultiplier, zoneVitalID);
+
+            damageReceiver.ApplyProjectileDamage(
+                damage,
+                attackerPosition,
+                critMultiplier,
+                zoneVitalID,
+                transform.position,
+                shooterNetObj,
+                true);
         }
         else
         {
@@ -114,6 +132,9 @@ public class BallistaArrow : NetworkBehaviour
                 Debug.Log($"[BallistaArrow] Applied {damage} damage directly to {vitalManager.gameObject.name} (no DamageReceiver)");
             }
         }
+
+        if (!hitOrc)
+            OrcAI.NotifyNearbyRangedImpact(transform.position, attackerPosition, shooterNetObj);
 
         // Notify impact effects on clients
         NotifyImpactClientRpc(transform.position, transform.rotation);

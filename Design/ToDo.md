@@ -2307,3 +2307,282 @@ FIX
  patrol routes, and simple Grunt/Berserker/Skirmisher tuning, with squad leader
  behavior kept intentionally lightweight.
 
+2026-05-08 - Orc field-of-view detection and pursuit
+
+ROOT CAUSE
+ OrcAI used pure radius detection, so orcs could acquire targets through walls
+ and had no believable difference between spotting, pursuing, and losing a
+ player. The next tactical basics needed vision cone + line-of-sight detection,
+ a bounded pursue distance, and a last-known-position search.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Replaced detectionRadius/leashRadius usage with viewDistance,
+       viewAngle, closeDetectionRadius, detectionTime, loseSightGraceTime,
+       pursueRadiusFromHome, searchDuration, eyeHeight, targetAimHeight, and
+       visionObstacleMask.
+     - Added FormerlySerializedAs migration for existing detectionRadius and
+       leashRadius prefab values.
+     - Kept OverlapSphereNonAlloc as a broad phase, then filters candidates
+       through field-of-view and line-of-sight raycasts.
+     - Added awareness buildup before patrol acquisition.
+     - Added combat sight tracking: visible targets refresh last known position,
+       hidden targets stay pursued briefly, then the orc moves to the last known
+       position, searches, and returns home if it cannot reacquire.
+     - Updated perception gizmos for view distance, close detection, FOV edges,
+       and pursue radius.
+ ~ Design/OrcAI.md
+     - Updated the LoS section with the implemented field names.
+
+FIX
+ Orcs now detect through a believable perception stack: close-range bubble,
+ vision cone, line of sight, awareness buildup, bounded pursuit, and search at
+ the last visible target position before returning to patrol/home.
+
+2026-05-08 - Orc ranged hit alert reaction
+
+ROOT CAUSE
+ Projectile hits only delivered generic damage feedback to OrcAI, so an orc hit
+ by an arrow could not distinguish the shooter/source from a melee hit. The next
+ behavior needed orcs to face the arrow source, pursue visible close shooters,
+ and guard when the shooter is too far away or not visible.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Human/Combat/DamageReceiver.cs
+     - Added OnRangedDamageReceived server-only hook.
+     - Extended ApplyProjectileDamage with optional hit point, attacker
+       NetworkObject, and triggerRangedAlert parameters while preserving existing
+       fire/burn projectile-style callers.
+ ~ CharacterScripts/Scripts/Ballista/BallistaArrow.cs
+     - Looks up the shooter NetworkObject from SetShooter and passes shooter
+       position, hit point, attacker object, and ranged-alert intent into
+       DamageReceiver.
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added investigateRadiusFromHome and rangedHitGuardDuration.
+     - Subscribes to ranged damage alerts.
+     - Pursues a visible ranged attacker when the source is within investigate
+       radius from home.
+     - Otherwise turns toward the hit source, enters Block/guard briefly, can
+       reacquire visible targets during the guard, then returns to patrol/home.
+     - Suppresses the generic projectile damage stagger immediately after a
+       ranged-alert reaction so the alert branch controls the state transition.
+ ~ Design/OrcAI.md
+     - Documented the ranged hit reaction and deferred cover behavior.
+
+FIX
+ Arrow hits now produce a believable source-aware reaction: visible close
+ shooters get pursued, while distant or hidden shooters make the orc face the
+ shot direction and guard briefly before recovering.
+
+2026-05-08 - Orc ranged source investigation
+
+ROOT CAUSE
+ The first ranged-hit alert used investigateRadiusFromHome only as a gate for
+ pursuing a visible shooter. If the shooter was hidden but the source was still
+ inside investigate range, the orc guarded in place instead of investigating,
+ making the field name and behavior misleading.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added BeginInvestigateRangedSource.
+     - Ranged hits from inside investigateRadiusFromHome now send the orc to
+       the source position when the shooter is not currently visible.
+     - Reuses the existing last-known-position search flow: move to source,
+       search for searchDuration, reacquire if a target enters FOV/LoS, then
+       return home.
+     - Sources beyond investigateRadiusFromHome still use guard-only recovery.
+ ~ Design/OrcAI.md
+     - Updated the ranged hit reaction note to distinguish pursue, investigate,
+       and guard-only outcomes.
+
+FIX
+ `investigateRadiusFromHome` now means what it says: ranged sources inside the
+ radius can trigger movement and search even when the shooter is not visible.
+
+2026-05-08 - Orc investigate radius gizmo
+
+ROOT CAUSE
+ The Scene view showed pursue radius but not investigate radius, making it hard
+ to tune the new ranged-hit investigation boundary relative to the combat leash.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added a purple/magenta wire sphere for investigateRadiusFromHome in
+       OnDrawGizmosSelected.
+     - Kept pursueRadiusFromHome red so it reads as the hard combat leash.
+
+FIX
+ Orc perception gizmos now show both the red pursue radius and the purple
+ investigate radius from home.
+
+2026-05-08 - Orc bounded investigation for long-range shots
+
+ROOT CAUSE
+ Shots fired outside investigateRadiusFromHome still produced only a guard
+ reaction, so the orc appeared not to investigate even though the shot direction
+ was known. The desired behavior is to respect the camp boundary while still
+ checking the edge nearest the shot source.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added GetRangedInvestigationDestination.
+     - Ranged sources outside investigateRadiusFromHome now clamp the
+       investigation destination to the edge of the investigate radius instead
+       of falling straight to guard-only behavior.
+     - While searching at the bounded destination, the orc faces the original
+       shot source direction.
+     - Guard-only fallback remains available by setting investigateRadiusFromHome
+       to 0.
+ ~ Design/OrcAI.md
+     - Updated ranged-hit behavior notes for bounded long-range investigation.
+
+FIX
+ Long-range arrow hits now make the orc move to the nearest allowed
+ investigation boundary, search while facing the shot direction, then return
+ home if no target enters FOV/LoS.
+
+2026-05-08 - Orc investigation alert return behavior
+
+ROOT CAUSE
+ Bounded long-range investigations still treated any detected player as a normal
+ target acquisition, even if the player was outside the investigation boundary.
+ The desired placeholder for future squad alerting is for the orc to run back
+ home when it spots a player beyond investigateRadiusFromHome during that
+ investigation. Investigation movement itself also needed to read as urgent.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added rangedInvestigationActive, boundedRangedInvestigationActive, and
+       alertReturnHomeActive state flags.
+     - Ranged-source investigation now uses run speed while moving to the source
+       or bounded source edge.
+     - If a bounded investigation spots a target outside
+       investigateRadiusFromHome, the orc cancels pursuit and runs home instead.
+     - If no target is spotted, the normal return after search remains a walk.
+ ~ Design/OrcAI.md
+     - Documented run-speed investigation and alert-return behavior.
+
+FIX
+ Long-range ranged-hit investigations now emulate a scout returning to alert the
+ camp: the orc sprints to investigate, runs home if it spots a player beyond the
+ investigation boundary, and otherwise walks home after an empty search.
+
+2026-05-08 - Orc nearby arrow miss investigation
+
+ROOT CAUSE
+ Orcs reacted to direct arrow hits, but near misses that struck terrain or other
+ objects inside the orc's close awareness bubble did nothing. That made arrows
+ feel silent unless they landed on the orc.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added a server-side OrcAI registry and NotifyNearbyRangedImpact.
+     - Added reactToNearbyRangedImpacts.
+     - Nearby ranged impacts within an orc's closeDetectionRadius reuse the
+       existing ranged-hit investigation/guard behavior.
+ ~ CharacterScripts/Scripts/Ballista/BallistaArrow.cs
+     - Resolves shooter position/object before damage routing.
+     - Calls OrcAI.NotifyNearbyRangedImpact for impacts that do not directly hit
+       an OrcAI, so direct hits do not double-trigger the reaction.
+ ~ Design/OrcAI.md
+     - Documented nearby missed-arrow investigation.
+
+FIX
+ Arrows that hit terrain, props, or non-orc objects near an orc now make that
+ orc turn toward the shot source and investigate using the same bounded
+ ranged-alert flow as direct projectile hits.
+
+2026-05-08 - Orc multiple ranged alert priority
+
+ROOT CAUSE
+ Nearby missed-arrow impacts could override the direction of a direct arrow hit,
+ and repeated arrows from beyond view distance continued to trigger investigation
+ instead of producing the desired "run home to alert camp" placeholder behavior.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added directRangedHitPriorityDuration so direct arrow hits temporarily
+       suppress nearby missed-arrow impact alerts.
+     - Added outOfViewRangedAlertReturnThreshold and
+       outOfViewRangedAlertWindow.
+     - Repeated ranged alerts from outside viewDistance now make the orc run
+       home via the existing alert-return behavior.
+     - Clears out-of-view alert counters when the orc commits to a target or
+       completes the alert-return home transition.
+ ~ Design/OrcAI.md
+     - Documented direct-hit priority and repeated out-of-view ranged alerts.
+
+FIX
+ Direct arrow hits now keep priority over nearby misses, and two or more
+ out-of-view ranged alerts within the tuning window make the orc run back to
+ origin/home to emulate alerting the camp.
+
+2026-05-08 - Orc alert-return ranged alert fixes
+
+ROOT CAUSE
+ Alert-return did not have stable priority once it started. Later missed-arrow
+ impacts could restart investigation, causing a see-saw between investigating
+ and running home. Alert-return also was not allowed to reacquire a player who
+ moved back inside investigateRadiusFromHome and normal FOV/LoS.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Alert-return now participates in target acquisition checks.
+     - During bounded investigation or alert-return, visible targets outside
+       investigateRadiusFromHome keep the orc running home.
+     - Visible targets inside investigateRadiusFromHome can be pursued.
+     - While alert-return is active, missed-arrow impacts are ignored.
+     - Direct hits only interrupt alert-return if the shooter is visible and
+       inside investigateRadiusFromHome.
+ ~ Design/OrcAI.md
+     - Documented alert-return priority, reacquisition, and missed-impact ignore
+       behavior.
+
+FIX
+ Repeated out-of-view arrows no longer make the orc alternate between
+ investigation and alert-return, and a player who moves back inside the
+ investigation boundary during alert-return can now be acquired and attacked.
+
+2026-05-08 - Orc ranged pursuit boundary fix
+
+ROOT CAUSE
+ Ranged investigation treated investigateRadiusFromHome as enough permission to
+ pursue a visible shooter. That let a player inside the investigation circle but
+ outside pursueRadiusFromHome cause odd behavior: the orc would begin pursuit,
+ immediately fail the combat leash, then walk home instead of using the intended
+ alert-return behavior.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Ranged-hit pursuit now requires the visible shooter to be inside both
+       investigateRadiusFromHome and pursueRadiusFromHome.
+     - Visible ranged threats inside investigate radius but outside pursue
+       radius now trigger alert-return instead of pursuit.
+     - Patrol/ranged-investigation target acquisition now alert-returns for
+       visible targets outside either boundary.
+ ~ Design/OrcAI.md
+     - Clarified investigate vs pursue boundaries for ranged reactions.
+
+FIX
+ Investigation radius now means "allowed to check/confirm," while pursue radius
+ remains the combat commitment boundary. If the player is visible but outside
+ pursueRadiusFromHome, the orc runs home to alert instead of chasing and then
+ walking back.
+
+2026-05-08 - Orc gizmo colors inspector tuning
+
+ROOT CAUSE
+ Pursue radius color was hardcoded in OnDrawGizmosSelected, so it could not be
+ adjusted per prefab/archetype from the Inspector.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added serialized Color fields for view distance, close detection, pursue
+       radius, investigate radius, wander radius, and preferred combat distance
+       gizmos.
+     - OnDrawGizmosSelected now reads those Inspector colors instead of
+       hardcoded Color values.
+
+FIX
+ Orc gizmo colors are now Inspector-tweakable, including pursueRadiusGizmoColor.
+

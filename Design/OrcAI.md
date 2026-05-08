@@ -189,15 +189,39 @@ Server-side detection flow:
 4. Reject the target if the ray hits an obstacle before the target.
 5. Keep the existing detection throttle; expose all distances, heights, masks, and intervals in the Inspector.
 
-Suggested fields:
-- `useLineOfSight`
+Implemented fields:
+- `closeDetectionRadius`
+- `viewDistance`
+- `viewAngle`
+- `detectionInterval`
+- `detectionTime`
 - `eyeHeight`
 - `targetAimHeight`
-- `lineOfSightObstacleMask`
-- `lineOfSightMaxDistance` or reuse `detectionRadius`
+- `visionObstacleMask`
 - `loseSightGraceTime`
+- `pursueRadiusFromHome`
+- `searchDuration`
 
 `loseSightGraceTime` matters because instant target drops feel twitchy around corners. A short grace window lets an alerted orc keep chasing briefly after the player breaks sight, while patrol acquisition still respects LoS.
+
+### Ranged hit reaction
+
+Arrow hits should create an alert-from-source reaction. The first implementation is intentionally simple:
+- Ballista/human arrows pass the shooter NetworkObject when known, plus the hit point and source position.
+- If the shooter is visible and inside both `investigateRadiusFromHome` and `pursueRadiusFromHome`, the orc immediately targets and pursues the shooter.
+- If the shooter is visible inside `investigateRadiusFromHome` but outside `pursueRadiusFromHome`, the orc does not pursue; it runs home as the placeholder "alert the camp" behavior.
+- If the source is within `investigateRadiusFromHome` but the shooter is not visible, the orc moves to the source position, searches for `searchDuration`, and then returns to patrol/home if it cannot reacquire.
+- If the source is beyond investigate range, the orc moves toward the source but clamps its destination to the edge of `investigateRadiusFromHome`, searches there while facing the shot direction, and then returns to patrol/home.
+- Ranged-source investigation uses run movement. If a long-range/bounded investigation spots a player outside `investigateRadiusFromHome`, the orc does not pursue; it runs back home as a placeholder "alert the camp" behavior. If it spots nobody, the return home remains a normal walk.
+- Direct arrow hits temporarily override nearby missed-arrow impacts via `directRangedHitPriorityDuration`, so the orc prioritizes the direction/source of the arrow that actually hit it.
+- Repeated ranged alerts from outside `viewDistance` increment an out-of-view counter. When `outOfViewRangedAlertReturnThreshold` is reached within `outOfViewRangedAlertWindow`, the orc runs home as the placeholder "alert the camp" behavior instead of continuing to investigate.
+- While running home to alert camp, missed-arrow impacts are ignored so the orc does not oscillate between investigating and returning. A direct hit can only interrupt alert-return if the shooter is visible and inside `investigateRadiusFromHome`; otherwise the orc keeps running home.
+- Alert-return can still reacquire normally visible players inside both `investigateRadiusFromHome` and `pursueRadiusFromHome`. Visible players outside either boundary keep the orc in alert-return instead of being pursued.
+- If investigation is disabled by setting `investigateRadiusFromHome` to 0, the fallback is guard/block stance for `rangedHitGuardDuration`.
+- While guarding or investigating from a ranged hit, the orc can still acquire a player who steps into normal FOV/LoS.
+- Missed arrows that hit terrain/objects inside an orc's `closeDetectionRadius` also trigger the same source-aware investigation, unless the arrow directly hit an orc. This lets nearby misses feel heard/seen without double-processing direct hits.
+
+Cover behavior is deferred. When cover points exist, this same ranged-hit branch should choose cover instead of only guarding for far/not-visible sources.
 
 ### Predefined patrol patterns
 

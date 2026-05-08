@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Serialization;
 
 [System.Serializable]
 public class OrcAttackOption
@@ -57,9 +58,40 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     }
 
     [Header("Detection")]
-    [SerializeField] private float detectionRadius = 15f;
-    [SerializeField] private float leashRadius = 25f;
+    [Tooltip("Close-range awareness bubble. Targets inside this range are detected even outside the vision cone.")]
+    [SerializeField] private float closeDetectionRadius = 3f;
+    [Tooltip("Maximum distance for vision checks. Former detectionRadius value maps here for existing prefabs.")]
+    [FormerlySerializedAs("detectionRadius")]
+    [SerializeField] private float viewDistance = 15f;
+    [Range(1f, 360f)]
+    [SerializeField] private float viewAngle = 110f;
+    [SerializeField] private float detectionInterval = 0.25f;
+    [Tooltip("How long a visible target must stay visible before patrol detection locks on.")]
+    [SerializeField] private float detectionTime = 0.35f;
+    [Tooltip("Seconds a combat target can be out of sight before the orc searches the last known position.")]
+    [SerializeField] private float loseSightGraceTime = 1.5f;
+    [Tooltip("Maximum chase distance from home before the orc gives up and returns.")]
+    [FormerlySerializedAs("leashRadius")]
+    [SerializeField] private float pursueRadiusFromHome = 25f;
+    [SerializeField] private float searchDuration = 3f;
+    [SerializeField] private float eyeHeight = 1.7f;
+    [SerializeField] private float targetAimHeight = 1.2f;
     [SerializeField] private LayerMask playerLayer;
+    [SerializeField] private LayerMask visionObstacleMask = ~0;
+
+    [Header("Ranged Alert")]
+    [Tooltip("How far from home the orc will commit to pursuing a visible ranged attacker.")]
+    [SerializeField] private float investigateRadiusFromHome = 25f;
+    [Tooltip("How long the orc guards while facing a ranged hit source it cannot pursue.")]
+    [SerializeField] private float rangedHitGuardDuration = 1.5f;
+    [Tooltip("Missed arrows that hit this close to the orc trigger investigation.")]
+    [SerializeField] private bool reactToNearbyRangedImpacts = true;
+    [Tooltip("Seconds after a direct arrow hit where nearby missed-arrow impacts cannot override the direct-hit direction.")]
+    [SerializeField] private float directRangedHitPriorityDuration = 1f;
+    [Tooltip("How many out-of-view ranged alerts within the window make the orc run home to alert camp.")]
+    [SerializeField] private int outOfViewRangedAlertReturnThreshold = 2;
+    [Tooltip("Seconds allowed between out-of-view ranged alerts before the count resets.")]
+    [SerializeField] private float outOfViewRangedAlertWindow = 4f;
 
     [Header("Patrol")]
     [SerializeField] private float wanderRadius = 10f;
@@ -149,11 +181,19 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
     [Header("Debug")]
     [SerializeField] private bool showGizmos = true;
+    [SerializeField] private Color viewDistanceGizmoColor = new Color(1f, 1f, 0f, 0.2f);
+    [SerializeField] private Color closeDetectionGizmoColor = new Color(0f, 0.75f, 1f, 0.35f);
+    [SerializeField] private Color pursueRadiusGizmoColor = new Color(1f, 0f, 0f, 0.2f);
+    [SerializeField] private Color investigateRadiusGizmoColor = new Color(0.75f, 0f, 1f, 0.2f);
+    [SerializeField] private Color wanderRadiusGizmoColor = new Color(0f, 1f, 0f, 0.2f);
+    [SerializeField] private Color preferredCombatDistanceGizmoColor = new Color(1f, 0.5f, 0f, 0.3f);
 
     private static readonly Dictionary<Transform, int> _attackerCounts = new Dictionary<Transform, int>();
+    private static readonly List<OrcAI> _serverOrcs = new List<OrcAI>();
 
     private readonly Collider[] _detectionBuffer = new Collider[16];
     private readonly Collider[] _separationBuffer = new Collider[10];
+    private readonly RaycastHit[] _lineOfSightHits = new RaycastHit[8];
 
     private int speedHash;
     private int deadHash;
@@ -177,6 +217,12 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private float hitboxTimer;
     private float verticalVelocity;
     private float nextBlockDuration = -1f;
+    private float targetAwareness;
+    private float loseSightTimer;
+    private float suppressDamageReceivedStateChangeTimer;
+    private float directRangedHitPriorityTimer;
+    private float outOfViewRangedAlertTimer;
+    private int outOfViewRangedAlertCount;
     private bool hitboxActive;
     private bool attackHitboxWindowStarted;
     private bool mainHandHitboxActive;
@@ -184,7 +230,16 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private bool postAttackBlockActive;
     private bool registeredAsAttacker;
     private bool stateInitialized;
+    private bool movingToLastKnownPosition;
+    private bool searchingLastKnownPosition;
+    private bool rangedHitGuardActive;
+    private bool rangedInvestigationActive;
+    private bool boundedRangedInvestigationActive;
+    private bool alertReturnHomeActive;
     private Vector3 repositionTarget;
+    private Vector3 lastKnownTargetPosition;
+    private Vector3 rangedThreatPosition;
+    private Transform awarenessTarget;
 
     public OrcState State { get; private set; } = OrcState.Patrol;
     public OrcSubState SubState { get; private set; } = OrcSubState.Idle;
@@ -196,6 +251,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         base.OnNetworkSpawn();
 
         homePosition = transform.position;
+        if (IsServer && !_serverOrcs.Contains(this))
+            _serverOrcs.Add(this);
 
         if (agent == null) agent = GetComponent<NavMeshAgent>();
         if (animator == null) animator = GetComponentInChildren<Animator>();
@@ -211,6 +268,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             damageReceiver.OnDamageReceived += HandleDamageReceived;
             damageReceiver.OnDamageBlocked += HandleDamageBlocked;
             damageReceiver.OnDamageParried += HandleDamageParried;
+            damageReceiver.OnRangedDamageReceived += HandleRangedDamageReceived;
         }
 
         speedHash = Animator.StringToHash("Speed");
@@ -239,6 +297,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     public override void OnNetworkDespawn()
     {
         UnregisterAttacker();
+        _serverOrcs.Remove(this);
 
         if (vitalManager != null)
             vitalManager.OnDeath -= OnDeath;
@@ -248,9 +307,25 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             damageReceiver.OnDamageReceived -= HandleDamageReceived;
             damageReceiver.OnDamageBlocked -= HandleDamageBlocked;
             damageReceiver.OnDamageParried -= HandleDamageParried;
+            damageReceiver.OnRangedDamageReceived -= HandleRangedDamageReceived;
         }
 
         base.OnNetworkDespawn();
+    }
+
+    public static void NotifyNearbyRangedImpact(Vector3 impactPosition, Vector3 sourcePosition, NetworkObject attackerObject)
+    {
+        for (int i = _serverOrcs.Count - 1; i >= 0; i--)
+        {
+            OrcAI orc = _serverOrcs[i];
+            if (orc == null)
+            {
+                _serverOrcs.RemoveAt(i);
+                continue;
+            }
+
+            orc.HandleNearbyRangedImpact(impactPosition, sourcePosition, attackerObject);
+        }
     }
 
     private void Update()
@@ -337,6 +412,14 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (blockCooldownTimer > 0f) blockCooldownTimer -= Time.deltaTime;
         if (parryCooldownTimer > 0f) parryCooldownTimer -= Time.deltaTime;
         if (parryActiveTimer > 0f) parryActiveTimer -= Time.deltaTime;
+        if (suppressDamageReceivedStateChangeTimer > 0f) suppressDamageReceivedStateChangeTimer -= Time.deltaTime;
+        if (directRangedHitPriorityTimer > 0f) directRangedHitPriorityTimer -= Time.deltaTime;
+        if (outOfViewRangedAlertTimer > 0f)
+        {
+            outOfViewRangedAlertTimer -= Time.deltaTime;
+            if (outOfViewRangedAlertTimer <= 0f)
+                outOfViewRangedAlertCount = 0;
+        }
 
         if (attacks != null)
         {
@@ -358,11 +441,38 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private void UpdatePatrol()
     {
         bool canAcquireTarget = SubState != OrcSubState.Return ||
-                                Vector3.Distance(transform.position, homePosition) < leashRadius;
-        Transform target = canAcquireTarget ? FindNearestTarget() : null;
+                                movingToLastKnownPosition ||
+                                searchingLastKnownPosition ||
+                                rangedInvestigationActive ||
+                                alertReturnHomeActive ||
+                                Vector3.Distance(transform.position, homePosition) < pursueRadiusFromHome;
+        Transform target = canAcquireTarget ? FindNearestDetectedTarget() : null;
         if (target != null)
         {
+            bool targetInsideInvestigationRadius =
+                Vector3.Distance(homePosition, target.position) <= investigateRadiusFromHome;
+            bool targetInsidePursueRadius =
+                Vector3.Distance(homePosition, target.position) <= pursueRadiusFromHome;
+            bool targetRequiresAlertReturn =
+                (rangedInvestigationActive || alertReturnHomeActive) &&
+                (!targetInsidePursueRadius || !targetInsideInvestigationRadius);
+
+            if (targetRequiresAlertReturn)
+            {
+                BeginAlertReturnHome(target.position);
+                return;
+            }
+
             currentTarget = target;
+            outOfViewRangedAlertCount = 0;
+            outOfViewRangedAlertTimer = 0f;
+            movingToLastKnownPosition = false;
+            searchingLastKnownPosition = false;
+            rangedInvestigationActive = false;
+            boundedRangedInvestigationActive = false;
+            alertReturnHomeActive = false;
+            lastKnownTargetPosition = target.position;
+            loseSightTimer = loseSightGraceTime;
             SetState(OrcState.Combat, OrcSubState.Approach);
             return;
         }
@@ -371,8 +481,20 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         {
             case OrcSubState.Idle:
                 stateTimer -= Time.deltaTime;
+                if (searchingLastKnownPosition)
+                    RotateToward(rangedThreatPosition - transform.position);
+
                 if (stateTimer <= 0f)
                 {
+                    if (searchingLastKnownPosition)
+                    {
+                        searchingLastKnownPosition = false;
+                        rangedInvestigationActive = false;
+                        boundedRangedInvestigationActive = false;
+                        SetState(OrcState.Patrol, OrcSubState.Return);
+                        return;
+                    }
+
                     Vector3 wanderPoint = GetRandomWanderPoint();
                     if (wanderPoint != Vector3.zero)
                     {
@@ -393,26 +515,64 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 break;
 
             case OrcSubState.Return:
-                agent.SetDestination(homePosition);
+                Vector3 destination = movingToLastKnownPosition ? lastKnownTargetPosition : homePosition;
+                agent.SetDestination(destination);
                 RotateToward(agent.desiredVelocity);
                 if (!agent.pathPending && agent.remainingDistance <= arrivalThreshold)
-                    SetState(OrcState.Patrol, OrcSubState.Idle);
+                {
+                    if (movingToLastKnownPosition)
+                    {
+                        movingToLastKnownPosition = false;
+                        searchingLastKnownPosition = true;
+                        SetState(OrcState.Patrol, OrcSubState.Idle);
+                        stateTimer = searchDuration;
+                    }
+                    else
+                    {
+                        alertReturnHomeActive = false;
+                        outOfViewRangedAlertCount = 0;
+                        outOfViewRangedAlertTimer = 0f;
+                        SetState(OrcState.Patrol, OrcSubState.Idle);
+                    }
+                }
                 break;
         }
     }
 
     private void UpdateCombat()
     {
+        if (rangedHitGuardActive && currentTarget == null)
+        {
+            Transform target = FindNearestDetectedTarget();
+            if (target != null)
+            {
+                rangedHitGuardActive = false;
+                currentTarget = target;
+                lastKnownTargetPosition = target.position;
+                loseSightTimer = loseSightGraceTime;
+                SetState(OrcState.Combat, OrcSubState.Approach);
+                return;
+            }
+
+            UpdateBlock();
+            return;
+        }
+
         if (!ValidateCombatTarget())
+            return;
+
+        if (!UpdateCurrentTargetVisibility())
             return;
 
         if (detectionTimer <= 0f)
         {
-            Transform betterTarget = FindLessContestedTarget();
+            Transform betterTarget = FindLessContestedVisibleTarget();
             if (betterTarget != null && betterTarget != currentTarget)
             {
                 UnregisterAttacker();
                 currentTarget = betterTarget;
+                lastKnownTargetPosition = betterTarget.position;
+                loseSightTimer = loseSightGraceTime;
             }
         }
 
@@ -485,15 +645,26 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         stateTimer -= Time.deltaTime;
         if (currentTarget != null)
             RotateToward(currentTarget.position - transform.position);
+        else if (rangedHitGuardActive)
+            RotateToward(rangedThreatPosition - transform.position);
 
         if (stateTimer <= 0f)
         {
+            if (rangedHitGuardActive)
+            {
+                rangedHitGuardActive = false;
+                blockCooldownTimer = blockCooldown;
+                SetState(OrcState.Patrol, OrcSubState.Return);
+                return;
+            }
+
             if (postAttackBlockActive)
                 postAttackBlockActive = false;
             else
                 blockCooldownTimer = blockCooldown;
 
-            SetState(OrcState.Combat, OrcSubState.Approach);
+            SetState(currentTarget != null ? OrcState.Combat : OrcState.Patrol,
+                currentTarget != null ? OrcSubState.Approach : OrcSubState.Return);
         }
     }
 
@@ -629,7 +800,11 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
     private void SetState(OrcState newState, OrcSubState newSubState)
     {
-        if (stateInitialized && State == newState && SubState == newSubState && newSubState != OrcSubState.Attack)
+        if (stateInitialized &&
+            State == newState &&
+            SubState == newSubState &&
+            newSubState != OrcSubState.Attack &&
+            newSubState != OrcSubState.Block)
             return;
 
         if (SubState == OrcSubState.Block && animator != null)
@@ -744,6 +919,29 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         agent.nextPosition = transform.position;
     }
 
+    private bool UpdateCurrentTargetVisibility()
+    {
+        if (currentTarget == null)
+            return false;
+
+        if (CanPerceiveTarget(currentTarget, out bool closeDetected))
+        {
+            lastKnownTargetPosition = currentTarget.position;
+            loseSightTimer = loseSightGraceTime;
+            return true;
+        }
+
+        if (closeDetected)
+            return true;
+
+        loseSightTimer -= Time.deltaTime;
+        if (loseSightTimer > 0f)
+            return true;
+
+        BeginSearchLastKnownPosition();
+        return false;
+    }
+
     private bool ValidateCombatTarget()
     {
         if (currentTarget == null || !IsTargetAlive(currentTarget))
@@ -753,13 +951,47 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         }
 
         float distToHome = Vector3.Distance(transform.position, homePosition);
-        if (distToHome > leashRadius)
+        if (distToHome > pursueRadiusFromHome)
         {
             HandleInvalidCombatTarget();
             return false;
         }
 
         return true;
+    }
+
+    private void BeginSearchLastKnownPosition()
+    {
+        CancelInvoke(nameof(EnableSelectedWeaponHitbox));
+        DisableWeaponHitbox();
+
+        activeAttack = null;
+        attackHitboxWindowStarted = false;
+        postAttackBlockActive = false;
+        nextBlockDuration = -1f;
+        targetAwareness = 0f;
+        awarenessTarget = null;
+
+        if (animator != null)
+        {
+            animator.ResetTrigger(attackHash);
+            animator.SetBool(blockHash, false);
+
+            if (SubState == OrcSubState.Attack && !string.IsNullOrEmpty(locomotionStatePath))
+                animator.CrossFade(locomotionStatePath, attackCancelFade, 0);
+        }
+
+        UnregisterAttacker();
+        currentTarget = null;
+        movingToLastKnownPosition = true;
+        searchingLastKnownPosition = false;
+        rangedHitGuardActive = false;
+        rangedInvestigationActive = false;
+        boundedRangedInvestigationActive = false;
+        alertReturnHomeActive = false;
+        outOfViewRangedAlertCount = 0;
+        outOfViewRangedAlertTimer = 0f;
+        SetState(OrcState.Patrol, OrcSubState.Return);
     }
 
     private void HandleInvalidCombatTarget()
@@ -771,6 +1003,14 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         attackHitboxWindowStarted = false;
         postAttackBlockActive = false;
         nextBlockDuration = -1f;
+        targetAwareness = 0f;
+        awarenessTarget = null;
+        movingToLastKnownPosition = false;
+        searchingLastKnownPosition = false;
+        rangedHitGuardActive = false;
+        rangedInvestigationActive = false;
+        boundedRangedInvestigationActive = false;
+        alertReturnHomeActive = false;
 
         if (animator != null)
         {
@@ -785,6 +1025,195 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         SetState(OrcState.Patrol, OrcSubState.Return);
     }
 
+    private void BeginPursueRangedAttacker(Transform attacker)
+    {
+        if (attacker == null)
+            return;
+
+        CancelInvoke(nameof(EnableSelectedWeaponHitbox));
+        DisableWeaponHitbox();
+        UnregisterAttacker();
+
+        activeAttack = null;
+        attackHitboxWindowStarted = false;
+        postAttackBlockActive = false;
+        nextBlockDuration = -1f;
+        movingToLastKnownPosition = false;
+        searchingLastKnownPosition = false;
+        rangedHitGuardActive = false;
+        rangedInvestigationActive = false;
+        boundedRangedInvestigationActive = false;
+        alertReturnHomeActive = false;
+        targetAwareness = detectionTime;
+        awarenessTarget = attacker;
+        currentTarget = attacker;
+        lastKnownTargetPosition = attacker.position;
+        loseSightTimer = loseSightGraceTime;
+
+        if (animator != null)
+        {
+            animator.ResetTrigger(attackHash);
+            animator.SetBool(blockHash, false);
+
+            if (SubState == OrcSubState.Attack && !string.IsNullOrEmpty(locomotionStatePath))
+                animator.CrossFade(locomotionStatePath, attackCancelFade, 0);
+        }
+
+        SetState(OrcState.Combat, OrcSubState.Approach);
+    }
+
+    private void BeginRangedHitGuard(Vector3 sourcePosition)
+    {
+        CancelInvoke(nameof(EnableSelectedWeaponHitbox));
+        DisableWeaponHitbox();
+        UnregisterAttacker();
+
+        activeAttack = null;
+        attackHitboxWindowStarted = false;
+        postAttackBlockActive = false;
+        nextBlockDuration = -1f;
+        currentTarget = null;
+        awarenessTarget = null;
+        targetAwareness = 0f;
+        movingToLastKnownPosition = false;
+        searchingLastKnownPosition = false;
+        rangedHitGuardActive = true;
+        rangedInvestigationActive = false;
+        boundedRangedInvestigationActive = false;
+        alertReturnHomeActive = false;
+        rangedThreatPosition = sourcePosition;
+
+        if (animator != null)
+        {
+            animator.ResetTrigger(attackHash);
+            animator.SetBool(blockHash, false);
+
+            if (SubState == OrcSubState.Attack && !string.IsNullOrEmpty(locomotionStatePath))
+                animator.CrossFade(locomotionStatePath, attackCancelFade, 0);
+        }
+
+        RotateToward(sourcePosition - transform.position);
+        BeginBlock(rangedHitGuardDuration, false);
+    }
+
+    private void BeginInvestigateRangedSource(Vector3 sourcePosition)
+    {
+        CancelInvoke(nameof(EnableSelectedWeaponHitbox));
+        DisableWeaponHitbox();
+        UnregisterAttacker();
+
+        activeAttack = null;
+        attackHitboxWindowStarted = false;
+        postAttackBlockActive = false;
+        nextBlockDuration = -1f;
+        currentTarget = null;
+        awarenessTarget = null;
+        targetAwareness = 0f;
+        searchingLastKnownPosition = false;
+        rangedHitGuardActive = false;
+        rangedThreatPosition = sourcePosition;
+        lastKnownTargetPosition = GetRangedInvestigationDestination(sourcePosition);
+        movingToLastKnownPosition = true;
+        rangedInvestigationActive = true;
+        boundedRangedInvestigationActive = IsRangedSourceOutsideInvestigationRadius(sourcePosition);
+        alertReturnHomeActive = false;
+
+        if (animator != null)
+        {
+            animator.ResetTrigger(attackHash);
+            animator.SetBool(blockHash, false);
+
+            if (SubState == OrcSubState.Attack && !string.IsNullOrEmpty(locomotionStatePath))
+                animator.CrossFade(locomotionStatePath, attackCancelFade, 0);
+        }
+
+        RotateToward(sourcePosition - transform.position);
+        SetState(OrcState.Patrol, OrcSubState.Return);
+    }
+
+    private void BeginAlertReturnHome(Vector3 spottedTargetPosition)
+    {
+        CancelInvoke(nameof(EnableSelectedWeaponHitbox));
+        DisableWeaponHitbox();
+        UnregisterAttacker();
+
+        activeAttack = null;
+        attackHitboxWindowStarted = false;
+        postAttackBlockActive = false;
+        nextBlockDuration = -1f;
+        currentTarget = null;
+        awarenessTarget = null;
+        targetAwareness = 0f;
+        movingToLastKnownPosition = false;
+        searchingLastKnownPosition = false;
+        rangedHitGuardActive = false;
+        rangedInvestigationActive = false;
+        boundedRangedInvestigationActive = false;
+        alertReturnHomeActive = true;
+        rangedThreatPosition = spottedTargetPosition;
+        outOfViewRangedAlertCount = 0;
+        outOfViewRangedAlertTimer = 0f;
+
+        if (animator != null)
+        {
+            animator.ResetTrigger(attackHash);
+            animator.SetBool(blockHash, false);
+        }
+
+        SetState(OrcState.Patrol, OrcSubState.Return);
+    }
+
+    private Vector3 GetRangedInvestigationDestination(Vector3 sourcePosition)
+    {
+        float radius = Mathf.Max(0f, investigateRadiusFromHome);
+        Vector3 fromHome = sourcePosition - homePosition;
+        fromHome.y = 0f;
+
+        Vector3 destination = sourcePosition;
+        if (radius > 0f && fromHome.sqrMagnitude > radius * radius)
+            destination = homePosition + fromHome.normalized * radius;
+
+        if (NavMesh.SamplePosition(destination, out NavMeshHit hit, arrivalThreshold * 2f, NavMesh.AllAreas))
+            return hit.position;
+
+        return destination;
+    }
+
+    private bool IsRangedSourceOutsideInvestigationRadius(Vector3 sourcePosition)
+    {
+        float radius = Mathf.Max(0f, investigateRadiusFromHome);
+        if (radius <= 0f)
+            return true;
+
+        Vector3 fromHome = sourcePosition - homePosition;
+        fromHome.y = 0f;
+        return fromHome.sqrMagnitude > radius * radius;
+    }
+
+    private bool IsRangedSourceOutsideViewDistance(Vector3 sourcePosition)
+    {
+        float distance = Mathf.Max(0f, viewDistance);
+        if (distance <= 0f)
+            return true;
+
+        Vector3 toSource = sourcePosition - transform.position;
+        toSource.y = 0f;
+        return toSource.sqrMagnitude > distance * distance;
+    }
+
+    private bool RegisterOutOfViewRangedAlert()
+    {
+        if (outOfViewRangedAlertReturnThreshold <= 1)
+            return true;
+
+        if (outOfViewRangedAlertTimer <= 0f)
+            outOfViewRangedAlertCount = 0;
+
+        outOfViewRangedAlertCount++;
+        outOfViewRangedAlertTimer = Mathf.Max(0.1f, outOfViewRangedAlertWindow);
+        return outOfViewRangedAlertCount >= outOfViewRangedAlertReturnThreshold;
+    }
+
     private void UpdateAnimatorSpeed()
     {
         if (animator == null) return;
@@ -795,8 +1224,12 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             case OrcSubState.Wander:
             case OrcSubState.Return:
             case OrcSubState.Reposition:
-                animSpeed = 0.5f;
-                if (!ShouldUseRootMotionForCurrentState() && agent != null) agent.speed = walkSpeed;
+                bool shouldRunPatrolMovement =
+                    SubState == OrcSubState.Return &&
+                    (alertReturnHomeActive || (movingToLastKnownPosition && rangedInvestigationActive));
+                animSpeed = shouldRunPatrolMovement ? 1f : 0.5f;
+                if (!ShouldUseRootMotionForCurrentState() && agent != null)
+                    agent.speed = shouldRunPatrolMovement ? runSpeed : walkSpeed;
                 break;
             case OrcSubState.Approach:
                 animSpeed = 1f;
@@ -1114,16 +1547,47 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         return angle <= frontalDefenseAngle * 0.5f;
     }
 
-    private Transform FindNearestTarget()
+    private Transform FindNearestDetectedTarget()
     {
         if (detectionTimer > 0f) return currentTarget;
-        detectionTimer = 0.25f;
+        detectionTimer = detectionInterval;
 
-        int count = Physics.OverlapSphereNonAlloc(transform.position, detectionRadius, _detectionBuffer, playerLayer);
+        Transform perceived = FindBestPerceivedTarget(out bool closeDetected);
+        if (perceived == null)
+        {
+            targetAwareness = Mathf.Max(0f, targetAwareness - detectionInterval);
+            if (targetAwareness <= 0f)
+                awarenessTarget = null;
+
+            return null;
+        }
+
+        if (closeDetected || detectionTime <= 0f)
+        {
+            awarenessTarget = perceived;
+            targetAwareness = detectionTime;
+            return perceived;
+        }
+
+        if (awarenessTarget != perceived)
+        {
+            awarenessTarget = perceived;
+            targetAwareness = 0f;
+        }
+
+        targetAwareness += detectionInterval;
+        return targetAwareness >= detectionTime ? perceived : null;
+    }
+
+    private Transform FindBestPerceivedTarget(out bool closeDetected)
+    {
+        closeDetected = false;
+        int count = Physics.OverlapSphereNonAlloc(transform.position, viewDistance, _detectionBuffer, playerLayer);
 
         Transform best = null;
         int bestCount = int.MaxValue;
         float bestDist = float.MaxValue;
+        bool bestCloseDetected = false;
 
         for (int i = 0; i < count; i++)
         {
@@ -1135,6 +1599,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
             Transform candidate = receiver.transform;
             if (!IsTargetAlive(candidate)) continue;
+            if (!CanPerceiveTarget(candidate, out bool candidateCloseDetected)) continue;
 
             _attackerCounts.TryGetValue(candidate, out int attackerCount);
             float dist = Vector3.Distance(transform.position, candidate.position);
@@ -1143,20 +1608,22 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 best = candidate;
                 bestCount = attackerCount;
                 bestDist = dist;
+                bestCloseDetected = candidateCloseDetected;
             }
         }
 
+        closeDetected = bestCloseDetected;
         return best;
     }
 
-    private Transform FindLessContestedTarget()
+    private Transform FindLessContestedVisibleTarget()
     {
-        detectionTimer = 0.25f;
+        detectionTimer = detectionInterval;
 
         _attackerCounts.TryGetValue(currentTarget, out int currentCount);
         if (currentCount < maxAttackersPerTarget) return null;
 
-        int count = Physics.OverlapSphereNonAlloc(transform.position, detectionRadius, _detectionBuffer, playerLayer);
+        int count = Physics.OverlapSphereNonAlloc(transform.position, viewDistance, _detectionBuffer, playerLayer);
 
         Transform best = null;
         int bestCount = int.MaxValue;
@@ -1171,6 +1638,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
             Transform candidate = receiver.transform;
             if (candidate == currentTarget || !IsTargetAlive(candidate)) continue;
+            if (!CanPerceiveTarget(candidate, out _)) continue;
 
             _attackerCounts.TryGetValue(candidate, out int attackerCount);
             if (attackerCount < bestCount)
@@ -1181,6 +1649,89 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         }
 
         return best;
+    }
+
+    private bool CanPerceiveTarget(Transform target, out bool closeDetected)
+    {
+        closeDetected = false;
+        if (target == null) return false;
+
+        Vector3 eye = GetEyePosition();
+        Vector3 targetPoint = GetTargetAimPoint(target);
+        Vector3 toTarget = targetPoint - eye;
+        float sqrDistance = toTarget.sqrMagnitude;
+
+        float closeRadius = Mathf.Max(0f, closeDetectionRadius);
+        if (closeRadius > 0f && sqrDistance <= closeRadius * closeRadius)
+        {
+            closeDetected = HasLineOfSight(eye, targetPoint, target);
+            return closeDetected;
+        }
+
+        float maxViewDistance = Mathf.Max(0f, viewDistance);
+        if (maxViewDistance <= 0f || sqrDistance > maxViewDistance * maxViewDistance)
+            return false;
+
+        Vector3 flatToTarget = target.position - transform.position;
+        flatToTarget.y = 0f;
+        if (flatToTarget.sqrMagnitude < 0.001f)
+            return HasLineOfSight(eye, targetPoint, target);
+
+        float halfAngle = Mathf.Clamp(viewAngle, 1f, 360f) * 0.5f;
+        float angle = Vector3.Angle(transform.forward, flatToTarget.normalized);
+        if (angle > halfAngle)
+            return false;
+
+        return HasLineOfSight(eye, targetPoint, target);
+    }
+
+    private bool HasLineOfSight(Vector3 eye, Vector3 targetPoint, Transform target)
+    {
+        Vector3 toTarget = targetPoint - eye;
+        float distance = toTarget.magnitude;
+        if (distance <= 0.001f)
+            return true;
+
+        int hitCount = Physics.RaycastNonAlloc(
+            eye,
+            toTarget / distance,
+            _lineOfSightHits,
+            distance,
+            visionObstacleMask,
+            QueryTriggerInteraction.Ignore);
+
+        if (hitCount == 0)
+            return true;
+
+        RaycastHit nearestHit = default;
+        float nearestDistance = float.MaxValue;
+        for (int i = 0; i < hitCount; i++)
+        {
+            RaycastHit hit = _lineOfSightHits[i];
+            if (hit.collider == null) continue;
+            if (hit.collider.GetComponentInParent<OrcAI>() == this) continue;
+
+            if (hit.distance < nearestDistance)
+            {
+                nearestHit = hit;
+                nearestDistance = hit.distance;
+            }
+        }
+
+        if (nearestHit.collider == null)
+            return true;
+
+        return nearestHit.collider.GetComponentInParent<DamageReceiver>()?.transform == target;
+    }
+
+    private Vector3 GetEyePosition()
+    {
+        return transform.position + Vector3.up * eyeHeight;
+    }
+
+    private Vector3 GetTargetAimPoint(Transform target)
+    {
+        return target.position + Vector3.up * targetAimHeight;
     }
 
     private bool IsTargetAlive(Transform target)
@@ -1255,8 +1806,138 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     {
         animalSoundPlayer?.PlayHitSound();
         if (!IsServer || State == OrcState.Dead) return;
+        if (suppressDamageReceivedStateChangeTimer > 0f)
+        {
+            suppressDamageReceivedStateChangeTimer = 0f;
+            return;
+        }
+
         if (SubState == OrcSubState.Attack || SubState == OrcSubState.Block || SubState == OrcSubState.Parry) return;
         SetState(OrcState.Stagger, OrcSubState.Stagger);
+    }
+
+    private void HandleRangedDamageReceived(
+        float damage,
+        Vector3 hitPoint,
+        Vector3 sourcePosition,
+        NetworkObject attackerObject)
+    {
+        HandleRangedAlert(damage, hitPoint, sourcePosition, attackerObject, true);
+    }
+
+    private void HandleRangedAlert(
+        float damage,
+        Vector3 hitPoint,
+        Vector3 sourcePosition,
+        NetworkObject attackerObject,
+        bool directHit)
+    {
+        if (!IsServer || State == OrcState.Dead)
+            return;
+
+        if (alertReturnHomeActive)
+        {
+            if (!directHit)
+                return;
+
+            Transform directAttacker = attackerObject != null ? attackerObject.transform : null;
+            bool directAttackerVisible =
+                directAttacker != null &&
+                IsTargetAlive(directAttacker) &&
+                CanPerceiveTarget(directAttacker, out _);
+            bool directAttackerInsideInvestigationRadius =
+                directAttacker != null &&
+                Vector3.Distance(homePosition, directAttacker.position) <= investigateRadiusFromHome;
+            bool directAttackerInsidePursueRadius =
+                directAttacker != null &&
+                Vector3.Distance(homePosition, directAttacker.position) <= pursueRadiusFromHome;
+
+            if (directAttackerVisible &&
+                directAttackerInsideInvestigationRadius &&
+                directAttackerInsidePursueRadius)
+            {
+                directRangedHitPriorityTimer = directRangedHitPriorityDuration;
+                suppressDamageReceivedStateChangeTimer = 0.25f;
+                BeginPursueRangedAttacker(directAttacker);
+            }
+
+            return;
+        }
+
+        if (!directHit && directRangedHitPriorityTimer > 0f)
+            return;
+
+        if (directHit)
+            directRangedHitPriorityTimer = directRangedHitPriorityDuration;
+
+        suppressDamageReceivedStateChangeTimer = 0.25f;
+
+        Transform attacker = attackerObject != null ? attackerObject.transform : null;
+        bool attackerVisible =
+            attacker != null &&
+            IsTargetAlive(attacker) &&
+            CanPerceiveTarget(attacker, out _);
+        bool sourceOutsideViewDistance = IsRangedSourceOutsideViewDistance(sourcePosition);
+
+        if (!attackerVisible && sourceOutsideViewDistance && RegisterOutOfViewRangedAlert())
+        {
+            BeginAlertReturnHome(sourcePosition);
+            return;
+        }
+
+        bool sourceInsideInvestigateRadius =
+            Vector3.Distance(homePosition, sourcePosition) <= investigateRadiusFromHome;
+        bool attackerInsidePursueRadius =
+            attacker != null &&
+            Vector3.Distance(homePosition, attacker.position) <= pursueRadiusFromHome;
+
+        if (sourceInsideInvestigateRadius &&
+            attackerVisible &&
+            attackerInsidePursueRadius)
+        {
+            BeginPursueRangedAttacker(attacker);
+            return;
+        }
+
+        if (sourceInsideInvestigateRadius &&
+            attackerVisible)
+        {
+            BeginAlertReturnHome(attacker.position);
+            return;
+        }
+
+        if (sourceInsideInvestigateRadius)
+        {
+            BeginInvestigateRangedSource(sourcePosition);
+            return;
+        }
+
+        if (investigateRadiusFromHome > 0f)
+        {
+            BeginInvestigateRangedSource(sourcePosition);
+            return;
+        }
+
+        BeginRangedHitGuard(sourcePosition);
+    }
+
+    private void HandleNearbyRangedImpact(
+        Vector3 impactPosition,
+        Vector3 sourcePosition,
+        NetworkObject attackerObject)
+    {
+        if (!IsServer || State == OrcState.Dead || !reactToNearbyRangedImpacts)
+            return;
+
+        float radius = Mathf.Max(0f, closeDetectionRadius);
+        if (radius <= 0f)
+            return;
+
+        Vector3 toImpact = impactPosition - transform.position;
+        if (toImpact.sqrMagnitude > radius * radius)
+            return;
+
+        HandleRangedAlert(0f, impactPosition, sourcePosition, attackerObject, false);
     }
 
     private void HandleDamageBlocked(float damage, Vector3 hitPoint)
@@ -1292,16 +1973,27 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
         Vector3 center = Application.isPlaying ? homePosition : transform.position;
 
-        Gizmos.color = new Color(1f, 1f, 0f, 0.2f);
-        Gizmos.DrawWireSphere(center, detectionRadius);
+        Gizmos.color = viewDistanceGizmoColor;
+        Gizmos.DrawWireSphere(transform.position, viewDistance);
 
-        Gizmos.color = new Color(1f, 0f, 0f, 0.2f);
-        Gizmos.DrawWireSphere(center, leashRadius);
+        Gizmos.color = closeDetectionGizmoColor;
+        Gizmos.DrawWireSphere(transform.position, closeDetectionRadius);
 
-        Gizmos.color = new Color(0f, 1f, 0f, 0.2f);
+        Vector3 left = Quaternion.AngleAxis(-viewAngle * 0.5f, Vector3.up) * transform.forward;
+        Vector3 right = Quaternion.AngleAxis(viewAngle * 0.5f, Vector3.up) * transform.forward;
+        Gizmos.DrawLine(GetEyePosition(), GetEyePosition() + left * viewDistance);
+        Gizmos.DrawLine(GetEyePosition(), GetEyePosition() + right * viewDistance);
+
+        Gizmos.color = pursueRadiusGizmoColor;
+        Gizmos.DrawWireSphere(center, pursueRadiusFromHome);
+
+        Gizmos.color = investigateRadiusGizmoColor;
+        Gizmos.DrawWireSphere(center, investigateRadiusFromHome);
+
+        Gizmos.color = wanderRadiusGizmoColor;
         Gizmos.DrawWireSphere(center, wanderRadius);
 
-        Gizmos.color = new Color(1f, 0.5f, 0f, 0.3f);
+        Gizmos.color = preferredCombatDistanceGizmoColor;
         Gizmos.DrawWireSphere(transform.position, preferredCombatDistance);
     }
 }

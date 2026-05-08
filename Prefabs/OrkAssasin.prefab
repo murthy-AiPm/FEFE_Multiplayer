@@ -6980,11 +6980,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OrcAI
   ShowTopMostFoldoutHeaderGroup: 1
-  detectionRadius: 15
-  leashRadius: 25
+  closeDetectionRadius: 4
+  viewDistance: 15
+  viewAngle: 110
+  detectionInterval: 0.25
+  detectionTime: 0.35
+  loseSightGraceTime: 1.5
+  pursueRadiusFromHome: 25
+  searchDuration: 3
+  eyeHeight: 1.7
+  targetAimHeight: 1.2
   playerLayer:
     serializedVersion: 2
     m_Bits: 320
+  visionObstacleMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  investigateRadiusFromHome: 35
+  rangedHitGuardDuration: 1.5
   wanderRadius: 10
   idleMinTime: 2
   idleMaxTime: 5
