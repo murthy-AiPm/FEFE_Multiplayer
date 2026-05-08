@@ -2096,3 +2096,43 @@ FIX
    - OffHandHitboxEnable / OffHandHitboxDisable for left-hand-only windows
    - BothHitboxesEnable / BothHitboxesDisable for dual-hit windows
 
+2026-05-07 - Orc animation-event attack completion
+
+ROOT CAUSE
+ OrcAI still used the attack option duration and distance-cancel path to leave
+ Attack while useAnimationEventsForHitboxes was enabled. If the timer or cancel
+ path fired before the clip's disable-hitbox event, later animation events ran
+ while the HFSM was already in Recover or Approach, which made hitbox windows
+ inconsistent and encouraged adding an extra AttackEnd event.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Animation-event attacks now complete from HitboxDisable,
+       MainHandHitboxDisable, OffHandHitboxDisable, or BothHitboxesDisable.
+     - Added main/offhand hitbox activity tracking so dual-wield attacks only
+       complete after all active weapon hitboxes are disabled.
+     - Attack duration is now a single safety timeout in animation-event mode.
+     - Distance-based attack cancel only applies to the timer-hitbox fallback.
+
+FIX
+ Attack clips only need the existing enable/disable hitbox events. The disable
+ event is the HFSM edge from Attack to Recover; no additional AttackEnd event is
+ required.
+
+2026-05-07 - Orc attack recover duration tuning
+
+ROOT CAUSE
+ After an attack completed, OrcAI always entered Recover for a hardcoded 0.2s.
+ Recover stops the NavMeshAgent and leaves Animator Speed at 0, so the orc can
+ visibly drop into the locomotion idle pose before returning to Approach.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added attackRecoverDuration as an Inspector-tweakable attack setting.
+     - Recover now uses attackRecoverDuration instead of a hardcoded 0.2s.
+
+FIX
+ Designers can set Attack Recover Duration to 0 for immediate chase/decision
+ after the hitbox disable event, or keep a small pause when an attack needs a
+ deliberate recovery beat.
+
