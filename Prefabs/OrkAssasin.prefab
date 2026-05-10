@@ -7003,12 +7003,8 @@ MonoBehaviour:
   directRangedHitPriorityDuration: 1
   outOfViewRangedAlertReturnThreshold: 2
   outOfViewRangedAlertWindow: 4
-  patrolMode: 0
-  patrolPoints:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  patrolMode: 3
+  patrolPoints: []
   randomizePatrolStartPoint: 1
   patrolWaitTimeRange: {x: 1, y: 3}
   wanderRadius: 10

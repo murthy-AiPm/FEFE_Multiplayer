@@ -2749,3 +2749,179 @@ FIX
  players or friendly NPCs can still naturally split targets through the
  existing per-orc target-balancing behavior.
 
+2026-05-09 - Orc idle patrol mode
+
+ROOT CAUSE
+ Some placed orcs need to act as static guards, but OrcPatrolMode only offered
+ Wander, Loop, and PingPong. A guard with no patrol points still fell back to
+ random wander instead of simply holding its placed position.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added OrcPatrolMode.Idle at the end of the enum to avoid shifting
+       existing serialized prefab values.
+     - TryGetNextPatrolDestination now returns no destination in Idle mode,
+       leaving the orc in Patrol/Idle until detection, ranged alert, squad
+       alert, or combat overrides it.
+     - Route gizmos now rely on HasPatrolPoints, and wander radius gizmo only
+       draws for Wander mode.
+ ~ Design/OrcAI.md
+     - Documented Idle patrol mode as the static guard option.
+
+FIX
+ Orc prefabs can now select Patrol Mode = Idle to stand in place while still
+ retaining normal LoS detection, ranged-alert response, squad wake-up, combat,
+ leash, and return-home behavior.
+
+2026-05-09 - Orc squad patrol authoring convenience
+
+ROOT CAUSE
+ The first OrcSquadController only accepted a flat member roster and one shared
+ patrol assignment, which made it awkward to author mixed camp behavior such as
+ one idle guard, one wanderer, and two route patrols. Shared patrol points also
+ had no squad-level path gizmo, so route setup had to be inferred from point
+ transforms.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcSquadController.cs
+     - Replaced the flat OrcAI roster with serialized OrcSquadMemberSetup
+       entries containing orc, patrol mode, shared-vs-member route choice,
+       optional member patrol points, and per-member randomize start toggle.
+     - Auto-filled child orcs now create member setup entries with Inspector
+       defaults for patrol mode, shared route usage, and randomize start.
+     - Registration assigns each member's selected patrol mode and route
+       through OrcAI.SetPatrolRoute.
+     - Added selected gizmos for shared patrol paths and member-specific patrol
+       paths, with Inspector colors and point radius.
+ ~ Design/OrcAI.md
+     - Updated the squad seed description with per-member patrol assignment and
+       path gizmo behavior.
+
+FIX
+ Squad setup can now be authored from one component: each orc can be set to
+ Idle, Wander, Loop, or PingPong independently, route patrol members can start
+ from randomized patrol points, and patrol paths are visible while the squad
+ controller is selected.
+
+2026-05-09 - Orc squad member rebuild context menus
+
+ROOT CAUSE
+ Auto-filling squad members only happened automatically when the member list
+ was empty, which made adding or removing child orcs awkward after the first
+ setup pass.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcSquadController.cs
+     - Added Rebuild Members From Children context menu action to recreate the
+       roster from child OrcAI components using Auto-Fill Defaults.
+     - Added Fill Missing Members From Children context menu action to append
+       newly added child orcs without overwriting existing member setup rows.
+     - Shared auto-fill creation through CreateDefaultMemberSetup.
+ ~ Design/OrcAI.md
+     - Noted the roster rebuild/fill context menu workflow.
+
+FIX
+ Squad rosters can now be refreshed from the Inspector after child orcs are
+ added or removed, while preserving existing per-member patrol settings when
+ using the fill-missing workflow.
+
+2026-05-09 - Orc squad auto-fill defaults removed
+
+ROOT CAUSE
+ The OrcSquadController Auto-Fill Defaults section made the Inspector harder
+ to understand because it only affected newly generated member rows, not the
+ squad's live behavior.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcSquadController.cs
+     - Removed the Auto-Fill Defaults Inspector section.
+     - Generated member rows now use fixed defaults: Wander, use shared patrol
+       points, and randomize patrol start.
+ ~ Design/OrcAI.md
+     - Updated the squad controller note to describe the fixed generated-row
+       defaults.
+
+FIX
+ The squad controller Inspector is simpler: generated member rows start with
+ sensible defaults, and all per-orc patrol behavior is configured directly in
+ the Members list.
+
+2026-05-09 - Squad-level orc gizmo visibility
+
+ROOT CAUSE
+ Each OrcAI already had a Show Gizmos debug toggle for LoS, detection, chase,
+ investigate, wander, and combat-distance gizmos, but squad-authored camps
+ required changing that setting one orc at a time.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added SetGizmosVisible so authoring helpers can control the existing
+       OrcAI debug gizmo toggle.
+ ~ CharacterScripts/Scripts/Orc/OrcSquadController.cs
+     - Added Control Member Orc Gizmos and Show Member Orc Gizmos under Gizmos.
+     - Applies the member OrcAI gizmo visibility during OnValidate and member
+       registration.
+
+FIX
+ Selecting a squad controller now gives one Inspector-level switch for showing
+ or hiding member orc LoS/radius/combat gizmos, while standalone orcs can still
+ use their own OrcAI Show Gizmos toggle.
+
+2026-05-09 - Squad gizmo control simplification
+
+ROOT CAUSE
+ The extra Control Member Orc Gizmos toggle made the squad Gizmos section
+ harder to understand. The useful authoring control is simply whether member
+ orc gizmos are shown.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcSquadController.cs
+     - Removed Control Member Orc Gizmos.
+     - Show Member Orc Gizmos now directly drives member OrcAI gizmo visibility
+       during OnValidate and member registration.
+
+FIX
+ The squad controller Gizmos section is simpler: Show Patrol Gizmos controls
+ route gizmos, and Show Member Orc Gizmos controls member LoS/radius/combat
+ gizmos.
+
+2026-05-09 - Squad patrol path visible from selected points
+
+ROOT CAUSE
+ Squad patrol path gizmos only drew from OnDrawGizmosSelected, so selecting a
+ patrol point transform hid the connected route and forced authors to reselect
+ the squad controller object to inspect the path.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcSquadController.cs
+     - Added editor-only Selection checks in OnDrawGizmos.
+     - Shared/member patrol paths now draw when any assigned patrol point is
+       selected, as well as when the squad controller itself is selected.
+
+FIX
+ Clicking a patrol point assigned to an OrcSquadController now shows the
+ connected patrol path in Scene view, making route editing easier even when
+ the points are separate objects or children of the squad controller.
+
+2026-05-10 - Authored patrol point arrival threshold
+
+ROOT CAUSE
+ OrcAI used the general arrivalThreshold for all Patrol/Wander movement,
+ including authored Loop/PingPong patrol points. That broader threshold is good
+ for wander/return/investigation smoothing, but made route guards stop visibly
+ short of their patrol point even when the NavMeshAgent stopping distance was
+ zero.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added patrolPointArrivalThreshold under Patrol.
+     - Patrol/Wander arrival now uses patrolPointArrivalThreshold only when
+       following authored Loop/PingPong patrol points.
+     - Random Wander, Return, investigation/search return, and other movement
+       continue using the existing arrivalThreshold.
+
+FIX
+ Orcs following authored patrol routes now walk much closer to the patrol point
+ before waiting, without tightening the broader arrival behavior used by other
+ navigation states.
+

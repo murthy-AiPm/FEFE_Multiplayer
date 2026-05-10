@@ -1,11 +1,31 @@
 using Unity.Netcode;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
+[System.Serializable]
+public class OrcSquadMemberSetup
+{
+    [Tooltip("The orc controlled by this squad entry.")]
+    public OrcAI orc;
+    [Tooltip("Patrol behavior assigned to this orc when the squad initializes.")]
+    public OrcPatrolMode patrolMode = OrcPatrolMode.Wander;
+    [Tooltip("Loop/PingPong members use the squad Shared Patrol Points when this is checked.")]
+    public bool useSharedPatrolPoints = true;
+    [Tooltip("Optional route used only when Use Shared Patrol Points is unchecked.")]
+    public Transform[] patrolPoints;
+    [Tooltip("For Loop/PingPong routes, this member starts at a random route point.")]
+    public bool randomizePatrolStartPoint = true;
+}
 
 public class OrcSquadController : MonoBehaviour
 {
     [Header("Roster")]
-    [SerializeField] private OrcAI[] members;
+    [Tooltip("Each entry controls one orc's squad membership and calm-state patrol behavior.")]
+    [SerializeField] private OrcSquadMemberSetup[] members;
     [SerializeField] private OrcAI leader;
+    [Tooltip("When no member entries are assigned, child OrcAI components are added at edit/runtime.")]
     [SerializeField] private bool autoFindChildMembers = true;
 
     [Header("Home")]
@@ -13,17 +33,23 @@ public class OrcSquadController : MonoBehaviour
     [SerializeField] private bool useLeaderAsHomeAnchor = true;
     [SerializeField] private bool assignSharedHomeOnStart = true;
 
-    [Header("Patrol")]
-    [SerializeField] private bool assignSharedPatrolRoute;
-    [SerializeField] private OrcPatrolMode sharedPatrolMode = OrcPatrolMode.Wander;
+    [Header("Shared Patrol Route")]
+    [Tooltip("Route used by member entries with Use Shared Patrol Points checked.")]
     [SerializeField] private Transform[] sharedPatrolPoints;
-    [SerializeField] private bool randomizeMemberPatrolStartPoint = true;
 
     [Header("Alert Sharing")]
     [SerializeField] private bool shareCombatTargets = true;
     [SerializeField] private float alertShareRadius = 20f;
     [SerializeField] private float leaderlessAlertRadiusMultiplier = 0.5f;
     [SerializeField] private float targetBroadcastInterval = 0.25f;
+
+    [Header("Gizmos")]
+    [SerializeField] private bool showPatrolGizmos = true;
+    [Tooltip("Shows/hides each member OrcAI's LoS, detection, chase, investigate, wander, and combat-distance gizmos.")]
+    [SerializeField] private bool showMemberOrcGizmos = true;
+    [SerializeField] private Color sharedPatrolRouteGizmoColor = new Color(0.25f, 0.8f, 1f, 0.85f);
+    [SerializeField] private Color memberPatrolRouteGizmoColor = new Color(1f, 0.65f, 0.15f, 0.85f);
+    [SerializeField] private float patrolPointGizmoRadius = 0.25f;
 
     private float targetBroadcastTimer;
     private bool registeredMembers;
@@ -33,8 +59,69 @@ public class OrcSquadController : MonoBehaviour
 
     private void Awake()
     {
-        if (autoFindChildMembers && (members == null || members.Length == 0))
-            members = GetComponentsInChildren<OrcAI>();
+        PopulateChildMembersIfNeeded();
+    }
+
+    private void OnValidate()
+    {
+        PopulateChildMembersIfNeeded();
+        patrolPointGizmoRadius = Mathf.Max(0.05f, patrolPointGizmoRadius);
+        alertShareRadius = Mathf.Max(0f, alertShareRadius);
+        targetBroadcastInterval = Mathf.Max(0.05f, targetBroadcastInterval);
+        leaderlessAlertRadiusMultiplier = Mathf.Max(0f, leaderlessAlertRadiusMultiplier);
+        ApplyMemberOrcGizmoVisibility();
+    }
+
+    [ContextMenu("Rebuild Members From Children")]
+    private void RebuildMembersFromChildren()
+    {
+        OrcAI[] childOrcs = GetComponentsInChildren<OrcAI>();
+        members = new OrcSquadMemberSetup[childOrcs.Length];
+        for (int i = 0; i < childOrcs.Length; i++)
+        {
+            members[i] = CreateDefaultMemberSetup(childOrcs[i]);
+        }
+
+        registeredMembers = false;
+    }
+
+    [ContextMenu("Fill Missing Members From Children")]
+    private void FillMissingMembersFromChildren()
+    {
+        OrcAI[] childOrcs = GetComponentsInChildren<OrcAI>();
+        if (childOrcs == null || childOrcs.Length == 0)
+            return;
+
+        int missingCount = 0;
+        for (int i = 0; i < childOrcs.Length; i++)
+        {
+            if (!HasMember(childOrcs[i]))
+                missingCount++;
+        }
+
+        if (missingCount == 0)
+            return;
+
+        int existingCount = members != null ? members.Length : 0;
+        var nextMembers = new OrcSquadMemberSetup[existingCount + missingCount];
+        for (int i = 0; i < existingCount; i++)
+        {
+            nextMembers[i] = members[i];
+        }
+
+        int writeIndex = existingCount;
+        for (int i = 0; i < childOrcs.Length; i++)
+        {
+            OrcAI childOrc = childOrcs[i];
+            if (HasMember(childOrc))
+                continue;
+
+            nextMembers[writeIndex] = CreateDefaultMemberSetup(childOrc);
+            writeIndex++;
+        }
+
+        members = nextMembers;
+        registeredMembers = false;
     }
 
     private void Start()
@@ -61,6 +148,44 @@ public class OrcSquadController : MonoBehaviour
         BroadcastCurrentTarget();
     }
 
+    private void PopulateChildMembersIfNeeded()
+    {
+        if (!autoFindChildMembers || (members != null && members.Length > 0))
+            return;
+
+        OrcAI[] childOrcs = GetComponentsInChildren<OrcAI>();
+        members = new OrcSquadMemberSetup[childOrcs.Length];
+        for (int i = 0; i < childOrcs.Length; i++)
+        {
+            members[i] = CreateDefaultMemberSetup(childOrcs[i]);
+        }
+    }
+
+    private OrcSquadMemberSetup CreateDefaultMemberSetup(OrcAI orc)
+    {
+        return new OrcSquadMemberSetup
+        {
+            orc = orc,
+            patrolMode = OrcPatrolMode.Wander,
+            useSharedPatrolPoints = true,
+            randomizePatrolStartPoint = true
+        };
+    }
+
+    private bool HasMember(OrcAI orc)
+    {
+        if (orc == null || members == null)
+            return false;
+
+        for (int i = 0; i < members.Length; i++)
+        {
+            if (members[i] != null && members[i].orc == orc)
+                return true;
+        }
+
+        return false;
+    }
+
     private void TryRegisterMembers()
     {
         if (!IsServerActive || members == null || members.Length == 0)
@@ -69,22 +194,21 @@ public class OrcSquadController : MonoBehaviour
         Vector3 homePosition = GetSharedHomePosition();
         for (int i = 0; i < members.Length; i++)
         {
-            OrcAI member = members[i];
+            OrcSquadMemberSetup setup = members[i];
+            OrcAI member = setup != null ? setup.orc : null;
             if (member == null)
                 continue;
 
             member.SetSquad(this);
+            member.SetGizmosVisible(showMemberOrcGizmos);
 
             if (assignSharedHomeOnStart)
                 member.SetHomeAnchor(homePosition);
 
-            if (assignSharedPatrolRoute)
-            {
-                member.SetPatrolRoute(
-                    sharedPatrolMode,
-                    sharedPatrolPoints,
-                    randomizeMemberPatrolStartPoint);
-            }
+            member.SetPatrolRoute(
+                setup.patrolMode,
+                GetPatrolPointsFor(setup),
+                setup.randomizePatrolStartPoint);
         }
 
         registeredMembers = true;
@@ -99,6 +223,14 @@ public class OrcSquadController : MonoBehaviour
             return homeAnchor.position;
 
         return transform.position;
+    }
+
+    private Transform[] GetPatrolPointsFor(OrcSquadMemberSetup setup)
+    {
+        if (setup == null)
+            return null;
+
+        return setup.useSharedPatrolPoints ? sharedPatrolPoints : setup.patrolPoints;
     }
 
     private void BroadcastCurrentTarget()
@@ -119,7 +251,7 @@ public class OrcSquadController : MonoBehaviour
 
         for (int i = 0; i < members.Length; i++)
         {
-            OrcAI member = members[i];
+            OrcAI member = GetMemberOrc(i);
             if (member == null || member == source || !member.IsAlive)
                 continue;
 
@@ -143,9 +275,12 @@ public class OrcSquadController : MonoBehaviour
             return target != null;
         }
 
+        if (members == null)
+            return false;
+
         for (int i = 0; i < members.Length; i++)
         {
-            OrcAI member = members[i];
+            OrcAI member = GetMemberOrc(i);
             if (member == null || !member.IsAlive || !member.HasCombatTarget)
                 continue;
 
@@ -155,5 +290,169 @@ public class OrcSquadController : MonoBehaviour
         }
 
         return false;
+    }
+
+    private OrcAI GetMemberOrc(int index)
+    {
+        if (members == null || index < 0 || index >= members.Length)
+            return null;
+
+        return members[index] != null ? members[index].orc : null;
+    }
+
+    private void ApplyMemberOrcGizmoVisibility()
+    {
+        if (members == null)
+            return;
+
+        for (int i = 0; i < members.Length; i++)
+        {
+            OrcAI member = GetMemberOrc(i);
+            if (member != null)
+                member.SetGizmosVisible(showMemberOrcGizmos);
+        }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (!showPatrolGizmos)
+            return;
+
+        DrawAllPatrolGizmos();
+    }
+
+    private void OnDrawGizmos()
+    {
+#if UNITY_EDITOR
+        if (!showPatrolGizmos || !IsAnyPatrolPointSelected())
+            return;
+
+        DrawAllPatrolGizmos();
+#endif
+    }
+
+    private void DrawAllPatrolGizmos()
+    {
+        DrawPatrolPath(sharedPatrolPoints, GetSharedPatrolGizmoMode(), sharedPatrolRouteGizmoColor);
+
+        if (members == null)
+            return;
+
+        for (int i = 0; i < members.Length; i++)
+        {
+            OrcSquadMemberSetup setup = members[i];
+            if (setup == null || setup.useSharedPatrolPoints)
+                continue;
+
+            DrawPatrolPath(setup.patrolPoints, setup.patrolMode, memberPatrolRouteGizmoColor);
+        }
+    }
+
+#if UNITY_EDITOR
+    private bool IsAnyPatrolPointSelected()
+    {
+        Transform[] selectedTransforms = Selection.transforms;
+        if (selectedTransforms == null || selectedTransforms.Length == 0)
+            return false;
+
+        for (int i = 0; i < selectedTransforms.Length; i++)
+        {
+            if (IsPatrolPointTransform(selectedTransforms[i]))
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool IsPatrolPointTransform(Transform selected)
+    {
+        if (selected == null)
+            return false;
+
+        if (ContainsTransform(sharedPatrolPoints, selected))
+            return true;
+
+        if (members == null)
+            return false;
+
+        for (int i = 0; i < members.Length; i++)
+        {
+            OrcSquadMemberSetup setup = members[i];
+            if (setup == null || setup.useSharedPatrolPoints)
+                continue;
+
+            if (ContainsTransform(setup.patrolPoints, selected))
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool ContainsTransform(Transform[] points, Transform selected)
+    {
+        if (points == null)
+            return false;
+
+        for (int i = 0; i < points.Length; i++)
+        {
+            if (points[i] == selected)
+                return true;
+        }
+
+        return false;
+    }
+#endif
+
+    private void DrawPatrolPath(Transform[] points, OrcPatrolMode mode, Color color)
+    {
+        if (points == null || points.Length == 0 || mode == OrcPatrolMode.Wander || mode == OrcPatrolMode.Idle)
+            return;
+
+        Gizmos.color = color;
+        Transform firstPoint = null;
+        Transform previousPoint = null;
+
+        for (int i = 0; i < points.Length; i++)
+        {
+            Transform point = points[i];
+            if (point == null)
+                continue;
+
+            Gizmos.DrawSphere(point.position, patrolPointGizmoRadius);
+
+            if (firstPoint == null)
+                firstPoint = point;
+
+            if (previousPoint != null)
+                Gizmos.DrawLine(previousPoint.position, point.position);
+
+            previousPoint = point;
+        }
+
+        if (mode == OrcPatrolMode.Loop &&
+            firstPoint != null &&
+            previousPoint != null &&
+            firstPoint != previousPoint)
+        {
+            Gizmos.DrawLine(previousPoint.position, firstPoint.position);
+        }
+    }
+
+    private OrcPatrolMode GetSharedPatrolGizmoMode()
+    {
+        if (members == null)
+            return OrcPatrolMode.PingPong;
+
+        for (int i = 0; i < members.Length; i++)
+        {
+            OrcSquadMemberSetup setup = members[i];
+            if (setup == null || !setup.useSharedPatrolPoints)
+                continue;
+
+            if (setup.patrolMode == OrcPatrolMode.Loop)
+                return OrcPatrolMode.Loop;
+        }
+
+        return OrcPatrolMode.PingPong;
     }
 }

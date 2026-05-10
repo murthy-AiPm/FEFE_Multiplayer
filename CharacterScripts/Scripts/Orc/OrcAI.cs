@@ -35,7 +35,8 @@ public enum OrcPatrolMode
 {
     Wander,
     Loop,
-    PingPong
+    PingPong,
+    Idle
 }
 
 public enum OrcArchetype
@@ -119,6 +120,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     [SerializeField] private float idleMinTime = 2f;
     [SerializeField] private float idleMaxTime = 5f;
     [SerializeField] private float arrivalThreshold = 1.5f;
+    [Tooltip("Arrival threshold used only for authored Loop/PingPong patrol points. Keep small so route guards reach the waypoint.")]
+    [SerializeField] private float patrolPointArrivalThreshold = 0.15f;
 
     [Header("Movement")]
     [Tooltip("Use animation root motion for idle/walk/run/reposition states. Leave off when locomotion clips are in-place.")]
@@ -282,6 +285,11 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     public bool HasCombatTarget => currentTarget != null && IsTargetAlive(currentTarget);
 
     public bool IsDefenseInvincible => false;
+
+    public void SetGizmosVisible(bool visible)
+    {
+        showGizmos = visible;
+    }
 
     public void SetSquad(OrcSquadController newSquad)
     {
@@ -609,7 +617,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 break;
 
             case OrcSubState.Wander:
-                if (!agent.pathPending && agent.remainingDistance <= arrivalThreshold)
+                if (!agent.pathPending && agent.remainingDistance <= GetCurrentPatrolArrivalThreshold())
                     SetState(OrcState.Patrol, OrcSubState.Idle);
                 RotateToward(agent.desiredVelocity);
                 break;
@@ -1916,6 +1924,9 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     {
         destination = Vector3.zero;
 
+        if (patrolMode == OrcPatrolMode.Idle)
+            return false;
+
         if (patrolMode == OrcPatrolMode.Wander || !HasPatrolPoints())
         {
             destination = GetRandomWanderPoint();
@@ -1976,7 +1987,16 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     {
         return patrolPoints != null &&
                patrolPoints.Length > 0 &&
-               patrolMode != OrcPatrolMode.Wander;
+               patrolMode != OrcPatrolMode.Wander &&
+               patrolMode != OrcPatrolMode.Idle;
+    }
+
+    private float GetCurrentPatrolArrivalThreshold()
+    {
+        if (HasPatrolPoints())
+            return Mathf.Max(0.01f, patrolPointArrivalThreshold);
+
+        return arrivalThreshold;
     }
 
     private float GetPatrolWaitDuration()
@@ -2211,8 +2231,11 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         Gizmos.color = investigateRadiusGizmoColor;
         Gizmos.DrawWireSphere(center, investigateRadiusFromHome);
 
-        Gizmos.color = wanderRadiusGizmoColor;
-        Gizmos.DrawWireSphere(center, wanderRadius);
+        if (patrolMode == OrcPatrolMode.Wander)
+        {
+            Gizmos.color = wanderRadiusGizmoColor;
+            Gizmos.DrawWireSphere(center, wanderRadius);
+        }
 
         Gizmos.color = preferredCombatDistanceGizmoColor;
         Gizmos.DrawWireSphere(transform.position, preferredCombatDistance);
@@ -2222,7 +2245,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
     private void DrawPatrolRouteGizmos()
     {
-        if (patrolPoints == null || patrolPoints.Length == 0 || patrolMode == OrcPatrolMode.Wander)
+        if (!HasPatrolPoints())
             return;
 
         Gizmos.color = patrolRouteGizmoColor;

@@ -230,7 +230,8 @@ Cover behavior is deferred. When cover points exist, this same ranged-hit branch
 Predefined patrol routes are the other immediate basic. Random wander is useful for animals, but orc camps and village patrols need authored intent.
 
 Patrol v1:
-- `OrcAI` exposes `OrcPatrolMode`: `Wander`, `Loop`, and `PingPong`.
+- `OrcAI` exposes `OrcPatrolMode`: `Wander`, `Loop`, `PingPong`, and `Idle`.
+- `Idle` holds the orc at its placed/shared home position until combat, ranged alert, or squad alert behavior overrides it.
 - `Wander` uses the existing random NavMesh point behavior around home.
 - `Loop` follows authored `patrolPoints` in order and wraps back to the first valid point.
 - `PingPong` follows authored `patrolPoints` forward, then reverses back through the same route.
@@ -253,7 +254,7 @@ Do not build full squad tactics yet. The first useful `OrcSquadController` can b
 
 Once that works, layer in engagement roles: grunts occupy main attack slots, berserkers chase/pressure, skirmishers flank. Keep all of this server-only; individual orcs already replicate through their NetworkObjects and animator sync.
 
-Implemented first step (2026-05-08): `OrcSquadController` is a server-side scene component with a serialized roster, optional leader, shared home anchor, optional shared patrol route, and target broadcast. It polls member `OrcAI` instances for an active combat target and shares that target to nearby alive squadmates. If a leader is assigned and dies, alert sharing still works but uses `leaderlessAlertRadiusMultiplier` to weaken coordination. Individual orcs still keep their own LoS, leash, attacker-count, and less-contested-target behavior, so multiple visible players/NPCs can still split the fight instead of every orc blindly dogpiling the squad target.
+Implemented first step (2026-05-08): `OrcSquadController` is a server-side scene component with serialized member entries, optional leader, shared home anchor, shared/member patrol routes, and target broadcast. Each member entry assigns one `OrcAI`, its calm-state `OrcPatrolMode`, whether it uses the shared patrol points or its own points, and whether route start is randomized. The controller draws patrol path gizmos for the shared route and member-specific routes. Context menu actions can rebuild the roster from child orcs or fill only missing child orcs; generated rows start as Wander, use shared patrol points, and randomize route starts. It polls member `OrcAI` instances for an active combat target and shares that target to nearby alive squadmates. If a leader is assigned and dies, alert sharing still works but uses `leaderlessAlertRadiusMultiplier` to weaken coordination. Individual orcs still keep their own LoS, leash, attacker-count, and less-contested-target behavior, so multiple visible players/NPCs can still split the fight instead of every orc blindly dogpiling the squad target.
 
 ---
 
