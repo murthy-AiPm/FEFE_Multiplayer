@@ -42,6 +42,15 @@ public class OrcSquadController : MonoBehaviour
     [SerializeField] private float alertShareRadius = 20f;
     [SerializeField] private float leaderlessAlertRadiusMultiplier = 0.5f;
     [SerializeField] private float targetBroadcastInterval = 0.25f;
+    [Tooltip("How many squadmates investigate a ranged hit or nearby missed-arrow impact before visual confirmation.")]
+    [SerializeField] private int rangedAlertInvestigatorCount = 2;
+    [Tooltip("Maximum distance from the hit/impact point for helper orcs to be selected. Set 0 to disable helper selection.")]
+    [SerializeField] private float rangedAlertAssistRadius = 18f;
+    [Tooltip("Repeated ranged disturbances inside this window trigger a camp alert instead of another investigation.")]
+    [SerializeField] private int rangedAlertCampAlertThreshold = 2;
+    [SerializeField] private float rangedAlertCampAlertWindow = 6f;
+    [Tooltip("How long non-investigator orcs pause in guarded idle during a camp alert.")]
+    [SerializeField] private float campAlertHoldDuration = 6f;
 
     [Header("Gizmos")]
     [SerializeField] private bool showPatrolGizmos = true;
@@ -52,7 +61,10 @@ public class OrcSquadController : MonoBehaviour
     [SerializeField] private float patrolPointGizmoRadius = 0.25f;
 
     private float targetBroadcastTimer;
+    private float rangedAlertCampAlertTimer;
     private bool registeredMembers;
+    private int lastNearbyRangedImpactSequence;
+    private int rangedAlertCampAlertCount;
 
     private bool IsServerActive => NetworkManager.Singleton == null || NetworkManager.Singleton.IsServer;
     private bool IsLeaderCoordinationIntact => leader == null || leader.IsAlive;
@@ -67,6 +79,11 @@ public class OrcSquadController : MonoBehaviour
         PopulateChildMembersIfNeeded();
         patrolPointGizmoRadius = Mathf.Max(0.05f, patrolPointGizmoRadius);
         alertShareRadius = Mathf.Max(0f, alertShareRadius);
+        rangedAlertInvestigatorCount = Mathf.Max(0, rangedAlertInvestigatorCount);
+        rangedAlertAssistRadius = Mathf.Max(0f, rangedAlertAssistRadius);
+        rangedAlertCampAlertThreshold = Mathf.Max(1, rangedAlertCampAlertThreshold);
+        rangedAlertCampAlertWindow = Mathf.Max(0.1f, rangedAlertCampAlertWindow);
+        campAlertHoldDuration = Mathf.Max(0.1f, campAlertHoldDuration);
         targetBroadcastInterval = Mathf.Max(0.05f, targetBroadcastInterval);
         leaderlessAlertRadiusMultiplier = Mathf.Max(0f, leaderlessAlertRadiusMultiplier);
         ApplyMemberOrcGizmoVisibility();
@@ -136,6 +153,8 @@ public class OrcSquadController : MonoBehaviour
 
         if (!registeredMembers)
             TryRegisterMembers();
+
+        TickRangedAlertMemory();
 
         if (!shareCombatTargets || members == null || members.Length == 0)
             return;
@@ -261,6 +280,172 @@ public class OrcSquadController : MonoBehaviour
 
             member.ReceiveSharedTarget(target, sourcePosition, strongCoordination);
         }
+    }
+
+    public bool HandleMemberDirectRangedHit(
+        OrcAI hitMember,
+        Vector3 sourcePosition,
+        NetworkObject attackerObject)
+    {
+        if (!IsServerActive || hitMember == null)
+            return false;
+
+        if (RegisterRangedDisturbance())
+        {
+            BeginCampAlert(sourcePosition, hitMember);
+            return true;
+        }
+
+        AssignRangedAlertInvestigators(hitMember.transform.position, sourcePosition, hitMember);
+        return false;
+    }
+
+    public void HandleNearbyRangedImpact(
+        int alertSequence,
+        Vector3 impactPosition,
+        Vector3 sourcePosition,
+        NetworkObject attackerObject)
+    {
+        if (!IsServerActive || alertSequence == lastNearbyRangedImpactSequence)
+            return;
+
+        lastNearbyRangedImpactSequence = alertSequence;
+
+        if (RegisterRangedDisturbance())
+        {
+            BeginCampAlert(sourcePosition, null);
+            return;
+        }
+
+        AssignRangedAlertInvestigators(impactPosition, sourcePosition, null);
+    }
+
+    private void TickRangedAlertMemory()
+    {
+        if (rangedAlertCampAlertTimer <= 0f)
+            return;
+
+        rangedAlertCampAlertTimer -= Time.deltaTime;
+        if (rangedAlertCampAlertTimer <= 0f)
+            rangedAlertCampAlertCount = 0;
+    }
+
+    private bool RegisterRangedDisturbance()
+    {
+        if (rangedAlertCampAlertTimer <= 0f)
+            rangedAlertCampAlertCount = 0;
+
+        rangedAlertCampAlertCount++;
+        rangedAlertCampAlertTimer = Mathf.Max(0.1f, rangedAlertCampAlertWindow);
+
+        if (rangedAlertCampAlertCount < rangedAlertCampAlertThreshold)
+            return false;
+
+        rangedAlertCampAlertCount = 0;
+        rangedAlertCampAlertTimer = 0f;
+        return true;
+    }
+
+    private void BeginCampAlert(Vector3 sourcePosition, OrcAI triggeringMember)
+    {
+        if (members == null)
+            return;
+
+        int guardIndex = 0;
+        for (int i = 0; i < members.Length; i++)
+        {
+            OrcAI member = GetMemberOrc(i);
+            if (member == null || !member.IsAlive || member.HasCombatTarget)
+                continue;
+
+            if (member == triggeringMember || member.IsRangedInvestigationActive)
+            {
+                member.ReceiveCampAlertReturnHome(sourcePosition);
+                continue;
+            }
+
+            bool faceThreat = guardIndex % 2 == 0;
+            member.ReceiveCampAlertHold(sourcePosition, campAlertHoldDuration, faceThreat);
+            guardIndex++;
+        }
+    }
+
+    private void AssignRangedAlertInvestigators(
+        Vector3 alertOrigin,
+        Vector3 sourcePosition,
+        OrcAI excludedMember)
+    {
+        int count = Mathf.Max(0, rangedAlertInvestigatorCount);
+        if (count == 0 || rangedAlertAssistRadius <= 0f)
+            return;
+
+        OrcAI[] selected = new OrcAI[count];
+        for (int i = 0; i < count; i++)
+        {
+            OrcAI investigator = FindBestRangedAlertInvestigator(alertOrigin, excludedMember, selected);
+            if (investigator == null)
+                return;
+
+            selected[i] = investigator;
+            investigator.ReceiveSharedAlert(sourcePosition, null, true);
+        }
+    }
+
+    private OrcAI FindBestRangedAlertInvestigator(
+        Vector3 alertOrigin,
+        OrcAI excludedMember,
+        OrcAI[] selectedMembers)
+    {
+        OrcAI best = null;
+        float bestScore = float.MaxValue;
+        float assistRadiusSqr = rangedAlertAssistRadius * rangedAlertAssistRadius;
+
+        if (members == null)
+            return null;
+
+        for (int i = 0; i < members.Length; i++)
+        {
+            OrcSquadMemberSetup setup = members[i];
+            OrcAI member = setup != null ? setup.orc : null;
+            if (member == null || member == excludedMember || !member.IsAlive || member.HasCombatTarget)
+                continue;
+
+            if (IsSelected(member, selectedMembers))
+                continue;
+
+            Vector3 toAlert = member.transform.position - alertOrigin;
+            float distanceSqr = toAlert.sqrMagnitude;
+            if (distanceSqr > assistRadiusSqr)
+                continue;
+
+            float score = distanceSqr;
+            if (setup.patrolMode == OrcPatrolMode.Idle)
+                score += 1000f;
+            if (member == leader)
+                score += 2000f;
+
+            if (score < bestScore)
+            {
+                bestScore = score;
+                best = member;
+            }
+        }
+
+        return best;
+    }
+
+    private bool IsSelected(OrcAI member, OrcAI[] selectedMembers)
+    {
+        if (member == null || selectedMembers == null)
+            return false;
+
+        for (int i = 0; i < selectedMembers.Length; i++)
+        {
+            if (selectedMembers[i] == member)
+                return true;
+        }
+
+        return false;
     }
 
     private bool TryGetBroadcastTarget(out OrcAI source, out Transform target)

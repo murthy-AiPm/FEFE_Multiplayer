@@ -223,6 +223,10 @@ Arrow hits should create an alert-from-source reaction. The first implementation
 - While guarding or investigating from a ranged hit, the orc can still acquire a player who steps into normal FOV/LoS.
 - Missed arrows that hit terrain/objects inside an orc's `closeDetectionRadius` also trigger the same source-aware investigation, unless the arrow directly hit an orc. This lets nearby misses feel heard/seen without double-processing direct hits.
 
+Squad behavior update (2026-05-12): squaded orcs no longer all investigate the same ranged disturbance. A direct hit still makes the hit orc react immediately, then `OrcSquadController` selects a small number of closest available helpers (`rangedAlertInvestigatorCount`, within `rangedAlertAssistRadius`) to investigate the source. Nearby missed-arrow impacts are deduped per squad and also send only the selected helpers. Mobile members are preferred over idle guards and the leader. If any investigator or the hit orc visually acquires the shooter, the existing squad target broadcast wakes the camp into combat.
+
+Camp alert escalation (2026-05-12): repeated ranged disturbances in the same squad within `rangedAlertCampAlertWindow` increment a camp-level count. At `rangedAlertCampAlertThreshold`, the camp enters a suspicious alert rather than sending another investigation wave. Current investigators and the triggering hit orc run home to alert camp. Non-investigator members stop patrolling/wandering and hold idle for `campAlertHoldDuration`; alternating guards face toward and away from the shot direction to read as a defensive posture. If no target is visually acquired during the hold, members resume their normal camp patrol behavior. Increased LoS/search sharpness during this alert is deferred.
+
 Cover behavior is deferred. When cover points exist, this same ranged-hit branch should choose cover instead of only guarding for far/not-visible sources.
 
 ### Predefined patrol patterns

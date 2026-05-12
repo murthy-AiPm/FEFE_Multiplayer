@@ -2925,3 +2925,66 @@ FIX
  before waiting, without tightening the broader arrival behavior used by other
  navigation states.
 
+2026-05-12 - Limited squad ranged-alert investigation
+
+ROOT CAUSE
+ Ranged disturbances were handled per OrcAI. In a camp, a nearby missed arrow
+ or direct hit could make every nearby squaded orc independently investigate,
+ which made camps collapse into one blob instead of sending a small response
+ team while the rest held position until visual confirmation.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added a ranged-impact alert sequence so nearby missed-arrow impacts can
+       be deduped by squad.
+     - Added IsRangedImpactInAwarenessRadius for squad filtering.
+     - Direct ranged hits now notify the orc's squad before running the hit
+       orc's existing ranged-alert reaction.
+     - Nearby ranged impacts delegate to OrcSquadController when the orc is in
+       a squad; solo orcs keep the previous behavior.
+ ~ CharacterScripts/Scripts/Orc/OrcSquadController.cs
+     - Added rangedAlertInvestigatorCount and rangedAlertAssistRadius.
+     - Added direct-hit and nearby-impact handlers that select the closest
+       eligible helpers to investigate the source.
+     - Helper selection prefers mobile members over idle guards and the leader.
+ ~ Design/OrcAI.md
+     - Documented limited squad ranged-alert investigation.
+
+FIX
+ Direct arrow hits now make the hit orc react and send only a small number of
+ nearby squadmates to investigate. Missed-arrow impacts near a camp are deduped
+ through the squad controller, so the whole camp only wakes into combat after
+ an investigator or hit orc visually acquires the attacker.
+
+2026-05-12 - Repeated ranged harassment camp alert
+
+ROOT CAUSE
+ Investigators could be hit repeatedly and keep starting fresh investigations,
+ so ranged harassment never escalated into a believable camp warning state.
+ Camps also had no suspicious-but-not-combat posture for members who were not
+ investigating.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added IsRangedInvestigationActive for squad alert filtering.
+     - Added ReceiveCampAlertReturnHome for investigators/triggering hit orcs.
+     - Added ReceiveCampAlertHold so non-investigators stop, idle, and face
+       toward or away from the threat direction for a timed suspicious hold.
+     - Camp alert hold clears when a real target is acquired or another ranged
+       investigation/return behavior takes over.
+ ~ CharacterScripts/Scripts/Orc/OrcSquadController.cs
+     - Added rangedAlertCampAlertThreshold, rangedAlertCampAlertWindow, and
+       campAlertHoldDuration.
+     - Repeated ranged disturbances within the window trigger camp alert.
+     - Camp alert sends current investigators/triggering hit orcs home and
+       pauses other members in alternating guard directions.
+ ~ Design/OrcAI.md
+     - Documented repeated ranged harassment escalation.
+
+FIX
+ After repeated ranged harassment, investigators run back to camp to alert and
+ the rest of the camp pauses in a suspicious idle/guard posture. If no player
+ appears for the hold duration, members resume their normal camp behavior; if
+ any orc visually confirms the player, existing squad target sharing escalates
+ to combat.
+

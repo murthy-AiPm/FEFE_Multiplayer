@@ -6820,7 +6820,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 457046086
+  GlobalObjectIdHash: 2707163135
   InScenePlacedSourceGlobalObjectIdHash: 3494116519
   DeferredDespawnTick: 0
   Ownership: 1
@@ -7011,6 +7011,7 @@ MonoBehaviour:
   idleMinTime: 2
   idleMaxTime: 5
   arrivalThreshold: 1.5
+  patrolPointArrivalThreshold: 0.15
   useLocomotionRootMotion: 0
   useCombatRootMotion: 1
   walkSpeed: 2
@@ -7095,7 +7096,7 @@ MonoBehaviour:
   closeDetectionGizmoColor: {r: 0, g: 0.75, b: 1, a: 0.35}
   pursueRadiusGizmoColor: {r: 1, g: 1, b: 1, a: 0.2}
   investigateRadiusGizmoColor: {r: 0.2295596, g: 0.5545849, b: 1, a: 0.2}
-  wanderRadiusGizmoColor: {r: 0, g: 1, b: 0, a: 0.2}
+  wanderRadiusGizmoColor: {r: 0.58176094, g: 1, b: 0.58176094, a: 0.2}
   preferredCombatDistanceGizmoColor: {r: 1, g: 0.5, b: 0, a: 0.3}
   patrolRouteGizmoColor: {r: 0.25, g: 0.8, b: 1, a: 0.8}
 --- !u!136 &8154649476447612921

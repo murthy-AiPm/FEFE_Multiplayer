@@ -216,6 +216,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
     private static readonly Dictionary<Transform, int> _attackerCounts = new Dictionary<Transform, int>();
     private static readonly List<OrcAI> _serverOrcs = new List<OrcAI>();
+    private static int _rangedImpactAlertSequence;
 
     private readonly Collider[] _detectionBuffer = new Collider[16];
     private readonly Collider[] _separationBuffer = new Collider[10];
@@ -264,12 +265,15 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private bool rangedInvestigationActive;
     private bool boundedRangedInvestigationActive;
     private bool alertReturnHomeActive;
+    private bool campAlertHoldActive;
     private Vector3 repositionTarget;
     private Vector3 lastKnownTargetPosition;
     private Vector3 rangedThreatPosition;
+    private Vector3 campAlertLookPosition;
     private Transform awarenessTarget;
     private OrcSquadController squad;
     private bool hasExternalHomeAnchor;
+    private float campAlertHoldTimer;
 
     public OrcState State { get; private set; } = OrcState.Patrol;
     public OrcSubState SubState { get; private set; } = OrcSubState.Idle;
@@ -283,6 +287,10 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     public Vector3 HomePosition => homePosition;
     public bool IsAlive => State != OrcState.Dead;
     public bool HasCombatTarget => currentTarget != null && IsTargetAlive(currentTarget);
+    public bool IsRangedInvestigationActive =>
+        rangedInvestigationActive ||
+        boundedRangedInvestigationActive ||
+        alertReturnHomeActive;
 
     public bool IsDefenseInvincible => false;
 
@@ -344,6 +352,65 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
         if (strongCoordination && investigateRadiusFromHome > 0f)
             BeginInvestigateRangedSource(alertPosition);
+    }
+
+    public void ReceiveCampAlertReturnHome(Vector3 alertPosition)
+    {
+        if (!CanAcceptServerCoordination() || !IsAlive || currentTarget != null) return;
+
+        BeginAlertReturnHome(alertPosition);
+    }
+
+    public void ReceiveCampAlertHold(Vector3 threatPosition, float duration, bool faceThreat)
+    {
+        if (!CanAcceptServerCoordination() || !IsAlive || currentTarget != null) return;
+
+        CancelInvoke(nameof(EnableSelectedWeaponHitbox));
+        DisableWeaponHitbox();
+        UnregisterAttacker();
+
+        activeAttack = null;
+        attackHitboxWindowStarted = false;
+        postAttackBlockActive = false;
+        nextBlockDuration = -1f;
+        awarenessTarget = null;
+        targetAwareness = 0f;
+        movingToLastKnownPosition = false;
+        searchingLastKnownPosition = false;
+        rangedHitGuardActive = false;
+        rangedInvestigationActive = false;
+        boundedRangedInvestigationActive = false;
+        alertReturnHomeActive = false;
+
+        Vector3 direction = threatPosition - transform.position;
+        direction.y = 0f;
+        if (!faceThreat)
+            direction = -direction;
+        if (direction.sqrMagnitude < 0.001f)
+            direction = transform.forward;
+
+        campAlertHoldActive = true;
+        campAlertHoldTimer = Mathf.Max(0.1f, duration);
+        campAlertLookPosition = transform.position + direction.normalized;
+
+        if (animator != null)
+        {
+            animator.ResetTrigger(attackHash);
+            animator.SetBool(blockHash, false);
+        }
+
+        SetState(OrcState.Patrol, OrcSubState.Idle);
+        RotateToward(campAlertLookPosition - transform.position);
+    }
+
+    public bool IsRangedImpactInAwarenessRadius(Vector3 impactPosition)
+    {
+        float radius = Mathf.Max(0f, closeDetectionRadius);
+        if (radius <= 0f)
+            return false;
+
+        Vector3 toImpact = impactPosition - transform.position;
+        return toImpact.sqrMagnitude <= radius * radius;
     }
 
     private bool CanAcceptServerCoordination()
@@ -424,6 +491,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
     public static void NotifyNearbyRangedImpact(Vector3 impactPosition, Vector3 sourcePosition, NetworkObject attackerObject)
     {
+        int alertSequence = ++_rangedImpactAlertSequence;
         for (int i = _serverOrcs.Count - 1; i >= 0; i--)
         {
             OrcAI orc = _serverOrcs[i];
@@ -433,7 +501,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 continue;
             }
 
-            orc.HandleNearbyRangedImpact(impactPosition, sourcePosition, attackerObject);
+            orc.HandleNearbyRangedImpact(impactPosition, sourcePosition, attackerObject, alertSequence);
         }
     }
 
@@ -573,6 +641,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             }
 
             currentTarget = target;
+            campAlertHoldActive = false;
+            campAlertHoldTimer = 0f;
             outOfViewRangedAlertCount = 0;
             outOfViewRangedAlertTimer = 0f;
             movingToLastKnownPosition = false;
@@ -592,6 +662,17 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 stateTimer -= Time.deltaTime;
                 if (searchingLastKnownPosition)
                     RotateToward(rangedThreatPosition - transform.position);
+
+                if (campAlertHoldActive)
+                {
+                    campAlertHoldTimer -= Time.deltaTime;
+                    RotateToward(campAlertLookPosition - transform.position);
+                    if (campAlertHoldTimer > 0f)
+                        return;
+
+                    campAlertHoldActive = false;
+                    stateTimer = 0f;
+                }
 
                 if (stateTimer <= 0f)
                 {
@@ -1097,6 +1178,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         rangedInvestigationActive = false;
         boundedRangedInvestigationActive = false;
         alertReturnHomeActive = false;
+        campAlertHoldActive = false;
+        campAlertHoldTimer = 0f;
         outOfViewRangedAlertCount = 0;
         outOfViewRangedAlertTimer = 0f;
         SetState(OrcState.Patrol, OrcSubState.Return);
@@ -1119,6 +1202,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         rangedInvestigationActive = false;
         boundedRangedInvestigationActive = false;
         alertReturnHomeActive = false;
+        campAlertHoldActive = false;
+        campAlertHoldTimer = 0f;
 
         if (animator != null)
         {
@@ -1152,6 +1237,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         rangedInvestigationActive = false;
         boundedRangedInvestigationActive = false;
         alertReturnHomeActive = false;
+        campAlertHoldActive = false;
+        campAlertHoldTimer = 0f;
         targetAwareness = detectionTime;
         awarenessTarget = attacker;
         currentTarget = attacker;
@@ -1189,6 +1276,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         rangedInvestigationActive = false;
         boundedRangedInvestigationActive = false;
         alertReturnHomeActive = false;
+        campAlertHoldActive = false;
+        campAlertHoldTimer = 0f;
         rangedThreatPosition = sourcePosition;
 
         if (animator != null)
@@ -1225,6 +1314,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         rangedInvestigationActive = true;
         boundedRangedInvestigationActive = IsRangedSourceOutsideInvestigationRadius(sourcePosition);
         alertReturnHomeActive = false;
+        campAlertHoldActive = false;
+        campAlertHoldTimer = 0f;
 
         if (animator != null)
         {
@@ -1258,6 +1349,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         rangedInvestigationActive = false;
         boundedRangedInvestigationActive = false;
         alertReturnHomeActive = true;
+        campAlertHoldActive = false;
+        campAlertHoldTimer = 0f;
         rangedThreatPosition = spottedTargetPosition;
         outOfViewRangedAlertCount = 0;
         outOfViewRangedAlertTimer = 0f;
@@ -2076,6 +2169,13 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (!IsServer || State == OrcState.Dead)
             return;
 
+        if (directHit && squad != null &&
+            squad.HandleMemberDirectRangedHit(this, sourcePosition, attackerObject))
+        {
+            suppressDamageReceivedStateChangeTimer = 0.25f;
+            return;
+        }
+
         if (alertReturnHomeActive)
         {
             if (!directHit)
@@ -2165,18 +2265,20 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private void HandleNearbyRangedImpact(
         Vector3 impactPosition,
         Vector3 sourcePosition,
-        NetworkObject attackerObject)
+        NetworkObject attackerObject,
+        int alertSequence)
     {
         if (!IsServer || State == OrcState.Dead || !reactToNearbyRangedImpacts)
             return;
 
-        float radius = Mathf.Max(0f, closeDetectionRadius);
-        if (radius <= 0f)
+        if (!IsRangedImpactInAwarenessRadius(impactPosition))
             return;
 
-        Vector3 toImpact = impactPosition - transform.position;
-        if (toImpact.sqrMagnitude > radius * radius)
+        if (squad != null)
+        {
+            squad.HandleNearbyRangedImpact(alertSequence, impactPosition, sourcePosition, attackerObject);
             return;
+        }
 
         HandleRangedAlert(0f, impactPosition, sourcePosition, attackerObject, false);
     }
