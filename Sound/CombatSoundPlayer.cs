@@ -269,7 +269,7 @@ public class CombatSoundPlayer : NetworkBehaviour
             }
         }
 
-        Debug.Log($"[CombatSoundPlayer] HandleHitDetected: attacker={attackerMat}, target={targetMat}, hitCollider={hitInfo.hitCollider?.gameObject.name}, hitPoint={hitInfo.hitPoint}");
+       // Debug.Log($"[CombatSoundPlayer] HandleHitDetected: attacker={attackerMat}, target={targetMat}, hitCollider={hitInfo.hitCollider?.gameObject.name}, hitPoint={hitInfo.hitPoint}");
 
         ProximitySoundManager.Instance.PlayImpact(attackerMat, targetMat, hitInfo.hitPoint);
     }

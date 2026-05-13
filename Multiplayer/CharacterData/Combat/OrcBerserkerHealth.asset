@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VitalDefinition
   vitalName: Health
   vitalID: health
-  maxValue: 160
-  startValue: 160
-  regenEnabled: 0
+  maxValue: 100
+  startValue: 100
+  regenEnabled: 1
   regenRate: 5
   regenDelay: 3
   regenOnlyWhenGrounded: 0

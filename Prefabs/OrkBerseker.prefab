@@ -2274,12 +2274,12 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   archetype: 1
   closeDetectionRadius: 4
-  viewDistance: 15
+  viewDistance: 35
   viewAngle: 110
   detectionInterval: 0.25
   detectionTime: 0.35
   loseSightGraceTime: 1.5
-  pursueRadiusFromHome: 25
+  pursueRadiusFromHome: 30
   searchDuration: 3
   eyeHeight: 1.7
   targetAimHeight: 1.2
@@ -2307,6 +2307,7 @@ MonoBehaviour:
   useLocomotionRootMotion: 0
   useCombatRootMotion: 1
   walkSpeed: 2
+  damagedWalkSpeed: 1.2
   runSpeed: 5
   rotationSpeed: 5
   preferredCombatDistance: 1.45
@@ -2317,6 +2318,8 @@ MonoBehaviour:
   frontalDefenseAngle: 100
   holdVisibleThreatAtLeash: 1
   leashThreatFaceSpeedMultiplier: 1.25
+  leashThreatMaxDuration: 5
+  lowHealthPursueRevertRatio: 0.5
   leashThreatBoolParameter: IsTaunting
   leashThreatIndexParameter: TauntIndex
   leashThreatStatePath: Base Layer.Taunt
@@ -2384,7 +2387,8 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 1
-  collidersToDisableOnDeath: []
+  collidersToDisableOnDeath:
+  - {fileID: 2839376034710377784}
   vitalManager: {fileID: 4076553978873713153}
   damageReceiver: {fileID: 922734276251597642}
   animator: {fileID: 1311735214021282198}

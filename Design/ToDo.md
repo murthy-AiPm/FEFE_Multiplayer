@@ -3212,3 +3212,313 @@ FIX
  `TauntIndex` now changes only after the current taunt animation/state finishes,
  and each chosen taunt variant restarts from the beginning.
 
+2026-05-13 - Player-hit pursue radius escalation
+
+ROOT CAUSE
+ Orcs only had a fixed home pursue radius, so repeated player harassment at the
+ boundary could not provoke an orc into a larger chase commitment. The same
+ radius still needed to contract when the orc was badly hurt so wounded orcs
+ return to guarding/survival behavior.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added normal/expanded pursue radius runtime selection.
+     - Added Inspector fields for expanded radius, player-hit threshold, and
+       low-health revert ratio.
+     - Successful player-like melee hits are counted through
+       OnServerDefenseResolved; direct ranged hits are counted through the
+       ranged alert path.
+     - Chase, leash-threat, shared-target, ranged-attacker, and gizmo radius
+       checks now use the effective pursue radius.
+ ~ Design/OrcAI.md
+     - Documented hit-based pursue-radius escalation and low-health reversion.
+
+FIX
+ After more than two successful player hits, an orc can use an expanded pursue
+ radius until its health reaches half, at which point it reverts to the normal
+ authored pursue radius.
+
+2026-05-13 - Leash-taunt harassment pursue override
+
+ROOT CAUSE
+ The expanded pursue radius still behaved like a finite leash. A player could
+ stand outside that larger boundary, keep hitting an orc while it taunted in
+ LeashThreat, and farm damage from a safe distance. The low-health revert also
+ used a strict below-half check instead of the requested 50%-or-lower cutoff.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added a server-side harassment override that activates when a
+       player-like attacker successfully damages the orc during LeashThreat.
+     - While the override is active, pursue-radius checks treat home distance
+       as valid so the orc leaves taunt and re-engages instead of holding still.
+     - At or below the configured low-health ratio, the override stops applying
+       and the orc returns to normal leash behavior.
+     - Changed the low-health revert comparison to include exactly 50% health.
+ ~ Design/OrcAI.md
+     - Documented leash-taunt harassment and the 50%-or-lower return rule.
+
+FIX
+ Hitting a taunting orc now provokes it into ignoring home-distance leash checks
+ until it reaches the low-health revert threshold, preventing the taunt boundary
+ from becoming a free damage exploit.
+
+2026-05-13 - Orc pursue Inspector cleanup
+
+ROOT CAUSE
+ The first provocation pass exposed extra Detection fields for expanded pursue
+ radius, hit threshold, and low-health revert ratio. After the behavior settled
+ on "harassment during taunt ignores home distance until 50% health," those
+ fields added Inspector noise without meaningful per-prefab value.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Removed the extra serialized provocation fields from the Detection
+       header.
+     - Simplified pursue-radius checks back to the authored
+       `pursueRadiusFromHome`, with only the internal leash-harassment override
+       bypassing home distance.
+     - Kept the 50% low-health return cutoff as an internal design constant.
+ ~ Design/OrcAI.md
+     - Updated the current behavior note so it no longer references removed
+       Inspector fields.
+
+FIX
+ The orc Inspector now keeps the normal pursue radius as the only visible
+ home-distance knob while preserving the taunt-harassment behavior.
+
+2026-05-13 - Chase to leash boundary before taunt
+
+ROOT CAUSE
+ The leash-threat checks used the target's distance from home as the primary
+ taunt condition. That made an orc start taunting immediately when a visible
+ player stood outside `pursueRadiusFromHome`, even if the orc itself was still
+ well inside the radius and should have been allowed to chase to the boundary.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Patrol acquisition now only starts LeashThreat for an outside target
+       when the orc itself is also outside the pursue radius.
+     - Combat validation now lets the orc keep chasing an outside target until
+       the orc reaches the home-radius boundary.
+     - LeashThreat exits back to Approach when either the target or the orc is
+       inside the pursue radius, so taunt only holds while both are outside.
+ ~ Design/OrcAI.md
+     - Updated the leash-boundary behavior note to describe chasing to the
+       boundary before taunting.
+
+FIX
+ Orcs now chase visible players up to the end of their home pursue radius and
+ only begin taunting once the leash boundary has actually been reached.
+
+2026-05-13 - Leash taunt duration cap
+
+ROOT CAUSE
+ Once an orc reached LeashThreat, a visible player outside the pursue radius
+ refreshed line of sight indefinitely. That made the orc hold the taunt forever
+ as long as the player stayed visible, which looked stuck and could be abused.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added `leashThreatMaxDuration` to cap visible leash-boundary taunting.
+     - LeashThreat now counts down while the target remains visible and returns
+       home when the timer expires.
+     - Re-entering range or harassment damage still breaks out of taunt into
+       normal approach behavior.
+ ~ Design/OrcAI.md
+     - Documented the taunt duration cap.
+
+FIX
+ Visible out-of-range players can only hold an orc in leash taunt for a bounded
+ duration before the orc gives up and returns home.
+
+2026-05-13 - Bounded ranged investigation taunt handoff
+
+ROOT CAUSE
+ Bounded ranged investigations clamped the orc's destination to
+ `investigateRadiusFromHome`, but a visible player beyond that radius still hit
+ the generic ranged-investigation alert-return branch. With larger view
+ distance, that meant the orc could visually confirm a far harasser at the
+ investigation boundary and immediately run home instead of using the intended
+ leash-boundary taunt behavior.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added a helper that lets active bounded ranged investigations hand off
+       visible far targets to LeashThreat once the orc is outside its home
+       pursue radius.
+     - Kept normal inside-investigation targets as chase/combat behavior and
+       preserved alert-return for non-leash ranged cases.
+ ~ Design/OrcAI.md
+     - Documented the bounded ranged-investigation to leash-taunt handoff.
+
+FIX
+ When a far ranged harasser becomes visible after the orc investigates to the
+ boundary, the orc can now use leash taunt behavior instead of immediately
+ running home, as long as it is far enough from home for leash behavior to make
+ sense.
+
+2026-05-13 - Orc leash and investigation logic cleanup
+
+ROOT CAUSE
+ The leash-threat and ranged-investigation behavior had grown through several
+ small tuning passes. `UpdatePatrol`, `UpdateLeashThreat`, and
+ `ValidateCombatTarget` were each carrying their own versions of the same
+ radius/taunt/return checks, making future changes easy to apply in one branch
+ but miss in another.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Centralized visible-target decisions into helpers for leash taunt,
+       alert-return, low-health leash revert, and leash-threat resume/return.
+     - Added a shared investigation-radius helper and replaced duplicate raw
+       distance checks with it.
+     - Removed the old bounded-investigation helper shape that duplicated the
+       patrol decision branch.
+ ~ Design/ToDo.md
+     - Logged the cleanup pass.
+
+FIX
+ The current leash, taunt, low-health revert, and ranged-investigation behavior
+ is now expressed through single-purpose helper methods instead of repeated
+ inline condition blocks.
+
+2026-05-13 - Remove visible-player investigation alert-return
+
+ROOT CAUSE
+ For one-orc testing, the ranged investigation behavior still had branches that
+ sent the orc home when it saw a player beyond the investigation/pursue layer.
+ That made visible-player behavior feel inconsistent: sometimes seeing the
+ player meant chase/taunt, other times it meant run home.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Removed the patrol-time visible-target alert-return branch.
+     - Changed ranged-hit handling so a visible attacker inside investigation
+       range becomes the combat target even if outside pursue range; leash
+       logic handles boundary taunt/return.
+     - Direct hits during alert-return can now interrupt if the attacker is
+       visible, with normal pursue/leash rules handling distance afterward.
+ ~ Design/OrcAI.md
+     - Updated ranged-hit notes so visible players no longer route to
+       alert-return just for being beyond investigation/pursue radius.
+
+FIX
+ A visible player no longer makes the single orc run home just because the
+ player is beyond the investigation layer; visible targets now flow into the
+ normal chase/leash/taunt behavior.
+
+2026-05-13 - Restore low-health leash Inspector field
+
+ROOT CAUSE
+ The cleanup pass removed the low-health leash revert field along with other
+ temporary provocation fields. The 50% cutoff remained as a code constant, but
+ the user needed to tune that threshold from the prefab Inspector.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added `lowHealthPursueRevertRatio` back under the Leash Threat header.
+     - Replaced the hardcoded 0.5 health check with the serialized clamped
+       Inspector value.
+ ~ Design/OrcAI.md
+     - Documented the restored low-health cutoff field.
+
+FIX
+ The low-health leash/harassment revert threshold is once again tweakable in
+ the OrcAI Inspector without bringing back the other removed provocation fields.
+
+2026-05-13 - Leash harassment hit grace
+
+ROOT CAUSE
+ The harassment override only activated if the server was still in
+ `LeashThreat` at the exact moment damage resolved. A hit landed during the
+ taunt could still miss that narrow state check if the AI had just transitioned
+ through stagger/return timing, so the normal taunt timeout path could send the
+ orc home even while above the low-health revert threshold.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added a short internal grace timer while the orc is in leash taunt.
+     - Successful player hits now count as taunt harassment when the orc is
+       currently in LeashThreat or was there within the grace window.
+     - Kept the low-health threshold controlled by the Inspector field.
+
+FIX
+ Player hits during leash taunt now reliably enable the harassment chase
+ override instead of being lost to a tight state-timing check.
+
+2026-05-13 - Low-health damaged return walk
+
+ROOT CAUSE
+ The low-health leash return still reused normal walk/run locomotion. The
+ desired read is a hurt retreat: the Animator blend tree already has a damaged
+ walk at Speed -1, and the navigation speed needs an Inspector value to match
+ the clip.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added `damagedWalkSpeed` under the Movement header.
+     - Removed the partial interrupted `runReturnHomeActive` return-speed flag.
+     - While in Return and at/below `lowHealthPursueRevertRatio`, sets Animator
+       Speed to -1 and uses `damagedWalkSpeed` for the NavMeshAgent.
+ ~ Design/OrcAI.md
+     - Documented the damaged return walk behavior.
+
+FIX
+ Low-health returns now use the damaged-walk blend-tree slot and a dedicated
+ Inspector speed instead of the normal return walk/run speeds.
+
+2026-05-13 - Low-health retreat ignores arrows until home
+
+ROOT CAUSE
+ The damaged-walk return was only derived from current health and Return state.
+ It was not a distinct retreat mode, so ranged alerts could still interrupt the
+ walk back, and if health regenerated above the threshold the return fell back
+ to normal walk instead of running home.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added an internal low-health return-home mode started by combat/leash
+       invalidation when health is at or below `lowHealthPursueRevertRatio`.
+     - Low-health return-home mode ignores ranged alerts and keeps moving to
+       `homePosition` until arrival.
+     - While the mode is active, health at/below the threshold drives Animator
+       Speed to -1 and uses `damagedWalkSpeed`; recovered health switches the
+       same return to run speed/Speed 1.
+     - Cleared the mode when the orc reaches home or re-enters normal combat.
+ ~ Design/OrcAI.md
+     - Documented ranged-alert ignoring and regen-to-run behavior during
+       low-health retreat.
+
+FIX
+ A damaged retreat cannot be re-baited with arrows before the orc reaches home,
+ and healing during that retreat changes the locomotion from damaged walk to
+ run instead of normal walk.
+
+2026-05-13 - Low-health retreat melee defense
+
+ROOT CAUSE
+ The low-health return-home mode correctly ignored ranged harassment, but it
+ also blocked all target acquisition. The desired behavior is more specific:
+ arrows should not pull the orc off its retreat, but players who are already in
+ melee range should still be fought, without causing pursuit.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added a low-health melee-defense branch that can start only while the
+       committed return-home mode is active and a visible/alive target is
+       inside melee defense range.
+     - Low-health melee defense stops the agent and fights in place instead of
+       setting a pursuit destination.
+     - If the target leaves melee defense range, the AI clears combat and
+       resumes the same low-health home return.
+     - Normal combat validation and target retargeting are skipped during this
+       defensive-retreat combat so it cannot become normal pursuit before home.
+ ~ Design/OrcAI.md
+     - Documented melee defense during low-health return.
+
+FIX
+ Low-health retreat now ignores ranged harassment but can still defend itself
+ against melee players, resuming the home return as soon as they step out of
+ close range.
+
