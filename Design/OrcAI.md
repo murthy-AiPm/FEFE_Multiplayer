@@ -206,6 +206,8 @@ Implemented fields:
 
 `loseSightGraceTime` matters because instant target drops feel twitchy around corners. A short grace window lets an alerted orc keep chasing briefly after the player breaks sight, while patrol acquisition still respects LoS.
 
+Leash-boundary update (2026-05-13): visible targets outside `pursueRadiusFromHome` no longer make an orc flicker between chase and return. `OrcAI` now has a `LeashThreat` substate: the orc keeps the visible target, stops pathing, faces the threat, and can hold an Inspector-configured taunt bool such as `IsTaunting` while randomly selecting a taunt blend-tree variant through an int/float parameter such as `TauntIndex`. `leashThreatStatePath` identifies the taunt blend-tree state so the AI can restart each chosen taunt from time 0 and only choose the next variant after the current taunt state reaches normalized time 1. If the target returns inside the pursue radius and the orc is also inside its leash, combat resumes. If the target breaks LoS for `loseSightGraceTime`, the orc returns to normal return/patrol behavior.
+
 ### Ranged hit reaction
 
 Arrow hits should create an alert-from-source reaction. The first implementation is intentionally simple:

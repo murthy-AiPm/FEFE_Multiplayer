@@ -69,7 +69,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         Block,
         Parry,
         Stagger,
-        Dead
+        Dead,
+        LeashThreat
     }
 
     [Header("Archetype")]
@@ -139,6 +140,22 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     [SerializeField] private float decisionInterval = 0.2f;
     [SerializeField] private float targetAttackReactDistance = 3f;
     [SerializeField] private float frontalDefenseAngle = 130f;
+
+    [Header("Leash Threat")]
+    [Tooltip("When a visible target is outside the pursue radius, hold position and face them instead of flickering between chase and return.")]
+    [SerializeField] private bool holdVisibleThreatAtLeash = true;
+    [Tooltip("Rotation multiplier while holding a visible out-of-leash target.")]
+    [SerializeField] private float leashThreatFaceSpeedMultiplier = 1.25f;
+    [Tooltip("Animator bool held true while the orc is taunting at the leash boundary. Leave blank to disable.")]
+    [SerializeField] private string leashThreatBoolParameter = "IsTaunting";
+    [Tooltip("Animator int/float parameter used by the taunt blend tree. Leave blank to disable variants.")]
+    [SerializeField] private string leashThreatIndexParameter = "TauntIndex";
+    [Tooltip("Full Animator state path for the taunt blend tree. Used to restart the chosen taunt variant from the beginning.")]
+    [SerializeField] private string leashThreatStatePath = "Base Layer.TauntBlend";
+    [Tooltip("Crossfade duration used when restarting the taunt blend tree for a new variant.")]
+    [SerializeField] private float leashThreatTransitionDuration = 0.05f;
+    [Tooltip("Number of taunt variants in the blend tree. Values are picked from 0 to count - 1.")]
+    [SerializeField] private int leashThreatVariantCount = 1;
 
     [Header("Attacks")]
     [SerializeField] private OrcAttackOption[] attacks =
@@ -230,6 +247,9 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private int blockHash;
     private int parryHash;
     private int staggerHash;
+    private int leashThreatBoolHash;
+    private int leashThreatIndexHash;
+    private int leashThreatStateHash;
 
     private Vector3 originalPosition;
     private Quaternion originalRotation;
@@ -251,6 +271,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private float suppressDamageReceivedStateChangeTimer;
     private float directRangedHitPriorityTimer;
     private float outOfViewRangedAlertTimer;
+    private int currentLeashThreatVariant = -1;
     private int outOfViewRangedAlertCount;
     private int currentPatrolPointIndex;
     private int patrolDirection = 1;
@@ -470,6 +491,15 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         blockHash = Animator.StringToHash("Block");
         parryHash = Animator.StringToHash("Parry");
         staggerHash = Animator.StringToHash("Stagger");
+        leashThreatBoolHash = string.IsNullOrEmpty(leashThreatBoolParameter)
+            ? 0
+            : Animator.StringToHash(leashThreatBoolParameter);
+        leashThreatIndexHash = string.IsNullOrEmpty(leashThreatIndexParameter)
+            ? 0
+            : Animator.StringToHash(leashThreatIndexParameter);
+        leashThreatStateHash = string.IsNullOrEmpty(leashThreatStatePath)
+            ? 0
+            : Animator.StringToHash(leashThreatStatePath);
 
         if (agent != null)
         {
@@ -647,6 +677,12 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 Vector3.Distance(homePosition, target.position) <= investigateRadiusFromHome;
             bool targetInsidePursueRadius =
                 Vector3.Distance(homePosition, target.position) <= pursueRadiusFromHome;
+            if (!targetInsidePursueRadius && holdVisibleThreatAtLeash)
+            {
+                BeginLeashThreat(target);
+                return;
+            }
+
             bool targetRequiresAlertReturn =
                 (rangedInvestigationActive || alertReturnHomeActive) &&
                 (!targetInsidePursueRadius || !targetInsideInvestigationRadius);
@@ -757,6 +793,12 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
     private void UpdateCombat()
     {
+        if (SubState == OrcSubState.LeashThreat)
+        {
+            UpdateLeashThreat();
+            return;
+        }
+
         if (rangedHitGuardActive && currentTarget == null)
         {
             Transform target = FindNearestDetectedTarget();
@@ -1014,6 +1056,84 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         SetState(OrcState.Combat, OrcSubState.Reposition);
     }
 
+    private void BeginLeashThreat(Transform target)
+    {
+        if (target == null)
+            return;
+
+        CancelInvoke(nameof(EnableSelectedWeaponHitbox));
+        DisableWeaponHitbox();
+        UnregisterAttacker();
+
+        activeAttack = null;
+        attackHitboxWindowStarted = false;
+        postAttackBlockActive = false;
+        nextBlockDuration = -1f;
+        movingToLastKnownPosition = false;
+        searchingLastKnownPosition = false;
+        rangedHitGuardActive = false;
+        rangedInvestigationActive = false;
+        boundedRangedInvestigationActive = false;
+        alertReturnHomeActive = false;
+        campAlertHoldActive = false;
+        campAlertHoldTimer = 0f;
+        targetAwareness = detectionTime;
+        awarenessTarget = target;
+        currentTarget = target;
+        lastKnownTargetPosition = target.position;
+        loseSightTimer = loseSightGraceTime;
+
+        if (animator != null)
+        {
+            animator.ResetTrigger(attackHash);
+            animator.SetBool(blockHash, false);
+
+            if (SubState == OrcSubState.Attack && !string.IsNullOrEmpty(locomotionStatePath))
+                animator.CrossFade(locomotionStatePath, attackCancelFade, 0);
+        }
+
+        SetState(OrcState.Combat, OrcSubState.LeashThreat);
+    }
+
+    private void UpdateLeashThreat()
+    {
+        if (currentTarget == null || !IsTargetAlive(currentTarget))
+        {
+            HandleInvalidCombatTarget();
+            return;
+        }
+
+        if (IsTargetInsidePursueRadius(currentTarget) && IsSelfInsidePursueRadius())
+        {
+            SetState(OrcState.Combat, OrcSubState.Approach);
+            return;
+        }
+
+        if (CanPerceiveTarget(currentTarget, out _))
+        {
+            lastKnownTargetPosition = currentTarget.position;
+            loseSightTimer = loseSightGraceTime;
+            RotateToward(
+                currentTarget.position - transform.position,
+                leashThreatFaceSpeedMultiplier);
+
+            UpdateLeashThreatVariant();
+
+            return;
+        }
+
+        loseSightTimer -= Time.deltaTime;
+        if (loseSightTimer > 0f)
+        {
+            RotateToward(
+                lastKnownTargetPosition - transform.position,
+                leashThreatFaceSpeedMultiplier);
+            return;
+        }
+
+        HandleInvalidCombatTarget();
+    }
+
     private void SetState(OrcState newState, OrcSubState newSubState)
     {
         if (stateInitialized &&
@@ -1023,8 +1143,11 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             newSubState != OrcSubState.Block)
             return;
 
+        OrcSubState previousSubState = SubState;
         if (SubState == OrcSubState.Block && animator != null)
             animator.SetBool(blockHash, false);
+        if (SubState == OrcSubState.LeashThreat && newSubState != OrcSubState.LeashThreat)
+            EndLeashThreatAnimation();
 
         State = newState;
         SubState = newSubState;
@@ -1060,6 +1183,12 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             case OrcSubState.Reposition:
                 stateTimer = repositionDuration;
                 ResumeAgent();
+                break;
+
+            case OrcSubState.LeashThreat:
+                StopAgent();
+                if (previousSubState != OrcSubState.LeashThreat)
+                    BeginLeashThreatAnimation();
                 break;
 
             case OrcSubState.Attack:
@@ -1166,9 +1295,21 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             return false;
         }
 
+        if (holdVisibleThreatAtLeash && !IsTargetInsidePursueRadius(currentTarget))
+        {
+            BeginLeashThreat(currentTarget);
+            return false;
+        }
+
         float distToHome = Vector3.Distance(transform.position, homePosition);
         if (distToHome > pursueRadiusFromHome)
         {
+            if (holdVisibleThreatAtLeash && CanPerceiveTarget(currentTarget, out _))
+            {
+                BeginLeashThreat(currentTarget);
+                return false;
+            }
+
             HandleInvalidCombatTarget();
             return false;
         }
@@ -1429,6 +1570,138 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         return toSource.sqrMagnitude > distance * distance;
     }
 
+    private bool IsTargetInsidePursueRadius(Transform target)
+    {
+        if (target == null)
+            return false;
+
+        return IsPositionInsidePursueRadius(target.position);
+    }
+
+    private bool IsSelfInsidePursueRadius()
+    {
+        return IsPositionInsidePursueRadius(transform.position);
+    }
+
+    private bool IsPositionInsidePursueRadius(Vector3 position)
+    {
+        float radius = Mathf.Max(0f, pursueRadiusFromHome);
+        Vector3 fromHome = position - homePosition;
+        fromHome.y = 0f;
+        return fromHome.sqrMagnitude <= radius * radius;
+    }
+
+    private void BeginLeashThreatAnimation()
+    {
+        SetAnimatorBoolIfPresent(leashThreatBoolHash, true);
+        currentLeashThreatVariant = -1;
+        PickLeashThreatVariant();
+    }
+
+    private void EndLeashThreatAnimation()
+    {
+        SetAnimatorBoolIfPresent(leashThreatBoolHash, false);
+        currentLeashThreatVariant = -1;
+    }
+
+    private void UpdateLeashThreatVariant()
+    {
+        if (!IsLeashThreatStateFinished())
+            return;
+
+        PickLeashThreatVariant();
+    }
+
+    private void PickLeashThreatVariant()
+    {
+        int variantCount = Mathf.Max(0, leashThreatVariantCount);
+        if (variantCount <= 0 || leashThreatIndexHash == 0)
+            return;
+
+        int nextVariant = Random.Range(0, variantCount);
+        if (variantCount > 1 && nextVariant == currentLeashThreatVariant)
+            nextVariant = (nextVariant + 1) % variantCount;
+
+        currentLeashThreatVariant = nextVariant;
+        SetAnimatorNumberIfPresent(leashThreatIndexHash, nextVariant);
+        RestartLeashThreatState();
+    }
+
+    private bool IsLeashThreatStateFinished()
+    {
+        if (animator == null || leashThreatStateHash == 0)
+            return false;
+
+        if (animator.IsInTransition(0))
+            return false;
+
+        AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+        return state.fullPathHash == leashThreatStateHash && state.normalizedTime >= 1f;
+    }
+
+    private void RestartLeashThreatState()
+    {
+        if (animator == null ||
+            leashThreatStateHash == 0 ||
+            !animator.HasState(0, leashThreatStateHash))
+        {
+            return;
+        }
+
+        float fadeDuration = Mathf.Max(0f, leashThreatTransitionDuration);
+        if (fadeDuration <= 0f)
+            animator.Play(leashThreatStateHash, 0, 0f);
+        else
+            animator.CrossFade(leashThreatStateHash, fadeDuration, 0, 0f);
+    }
+
+    private void SetAnimatorBoolIfPresent(int parameterHash, bool value)
+    {
+        if (animator == null || parameterHash == 0)
+            return;
+
+        if (TryGetAnimatorParameter(parameterHash, out AnimatorControllerParameter parameter) &&
+            parameter.type == AnimatorControllerParameterType.Bool)
+        {
+            animator.SetBool(parameterHash, value);
+        }
+    }
+
+    private void SetAnimatorNumberIfPresent(int parameterHash, int value)
+    {
+        if (animator == null || parameterHash == 0)
+            return;
+
+        if (!TryGetAnimatorParameter(parameterHash, out AnimatorControllerParameter parameter))
+            return;
+
+        if (parameter.type == AnimatorControllerParameterType.Int)
+            animator.SetInteger(parameterHash, value);
+        else if (parameter.type == AnimatorControllerParameterType.Float)
+            animator.SetFloat(parameterHash, value);
+    }
+
+    private bool TryGetAnimatorParameter(
+        int parameterHash,
+        out AnimatorControllerParameter parameter)
+    {
+        parameter = null;
+        if (animator == null)
+            return false;
+
+        AnimatorControllerParameter[] parameters = animator.parameters;
+        for (int i = 0; i < parameters.Length; i++)
+        {
+            if (parameters[i].nameHash != parameterHash)
+                continue;
+
+            parameter = parameters[i];
+            return true;
+        }
+
+        return false;
+    }
+
     private bool RegisterOutOfViewRangedAlert()
     {
         if (outOfViewRangedAlertReturnThreshold <= 1)
@@ -1490,10 +1763,13 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             case OrcSubState.Wander:
             case OrcSubState.Return:
             case OrcSubState.Reposition:
+            case OrcSubState.LeashThreat:
                 bool shouldRunPatrolMovement =
                     SubState == OrcSubState.Return &&
                     (alertReturnHomeActive || (movingToLastKnownPosition && rangedInvestigationActive));
-                animSpeed = shouldRunPatrolMovement ? 1f : 0.5f;
+                animSpeed = SubState == OrcSubState.LeashThreat
+                    ? 0f
+                    : shouldRunPatrolMovement ? 1f : 0.5f;
                 if (!ShouldUseRootMotionForCurrentState() && agent != null)
                     agent.speed = shouldRunPatrolMovement ? runSpeed : walkSpeed;
                 break;
@@ -1523,6 +1799,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             case OrcSubState.Return:
             case OrcSubState.Approach:
             case OrcSubState.Reposition:
+            case OrcSubState.LeashThreat:
                 return useLocomotionRootMotion;
 
             case OrcSubState.Attack:
@@ -2191,13 +2468,16 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         return Vector3.zero;
     }
 
-    private void RotateToward(Vector3 direction)
+    private void RotateToward(Vector3 direction, float speedMultiplier = 1f)
     {
         direction.y = 0f;
         if (direction.sqrMagnitude < 0.01f) return;
 
         Quaternion targetRot = Quaternion.LookRotation(direction);
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, rotationSpeed * Time.deltaTime);
+        transform.rotation = Quaternion.Slerp(
+            transform.rotation,
+            targetRot,
+            rotationSpeed * Mathf.Max(0f, speedMultiplier) * Time.deltaTime);
     }
 
     private void HandleDamageReceived(float damage, Vector3 hitPoint)

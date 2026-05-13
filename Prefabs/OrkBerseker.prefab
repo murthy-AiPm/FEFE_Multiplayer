@@ -2315,6 +2315,13 @@ MonoBehaviour:
   decisionInterval: 0.12
   targetAttackReactDistance: 2.5
   frontalDefenseAngle: 100
+  holdVisibleThreatAtLeash: 1
+  leashThreatFaceSpeedMultiplier: 1.25
+  leashThreatBoolParameter: IsTaunting
+  leashThreatIndexParameter: TauntIndex
+  leashThreatStatePath: Base Layer.Taunt
+  leashThreatTransitionDuration: 0.05
+  leashThreatVariantCount: 2
   attacks:
   - name: Double Chop
     attackIndex: 0

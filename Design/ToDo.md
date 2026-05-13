@@ -3144,3 +3144,71 @@ FIX
  OrkBerseker keeps the shared orc animation graph while retaining the OrcAI
  no-post-block attack exit fix from the previous entry.
 
+2026-05-13 - Visible leash-threat hold
+
+ROOT CAUSE
+ Close-range detection could reacquire a visible player immediately after the
+ leash/home guard rejected combat, causing orcs to oscillate between chase and
+ return. The return path also rotated back toward home even while the player was
+ visibly baiting the orc at the edge of its allowed pursue area.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added LeashThreat substate for visible targets outside pursue radius.
+     - Added Inspector-tweakable hold timing, repeat cooldown, face speed, and
+       optional Animator trigger name for taunt/scream animations.
+     - LeashThreat stops pathing, faces the visible target, resumes chase only
+       when target and orc are both inside the pursue radius, and returns after
+       LoS is gone for the normal grace window.
+ ~ Design/OrcAI.md
+     - Documented the leash-boundary behavior and taunt trigger hook.
+
+FIX
+ Orcs now read as holding their post when a player baits them outside leash:
+ they face/taunt the visible threat instead of flickering between pursuit and
+ returning home.
+
+2026-05-13 - Looping leash taunt parameters
+
+ROOT CAUSE
+ The first leash-threat animation hook used an optional one-shot trigger, but
+ the desired behavior is a sustained taunt mode that can loop and randomly swap
+ between multiple taunt clips while the orc keeps holding the leash boundary.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Replaced the leash-threat trigger hook with Inspector-configured
+       Animator bool/index parameter names.
+     - LeashThreat now sets the taunt bool true on entry, false on exit, and
+       randomly picks a new taunt variant index on the hold interval.
+     - Variant index works with either int or float Animator parameters.
+ ~ Design/OrcAI.md
+     - Updated leash-boundary documentation for the bool + blend-tree index
+       taunt setup.
+
+FIX
+ Leash-threat taunts can now loop through an Animator bool state and choose
+ random blend-tree variants instead of relying on a one-shot trigger.
+
+2026-05-13 - Taunt variant changes after clip end
+
+ROOT CAUSE
+ Timer-based taunt variant changes could switch `TauntIndex` while the current
+ taunt was still playing. With non-looping taunt clips in a held blend-tree
+ state, changing the blend parameter mid-state did not reliably restart the new
+ clip and could leave the orc frozen on the end pose.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added `leashThreatStatePath` and `leashThreatTransitionDuration`.
+     - Taunt variant selection now restarts the configured taunt blend-tree
+       state from normalized time 0.
+     - The next variant is picked only after the taunt state reaches normalized
+       time 1 and is not in transition.
+ ~ Design/OrcAI.md
+     - Documented the taunt state path and clip-finished variant selection.
+
+FIX
+ `TauntIndex` now changes only after the current taunt animation/state finishes,
+ and each chosen taunt variant restarts from the beginning.
+

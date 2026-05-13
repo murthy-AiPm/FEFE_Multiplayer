@@ -55246,10 +55246,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: OrkBerseker
       objectReference: {fileID: 0}
-    - target: {fileID: 1311735214021282198, guid: 564a8d72c01ac124e8d80c8de2f55258, type: 3}
-      propertyPath: m_Controller
-      value: 
-      objectReference: {fileID: 9100000, guid: 67cee89b17b9fc943941b1cc8cdc8a50, type: 2}
     - target: {fileID: 3149192390463386702, guid: 564a8d72c01ac124e8d80c8de2f55258, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 876146978
