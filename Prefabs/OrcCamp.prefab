@@ -390,7 +390,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::OrcSquadController
   members:
   - orc: {fileID: 1006073962103828257}
-    patrolMode: 3
+    patrolMode: 0
     useSharedPatrolPoints: 1
     patrolPoints: []
     randomizePatrolStartPoint: 0
@@ -410,7 +410,7 @@ MonoBehaviour:
     patrolMode: 1
     useSharedPatrolPoints: 1
     patrolPoints: []
-    randomizePatrolStartPoint: 1
+    randomizePatrolStartPoint: 0
   - orc: {fileID: 5685874469246974261}
     patrolMode: 0
     useSharedPatrolPoints: 0
@@ -447,6 +447,9 @@ MonoBehaviour:
   targetBroadcastInterval: 0.25
   rangedAlertInvestigatorCount: 2
   rangedAlertAssistRadius: 18
+  suspiciousDuration: 6
+  alertedDuration: 10
+  campState: 0
   showPatrolGizmos: 1
   showMemberOrcGizmos: 0
   sharedPatrolRouteGizmoColor: {r: 0.25, g: 0.8, b: 1, a: 0.85}
@@ -522,7 +525,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6906518828392738488, guid: 609f31726732ee044a38f7551c2c099f, type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 3284540644
+      value: 2171634205
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -615,7 +618,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6906518828392738488, guid: 609f31726732ee044a38f7551c2c099f, type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 2713951572
+      value: 3954875617
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1052,7 +1055,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1747062510255893974, guid: 609f31726732ee044a38f7551c2c099f, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -5.44
+      value: -8.520002
       objectReference: {fileID: 0}
     - target: {fileID: 1747062510255893974, guid: 609f31726732ee044a38f7551c2c099f, type: 3}
       propertyPath: m_LocalPosition.y
@@ -1060,7 +1063,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1747062510255893974, guid: 609f31726732ee044a38f7551c2c099f, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 3.3
+      value: 12.079999
       objectReference: {fileID: 0}
     - target: {fileID: 1747062510255893974, guid: 609f31726732ee044a38f7551c2c099f, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1145,7 +1148,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1747062510255893974, guid: 609f31726732ee044a38f7551c2c099f, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -3.47
+      value: -6.55
       objectReference: {fileID: 0}
     - target: {fileID: 1747062510255893974, guid: 609f31726732ee044a38f7551c2c099f, type: 3}
       propertyPath: m_LocalPosition.y
@@ -1153,7 +1156,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1747062510255893974, guid: 609f31726732ee044a38f7551c2c099f, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 4.67
+      value: 13.45
       objectReference: {fileID: 0}
     - target: {fileID: 1747062510255893974, guid: 609f31726732ee044a38f7551c2c099f, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1205,7 +1208,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6906518828392738488, guid: 609f31726732ee044a38f7551c2c099f, type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 76575883
+      value: 513020284
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

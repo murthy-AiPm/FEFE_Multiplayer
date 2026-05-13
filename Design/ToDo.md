@@ -2988,3 +2988,104 @@ FIX
  any orc visually confirms the player, existing squad target sharing escalates
  to combat.
 
+2026-05-12 - Explicit orc camp state machine
+
+ROOT CAUSE
+ The repeated-harassment layer still felt chaotic because the camp reaction was
+ spread across individual orc ranged-alert branches and squad thresholds. The
+ behavior needed one simple camp-level state owner instead of several special
+ cases competing with each other.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcSquadController.cs
+     - Added OrcCampState with Calm, Suspicious, Alerted, and Combat.
+     - Added per-member OrcSquadMemberRole so designers can mark guards,
+       patrollers, investigators, and reserves in the squad inspector.
+     - First ranged disturbance enters Suspicious, sends a small investigator
+       group, and makes non-investigators hold guard posture.
+     - A second ranged disturbance during Suspicious enters Alerted, sends
+       investigators/triggering orcs home, and pauses the rest of the camp.
+     - Combat state now begins on confirmed shared target and returns to Calm
+       when no member has a combat target.
+ ~ Design/OrcAI.md
+     - Replaced the old threshold-counter alert description with the explicit
+       camp state machine behavior.
+
+FIX
+ Orc camps now have a predictable readable loop: calm camp behavior, suspicious
+ investigation, alerted defensive hold, and combat only after visual
+ confirmation. If no target appears, the camp relaxes back to its configured
+ patrol/idle/wander setup.
+
+2026-05-12 - Patrol-mode camp duties and original-position return
+
+ROOT CAUSE
+ The separate squad member role field duplicated patrol mode and created
+ contradictory inspector states such as Patroller + Idle. Combat disengage also
+ reused the shared camp home as the return destination, so orcs could drift back
+ to the camp anchor instead of the place where they were originally staged.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added originalPosition tracking before squad home assignment.
+     - Normal combat/search disengage now returns to the original placed
+       position.
+     - Explicit alert-return still uses the shared home/camp anchor.
+ ~ CharacterScripts/Scripts/Orc/OrcSquadController.cs
+     - Removed OrcSquadMemberRole and the per-member role field.
+     - Ranged investigation eligibility now comes from patrol mode.
+     - Wander members are preferred investigators; PingPong members are backup
+       patrollers; Idle and Loop members do not investigate.
+ ~ Design/OrcAI.md
+     - Documented patrol-mode-driven camp duties and original-position return.
+
+FIX
+ The squad inspector now has one source of truth for calm behavior and camp
+ duty: patrol mode. Orcs also return to their own staged position after normal
+ chase/combat cleanup, while camp-alert behavior can still run back to the
+ shared camp home.
+
+2026-05-12 - Alert-return resumes original staged posts
+
+ROOT CAUSE
+ Camp-alert return used the shared home anchor as its destination and then
+ immediately idled there. Idle-mode guards had no follow-up patrol destination,
+ so they stayed at camp home instead of returning to their authored staging
+ position after the alert/combat flow ended.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Alert-return arrival now clears the alert-home leg, then starts a normal
+       return to originalPosition when the orc is not already there.
+     - Random Wander patrol points now use originalPosition as their center so
+       resumed behavior stays around the orc's staged post.
+     - Wander gizmo radius now draws around originalPosition during play mode.
+ ~ Design/OrcAI.md
+     - Documented the two-leg alert return and original-position wander center.
+
+FIX
+ Orcs can still run to the shared camp home to alert the camp, but once that
+ special leg finishes they walk back to their original placed position and then
+ resume their configured Idle/Wander/Loop/PingPong behavior.
+
+2026-05-12 - Idle guards restore authored facing
+
+ROOT CAUSE
+ Original-position return preserved where idle guards stood, but not the
+ direction they were authored to face. After alert/combat cleanup, an idle guard
+ could arrive at its staged position still facing the last pathing or threat
+ direction.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Stored originalRotation alongside originalPosition.
+     - Added calm idle rotation restoration for Idle patrol mode guards once
+       they are back at their staged position.
+ ~ Design/OrcAI.md
+     - Documented idle guard authored-facing restoration.
+
+FIX
+ Idle-mode orcs now settle back to their original placed rotation after camp
+ alerts, chase, or combat calm down, without fighting active alert/search/combat
+ facing.
+

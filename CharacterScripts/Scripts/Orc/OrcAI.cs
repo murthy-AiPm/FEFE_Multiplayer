@@ -231,6 +231,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private int parryHash;
     private int staggerHash;
 
+    private Vector3 originalPosition;
+    private Quaternion originalRotation;
     private Vector3 homePosition;
     private Transform currentTarget;
     private OrcAttackOption activeAttack;
@@ -259,6 +261,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private bool postAttackBlockActive;
     private bool registeredAsAttacker;
     private bool stateInitialized;
+    private bool hasOriginalPosition;
     private bool movingToLastKnownPosition;
     private bool searchingLastKnownPosition;
     private bool rangedHitGuardActive;
@@ -284,6 +287,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     public bool IsSkirmisher => archetype == OrcArchetype.Skirmisher;
     public OrcSquadController Squad => squad;
     public Transform CurrentTarget => currentTarget;
+    public Vector3 OriginalPosition => hasOriginalPosition ? originalPosition : transform.position;
+    public Quaternion OriginalRotation => hasOriginalPosition ? originalRotation : transform.rotation;
     public Vector3 HomePosition => homePosition;
     public bool IsAlive => State != OrcState.Dead;
     public bool HasCombatTarget => currentTarget != null && IsTargetAlive(currentTarget);
@@ -310,6 +315,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     {
         if (!CanAcceptServerCoordination()) return;
 
+        RememberOriginalPosition();
         homePosition = home;
         hasExternalHomeAnchor = true;
     }
@@ -418,10 +424,21 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         return NetworkManager.Singleton == null || NetworkManager.Singleton.IsServer;
     }
 
+    private void RememberOriginalPosition()
+    {
+        if (hasOriginalPosition)
+            return;
+
+        originalPosition = transform.position;
+        originalRotation = transform.rotation;
+        hasOriginalPosition = true;
+    }
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
 
+        RememberOriginalPosition();
         if (!hasExternalHomeAnchor)
             homePosition = transform.position;
         if (IsServer && !_serverOrcs.Contains(this))
@@ -695,6 +712,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                         stateTimer = GetPatrolWaitDuration();
                     }
                 }
+
+                RestoreOriginalRotationWhenCalm();
                 break;
 
             case OrcSubState.Wander:
@@ -704,7 +723,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 break;
 
             case OrcSubState.Return:
-                Vector3 destination = movingToLastKnownPosition ? lastKnownTargetPosition : homePosition;
+                Vector3 destination = GetCurrentReturnDestination();
                 agent.SetDestination(destination);
                 RotateToward(agent.desiredVelocity);
                 if (!agent.pathPending && agent.remainingDistance <= arrivalThreshold)
@@ -718,9 +737,17 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                     }
                     else
                     {
+                        bool completedAlertReturnHome = alertReturnHomeActive;
                         alertReturnHomeActive = false;
                         outOfViewRangedAlertCount = 0;
                         outOfViewRangedAlertTimer = 0f;
+
+                        if (completedAlertReturnHome && !IsAtOriginalPosition())
+                        {
+                            SetState(OrcState.Patrol, OrcSubState.Return);
+                            return;
+                        }
+
                         SetState(OrcState.Patrol, OrcSubState.Idle);
                     }
                 }
@@ -1413,6 +1440,44 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         outOfViewRangedAlertCount++;
         outOfViewRangedAlertTimer = Mathf.Max(0.1f, outOfViewRangedAlertWindow);
         return outOfViewRangedAlertCount >= outOfViewRangedAlertReturnThreshold;
+    }
+
+    private Vector3 GetCurrentReturnDestination()
+    {
+        if (movingToLastKnownPosition)
+            return lastKnownTargetPosition;
+
+        if (alertReturnHomeActive)
+            return homePosition;
+
+        return OriginalPosition;
+    }
+
+    private bool IsAtOriginalPosition()
+    {
+        Vector3 toOriginal = transform.position - OriginalPosition;
+        toOriginal.y = 0f;
+        return toOriginal.sqrMagnitude <= arrivalThreshold * arrivalThreshold;
+    }
+
+    private void RestoreOriginalRotationWhenCalm()
+    {
+        if (patrolMode != OrcPatrolMode.Idle ||
+            searchingLastKnownPosition ||
+            campAlertHoldActive ||
+            rangedHitGuardActive ||
+            rangedInvestigationActive ||
+            boundedRangedInvestigationActive ||
+            alertReturnHomeActive ||
+            !IsAtOriginalPosition())
+        {
+            return;
+        }
+
+        transform.rotation = Quaternion.Slerp(
+            transform.rotation,
+            OriginalRotation,
+            rotationSpeed * Time.deltaTime);
     }
 
     private void UpdateAnimatorSpeed()
@@ -2110,7 +2175,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         {
             Vector3 randomDir = Random.insideUnitSphere * wanderRadius;
             randomDir.y = 0f;
-            Vector3 candidate = homePosition + randomDir;
+            Vector3 candidate = OriginalPosition + randomDir;
 
             if (NavMesh.SamplePosition(candidate, out NavMeshHit hit, wanderRadius * 0.5f, NavMesh.AllAreas))
                 return hit.position;
@@ -2336,7 +2401,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (patrolMode == OrcPatrolMode.Wander)
         {
             Gizmos.color = wanderRadiusGizmoColor;
-            Gizmos.DrawWireSphere(center, wanderRadius);
+            Vector3 wanderCenter = Application.isPlaying ? OriginalPosition : transform.position;
+            Gizmos.DrawWireSphere(wanderCenter, wanderRadius);
         }
 
         Gizmos.color = preferredCombatDistanceGizmoColor;

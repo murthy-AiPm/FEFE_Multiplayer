@@ -161,9 +161,9 @@ Only Grunt, Berserker, and Skirmisher are in scope for the next implementation p
 
 **Berserker** is pressure. It should still use the same core `OrcAI`, but with higher speed or aggression, lower defense, lower block/parry chance, shorter attack cooldowns, and dual-wield or chain-style attack options. Berserkers are allowed to feel reckless.
 
-**Skirmisher** is movement. It should prefer side approaches, quick attacks, and disengage/reposition behavior over standing in the main dogpile. This is the first archetype that benefits from squad-assigned roles, but the first pass can be mostly tuning plus more frequent repositioning.
+**Skirmisher** is movement. It should prefer side approaches, quick attacks, and disengage/reposition behavior over standing in the main dogpile. This is the first archetype that benefits from squad-aware camp duties, but the first pass can be mostly tuning plus more frequent repositioning.
 
-Implementation direction: start with prefab variants / serialized tuning on `OrcAI`. If variants become hard to maintain, add an `OrcArchetypeDefinition` ScriptableObject later to apply movement, defense, attack-table, and squad-role defaults. Do not split into separate AI scripts until an archetype needs behavior the base controller cannot express cleanly.
+Implementation direction: start with prefab variants / serialized tuning on `OrcAI`. If variants become hard to maintain, add an `OrcArchetypeDefinition` ScriptableObject later to apply movement, defense, attack-table, and camp-duty defaults. Do not split into separate AI scripts until an archetype needs behavior the base controller cannot express cleanly.
 
 Implemented first step (2026-05-08): `OrcAI` now exposes a serialized `OrcArchetype` identity field with `Grunt`, `Berserker`, and `Skirmisher`, plus read-only helper properties for squad logic. This does **not** auto-apply tuning yet; prefab variants still own their Inspector values for speed, defense chance, attacks, hitboxes, and reposition settings.
 
@@ -223,9 +223,9 @@ Arrow hits should create an alert-from-source reaction. The first implementation
 - While guarding or investigating from a ranged hit, the orc can still acquire a player who steps into normal FOV/LoS.
 - Missed arrows that hit terrain/objects inside an orc's `closeDetectionRadius` also trigger the same source-aware investigation, unless the arrow directly hit an orc. This lets nearby misses feel heard/seen without double-processing direct hits.
 
-Squad behavior update (2026-05-12): squaded orcs no longer all investigate the same ranged disturbance. A direct hit still makes the hit orc react immediately, then `OrcSquadController` selects a small number of closest available helpers (`rangedAlertInvestigatorCount`, within `rangedAlertAssistRadius`) to investigate the source. Nearby missed-arrow impacts are deduped per squad and also send only the selected helpers. Mobile members are preferred over idle guards and the leader. If any investigator or the hit orc visually acquires the shooter, the existing squad target broadcast wakes the camp into combat.
+Squad camp behavior update (2026-05-12): `OrcSquadController` now owns a small camp state machine: `Calm`, `Suspicious`, `Alerted`, and `Combat`. In `Calm`, each member follows its assigned patrol mode, and that patrol mode also defines its camp duty: `Idle` means guard, `Wander` means investigator, `PingPong` means patroller/backup investigator, and `Loop` means route guard that does not investigate ranged disturbances. The first ranged disturbance moves the camp to `Suspicious`: a small number of helpers (`rangedAlertInvestigatorCount`, within `rangedAlertAssistRadius`) investigate while non-investigators hold idle and face alternating guard directions for `suspiciousDuration`. Direct hits still let the hit orc run its own immediate ranged-hit reaction.
 
-Camp alert escalation (2026-05-12): repeated ranged disturbances in the same squad within `rangedAlertCampAlertWindow` increment a camp-level count. At `rangedAlertCampAlertThreshold`, the camp enters a suspicious alert rather than sending another investigation wave. Current investigators and the triggering hit orc run home to alert camp. Non-investigator members stop patrolling/wandering and hold idle for `campAlertHoldDuration`; alternating guards face toward and away from the shot direction to read as a defensive posture. If no target is visually acquired during the hold, members resume their normal camp patrol behavior. Increased LoS/search sharpness during this alert is deferred.
+Camp alert escalation (2026-05-12): a second ranged disturbance while `Suspicious` moves the camp to `Alerted`. Current investigators and the triggering hit orc run home to alert camp. Other members stop patrolling/wandering and hold idle for `alertedDuration`, alternating between facing the shot direction and guarding away from it. If no target is visually acquired during the timer, the camp returns to `Calm` and members resume their normal camp behavior. If any member visually confirms a target, the existing squad target broadcast moves the camp to `Combat`; once all combat targets are gone, the camp returns to `Calm`. Normal combat/search disengage returns an orc to its original placed position. Explicit camp-alert return still runs to the shared home/camp anchor first, then returns the orc to its original placed position before resuming patrol mode. Idle guards also settle back to their authored starting rotation once calm. Increased LoS/search sharpness during `Alerted` is deferred.
 
 Cover behavior is deferred. When cover points exist, this same ranged-hit branch should choose cover instead of only guarding for far/not-visible sources.
 
@@ -236,7 +236,7 @@ Predefined patrol routes are the other immediate basic. Random wander is useful 
 Patrol v1:
 - `OrcAI` exposes `OrcPatrolMode`: `Wander`, `Loop`, `PingPong`, and `Idle`.
 - `Idle` holds the orc at its placed/shared home position until combat, ranged alert, or squad alert behavior overrides it.
-- `Wander` uses the existing random NavMesh point behavior around home.
+- `Wander` uses random NavMesh points around the orc's original placed position.
 - `Loop` follows authored `patrolPoints` in order and wraps back to the first valid point.
 - `PingPong` follows authored `patrolPoints` forward, then reverses back through the same route.
 - Authored routes use `patrolWaitTimeRange` at each point.
