@@ -1665,9 +1665,16 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         attackHitboxWindowStarted = false;
 
         if (blockDuringAttackCooldown && cooldownDuration > 0f)
+        {
             BeginBlock(cooldownDuration, true);
+        }
         else
+        {
+            if (animator != null && !string.IsNullOrEmpty(locomotionStatePath))
+                animator.CrossFade(locomotionStatePath, attackCancelFade, 0);
+
             SetState(OrcState.Combat, OrcSubState.Approach);
+        }
     }
 
     private void InitializeWeaponHitbox(HitboxController hitbox)

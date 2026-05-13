@@ -3089,3 +3089,58 @@ FIX
  alerts, chase, or combat calm down, without fighting active alert/search/combat
  facing.
 
+2026-05-13 - Berserker prefab combat tuning
+
+ROOT CAUSE
+ OrkBerseker was marked as the Berserker archetype but still carried mostly
+ generic orc combat values and referenced shared Base_Health, so the large
+ dual-axe body did not yet have its own pressure-bruiser stats.
+
+FILES CHANGED
+ ~ Prefabs/OrkBerseker.prefab
+     - Pointed VitalManager at a Berserker-specific health asset.
+     - Raised stagger threshold and tuned movement, decision cadence, defense,
+       attacker tolerance, and dual-axe attack options.
+ + Multiplayer/CharacterData/Combat/OrcBerserkerHealth.asset
+ + Multiplayer/CharacterData/Combat/OrcBerserkerHealth.asset.meta
+     - Added a dedicated 160 HP health definition with no regeneration.
+
+FIX
+ OrkBerseker now behaves as a large pressure melee archetype: faster engagement,
+ low block/parry behavior, shorter dual-axe attack gaps, 160 health, and higher
+ stagger resistance without changing shared Base_Health.
+
+2026-05-13 - Berserker attack animation unstuck
+
+ROOT CAUSE
+ OrkBerseker still referenced OrcAnimations.controller even though a dedicated
+ BersekerAnimations.controller existed. The Berserker tuning also disabled
+ post-attack blocking, but OrcAI only had a natural Attack-state animator exit
+ through the Block path, leaving no-block attacks stuck in the Attack state.
+
+FILES CHANGED
+ ~ Prefabs/OrkBerseker.prefab
+     - Assigned BersekerAnimations.controller to the Animator.
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - CompleteAttack now explicitly crossfades to locomotion before returning
+       to Approach when blockDuringAttackCooldown is false.
+
+FIX
+ Berserker attacks can now use the dedicated controller and return from Attack
+ to locomotion/approach without requiring the post-attack Block state.
+
+2026-05-13 - Berserker keeps shared orc animator controller
+
+ROOT CAUSE
+ The Berserker was intentionally using the shared OrcAnimations.controller with
+ a different humanoid avatar. Humanoid retargeting allows this; the controller
+ assignment was not the root cause of the attack-state stickiness.
+
+FILES CHANGED
+ ~ Prefabs/OrkBerseker.prefab
+     - Restored the Animator controller reference to OrcAnimations.controller.
+
+FIX
+ OrkBerseker keeps the shared orc animation graph while retaining the OrcAI
+ no-post-block attack exit fix from the previous entry.
+
