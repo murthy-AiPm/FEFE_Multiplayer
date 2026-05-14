@@ -55246,6 +55246,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: OrkBerseker
       objectReference: {fileID: 0}
+    - target: {fileID: 2839376034710377784, guid: 564a8d72c01ac124e8d80c8de2f55258, type: 3}
+      propertyPath: m_Height
+      value: 2.15
+      objectReference: {fileID: 0}
+    - target: {fileID: 2839376034710377784, guid: 564a8d72c01ac124e8d80c8de2f55258, type: 3}
+      propertyPath: m_Center.y
+      value: 0.94
+      objectReference: {fileID: 0}
     - target: {fileID: 3149192390463386702, guid: 564a8d72c01ac124e8d80c8de2f55258, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 876146978
