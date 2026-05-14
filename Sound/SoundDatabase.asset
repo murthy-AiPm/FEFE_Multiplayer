@@ -727,6 +727,149 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+  - soundName: OrcIdle
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 88ba551e6eb3847279ac2fea8b38e665, type: 3}
+    - {fileID: 8300000, guid: 96a2f6f95f4994aceb198857afee6516, type: 3}
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - soundName: OrcAttack
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: ec834e3a0a9a041e58e015c0bf39ed52, type: 3}
+    - {fileID: 8300000, guid: 6beb606fbac8f4d0e9ea410969417e51, type: 3}
+    - {fileID: 8300000, guid: c55fb47f6865f480c989e8407de1d19c, type: 3}
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - soundName: OrcHit
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 093a5dc60018d476791de718279859f3, type: 3}
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - soundName: OrcDeath
+    category: 0
+    clips:
+    - {fileID: 8300000, guid: 8a42266be58db4c518b5d4e47cc0f780, type: 3}
+    volume: {x: 0.8, y: 1}
+    pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   terrainLayerMappings:
   - terrainLayerIndex: 0
     surfaceType: Soil
