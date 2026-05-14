@@ -676,6 +676,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
     private void UpdatePatrol()
     {
+        RefreshLowHealthReturnHomeMode();
+
         if (lowHealthReturnHomeActive && TryBeginLowHealthMeleeDefense())
             return;
 
@@ -770,12 +772,18 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 break;
 
             case OrcSubState.Return:
+                RefreshLowHealthReturnHomeMode();
                 Vector3 destination = GetCurrentReturnDestination();
                 agent.SetDestination(destination);
                 RotateToward(agent.desiredVelocity);
                 if (!agent.pathPending && agent.remainingDistance <= arrivalThreshold)
                 {
-                    if (movingToLastKnownPosition)
+                    if (lowHealthReturnHomeActive)
+                    {
+                        lowHealthReturnHomeActive = false;
+                        SetState(OrcState.Patrol, OrcSubState.Idle);
+                    }
+                    else if (movingToLastKnownPosition)
                     {
                         movingToLastKnownPosition = false;
                         searchingLastKnownPosition = true;
@@ -1979,16 +1987,36 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
     private Vector3 GetCurrentReturnDestination()
     {
+        if (lowHealthReturnHomeActive)
+            return OriginalPosition;
+
         if (movingToLastKnownPosition)
             return lastKnownTargetPosition;
-
-        if (lowHealthReturnHomeActive)
-            return homePosition;
 
         if (alertReturnHomeActive)
             return homePosition;
 
         return OriginalPosition;
+    }
+
+    private void RefreshLowHealthReturnHomeMode()
+    {
+        if (State != OrcState.Patrol ||
+            SubState != OrcSubState.Return ||
+            lowHealthReturnHomeActive ||
+            !IsHealthAtOrBelowPursueRevertRatio())
+        {
+            return;
+        }
+
+        currentTarget = null;
+        movingToLastKnownPosition = false;
+        searchingLastKnownPosition = false;
+        rangedHitGuardActive = false;
+        rangedInvestigationActive = false;
+        boundedRangedInvestigationActive = false;
+        alertReturnHomeActive = false;
+        lowHealthReturnHomeActive = true;
     }
 
     private bool IsAtOriginalPosition()
@@ -2797,6 +2825,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (!IsServer || State == OrcState.Dead)
             return;
 
+        RefreshLowHealthReturnHomeMode();
         if (lowHealthReturnHomeActive)
             return;
 

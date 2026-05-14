@@ -3522,3 +3522,28 @@ FIX
  against melee players, resuming the home return as soon as they step out of
  close range.
 
+2026-05-13 - Low-health retreat uses original start point
+
+ROOT CAUSE
+ The committed low-health return used `homePosition`, which can be a squad or
+ camp anchor, while the intended "home" for this one-orc behavior is the orc's
+ original placed/start position. Some normal Return paths also stayed outside
+ the committed low-health retreat mode, so a wounded orc walking back could
+ still react to ranged alerts and fail to use the damaged-walk blend value.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Low-health return mode now routes to `OriginalPosition`.
+     - Added refresh logic so a wounded orc already in non-investigation Return
+       becomes a committed low-health return before ranged alert handling or
+       patrol acquisition.
+     - Low-health return now overrides alert-return flags and clears ranged
+       investigation state.
+ ~ Design/OrcAI.md
+     - Clarified that low-health "home" means the original scene/start point.
+
+FIX
+ A wounded returning orc now keeps going to its original start point, ignores
+ arrows during that retreat, and reliably drives the damaged-walk locomotion
+ while under the configured health threshold.
+
