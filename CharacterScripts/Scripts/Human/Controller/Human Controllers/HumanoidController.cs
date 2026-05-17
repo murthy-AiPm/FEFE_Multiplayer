@@ -116,8 +116,9 @@ public class HumanoidController : ThirdPersonController
 
     protected virtual void SpeedLogic()
     {
-        // Root motion takes over movement — zero out speed
-        if (animancerDriver != null && animancerDriver.RootMotionActive)
+        // Root motion / attack locks take over movement.
+        if ((animancerDriver != null && (animancerDriver.RootMotionActive || animancerDriver.IsAttackLocked)) ||
+            (combatController != null && combatController.IsActionLocked()))
         {
             speed = 0;
             return;
@@ -125,11 +126,6 @@ public class HumanoidController : ThirdPersonController
 
         if (combatController != null)
         {
-            if (combatController.IsActionLocked())
-            {
-                speed = 0;
-                return;
-            }
             if (combatController.IsSlowMovement())
             {
                 speed = combatSpeed;
@@ -154,6 +150,12 @@ public class HumanoidController : ThirdPersonController
 
     protected override void Walk()
     {
+        if ((animancerDriver != null && (animancerDriver.RootMotionActive || animancerDriver.IsAttackLocked)) ||
+            (combatController != null && combatController.IsActionLocked()))
+        {
+            return;
+        }
+
         CameraCalculations(out float targetAngle, out float angle);
 
         bool inCombat   = playerController.inputController.isCombatMode;

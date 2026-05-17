@@ -19,7 +19,7 @@ MonoBehaviour:
   baseDamage: 10
   heavyDamageMultiplier: 2
   attackRange: 2
-  staminaCostLight: 10
+  staminaCostLight: 0
   staminaCostHeavy: 25
   blockStaminaCost: 5
   arrowPrefab: {fileID: 0}

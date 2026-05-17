@@ -3547,3 +3547,27 @@ FIX
  arrows during that retreat, and reliably drives the damaged-walk locomotion
  while under the configured health threshold.
 
+2026-05-17 - Sword swing movement lock
+
+ROOT CAUSE
+ Sword attack animations run on the Animancer attack layer and may use root
+ motion, but humanoid input locomotion only checked `RootMotionActive`/combat
+ dodge-parry locks. If the attack layer was locked while input movement still
+ ran, the `CharacterController` could slide under the swing animation and help
+ trigger unwanted free-fall behavior.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Human/Animation/RuleAnimancerDriver.cs
+     - Exposed `IsAttackLocked` for movement/combat code to query the attack
+       layer lock directly.
+ ~ CharacterScripts/Scripts/Human/Combat/CombatController.cs
+     - Included active attack-layer locks in `IsActionLocked()`.
+ ~ CharacterScripts/Scripts/Human/Controller/Human Controllers/HumanoidController.cs
+     - Stopped input-driven walk/strafe movement while root motion, an attack
+       layer lock, or an action lock is active.
+     - Kept root motion movement handled by `RuleAnimancerDriver.OnAnimatorMove`.
+
+FIX
+ Sword swings now block normal input locomotion while the attack layer is
+ locked, leaving swing root motion as the only horizontal movement source.
+

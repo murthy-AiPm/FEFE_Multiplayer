@@ -122,6 +122,7 @@ public class RuleAnimancerDriver : MonoBehaviour
 
     public AnimancerComponent Animancer => _animancer;
     public bool IsLocked => IsLayerLocked(AnimLayer.Attack) || IsLayerLocked(AnimLayer.Action);
+    public bool IsAttackLocked => IsLayerLocked(AnimLayer.Attack);
 
     /// <summary>
     /// True when root motion is currently driving movement.

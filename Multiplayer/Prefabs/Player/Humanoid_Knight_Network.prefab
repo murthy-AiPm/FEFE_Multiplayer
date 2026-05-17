@@ -5773,6 +5773,8 @@ MonoBehaviour:
     singleAttackKeys:
     - Attack/Sword/Light1
     - Attack/Sword/Light2
+    - Attack/Sword/Light3
+    - Attack/Sword/Light5
     lightComboKeys: []
     heavyComboKeys:
     - Attack/Sword/Heavy
@@ -6177,6 +6179,7 @@ MonoBehaviour:
   parryCooldown: 0.8
   parryStaminaCost: 10
   parryAngle: 120
+  parryServerValidationPadding: 0.15
   bowAimStaminaDrain: 5
   fistStaminaCost: 8
 --- !u!114 &6854998894812114630

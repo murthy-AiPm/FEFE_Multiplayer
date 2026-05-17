@@ -821,7 +821,9 @@ public class CombatController : NetworkBehaviour, IDamageDefenseProvider
     /// </summary>
     public bool IsActionLocked()
     {
-        return State == CombatState.Dodging || State == CombatState.Parrying;
+        return State == CombatState.Dodging ||
+               State == CombatState.Parrying ||
+               (animancerDriver != null && animancerDriver.IsAttackLocked);
     }
 
     /// <summary>

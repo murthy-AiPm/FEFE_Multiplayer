@@ -17,7 +17,7 @@ MonoBehaviour:
   maxValue: 100
   startValue: 100
   regenEnabled: 1
-  regenRate: 100
+  regenRate: 5
   regenDelay: 0
   regenOnlyWhenGrounded: 1
   clampAtZero: 1

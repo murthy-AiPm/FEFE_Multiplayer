@@ -371,6 +371,30 @@ MonoBehaviour:
       _Speed: NaN
       _NormalizedStartTime: NaN
     useRootMotion: 1
+  - key: Attack/Sword/Light4
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes:
+        - 0.7
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 1827226128182048838, guid: 7bc234b8c6dc6db4aa82f74cb94e671f, type: 3}
+      _Speed: 1
+      _NormalizedStartTime: NaN
+    useRootMotion: 1
+  - key: Attack/Sword/Light5
+    transition:
+      _FadeDuration: 0
+      _Events:
+        _NormalizedTimes:
+        - 0.7
+        _Callbacks: []
+        _Names: []
+      _Clip: {fileID: 6995271511204810924, guid: 36be90c419cc40a42982816b9230f4b5, type: 3}
+      _Speed: NaN
+      _NormalizedStartTime: NaN
+    useRootMotion: 1
   - key: Attack/Sword/Heavy
     transition:
       _FadeDuration: 0
