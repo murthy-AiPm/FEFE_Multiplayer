@@ -163,8 +163,9 @@ public class HumanoidController : ThirdPersonController
         bool sprinting  = isModified;
         bool strafeMode = playerController.inputController.isStrafeMode;
         bool bowAimDraw = combatController != null && (combatController.IsBowDrawing || combatController.IsBowAiming);
-        // Tab toggles combat strafe. Drawing/aiming the bow always strafes.
-        bool useStrafe  = inCombat && (bowAimDraw || (!sprinting && strafeMode));
+        bool blocking = combatController != null && combatController.IsBlocking;
+        // Tab toggles combat strafe. Bow draw/aim and blocking temporarily force it.
+        bool useStrafe  = inCombat && (bowAimDraw || blocking || (!sprinting && strafeMode));
 
         if (useStrafe)
         {

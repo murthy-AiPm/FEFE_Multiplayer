@@ -361,11 +361,7 @@ public class RuleAnimancerDriver : MonoBehaviour
             // Start dodge mixer (once per dodge)
             if (ctx.Dodging && combatMixer.HasDodgeMixer && !_dodgeMixerStartedThisDodge)
             {
-                // While sprinting in a direction the body already faces movement,
-                // so always play the front-dodge clip — its root motion will carry
-                // the dodge forward in the same direction the player is running.
-                bool sprintInDir = ctx.Modified && ctx.snapshot.move.sqrMagnitude > 0.01f;
-                Vector2 dodgeInput = sprintInDir ? new Vector2(0f, 1f) : ctx.snapshot.move;
+                Vector2 dodgeInput = GetDodgeMixerInput(ctx);
                 var mixerState = combatMixer.PlayDodge(_baseLayer, dodgeInput);
                 if (mixerState != null)
                 {
@@ -668,6 +664,33 @@ public class RuleAnimancerDriver : MonoBehaviour
             yaw += Mathf.Atan2(move.x, move.y) * Mathf.Rad2Deg;
         }
 
+        Transform root = transform.parent != null ? transform.parent : transform;
+        root.rotation = Quaternion.Euler(0f, yaw, 0f);
+    }
+
+    private Vector2 GetDodgeMixerInput(AnimationContext ctx)
+    {
+        bool strafeMode = ctx.input != null && ctx.input.isStrafeMode;
+        bool hasMoveInput = ctx.snapshot.move.sqrMagnitude > 0.01f;
+
+        if (strafeMode)
+            return hasMoveInput ? ctx.snapshot.move : new Vector2(0f, -1f);
+
+        if (hasMoveInput)
+            SnapRotationToMovementInput(ctx.snapshot.move);
+
+        return new Vector2(0f, 1f);
+    }
+
+    private void SnapRotationToMovementInput(Vector2 moveInput)
+    {
+        if (_isRemoteClient) return;
+
+        Transform cam = Camera.main?.transform;
+        if (cam == null) return;
+
+        Vector2 move = moveInput.normalized;
+        float yaw = cam.eulerAngles.y + Mathf.Atan2(move.x, move.y) * Mathf.Rad2Deg;
         Transform root = transform.parent != null ? transform.parent : transform;
         root.rotation = Quaternion.Euler(0f, yaw, 0f);
     }
