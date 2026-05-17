@@ -393,11 +393,14 @@ public class RuleAnimancerDriver : MonoBehaviour
         // ── Blend tree locomotion: if the mixer wants control, it drives Base ──
         bool mixerActive = false;
         bool dodgeMixerOwnsBase = _dodgeMixerStartedThisDodge || _dodgeStepMixerStartedThisStep;
+        bool bowAimDraw = ctx.BowDrawing || ctx.BowAiming;
+        bool useStrafeLocomotion = bowAimDraw || (ctx.input != null && ctx.input.isStrafeMode);
         if (!dodgeMixerOwnsBase && combatMixer != null && combatMixer.WantsControl(
                 ctx.ActiveWeaponSlot, ctx.Moving, ctx.Dodging,
-                ctx.Blocking, ctx.BowDrawing, ctx.BowAiming, ctx.IsMounted, ctx.IsDodgeStep, ctx.Modified))
+                ctx.Blocking, ctx.BowDrawing, ctx.BowAiming, ctx.IsMounted, ctx.IsDodgeStep,
+                ctx.Modified, useStrafeLocomotion))
         {
-            combatMixer.UpdateAndPlay(_baseLayer, ctx.snapshot.move, ctx.ActiveWeaponSlot, ctx.BowDrawing || ctx.BowAiming);
+            combatMixer.UpdateAndPlay(_baseLayer, ctx.snapshot.move, ctx.ActiveWeaponSlot, bowAimDraw);
             _rootMotionActive = false;
             if (_animator != null) _animator.applyRootMotion = false;
             mixerActive = true;
@@ -576,7 +579,7 @@ public class RuleAnimancerDriver : MonoBehaviour
         if (down)
         {
             bool heavy = ctx.Modified;
-            SnapRotationToCamera(); // Face camera direction on each attack
+            SnapRotationForAttack(ctx);
             return StartSequentialAttack(ctx, heavy);
         }
 
@@ -646,26 +649,27 @@ public class RuleAnimancerDriver : MonoBehaviour
         return false;
     }
 
-    // ─── New: Snap player rotation to camera direction ───
+    // ─── New: Snap player rotation for attack startup ───
 
-    private void SnapRotationToCamera()
+    private void SnapRotationForAttack(AnimationContext ctx)
     {
         if (_isRemoteClient) return;
 
-        // Get camera reference
-        Transform cam = null;
-        if (tps != null)
-        {
-            // Try to get camera from ThirdPersonController or main camera
-            cam = Camera.main?.transform;
-        }
-
+        Transform cam = Camera.main?.transform;
         if (cam == null) return;
 
-        // Snap player to face camera's forward direction (Y axis only)
-        float cameraYaw = cam.eulerAngles.y;
+        float yaw = cam.eulerAngles.y;
+        bool forceCameraFacing = ctx.BowDrawing || ctx.BowAiming ||
+            (ctx.input != null && ctx.input.isStrafeMode);
+
+        if (!forceCameraFacing && ctx.snapshot.move.sqrMagnitude > 0.01f)
+        {
+            Vector2 move = ctx.snapshot.move.normalized;
+            yaw += Mathf.Atan2(move.x, move.y) * Mathf.Rad2Deg;
+        }
+
         Transform root = transform.parent != null ? transform.parent : transform;
-        root.rotation = Quaternion.Euler(0f, cameraYaw, 0f);
+        root.rotation = Quaternion.Euler(0f, yaw, 0f);
     }
 
     private string GetEquippedWeaponName(AnimationContext ctx)
@@ -1080,6 +1084,7 @@ public class RuleAnimancerDriver : MonoBehaviour
                 BoolParam.WeaponSlot2 => ctx.ActiveWeaponSlot == 2,
                 BoolParam.PendingSlot1 => ctx.PendingWeaponSlot == 1,
                 BoolParam.PendingSlot2 => ctx.PendingWeaponSlot == 2,
+                BoolParam.StrafeMode => ctx.input != null && ctx.input.isStrafeMode,
                 _ => false
             };
 

@@ -242,13 +242,15 @@ public class CombatLocomotionMixer : MonoBehaviour
     /// </summary>
     public bool WantsControl(int activeWeaponSlot, bool isMoving, bool isDodging,
                              bool isBlocking, bool isBowDrawing, bool isBowAiming,
-                             bool isMounted, bool isDodgeStep, bool isSprinting)
+                             bool isMounted, bool isDodgeStep, bool isSprinting,
+                             bool useStrafeLocomotion)
     {
         if (!_initialized) return false;
         if (!isMoving) return false;
         if (isDodging) return false;
         if (isDodgeStep) return false;
         if (isMounted) return false;
+        if (!useStrafeLocomotion) return false;
 
         // Combat sprint always falls through to rules for a forward-only run.
         // Applies to bow too — bow + sprint plays the rule-based forward run,

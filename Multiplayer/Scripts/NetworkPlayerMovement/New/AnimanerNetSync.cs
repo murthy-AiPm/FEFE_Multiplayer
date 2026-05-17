@@ -19,6 +19,9 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
     private readonly NetworkVariable<bool> nvCombatMode =
         new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
+    private readonly NetworkVariable<bool> nvStrafeMode =
+        new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
     private readonly NetworkVariable<bool> nvModified =
         new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
@@ -249,6 +252,7 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         // Input state
         if (nvMoving.Value     != input.isMoving)          nvMoving.Value          = input.isMoving;
         if (nvCombatMode.Value != input.isCombatMode)      nvCombatMode.Value      = input.isCombatMode;
+        if (nvStrafeMode.Value != input.isStrafeMode)      nvStrafeMode.Value      = input.isStrafeMode;
         if (nvModified.Value   != input.isModified)        nvModified.Value        = input.isModified;
         if (nvSecondaryHeld.Value != input.isSecondaryAttack) nvSecondaryHeld.Value = input.isSecondaryAttack;
         if (nvHoverMode.Value  != input.isHoverMode)       nvHoverMode.Value       = input.isHoverMode;
@@ -342,6 +346,7 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         {
             input.isMoving         = nvMoving.Value;
             input.isCombatMode     = nvCombatMode.Value;
+            input.isStrafeMode     = nvStrafeMode.Value;
             input.isModified       = nvModified.Value;
             input.isSecondaryAttack = nvSecondaryHeld.Value;
             input.isHoverMode      = nvHoverMode.Value;

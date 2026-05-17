@@ -219,6 +219,54 @@ MonoBehaviour:
       direction: 0
       useActionId: 0
       actionIdEquals: 0
+  - name: Sword/Walk/Fwd
+    layer: 0
+    priority: 53
+    lockUntilEnd: 0
+    allowInterruptSameLayer: 0
+    maskOverride: {fileID: 31900000, guid: 4a2a2d9b88b4bde4da39ddeb8020b35c, type: 2}
+    animationKey: Sword/Walk/Fwd
+    all:
+    - useBool: 1
+      boolParam: 0
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 2
+      boolValue: 0
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 22
+      boolValue: 0
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
+    - useBool: 1
+      boolParam: 18
+      boolValue: 1
+      useInput: 0
+      input: 0
+      triggerMode: 1
+      useDirection: 0
+      direction: 0
+      useActionId: 0
+      actionIdEquals: 0
   - name: Bow/Run
     layer: 0
     priority: 53

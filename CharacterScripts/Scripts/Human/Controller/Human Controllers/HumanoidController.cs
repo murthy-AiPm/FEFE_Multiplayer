@@ -150,7 +150,7 @@ public class HumanoidController : ThirdPersonController
 
     protected override void Walk()
     {
-        if ((animancerDriver != null && (animancerDriver.RootMotionActive || animancerDriver.IsAttackLocked)) ||
+        if ((animancerDriver != null && animancerDriver.IsAttackLocked) ||
             (combatController != null && combatController.IsActionLocked()))
         {
             return;
@@ -158,13 +158,13 @@ public class HumanoidController : ThirdPersonController
 
         CameraCalculations(out float targetAngle, out float angle);
 
+        bool rootMotionActive = animancerDriver != null && animancerDriver.RootMotionActive;
         bool inCombat   = playerController.inputController.isCombatMode;
         bool sprinting  = isModified;
+        bool strafeMode = playerController.inputController.isStrafeMode;
         bool bowAimDraw = combatController != null && (combatController.IsBowDrawing || combatController.IsBowAiming);
-        // Strafe at walk speed in combat. Sprint falls through to forward locomotion
-        // regardless of weapon. Drawing/aiming the bow always strafes (speed is
-        // capped to walk by IsSlowMovement so sprint key has no real effect there).
-        bool useStrafe  = inCombat && (bowAimDraw || !sprinting);
+        // Tab toggles combat strafe. Drawing/aiming the bow always strafes.
+        bool useStrafe  = inCombat && (bowAimDraw || (!sprinting && strafeMode));
 
         if (useStrafe)
         {
@@ -179,7 +179,8 @@ public class HumanoidController : ThirdPersonController
                 Vector3 right = transform.right;
                 Vector3 strafeDir = (forward * input.move.y + right * input.move.x).normalized;
 
-                controller.Move(strafeDir * speed * speedModifier * Time.deltaTime);
+                if (!rootMotionActive)
+                    controller.Move(strafeDir * speed * speedModifier * Time.deltaTime);
             }
             else if (combatController != null && combatController.IsBlocking)
             {
@@ -193,7 +194,7 @@ public class HumanoidController : ThirdPersonController
             // Normal locomotion — face movement direction
             Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward * speed;
             transform.rotation = Quaternion.Euler(0f, angle, 0f);
-            if (!isobstacle)
+            if (!isobstacle && !rootMotionActive)
                 controller.Move(moveDir.normalized * speed * speedModifier * Time.deltaTime);
         }
     }

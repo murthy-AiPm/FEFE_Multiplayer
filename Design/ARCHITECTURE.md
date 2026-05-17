@@ -855,10 +855,11 @@ locks, witcher-style combo chains, hit-reaction interrupts, and death freezing.
       aiming, with a fallback to whichever variant is built.
   Dodge and dodge-step have separate cardinal-direction mixers.
   `WantsControl(activeWeaponSlot, isMoving, isDodging, isBlocking,
-  isBowDrawing, isBowAiming, isMounted, isDodgeStep, isSprinting)` short-
-  circuits false on `isSprinting` (any weapon) so sprint always falls
-  through. `UpdateAndPlay(layer, moveInput, activeWeaponSlot, bowAimDraw)`
-  smooth-damps the parameter and plays the selected mixer.
+  isBowDrawing, isBowAiming, isMounted, isDodgeStep, isSprinting,
+  useStrafeLocomotion)` short-circuits false when strafe locomotion is not
+  requested or on `isSprinting` (any weapon) so sprint always falls through.
+  `UpdateAndPlay(layer, moveInput, activeWeaponSlot, bowAimDraw)` smooth-damps
+  the parameter and plays the selected mixer.
 - `AnimationEventRelay` — relays Animation Events to subscribers
   (`HitboxEnable/Disable`, `EquipComplete/HolsterComplete`, `FootstepLeft/Right`,
   generic `OnCustomEvent` for custom keys).

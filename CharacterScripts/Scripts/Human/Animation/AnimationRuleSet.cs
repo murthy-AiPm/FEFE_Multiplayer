@@ -41,6 +41,7 @@ public enum BoolParam
     WeaponSlot2,   // bow
     PendingSlot1,
     PendingSlot2,
+    StrafeMode,
 }
 
 public enum InputEdge

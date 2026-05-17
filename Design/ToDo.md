@@ -3571,3 +3571,37 @@ FIX
  Sword swings now block normal input locomotion while the attack layer is
  locked, leaving swing root motion as the only horizontal movement source.
 
+2026-05-17 - Combat strafe toggle
+
+ROOT CAUSE
+ Equipping a sword forced combat strafe locomotion whenever the player moved
+ without sprinting. That kept the body camera-facing all the time, which made
+ multi-enemy fights awkward: pressing left to face and attack a western target
+ could still be pulled back toward camera-forward by the attack startup snap.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Human/Controller/InputController.cs
+     - Added a Tab edge to the input snapshot.
+     - Added `isStrafeMode`, toggled only while human combat mode is active and
+       reset when leaving combat.
+ ~ CharacterScripts/Scripts/Human/Controller/Human Controllers/HumanoidController.cs
+     - Changed sword combat movement to strafe only when the Tab toggle is on.
+       Bow draw/aim still forces strafe.
+ ~ CharacterScripts/Scripts/Human/Animation/RuleAnimancerDriver.cs
+     - Attack startup now faces movement direction when strafe is off and
+       movement input is present; strafe/bow attacks still face camera-forward.
+     - Combat locomotion mixer control is gated by the strafe toggle, except
+       bow draw/aim.
+ ~ CharacterScripts/Scripts/Human/Animation/CombatLocomotionMixer.cs
+     - Added an explicit `useStrafeLocomotion` gate to mixer ownership.
+ ~ Multiplayer/Scripts/NetworkPlayerMovement/New/AnimanerNetSync.cs
+     - Synced strafe-mode state to remote animation holders.
+ ~ Design/ARCHITECTURE.md
+     - Updated the combat locomotion mixer signature note.
+
+FIX
+ Pressing Tab while a weapon/fist combat mode is active toggles strafe on/off.
+ With strafe off, movement turns the character toward the input direction, and
+ attacks started while moving face that direction. Attack movement remains
+ locked to animation/root motion.
+

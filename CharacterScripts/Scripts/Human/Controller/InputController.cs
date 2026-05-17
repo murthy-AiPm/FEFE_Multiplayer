@@ -22,6 +22,7 @@ public struct InputSnapshot
     public bool dodgeDown; // edge: left alt pressed this frame
     public bool primaryHeld;
     public bool hoistWeaponsDown;     // edge
+    public bool strafeToggleDown;     // edge
     public bool slot1Down;
     public bool slot2Down;
     public bool slot3Down;
@@ -64,6 +65,7 @@ public class InputController : MonoBehaviour
     public bool isPrimaryAttack, isWeaponDischarge;
     public bool isSecondaryAttack;
     public bool isCombatMode = false;
+    public bool isStrafeMode = false;
     public bool isSheating;
 
     // DEPRECATED — kept as fields so nothing breaks at compile time,
@@ -152,6 +154,7 @@ public class InputController : MonoBehaviour
 
             primaryHeld = Input.GetButton("PrimaryAttack"),
             hoistWeaponsDown = Input.GetButtonDown("HoistWeapons"),
+            strafeToggleDown = Input.GetKeyDown(KeyCode.Tab),
 
             slot1Down = Input.GetKeyDown(KeyCode.Alpha1),
             slot2Down = Input.GetKeyDown(KeyCode.Alpha2),
@@ -207,6 +210,15 @@ public class InputController : MonoBehaviour
             bool weaponEquipped = _weaponManager.ActiveSlot != 0;
             bool fistMode = _combatController != null && _combatController.IsFistCombatMode;
             isCombatMode = weaponEquipped || fistMode;
+        }
+
+        if (!isCombatMode)
+        {
+            isStrafeMode = false;
+        }
+        else if (s.strafeToggleDown)
+        {
+            isStrafeMode = !isStrafeMode;
         }
 
         // Primary attack flag (for any systems still reading this)
