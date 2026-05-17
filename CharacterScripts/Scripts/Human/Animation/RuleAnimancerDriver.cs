@@ -80,6 +80,23 @@ public class RuleAnimancerDriver : MonoBehaviour
     [Tooltip("Seconds of inactivity after which the single-attack sequence resets to the beginning.")]
     [SerializeField] private float singleAttackResetTime = 10f;
 
+    [Header("Attack Steering")]
+    [Tooltip("Allow limited yaw steering while a root-motion attack is locked.")]
+    [SerializeField] private bool enableAttackSteering = true;
+    [Tooltip("Degrees per second for light attack steering.")]
+    [SerializeField] private float lightAttackSteeringTurnSpeed = 240f;
+    [Tooltip("Degrees per second for heavy attack steering.")]
+    [SerializeField] private float heavyAttackSteeringTurnSpeed = 90f;
+    [Tooltip("Only steer during the early part of the attack. 1 = whole clip.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float attackSteeringNormalizedTime = 0.45f;
+    [Tooltip("If false, steering stops while the weapon hitbox is active.")]
+    [SerializeField] private bool allowAttackSteeringDuringHitbox = false;
+    [Tooltip("Use WASD input to steer toward movement direction relative to the camera.")]
+    [SerializeField] private bool steerAttackWithMoveInput = true;
+    [Tooltip("When there is no WASD input, steer toward camera yaw.")]
+    [SerializeField] private bool steerAttackTowardCameraWithoutInput = true;
+
     [Header("Weapon Attack Profiles (data)")]
     [SerializeField] private List<WeaponAttackProfile> weapons = new List<WeaponAttackProfile>();
 
@@ -301,6 +318,7 @@ public class RuleAnimancerDriver : MonoBehaviour
         // 2) Attack locked → skip everything (full body, frame-critical)
         if (IsLayerLocked(AnimLayer.Attack))
         {
+            ApplyAttackSteering(ctx);
             return;
         }
         bool combatBusy = combatController != null &&
@@ -510,6 +528,7 @@ public class RuleAnimancerDriver : MonoBehaviour
     private class AttackRuntime
     {
         public AttackMode mode = AttackMode.None;
+        public bool currentIsHeavy;
 
         // Combo tracking
         public bool comboIsHeavy;
@@ -532,6 +551,7 @@ public class RuleAnimancerDriver : MonoBehaviour
         public void ResetAll()
         {
             mode = AttackMode.None;
+            currentIsHeavy = false;
             comboIsHeavy = false;
             // weaponName intentionally kept — used for weapon-change detection in sequential single attacks
             comboKeys = null;
@@ -667,6 +687,48 @@ public class RuleAnimancerDriver : MonoBehaviour
         root.rotation = Quaternion.Euler(0f, yaw, 0f);
     }
 
+    private void ApplyAttackSteering(AnimationContext ctx)
+    {
+        if (!enableAttackSteering || _isRemoteClient)
+            return;
+        if (!_rootMotionActive)
+            return;
+        if (!allowAttackSteeringDuringHitbox && activeHitbox != null && activeHitbox.IsActive)
+            return;
+        if (!_lockedState.TryGetValue(AnimLayer.Attack, out var attackState) || attackState == null)
+            return;
+        if (attackSteeringNormalizedTime <= 0f || attackState.NormalizedTime > attackSteeringNormalizedTime)
+            return;
+
+        if (!TryGetAttackSteeringYaw(ctx, out float yaw))
+            return;
+
+        Transform root = transform.parent != null ? transform.parent : transform;
+        Quaternion targetRotation = Quaternion.Euler(0f, yaw, 0f);
+        float turnSpeed = _attack.currentIsHeavy ? heavyAttackSteeringTurnSpeed : lightAttackSteeringTurnSpeed;
+        root.rotation = Quaternion.RotateTowards(root.rotation, targetRotation, turnSpeed * Time.deltaTime);
+    }
+
+    private bool TryGetAttackSteeringYaw(AnimationContext ctx, out float yaw)
+    {
+        yaw = 0f;
+
+        Transform cam = Camera.main?.transform;
+        if (cam == null)
+            return false;
+
+        yaw = cam.eulerAngles.y;
+
+        if (steerAttackWithMoveInput && ctx.snapshot.move.sqrMagnitude > 0.01f)
+        {
+            Vector2 move = ctx.snapshot.move.normalized;
+            yaw += Mathf.Atan2(move.x, move.y) * Mathf.Rad2Deg;
+            return true;
+        }
+
+        return steerAttackTowardCameraWithoutInput;
+    }
+
     private Vector2 GetDodgeMixerInput(AnimationContext ctx)
     {
         bool strafeMode = ctx.input != null && ctx.input.isStrafeMode;
@@ -795,6 +857,7 @@ public class RuleAnimancerDriver : MonoBehaviour
         state.Time = 0;
 
         _attack.mode = mode;
+        _attack.currentIsHeavy = isHeavy;
 
         // Root motion from clip-level flag
         bool wantRoot = allowRootMotion && animationSet.IsRootMotion(key);
@@ -854,6 +917,7 @@ public class RuleAnimancerDriver : MonoBehaviour
             {
                 _attack.mode = AttackMode.Combo;
                 _attack.comboIsHeavy = foundInHeavy;
+                _attack.currentIsHeavy = isHeavy;
                 _attack.weaponName = profile.weaponName;
                 _attack.comboKeys = foundInHeavy ? profile.heavyComboKeys : profile.lightComboKeys;
                 _attack.comboIndex = comboIndex;
@@ -862,11 +926,13 @@ public class RuleAnimancerDriver : MonoBehaviour
             {
                 Debug.LogWarning($"[PlayNetworkedAttack] Could not find weapon profile for combo attack '{attackKey}'");
                 _attack.mode = AttackMode.Single;
+                _attack.currentIsHeavy = isHeavy;
             }
         }
         else
         {
             _attack.mode = mode;
+            _attack.currentIsHeavy = isHeavy;
         }
 
         // ► Play on the Attack Animancer layer
