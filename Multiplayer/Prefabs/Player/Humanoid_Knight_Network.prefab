@@ -5768,6 +5768,13 @@ MonoBehaviour:
   comboHoldThreshold: 0.08
   defaultWeaponName: Sword
   singleAttackResetTime: 10
+  enableAttackSteering: 1
+  lightAttackSteeringTurnSpeed: 240
+  heavyAttackSteeringTurnSpeed: 90
+  attackSteeringNormalizedTime: 0.45
+  allowAttackSteeringDuringHitbox: 1
+  steerAttackWithMoveInput: 1
+  steerAttackTowardCameraWithoutInput: 1
   weapons:
   - weaponName: Sword
     singleAttackKeys:
@@ -5841,6 +5848,7 @@ MonoBehaviour:
   isWeaponDischarge: 0
   isSecondaryAttack: 0
   isCombatMode: 0
+  isStrafeMode: 0
   isSheating: 0
   fistEquip: 0
   swordEquip: 0

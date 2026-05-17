@@ -212,6 +212,22 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     [Header("Crowd Control")]
     [SerializeField] private int maxAttackersPerTarget = 4;
 
+    [Header("Berserker Targeting")]
+    [Tooltip("How often a berserker evaluates visible targets while already in combat.")]
+    [SerializeField] private float berserkerTargetScanInterval = 0.35f;
+    [Tooltip("Minimum time after a berserker switches targets before it may switch again.")]
+    [SerializeField] private float berserkerRetargetCooldown = 1.25f;
+    [Tooltip("New target score must beat the current target by this much before the berserker switches.")]
+    [SerializeField] private float berserkerSwitchScoreMargin = 0.75f;
+    [Tooltip("Meters-to-score multiplier. Higher values make berserkers favor closer targets more strongly.")]
+    [SerializeField] private float berserkerDistanceWeight = 1f;
+    [Tooltip("Health-ratio-to-score multiplier. Higher values make berserkers favor wounded targets more strongly.")]
+    [SerializeField] private float berserkerLowHealthWeight = 6f;
+    [Tooltip("Per-orc score penalty for targets already engaged by other attackers.")]
+    [SerializeField] private float berserkerDogpilePenaltyWeight = 1.5f;
+    [Tooltip("Score discount for the current target so berserkers do not ping-pong between similar targets.")]
+    [SerializeField] private float berserkerCurrentTargetStickiness = 0.75f;
+
     [Header("Separation")]
     [SerializeField] private float separationRadius = 1.2f;
     [SerializeField] private float separationStrength = 2f;
@@ -283,6 +299,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private float outOfViewRangedAlertTimer;
     private float leashThreatHitGraceTimer;
     private float postLeashReturnTimer;
+    private float berserkerTargetScanTimer;
+    private float berserkerRetargetCooldownTimer;
     private int currentLeashThreatVariant = -1;
     private int outOfViewRangedAlertCount;
     private int currentPatrolPointIndex;
@@ -654,6 +672,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (suppressDamageReceivedStateChangeTimer > 0f) suppressDamageReceivedStateChangeTimer -= Time.deltaTime;
         if (directRangedHitPriorityTimer > 0f) directRangedHitPriorityTimer -= Time.deltaTime;
         if (leashThreatHitGraceTimer > 0f) leashThreatHitGraceTimer -= Time.deltaTime;
+        if (berserkerTargetScanTimer > 0f) berserkerTargetScanTimer -= Time.deltaTime;
+        if (berserkerRetargetCooldownTimer > 0f) berserkerRetargetCooldownTimer -= Time.deltaTime;
         if (postLeashReturnTimer > 0f)
         {
             postLeashReturnTimer -= Time.deltaTime;
@@ -869,7 +889,11 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 return;
         }
 
-        if (!lowHealthReturnHomeActive && detectionTimer <= 0f)
+        if (!lowHealthReturnHomeActive && IsBerserker)
+        {
+            TryUpdateBerserkerPriorityTarget();
+        }
+        else if (!lowHealthReturnHomeActive && detectionTimer <= 0f)
         {
             Transform betterTarget = FindLessContestedVisibleTarget();
             if (betterTarget != null && betterTarget != currentTarget)
@@ -2536,6 +2560,124 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
         targetAwareness += detectionInterval;
         return targetAwareness >= detectionTime ? perceived : null;
+    }
+
+    private bool TryUpdateBerserkerPriorityTarget()
+    {
+        if (!IsBerserker || currentTarget == null)
+            return false;
+
+        if (berserkerTargetScanTimer > 0f || berserkerRetargetCooldownTimer > 0f)
+            return false;
+
+        if (SubState == OrcSubState.Attack ||
+            SubState == OrcSubState.Block ||
+            SubState == OrcSubState.Parry ||
+            SubState == OrcSubState.LeashThreat)
+        {
+            return false;
+        }
+
+        berserkerTargetScanTimer = Mathf.Max(0.05f, berserkerTargetScanInterval);
+
+        Transform bestTarget = FindBestBerserkerTarget(out float bestScore);
+        if (bestTarget == null || bestTarget == currentTarget)
+            return false;
+
+        float currentScore = ScoreBerserkerTarget(currentTarget);
+        if (bestScore + Mathf.Max(0f, berserkerSwitchScoreMargin) >= currentScore)
+            return false;
+
+        SwitchBerserkerTarget(bestTarget);
+        return true;
+    }
+
+    private Transform FindBestBerserkerTarget(out float bestScore)
+    {
+        bestScore = float.MaxValue;
+        Transform best = null;
+
+        int count = Physics.OverlapSphereNonAlloc(transform.position, viewDistance, _detectionBuffer, playerLayer);
+        for (int i = 0; i < count; i++)
+        {
+            var col = _detectionBuffer[i];
+            if (col == null) continue;
+
+            var receiver = col.GetComponentInParent<DamageReceiver>();
+            if (receiver == null) continue;
+
+            Transform candidate = receiver.transform;
+            if (!IsTargetAlive(candidate)) continue;
+            if (!CanPerceiveTarget(candidate, out _)) continue;
+
+            float score = ScoreBerserkerTarget(candidate);
+            if (score < bestScore)
+            {
+                best = candidate;
+                bestScore = score;
+            }
+        }
+
+        return best;
+    }
+
+    private float ScoreBerserkerTarget(Transform candidate)
+    {
+        if (candidate == null)
+            return float.MaxValue;
+
+        float distanceScore =
+            Vector3.Distance(transform.position, candidate.position) *
+            Mathf.Max(0f, berserkerDistanceWeight);
+
+        float healthScore =
+            GetTargetHealthRatio(candidate) *
+            Mathf.Max(0f, berserkerLowHealthWeight);
+
+        _attackerCounts.TryGetValue(candidate, out int attackerCount);
+        if (candidate == currentTarget && registeredAsAttacker && attackerCount > 0)
+            attackerCount--;
+
+        float dogpileScore = attackerCount * Mathf.Max(0f, berserkerDogpilePenaltyWeight);
+        float stickinessScore = candidate == currentTarget
+            ? -Mathf.Max(0f, berserkerCurrentTargetStickiness)
+            : 0f;
+
+        return distanceScore + healthScore + dogpileScore + stickinessScore;
+    }
+
+    private float GetTargetHealthRatio(Transform target)
+    {
+        if (target == null)
+            return 1f;
+
+        var vitals = target.GetComponentInParent<VitalManager>();
+        if (vitals == null)
+            return 1f;
+
+        Vital health = vitals.GetVital("health");
+        if (health == null)
+            return vitals.IsDead ? 0f : 1f;
+
+        return Mathf.Clamp01(health.Normalized);
+    }
+
+    private void SwitchBerserkerTarget(Transform target)
+    {
+        if (target == null || target == currentTarget)
+            return;
+
+        UnregisterAttacker();
+
+        currentTarget = target;
+        awarenessTarget = target;
+        targetAwareness = detectionTime;
+        lastKnownTargetPosition = target.position;
+        loseSightTimer = loseSightGraceTime;
+        berserkerRetargetCooldownTimer = Mathf.Max(0f, berserkerRetargetCooldown);
+
+        if (SubState == OrcSubState.Reposition)
+            SetState(OrcState.Combat, OrcSubState.Approach);
     }
 
     private Transform FindBestPerceivedTarget(out bool closeDetected)

@@ -3605,3 +3605,24 @@ FIX
  attacks started while moving face that direction. Attack movement remains
  locked to animation/root motion.
 
+2026-05-17 - Berserker target priority
+
+ROOT CAUSE
+ Berserkers used the same target logic as other orcs: they kept their current
+ combat target unless normal visibility/leash logic failed or the hard
+ max-attackers crowd rule found a less-contested target. Multiple players/NPCs
+ attacking one berserker did not make it feel predatory toward nearby wounded
+ targets.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added Inspector-tweakable Berserker Targeting weights and cooldowns.
+     - Berserkers now periodically score visible alive targets by distance,
+       health ratio, and existing dogpile pressure.
+     - Target switching requires a score margin and cooldown, and avoids
+       switching during committed attack/block/parry/leash-threat states.
+
+FIX
+ Berserkers now bias toward close, low-health targets while still treating
+ already-dogpiled targets as less attractive. Grunts and skirmishers keep the
+ existing less-contested target behavior.
