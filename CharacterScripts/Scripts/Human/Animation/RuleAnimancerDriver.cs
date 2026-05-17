@@ -301,7 +301,6 @@ public class RuleAnimancerDriver : MonoBehaviour
         // 2) Attack locked → skip everything (full body, frame-critical)
         if (IsLayerLocked(AnimLayer.Attack))
         {
-            TryPlayBestRule(ctx, AnimLayer.Base);
             return;
         }
         bool combatBusy = combatController != null &&

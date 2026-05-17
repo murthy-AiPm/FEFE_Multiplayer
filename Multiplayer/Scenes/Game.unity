@@ -5908,7 +5908,7 @@ Transform:
   m_GameObject: {fileID: 923606957}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -94.8, y: -88.09729, z: 399.8}
+  m_LocalPosition: {x: -105.8, y: -88.09729, z: 414}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6941,30 +6941,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 59636756cb0539b43afa9439178efd17, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SettingsMenuUI
---- !u!1 &1115202611 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1230148255650891468, guid: 564a8d72c01ac124e8d80c8de2f55258, type: 3}
-  m_PrefabInstance: {fileID: 5881650818128827491}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1115202624
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1115202611}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e6f899d9665c9b94bbb45b8db167d695, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AnimalSoundPlayer
-  idleSound: OrcIdle
-  attackSound: OrcAttack
-  hitSound: OrcHit
-  deathSound: OrcDeath
-  sleepSound: 
-  idleIntervalMin: 4
-  idleIntervalMax: 12
 --- !u!1 &1126254640
 GameObject:
   m_ObjectHideFlags: 0
@@ -55270,29 +55246,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: OrkBerseker
       objectReference: {fileID: 0}
-    - target: {fileID: 2839376034710377784, guid: 564a8d72c01ac124e8d80c8de2f55258, type: 3}
-      propertyPath: m_Height
-      value: 2.15
-      objectReference: {fileID: 0}
-    - target: {fileID: 2839376034710377784, guid: 564a8d72c01ac124e8d80c8de2f55258, type: 3}
-      propertyPath: m_Center.y
-      value: 0.94
-      objectReference: {fileID: 0}
     - target: {fileID: 3149192390463386702, guid: 564a8d72c01ac124e8d80c8de2f55258, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 876146978
       objectReference: {fileID: 0}
-    - target: {fileID: 6381779419303463576, guid: 564a8d72c01ac124e8d80c8de2f55258, type: 3}
-      propertyPath: lowHealthPursueRevertRatio
-      value: 0.25
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1230148255650891468, guid: 564a8d72c01ac124e8d80c8de2f55258, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1115202624}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 564a8d72c01ac124e8d80c8de2f55258, type: 3}
 --- !u!4 &5917794330272948255
 Transform:

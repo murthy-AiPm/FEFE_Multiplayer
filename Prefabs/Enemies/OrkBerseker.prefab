@@ -2054,6 +2054,7 @@ GameObject:
   - component: {fileID: 2839376034710377784}
   - component: {fileID: 7021934352038450474}
   - component: {fileID: 9028891114235070629}
+  - component: {fileID: 3910604336005792107}
   m_Layer: 23
   m_Name: OrkBerseker
   m_TagString: Untagged
@@ -2319,7 +2320,7 @@ MonoBehaviour:
   holdVisibleThreatAtLeash: 1
   leashThreatFaceSpeedMultiplier: 1.25
   leashThreatMaxDuration: 5
-  lowHealthPursueRevertRatio: 0.5
+  lowHealthPursueRevertRatio: 0.25
   leashThreatBoolParameter: IsTaunting
   leashThreatIndexParameter: TauntIndex
   leashThreatStatePath: Base Layer.Taunt
@@ -2422,9 +2423,9 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.5
-  m_Height: 1.97
+  m_Height: 2.15
   m_Direction: 1
-  m_Center: {x: 0, y: 0.87, z: 0}
+  m_Center: {x: 0, y: 0.94, z: 0}
 --- !u!114 &7021934352038450474
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2469,6 +2470,25 @@ MonoBehaviour:
   maxBurnDuration: 10
   fireVFXPrefab: {fileID: 1796120904278366016, guid: 1bef320677628644081dfb5e21bea115, type: 3}
   vfxScale: 1
+--- !u!114 &3910604336005792107
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1230148255650891468}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6f899d9665c9b94bbb45b8db167d695, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AnimalSoundPlayer
+  idleSound: OrcIdle
+  attackSound: OrcAttack
+  hitSound: OrcHit
+  deathSound: OrcDeath
+  sleepSound: 
+  idleIntervalMin: 4
+  idleIntervalMax: 12
 --- !u!1 &1231950193636808526
 GameObject:
   m_ObjectHideFlags: 0

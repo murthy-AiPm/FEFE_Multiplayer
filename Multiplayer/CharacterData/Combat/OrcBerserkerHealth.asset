@@ -19,6 +19,6 @@ MonoBehaviour:
   regenEnabled: 1
   regenRate: 5
   regenDelay: 3
-  regenOnlyWhenGrounded: 1
+  regenOnlyWhenGrounded: 0
   clampAtZero: 1
   killOnDepleted: 1
