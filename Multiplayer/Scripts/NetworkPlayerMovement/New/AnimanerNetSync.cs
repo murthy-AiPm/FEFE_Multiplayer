@@ -11,6 +11,7 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
     [SerializeField] private RuleAnimancerDriver animDriver;
     [SerializeField] private WeaponManager weaponManager;
     [SerializeField] private CombatController combatController;
+    [SerializeField] private HumanoidSwimController swimController;
 
     // ---- Networked "AnimationContext" pieces ----
     private readonly NetworkVariable<bool> nvMoving =
@@ -143,6 +144,27 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         new(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     [SerializeField] private CombatLocomotionMixer combatMixer;
 
+    // ---- Humanoid swim sync ----
+    private readonly NetworkVariable<bool> nvSwimming =
+        new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    private readonly NetworkVariable<bool> nvSwimUnderwater =
+        new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    private readonly NetworkVariable<Vector2> nvSwimMoveInput =
+        new(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    private readonly NetworkVariable<float> nvSwimVertical =
+        new(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    private readonly NetworkVariable<bool> nvSwimFast =
+        new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    private readonly NetworkVariable<Vector2> nvSwimBlendParameter =
+        new(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    [SerializeField] private HumanoidSwimMixer swimMixer;
+
     // Reflection to set InputController.Snapshot
     private FieldInfo _snapshotBackingField;
 
@@ -170,7 +192,9 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         if (!animDriver) animDriver = GetComponentInChildren<RuleAnimancerDriver>(true);
         if (!weaponManager) weaponManager = GetComponentInChildren<WeaponManager>(true);
         if (!combatController) combatController = GetComponentInChildren<CombatController>(true);
+        if (!swimController) swimController = GetComponentInChildren<HumanoidSwimController>(true);
         if (!combatMixer) combatMixer = GetComponentInChildren<CombatLocomotionMixer>(true);
+        if (!swimMixer) swimMixer = GetComponentInChildren<HumanoidSwimMixer>(true);
     }
 
     private void CacheSnapshotSetter()
@@ -338,6 +362,24 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
             if (Vector2.SqrMagnitude(nvMoveInput.Value - move) > 0.001f)
                 nvMoveInput.Value = move;
         }
+
+        if (swimController != null)
+        {
+            if (nvSwimming.Value != swimController.IsSwimming) nvSwimming.Value = swimController.IsSwimming;
+            if (nvSwimUnderwater.Value != swimController.IsUnderwater) nvSwimUnderwater.Value = swimController.IsUnderwater;
+            if (Vector2.SqrMagnitude(nvSwimMoveInput.Value - swimController.SwimMoveInput) > 0.001f)
+                nvSwimMoveInput.Value = swimController.SwimMoveInput;
+            if (Mathf.Abs(nvSwimVertical.Value - swimController.SwimVertical) > 0.01f)
+                nvSwimVertical.Value = swimController.SwimVertical;
+            if (nvSwimFast.Value != swimController.IsFastSwimming) nvSwimFast.Value = swimController.IsFastSwimming;
+        }
+
+        if (swimMixer != null)
+        {
+            Vector2 blend = swimMixer.BlendParameter;
+            if (Vector2.SqrMagnitude(nvSwimBlendParameter.Value - blend) > 0.001f)
+                nvSwimBlendParameter.Value = blend;
+        }
     }
 
     private void ApplyToRemoteHolders()
@@ -401,6 +443,18 @@ public class ClientAuthoritativeAnimancerSync : NetworkBehaviour
         // ── Feed synced move input to remote mixer ──
         if (combatMixer != null)
             combatMixer.SetRemoteParameter(nvMoveInput.Value);
+
+        if (swimController != null)
+            swimController.SetRemoteSwimState(
+                nvSwimming.Value,
+                nvSwimUnderwater.Value,
+                nvSwimMoveInput.Value,
+                nvSwimVertical.Value,
+                nvSwimFast.Value
+            );
+
+        if (swimMixer != null)
+            swimMixer.SetRemoteParameter(nvSwimBlendParameter.Value);
     }
 
     private void ApplyRemoteActionEdge()

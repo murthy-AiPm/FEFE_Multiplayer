@@ -8,6 +8,7 @@ public struct AnimationContext
     public MountController mountController; // NEW: for mounted state
     public CombatController combatController;
     public WeaponManager weaponManager;
+    public HumanoidSwimController swimController;
 
     // Humanoid states
     public bool Moving => GetMoving();
@@ -19,6 +20,11 @@ public struct AnimationContext
     public bool FreeFall => tps != null && tps.isfreeFall;
     public bool Sheathing => input != null && input.isSheating;
     public bool Crouching => input != null && input.isCrouch;
+    public bool Swimming => swimController != null && swimController.IsSwimming;
+    public bool SwimUnderwater => swimController != null && swimController.IsUnderwater;
+    public Vector2 SwimMoveInput => swimController != null ? swimController.SwimMoveInput : Vector2.zero;
+    public float SwimVertical => swimController != null ? swimController.SwimVertical : 0f;
+    public bool SwimFast => swimController != null && swimController.IsFastSwimming;
 
     public bool Dodging => combatController != null && combatController.IsDodging;
     public bool IsDodgeStep => combatController != null && combatController.IsDodgeStep;

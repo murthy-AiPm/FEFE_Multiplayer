@@ -42,6 +42,10 @@ public enum BoolParam
     PendingSlot1,
     PendingSlot2,
     StrafeMode,
+    Swimming,
+    SwimUnderwater,
+    SwimSurface,
+    SwimFast,
 }
 
 public enum InputEdge

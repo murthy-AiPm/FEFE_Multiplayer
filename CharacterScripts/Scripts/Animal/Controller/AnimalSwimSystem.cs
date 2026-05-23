@@ -25,6 +25,8 @@ public class AnimalSwimSystem : MonoBehaviour
     [SerializeField] private float waterExitDepthThreshold  = -0.5f;
     [Tooltip("Dragon is near surface when within this distance above/below")]
     [SerializeField] private float nearSurfaceThreshold = 1.5f;
+    [Tooltip("Brief grace after leaving a water trigger before clearing swim state. Prevents waterline flicker.")]
+    [SerializeField] private float waterExitGraceTime = 0.25f;
 
     [Header("Debug (Read Only)")]
     [SerializeField] private bool _debugInVolume;
@@ -37,6 +39,7 @@ public class AnimalSwimSystem : MonoBehaviour
     private bool  _inWaterVolume;
     private bool  _flightActive;
     private bool  _isInWaterState; // latched with hysteresis
+    private float _waterExitGraceTimer;
     private float _waterSurfaceY;
     private float _submersionDepth;
 
@@ -64,9 +67,28 @@ public class AnimalSwimSystem : MonoBehaviour
 
     private void Update()
     {
-        if (!_inWaterVolume || _flightActive)
+        if (_flightActive)
         {
             _submersionDepth = 0f;
+            _waterExitGraceTimer = 0f;
+            _isInWaterState = false;
+            UpdateDebug();
+            return;
+        }
+
+        if (!_inWaterVolume)
+        {
+            if (_waterExitGraceTimer > 0f)
+            {
+                _waterExitGraceTimer -= Time.deltaTime;
+                UpdateSurface();
+                UpdateIsInWaterState();
+                UpdateDebug();
+                return;
+            }
+
+            _submersionDepth = 0f;
+            _isInWaterState = false;
             UpdateDebug();
             return;
         }
@@ -79,7 +101,7 @@ public class AnimalSwimSystem : MonoBehaviour
     // ── Hysteresis ────────────────────────────────────────────────
     private void UpdateIsInWaterState()
     {
-        if (_flightActive || !_inWaterVolume)
+        if (_flightActive || (!_inWaterVolume && _waterExitGraceTimer <= 0f))
         {
             _isInWaterState = false;
             return;
@@ -120,17 +142,18 @@ public class AnimalSwimSystem : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag(waterTag))
+        {
             _inWaterVolume = true;
+            _waterExitGraceTimer = 0f;
+        }
     }
 
     private void OnTriggerExit(Collider other)
     {
         if (other.CompareTag(waterTag))
         {
-            _inWaterVolume   = false;
-            _isInWaterState  = false;
-            _submersionDepth = 0f;
-            _waterSurfaceY   = 0f;
+            _inWaterVolume = false;
+            _waterExitGraceTimer = waterExitGraceTime;
         }
     }
 
@@ -144,7 +167,7 @@ public class AnimalSwimSystem : MonoBehaviour
     // ── Debug mirrors ─────────────────────────────────────────────
     private void UpdateDebug()
     {
-        _debugInVolume      = _inWaterVolume;
+        _debugInVolume      = _inWaterVolume || _waterExitGraceTimer > 0f;
         _debugIsInWater     = IsInWater;
         _debugIsNearSurface = IsNearSurface;
         _debugSubmersionDepth = _submersionDepth;

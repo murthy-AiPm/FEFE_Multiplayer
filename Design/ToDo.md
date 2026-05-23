@@ -3647,3 +3647,46 @@ FIX
  Orc chase movement can now be diagnosed from the Unity Console by enabling
  `Log Movement Debug` on the affected orc instance, without changing behavior
  when the toggle is off.
+
+2026-05-23 - Humanoid swim animation and weapon lockout
+
+ROOT CAUSE
+ Humans had no equivalent to the dragon swim path. Water detection existed in
+ `AnimalSwimSystem`, but humanoid Animancer locomotion, combat gates, weapon
+ state, and remote animation sync had no swimming state to consume.
+
+FILES CHANGED
+ + CharacterScripts/Scripts/Human/Controller/HumanoidSwimSystem.cs
+     - Added a humanoid subclass of `AnimalSwimSystem` with surface vs
+       underwater mode based on submersion depth.
+ + CharacterScripts/Scripts/Human/Controller/HumanoidSwimController.cs
+     - Added owner-side swim movement, vertical swim input, fast swim state,
+       automatic weapon unequip, and remote swim state application.
+ + CharacterScripts/Scripts/Human/Animation/HumanoidSwimMixer.cs
+     - Added Animancer Cartesian mixers for surface and underwater swim clips
+       using the `H_Swim_*` and `S_SwimUnder_*` key names.
+ ~ CharacterScripts/Scripts/Human/Animation/AnimationData/BaseAnimationData.asset
+     - Added swim clip entries from
+       `Assets/Malbers Animations/Common/Human Anims/Swim`.
+ ~ CharacterScripts/Scripts/Human/Animation/AnimationContext.cs
+     - Exposed swim state and swim blend inputs to Animancer rule evaluation.
+ ~ CharacterScripts/Scripts/Human/Animation/AnimationRuleSet.cs
+     - Added swim-related bool params for future rule authoring.
+ ~ CharacterScripts/Scripts/Human/Animation/RuleAnimancerDriver.cs
+     - Added swim mixer wiring; swimming cancels attack/action layers and owns
+       the Base layer while active.
+ ~ CharacterScripts/Scripts/Human/Combat/CombatController.cs
+     - Blocked weapon swap, attacks, bow draw, block/parry, dodge, and fist
+       combat while swimming.
+ ~ CharacterScripts/Scripts/Human/Controller/Human Controllers/HumanoidController.cs
+     - Suppressed land walk, jump, gravity, freefall, and sprint stamina drain
+       while the swim controller owns movement.
+ ~ Multiplayer/Scripts/NetworkPlayerMovement/New/AnimanerNetSync.cs
+     - Synced swim state, surface/underwater mode, swim movement input,
+       vertical swim intent, and fast-swim state to remote animation holders.
+
+FIX
+ Defenders now enter a humanoid swim state when submerged by `AnimalSwimSystem`.
+ Any equipped weapon is forced back to slot 0, combat actions are rejected in
+ water, local land locomotion is suppressed, and remote players receive the
+ same swim animation state for Animancer blending.

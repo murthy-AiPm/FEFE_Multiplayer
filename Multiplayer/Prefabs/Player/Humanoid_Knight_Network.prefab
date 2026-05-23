@@ -3943,8 +3943,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6450013997866560284}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.06292836, y: 0.9327943, z: 0.20044762, w: -0.2928406}
-  m_LocalPosition: {x: 1.193222, y: 0.46931458, z: 1.7131042}
+  m_LocalRotation: {x: 0.12437605, y: 0.86794406, z: 0.39617875, w: -0.27248162}
+  m_LocalPosition: {x: 1.193222, y: -0.99749756, z: 1.7131042}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -4026,7 +4026,7 @@ MonoBehaviour:
       Height: 2
     Bottom:
       Radius: 2
-      Height: -1
+      Height: -2.5
     SplineCurvature: 0.5
   RecenteringTarget: 2
   HorizontalAxis:
@@ -5635,6 +5635,9 @@ GameObject:
   - component: {fileID: 2104147845960171010}
   - component: {fileID: 8012761472847845033}
   - component: {fileID: 1947542239926039705}
+  - component: {fileID: -6569124022271541000}
+  - component: {fileID: -782973250471382307}
+  - component: {fileID: 7816463685083176472}
   m_Layer: 6
   m_Name: Humanoid_Knight_Network
   m_TagString: Player
@@ -5744,6 +5747,7 @@ MonoBehaviour:
   input: {fileID: 1001088175776627155}
   networkSync: {fileID: 701928192926613071}
   mountController: {fileID: 390209779912540638}
+  swimController: {fileID: 0}
   baseFade: 0.12
   actionFade: 0.08
   attackFade: 0.05
@@ -5764,6 +5768,7 @@ MonoBehaviour:
   combatController: {fileID: 929657025235045054}
   weaponManager: {fileID: 4819312757928810008}
   combatMixer: {fileID: 0}
+  swimMixer: {fileID: 0}
   doubleClickWindow: 0.25
   comboHoldThreshold: 0.08
   defaultWeaponName: Sword
@@ -5891,6 +5896,7 @@ MonoBehaviour:
   combatController: {fileID: 929657025235045054}
   animancerDriver: {fileID: 2683264340040594894}
   vitalManager: {fileID: 1702300467690810362}
+  swimController: {fileID: 0}
   jumpnum: 0.5
   crouchSpeed: 0.5
   walkSpeed: 1
@@ -6055,7 +6061,9 @@ MonoBehaviour:
   animDriver: {fileID: 2683264340040594894}
   weaponManager: {fileID: 0}
   combatController: {fileID: 0}
+  swimController: {fileID: 0}
   combatMixer: {fileID: 0}
+  swimMixer: {fileID: 0}
 --- !u!114 &3220517450429524996
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6164,6 +6172,7 @@ MonoBehaviour:
   humanoidController: {fileID: 834153548958768503}
   playerController: {fileID: 6395165421274534476}
   animancerDriver: {fileID: 2683264340040594894}
+  swimController: {fileID: 0}
   arrowSpawnPoint: {fileID: 1379066709997379217}
   vcam: {fileID: 6169671671747164374}
   defaultCamTarget: {fileID: 3897897725061523244}
@@ -6479,6 +6488,95 @@ MonoBehaviour:
   maxBurnDuration: 10
   fireVFXPrefab: {fileID: 1796120904278366016, guid: 1bef320677628644081dfb5e21bea115, type: 3}
   vfxScale: 1
+--- !u!114 &-6569124022271541000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8837511929152388741}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f9aef34f2337a04db74ead56f6c99ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HumanoidSwimSystem
+  waterTag: Water
+  waterLayer:
+    serializedVersion: 2
+    m_Bits: 16
+  bodyCentre: {fileID: 1218925387297013232}
+  surfaceRaycastUpOffset: 2
+  surfaceRaycastDistance: 6
+  waterEntryDepthThreshold: 0.3
+  waterExitDepthThreshold: -0.5
+  nearSurfaceThreshold: 1.5
+  waterExitGraceTime: 0.25
+  _debugInVolume: 1
+  _debugIsInWater: 1
+  _debugIsNearSurface: 1
+  _debugSubmersionDepth: 0
+  _debugWaterSurfaceY: 0
+  surfaceModeMaxDepth: 1.2
+--- !u!114 &-782973250471382307
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8837511929152388741}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb395bca7b2b8c34b8ccde425930377b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HumanoidSwimController
+  ShowTopMostFoldoutHeaderGroup: 1
+  swimSystem: {fileID: -6569124022271541000}
+  characterController: {fileID: 6679760703113808729}
+  playerController: {fileID: 6395165421274534476}
+  weaponManager: {fileID: 4819312757928810008}
+  combatController: {fileID: 929657025235045054}
+  root: {fileID: 1230917860662716930}
+  cam: {fileID: 0}
+  swimUpKey: 32
+  swimDownKey: 306
+  surfaceSwimSpeed: 2.2
+  surfaceFastSwimSpeed: 3.8
+  underwaterSwimSpeed: 2.5
+  underwaterFastSwimSpeed: 4.2
+  verticalSwimSpeed: 2.2
+  rotationSmoothTime: 0.08
+  surfaceFloatSpeed: 0
+  surfaceHoldDepth: 0.35
+--- !u!114 &7816463685083176472
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8837511929152388741}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b8db2835aa5b1447bfe8d05994bf4f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HumanoidSwimMixer
+  animationSet: {fileID: 11400000, guid: ffafb136e5921c3499cb268eacfef62a, type: 2}
+  surfaceIdle: H_Swim_Idle
+  surfaceForward: H_Swim_Forward
+  surfaceLeft: H_Swim_Left
+  surfaceRight: H_Swim_Right
+  surfaceUp: H_Swim_Up
+  surfaceDown: H_Swim_Down
+  surfaceFastForward: H_Swim_Fast_Forward
+  surfaceFastLeft: H_Swim_Fast_Left
+  surfaceFastRight: H_Swim_Fast_Right
+  underwaterIdleFallback: H_Swim_Idle
+  underwaterForward: S_SwimUnder_Forward
+  underwaterLeft: S_SwimUnder_Left
+  underwaterRight: S_SwimUnder_Right
+  underwaterUp: S_SwimUnder_Up
+  underwaterDown: S_SwimUnder_Down
+  fadeDuration: 0.15
+  parameterSmoothTime: 0.08
 --- !u!1 &8848191647751171253
 GameObject:
   m_ObjectHideFlags: 0

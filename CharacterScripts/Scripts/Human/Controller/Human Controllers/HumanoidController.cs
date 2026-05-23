@@ -8,6 +8,7 @@ public class HumanoidController : ThirdPersonController
     [SerializeField] private CombatController combatController;
     [SerializeField] private RuleAnimancerDriver animancerDriver;
     [SerializeField] private VitalManager vitalManager;
+    [SerializeField] private HumanoidSwimController swimController;
     [SerializeField] internal float jumpnum;
     [SerializeField] internal float crouchSpeed;
     [SerializeField] internal float walkSpeed,combatSpeed;
@@ -27,6 +28,7 @@ public class HumanoidController : ThirdPersonController
     protected override void Awake()
     {
         base.Awake();
+        if (swimController == null) swimController = GetComponentInChildren<HumanoidSwimController>(true);
         _defaultJumpHeight = jumpHeight;
     }
     protected override void Update()
@@ -49,6 +51,9 @@ public class HumanoidController : ThirdPersonController
 
     protected override void Jump()
     {
+        if (IsSwimming())
+            return;
+
         // Don't jump if combat controller is handling the input as a dodge
         if (combatController != null && (combatController.IsDodging || combatController.IsDodgeStep))
             return;
@@ -69,6 +74,12 @@ public class HumanoidController : ThirdPersonController
 
     protected override void GroundCheck()
     {
+        if (IsSwimming())
+        {
+            isgrounded = false;
+            return;
+        }
+
         Ray landingRay = new Ray(leftFeet.transform.position, Vector3.down);
         Ray landingRay2 = new Ray(rightFeet.transform.position, Vector3.down);
         Debug.DrawRay(leftFeet.transform.position, Vector3.down * DistToGround);
@@ -116,6 +127,13 @@ public class HumanoidController : ThirdPersonController
 
     protected virtual void SpeedLogic()
     {
+        if (IsSwimming())
+        {
+            speed = 0f;
+            jumpHeight = 0f;
+            return;
+        }
+
         // Root motion / attack locks take over movement.
         if ((animancerDriver != null && (animancerDriver.RootMotionActive || animancerDriver.IsAttackLocked)) ||
             (combatController != null && combatController.IsActionLocked()))
@@ -150,6 +168,9 @@ public class HumanoidController : ThirdPersonController
 
     protected override void Walk()
     {
+        if (IsSwimming())
+            return;
+
         if ((animancerDriver != null && animancerDriver.IsAttackLocked) ||
             (combatController != null && combatController.IsActionLocked()))
         {
@@ -202,6 +223,12 @@ public class HumanoidController : ThirdPersonController
 
     private void SprintStaminaDrain()
     {
+        if (IsSwimming())
+        {
+            combatController?.SetStaminaRegenPausedExternal(false);
+            return;
+        }
+
         if (vitalManager == null) return;
         if (isMoving && isModified)
         {
@@ -212,6 +239,34 @@ public class HumanoidController : ThirdPersonController
         {
             combatController.SetStaminaRegenPausedExternal(false);
         }
+    }
+
+    protected override void FreeFall()
+    {
+        if (IsSwimming())
+        {
+            isfreeFall = false;
+            playerVelocity = Vector3.zero;
+            return;
+        }
+
+        base.FreeFall();
+    }
+
+    protected override void Gravity()
+    {
+        if (IsSwimming())
+        {
+            playerVelocity = Vector3.zero;
+            return;
+        }
+
+        base.Gravity();
+    }
+
+    private bool IsSwimming()
+    {
+        return swimController != null && swimController.IsSwimming;
     }
 
 

@@ -37,6 +37,7 @@ public class CombatController : NetworkBehaviour, IDamageDefenseProvider
     [SerializeField] private HumanoidController humanoidController;
     [SerializeField] private PlayerController playerController;
     [SerializeField] private RuleAnimancerDriver animancerDriver;
+    [SerializeField] private HumanoidSwimController swimController;
 
     [Header("Bow")]
     [SerializeField] private Transform arrowSpawnPoint;
@@ -47,6 +48,7 @@ public class CombatController : NetworkBehaviour, IDamageDefenseProvider
     [SerializeField] private Transform aimCube;
     [SerializeField] private float aimFOV = 40f;
     private float _defaultFOV;
+    private bool _hasDefaultFOV;
 
     [Header("Mounted Combat")]
     [SerializeField] public bool allowMountedCombat = false;
@@ -150,6 +152,9 @@ public class CombatController : NetworkBehaviour, IDamageDefenseProvider
     private void Awake()
     {
         _characterController = GetComponent<CharacterController>();
+        if (swimController == null) swimController = GetComponentInParent<HumanoidSwimController>();
+        if (swimController == null) swimController = GetComponentInChildren<HumanoidSwimController>(true);
+        CacheDefaultFOV();
     }
     // ─── Debug: auto-attack toggle (press O) ───
     private bool _debugAutoAttack;
@@ -171,6 +176,17 @@ public class CombatController : NetworkBehaviour, IDamageDefenseProvider
 
         _input = playerController.inputController.Snapshot;
 
+        if (IsSwimming())
+        {
+            if (weaponManager != null && weaponManager.ActiveSlot != 0)
+                weaponManager.InstantEquip(0);
+            if (State != CombatState.None)
+                ResetState();
+            IsFistCombatMode = false;
+            UpdateTimers();
+            return;
+        }
+
         // Debug: inject fake primaryDown when auto-attack is on and attack layer isn't locked
         if (_debugAutoAttack && animancerDriver != null && !animancerDriver.IsLocked)
         {
@@ -189,6 +205,8 @@ public class CombatController : NetworkBehaviour, IDamageDefenseProvider
 
     private void ProcessWeaponSwapInput()
     {
+        if (IsSwimming()) return;
+
         // Don't swap mid-dodge
         if (State == CombatState.Dodging) return;
 
@@ -259,6 +277,8 @@ public class CombatController : NetworkBehaviour, IDamageDefenseProvider
 
     private void HandleIdleInput()
     {
+        if (IsSwimming()) return;
+
         bool inCombat = weaponManager.ActiveSlot != 0 || IsFistCombatMode;
 
         var activeWeaponType = weaponManager.GetActiveWeaponType();
@@ -564,7 +584,7 @@ public class CombatController : NetworkBehaviour, IDamageDefenseProvider
         if (weapon == null) return;
         if (vcam != null && aimCube != null)
         {
-            _defaultFOV = vcam.Lens.FieldOfView;
+            CacheDefaultFOV();
             vcam.Target.TrackingTarget = aimCube;
             vcam.Lens.FieldOfView = aimFOV;
         }
@@ -696,6 +716,7 @@ public class CombatController : NetworkBehaviour, IDamageDefenseProvider
     /// </summary>
     public bool CanAttack()
     {
+        if (IsSwimming()) return false;
         if (State == CombatState.Dodging || State == CombatState.Dead) return false;
         if (State == CombatState.Blocking) return false; // must release block first
         if (State == CombatState.Parrying) return false;
@@ -784,7 +805,7 @@ public class CombatController : NetworkBehaviour, IDamageDefenseProvider
             if (vcam != null && defaultCamTarget != null)
             {
                 vcam.Target.TrackingTarget = defaultCamTarget;
-                vcam.Lens.FieldOfView = _defaultFOV;
+                RestoreDefaultFOV();
             }
 
             // ► FIX: Fade out the Action layer animation (bow aim/draw)
@@ -851,6 +872,14 @@ public class CombatController : NetworkBehaviour, IDamageDefenseProvider
     {
         if (IsOwner) return;
 
+        if (IsSwimming())
+        {
+            State = CombatState.None;
+            IsFistCombatMode = false;
+            IsDodgeStep = false;
+            return;
+        }
+
         if (dodging) State = CombatState.Dodging;
         else if (parrying)
         {
@@ -884,9 +913,36 @@ public class CombatController : NetworkBehaviour, IDamageDefenseProvider
         if (vcam != null && defaultCamTarget != null)
         {
             vcam.Target.TrackingTarget = defaultCamTarget;
-            vcam.Lens.FieldOfView = _defaultFOV;
+            RestoreDefaultFOV();
         }
         StopAllCoroutines();
+    }
+
+    private void CacheDefaultFOV()
+    {
+        if (vcam == null)
+            return;
+
+        float fov = vcam.Lens.FieldOfView;
+        if (fov <= 0f)
+            return;
+
+        if (!_hasDefaultFOV)
+        {
+            _defaultFOV = fov;
+            _hasDefaultFOV = true;
+        }
+    }
+
+    private void RestoreDefaultFOV()
+    {
+        if (vcam != null && _hasDefaultFOV)
+            vcam.Lens.FieldOfView = _defaultFOV;
+    }
+
+    private bool IsSwimming()
+    {
+        return swimController != null && swimController.IsSwimming;
     }
 
     private void ConsumeStamina(float cost)

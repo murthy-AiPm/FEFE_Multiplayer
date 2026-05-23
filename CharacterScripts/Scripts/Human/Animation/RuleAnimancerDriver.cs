@@ -16,6 +16,7 @@ public class RuleAnimancerDriver : MonoBehaviour
     [SerializeField] private InputController input;
     [SerializeField] private ClientAuthoritativeAnimancerSync networkSync;
     [SerializeField] private MountController mountController;
+    [SerializeField] private HumanoidSwimController swimController;
 
     [Header("Fades")]
     [SerializeField] private float baseFade = 0.12f;
@@ -72,6 +73,8 @@ public class RuleAnimancerDriver : MonoBehaviour
     [Header("Blend Tree Locomotion (optional)")]
     [Tooltip("When assigned, sword combat locomotion uses a 2D blend tree instead of directional rules.")]
     [SerializeField] private CombatLocomotionMixer combatMixer;
+    [Tooltip("When assigned, humanoid swimming uses surface/underwater Animancer mixers.")]
+    [SerializeField] private HumanoidSwimMixer swimMixer;
 
     [Header("Witcher-Style Attack Settings")]
     [SerializeField] private float doubleClickWindow = 0.25f;
@@ -169,6 +172,8 @@ public class RuleAnimancerDriver : MonoBehaviour
         if (input == null) input = GetComponentInParent<InputController>();
         if (networkSync == null) networkSync = GetComponentInParent<ClientAuthoritativeAnimancerSync>();
         if (mountController == null) mountController = GetComponentInParent<MountController>();
+        if (swimController == null) swimController = GetComponentInParent<HumanoidSwimController>();
+        if (swimController == null) swimController = GetComponentInChildren<HumanoidSwimController>(true);
         if (combatController == null) combatController = GetComponentInParent<CombatController>();
         if (weaponManager == null) weaponManager = GetComponentInParent<WeaponManager>();
 
@@ -177,6 +182,8 @@ public class RuleAnimancerDriver : MonoBehaviour
         // Initialize blend tree mixer if assigned
         if (combatMixer == null) combatMixer = GetComponentInChildren<CombatLocomotionMixer>(true);
         if (combatMixer != null) combatMixer.Initialize(_animancer);
+        if (swimMixer == null) swimMixer = GetComponentInChildren<HumanoidSwimMixer>(true);
+        if (swimMixer != null) swimMixer.Initialize(_animancer);
     }
 
     /// <summary>
@@ -265,6 +272,7 @@ public class RuleAnimancerDriver : MonoBehaviour
             input = input,
             snapshot = input != null ? input.Snapshot : default,
             mountController = mountController,
+            swimController = swimController,
             combatController = combatController,    // NEW
             weaponManager = weaponManager,           // NEW
             ActionId = _actionId,
@@ -315,6 +323,27 @@ public class RuleAnimancerDriver : MonoBehaviour
             if (upperChest != null)
                 upperChest.Rotate(Vector3.up, aimPitch * spineUpperChestWeight, Space.Self);
         }
+
+        if (ctx.Swimming)
+        {
+            if (IsLayerLocked(AnimLayer.Attack))
+                CancelCurrentAttack();
+            if (IsLayerLocked(AnimLayer.Action))
+                CancelCurrentAction();
+
+            if (swimMixer != null && swimMixer.WantsControl(ctx))
+            {
+                swimMixer.UpdateAndPlay(_baseLayer, ctx);
+                _rootMotionActive = false;
+                if (_animator != null) _animator.applyRootMotion = false;
+                return;
+            }
+        }
+        else if (swimMixer != null)
+        {
+            swimMixer.ResetActiveState();
+        }
+
         // 2) Attack locked → skip everything (full body, frame-critical)
         if (IsLayerLocked(AnimLayer.Attack))
         {
@@ -1043,6 +1072,21 @@ public class RuleAnimancerDriver : MonoBehaviour
         DisableRootMotion();
     }
 
+    private void CancelCurrentAction()
+    {
+        if (_lockedState.TryGetValue(AnimLayer.Action, out var st) && st != null)
+        {
+            try { st.Stop(); } catch { /* ignore */ }
+        }
+
+        _isLocked[AnimLayer.Action] = false;
+        _lockedState[AnimLayer.Action] = null;
+        _actionLayer.SetMask(actionLayerMask);
+        _actionLayer.StartFade(0f, cancelFade);
+
+        DisableRootMotion();
+    }
+
     /// <summary>
     /// Turns off root motion. Called when attacks/actions end.
     /// The next Base layer rule evaluation will re-enable it if needed.
@@ -1173,6 +1217,10 @@ public class RuleAnimancerDriver : MonoBehaviour
                 BoolParam.PendingSlot1 => ctx.PendingWeaponSlot == 1,
                 BoolParam.PendingSlot2 => ctx.PendingWeaponSlot == 2,
                 BoolParam.StrafeMode => ctx.input != null && ctx.input.isStrafeMode,
+                BoolParam.Swimming => ctx.Swimming,
+                BoolParam.SwimUnderwater => ctx.SwimUnderwater,
+                BoolParam.SwimSurface => ctx.Swimming && !ctx.SwimUnderwater,
+                BoolParam.SwimFast => ctx.SwimFast,
                 _ => false
             };
 
