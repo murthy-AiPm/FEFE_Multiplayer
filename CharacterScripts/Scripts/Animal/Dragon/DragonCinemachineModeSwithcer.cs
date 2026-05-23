@@ -10,6 +10,10 @@ public class DragonCinemachineModeSwitcher : NetworkBehaviour
     [SerializeField] private CinemachineCamera flightCam;
     [SerializeField] private CinemachineCamera diveCam;
 
+    [Header("Lens")]
+    [Tooltip("Far clipping plane applied to all dragon Cinemachine cameras. Cinemachine copies this value to MainCamera while a dragon camera is live.")]
+    [SerializeField] private float farClipPlane = 10000f;
+
     [Header("Priority")]
     [SerializeField] private int ownerActivePriority = 15;
     [SerializeField] private int ownerInactivePriority = 5;
@@ -42,14 +46,30 @@ public class DragonCinemachineModeSwitcher : NetworkBehaviour
         }
 
         // Owner: enable cameras
+        ApplyLensSettings();
         SetCamerasEnabled(true);
     }
 
     private void SetCamerasEnabled(bool enabled)
     {
-        if (groundCam) { groundCam.gameObject.SetActive(enabled); groundCam.Priority = enabled ? ownerActivePriority : nonOwnerPriority; }
-        if (flightCam) { flightCam.gameObject.SetActive(enabled); flightCam.Priority = enabled ? ownerInactivePriority : nonOwnerPriority; }
-        if (diveCam) { diveCam.gameObject.SetActive(enabled); diveCam.Priority = enabled ? ownerInactivePriority : nonOwnerPriority; }
+        if (groundCam) { ApplyLensSettings(groundCam); groundCam.gameObject.SetActive(enabled); groundCam.Priority = enabled ? ownerActivePriority : nonOwnerPriority; }
+        if (flightCam) { ApplyLensSettings(flightCam); flightCam.gameObject.SetActive(enabled); flightCam.Priority = enabled ? ownerInactivePriority : nonOwnerPriority; }
+        if (diveCam) { ApplyLensSettings(diveCam); diveCam.gameObject.SetActive(enabled); diveCam.Priority = enabled ? ownerInactivePriority : nonOwnerPriority; }
+    }
+
+    private void ApplyLensSettings()
+    {
+        ApplyLensSettings(groundCam);
+        ApplyLensSettings(flightCam);
+        ApplyLensSettings(diveCam);
+    }
+
+    private void ApplyLensSettings(CinemachineCamera cam)
+    {
+        if (!cam)
+            return;
+
+        cam.Lens.FarClipPlane = Mathf.Max(cam.Lens.NearClipPlane + 0.01f, farClipPlane);
     }
 
     private void LateUpdate()

@@ -1303,7 +1303,7 @@ MonoBehaviour:
     FieldOfView: 72
     OrthographicSize: 5
     NearClipPlane: 0.3
-    FarClipPlane: 1000
+    FarClipPlane: 10000
     Dutch: 0
     ModeOverride: 0
     PhysicalProperties:
@@ -3800,7 +3800,7 @@ MonoBehaviour:
     FieldOfView: 60.000004
     OrthographicSize: 5
     NearClipPlane: 0.3
-    FarClipPlane: 1000
+    FarClipPlane: 10000
     Dutch: 0
     ModeOverride: 0
     PhysicalProperties:
@@ -5458,7 +5458,7 @@ MonoBehaviour:
     FieldOfView: 60
     OrthographicSize: 5
     NearClipPlane: 0.3
-    FarClipPlane: 1000
+    FarClipPlane: 10000
     Dutch: 0
     ModeOverride: 0
     PhysicalProperties:
@@ -6252,6 +6252,7 @@ MonoBehaviour:
   groundCam: {fileID: 6588417174001191475}
   flightCam: {fileID: 9036942650903576649}
   diveCam: {fileID: 267100468536283623}
+  farClipPlane: 10000
   ownerActivePriority: 15
   ownerInactivePriority: 5
   nonOwnerPriority: 0

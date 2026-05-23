@@ -140,6 +140,16 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     [SerializeField] private float preferredCombatDistance = 2.2f;
     [SerializeField] private float repositionDistance = 1.4f;
     [SerializeField] private float repositionDuration = 0.7f;
+    [Tooltip("Minimum seconds between immediate path refreshes. Prevents constantly replacing the active NavMesh path.")]
+    [SerializeField] private float chaseRepathInterval = 0.2f;
+    [Tooltip("Refresh the chase destination immediately once the target has moved this far from the last requested destination.")]
+    [SerializeField] private float chaseRepathDistance = 0.75f;
+    [Tooltip("Vertical offset used before sampling chase/return destinations onto the NavMesh. Helps when target pivots are slightly below the ground.")]
+    [SerializeField] private float navMeshDestinationSampleHeightOffset = 1f;
+    [Tooltip("Radius used to find the nearest NavMesh point for chase/return destinations.")]
+    [SerializeField] private float navMeshDestinationSampleRadius = 3f;
+    [Tooltip("When enabled, reject partial paths. Leave off if Unity marks usable terrain-edge paths as partial.")]
+    [SerializeField] private bool requireCompleteNavMeshPath;
 
     [Header("Utility")]
     [SerializeField] private float decisionInterval = 0.2f;
@@ -249,6 +259,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
     [Header("Debug")]
     [SerializeField] private bool showGizmos = true;
+    [SerializeField] private bool logMovementDebug;
+    [SerializeField] private float movementDebugInterval = 0.5f;
     [SerializeField] private Color viewDistanceGizmoColor = new Color(1f, 1f, 0f, 0.2f);
     [SerializeField] private Color closeDetectionGizmoColor = new Color(0f, 0.75f, 1f, 0.35f);
     [SerializeField] private Color pursueRadiusGizmoColor = new Color(1f, 0f, 0f, 0.2f);
@@ -264,6 +276,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private readonly Collider[] _detectionBuffer = new Collider[16];
     private readonly Collider[] _separationBuffer = new Collider[10];
     private readonly RaycastHit[] _lineOfSightHits = new RaycastHit[8];
+    private NavMeshPath immediatePath;
 
     private int speedHash;
     private int deadHash;
@@ -313,6 +326,11 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private bool registeredAsAttacker;
     private bool stateInitialized;
     private bool hasOriginalPosition;
+    private float nextMovementDebugTime;
+    private float nextChaseRepathTime;
+    private float nextReturnRepathTime;
+    private bool hasChaseDestination;
+    private bool hasReturnDestination;
     private bool movingToLastKnownPosition;
     private bool searchingLastKnownPosition;
     private bool rangedHitGuardActive;
@@ -323,8 +341,11 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private bool ignoreHomePursueDistanceAfterLeashHarassment;
     private bool lowHealthReturnHomeActive;
     private bool postLeashReturnActive;
+    private bool leashReturnHomeActive;
     private bool postLeashRangedChargeActive;
     private Vector3 repositionTarget;
+    private Vector3 lastChaseDestination;
+    private Vector3 lastReturnDestination;
     private Vector3 lastKnownTargetPosition;
     private Vector3 rangedThreatPosition;
     private Vector3 campAlertLookPosition;
@@ -503,6 +524,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (vitalManager == null) vitalManager = GetComponent<VitalManager>();
         if (damageReceiver == null) damageReceiver = GetComponent<DamageReceiver>();
         if (animalSoundPlayer == null) animalSoundPlayer = GetComponent<AnimalSoundPlayer>();
+        EnsureImmediatePath();
 
         InitializeWeaponHitbox(weaponHitbox);
         InitializeWeaponHitbox(offHandWeaponHitbox);
@@ -717,6 +739,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                                  searchingLastKnownPosition ||
                                  rangedInvestigationActive ||
                                  alertReturnHomeActive ||
+                                 IsReturningHomeAfterLeashThreat() ||
                                  IsSelfInsidePursueRadius());
         Transform target = canAcquireTarget ? FindNearestDetectedTarget() : null;
         if (target != null)
@@ -748,6 +771,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             lowHealthReturnHomeActive = false;
             postLeashReturnActive = false;
             postLeashReturnTimer = 0f;
+            leashReturnHomeActive = false;
             postLeashRangedChargeActive = false;
             lastKnownTargetPosition = target.position;
             loseSightTimer = loseSightGraceTime;
@@ -786,8 +810,10 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
                     if (TryGetNextPatrolDestination(out Vector3 patrolDestination))
                     {
-                        agent.SetDestination(patrolDestination);
-                        SetState(OrcState.Patrol, OrcSubState.Wander);
+                        if (TrySetImmediateDestination(patrolDestination, out _))
+                            SetState(OrcState.Patrol, OrcSubState.Wander);
+                        else
+                            stateTimer = GetPatrolWaitDuration();
                     }
                     else
                     {
@@ -807,7 +833,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             case OrcSubState.Return:
                 RefreshLowHealthReturnHomeMode();
                 Vector3 destination = GetCurrentReturnDestination();
-                agent.SetDestination(destination);
+                RefreshReturnDestination(destination);
                 RotateToward(agent.desiredVelocity);
                 if (!agent.pathPending && agent.remainingDistance <= arrivalThreshold)
                 {
@@ -816,6 +842,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                         lowHealthReturnHomeActive = false;
                         postLeashReturnActive = false;
                         postLeashReturnTimer = 0f;
+                        leashReturnHomeActive = false;
                         postLeashRangedChargeActive = false;
                         SetState(OrcState.Patrol, OrcSubState.Idle);
                     }
@@ -842,6 +869,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                         lowHealthReturnHomeActive = false;
                         postLeashReturnActive = false;
                         postLeashReturnTimer = 0f;
+                        leashReturnHomeActive = false;
                         postLeashRangedChargeActive = false;
                         SetState(OrcState.Patrol, OrcSubState.Idle);
                     }
@@ -950,14 +978,126 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             return;
         }
 
-        agent.SetDestination(currentTarget.position);
+        RefreshChaseDestination(distToTarget);
         RotateToward(currentTarget.position - transform.position);
+    }
+
+    private void RefreshChaseDestination(float distToTarget)
+    {
+        if (agent == null || currentTarget == null)
+            return;
+
+        Vector3 destination = currentTarget.position;
+        float repathDistance = Mathf.Max(0f, chaseRepathDistance);
+        bool targetMovedEnough = !hasChaseDestination ||
+                                 (destination - lastChaseDestination).sqrMagnitude >= repathDistance * repathDistance;
+
+        bool missingPath = !agent.hasPath;
+        bool repathIntervalElapsed = Time.time >= nextChaseRepathTime;
+        if (hasChaseDestination && !targetMovedEnough && !missingPath)
+        {
+            LogMovementDebug($"Approach keep destination dist={distToTarget:0.00}");
+            return;
+        }
+
+        if (hasChaseDestination && targetMovedEnough && !repathIntervalElapsed && !missingPath)
+        {
+            LogMovementDebug($"Approach wait repath interval dist={distToTarget:0.00}");
+            return;
+        }
+
+        bool destinationAccepted = TrySetImmediateDestination(destination, out Vector3 sampledDestination);
+        if (destinationAccepted)
+        {
+            hasChaseDestination = true;
+            lastChaseDestination = destination;
+            nextChaseRepathTime = Time.time + Mathf.Max(0.05f, chaseRepathInterval);
+        }
+
+        LogMovementDebug(
+            $"Approach set immediate path accepted={destinationAccepted} sampled={sampledDestination} moved={targetMovedEnough} missingPath={missingPath} interval={repathIntervalElapsed} dist={distToTarget:0.00}");
+    }
+
+    private void RefreshReturnDestination(Vector3 destination)
+    {
+        if (agent == null)
+            return;
+
+        float repathDistance = Mathf.Max(0f, chaseRepathDistance);
+        bool destinationMovedEnough = !hasReturnDestination ||
+                                      (destination - lastReturnDestination).sqrMagnitude >= repathDistance * repathDistance;
+
+        bool missingPath = !agent.hasPath;
+        bool repathIntervalElapsed = Time.time >= nextReturnRepathTime;
+        if (hasReturnDestination && !destinationMovedEnough && !missingPath)
+            return;
+
+        if (hasReturnDestination && destinationMovedEnough && !repathIntervalElapsed && !missingPath)
+            return;
+
+        bool destinationAccepted = TrySetImmediateDestination(destination, out Vector3 sampledDestination);
+        if (destinationAccepted)
+        {
+            hasReturnDestination = true;
+            lastReturnDestination = destination;
+            nextReturnRepathTime = Time.time + Mathf.Max(0.05f, chaseRepathInterval);
+        }
+
+        LogMovementDebug(
+            $"Return set immediate path accepted={destinationAccepted} sampled={sampledDestination} moved={destinationMovedEnough} missingPath={missingPath} interval={repathIntervalElapsed}");
+    }
+
+    private bool TrySetImmediateDestination(Vector3 destination, out Vector3 sampledDestination)
+    {
+        sampledDestination = destination;
+
+        if (agent == null || !agent.enabled || !agent.isOnNavMesh)
+            return false;
+
+        if (!TrySampleNavMeshDestination(destination, out sampledDestination))
+            return false;
+
+        EnsureImmediatePath();
+        immediatePath.ClearCorners();
+        bool calculated = agent.CalculatePath(sampledDestination, immediatePath);
+        bool usablePath = calculated && immediatePath.status != NavMeshPathStatus.PathInvalid;
+
+        if (requireCompleteNavMeshPath)
+            usablePath = usablePath && immediatePath.status == NavMeshPathStatus.PathComplete;
+
+        if (!usablePath)
+            return false;
+
+        agent.isStopped = false;
+        return agent.SetPath(immediatePath);
+    }
+
+    private void EnsureImmediatePath()
+    {
+        if (immediatePath == null)
+            immediatePath = new NavMeshPath();
+    }
+
+    private bool TrySampleNavMeshDestination(Vector3 destination, out Vector3 sampledDestination)
+    {
+        Vector3 sampleOrigin = destination + Vector3.up * navMeshDestinationSampleHeightOffset;
+        float sampleRadius = Mathf.Max(0f, navMeshDestinationSampleRadius);
+
+        if (NavMesh.SamplePosition(sampleOrigin, out NavMeshHit hit, sampleRadius, agent.areaMask))
+        {
+            sampledDestination = hit.position;
+            return true;
+        }
+
+        sampledDestination = destination;
+        return false;
     }
 
     private void UpdateReposition()
     {
         stateTimer -= Time.deltaTime;
-        agent.SetDestination(repositionTarget);
+        if (!agent.hasPath)
+            TrySetImmediateDestination(repositionTarget, out _);
         RotateToward(currentTarget.position - transform.position);
 
         if (stateTimer <= 0f || (!agent.pathPending && agent.remainingDistance <= arrivalThreshold))
@@ -1220,6 +1360,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         lowHealthReturnHomeActive = false;
         postLeashReturnActive = false;
         postLeashReturnTimer = 0f;
+        leashReturnHomeActive = false;
         postLeashRangedChargeActive = false;
         campAlertHoldActive = false;
         campAlertHoldTimer = 0f;
@@ -1320,6 +1461,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (animator != null)
             animator.SetInteger(combatStateHash, (int)newSubState);
 
+        LogMovementDebug($"SetState {previousSubState}->{newSubState} state={newState}", true);
+
         switch (newSubState)
         {
             case OrcSubState.Idle:
@@ -1328,22 +1471,30 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 break;
 
             case OrcSubState.Wander:
+                ResetReturnDestination();
                 ResumeAgent();
                 break;
 
             case OrcSubState.Return:
                 UnregisterAttacker();
                 currentTarget = null;
+                ResetReturnDestination();
                 ResumeAgent();
                 break;
 
             case OrcSubState.Approach:
+                leashReturnHomeActive = false;
+                ResetReturnDestination();
+                ResetChaseDestination();
                 ResumeAgent();
                 break;
 
             case OrcSubState.Reposition:
                 stateTimer = repositionDuration;
+                ResetReturnDestination();
+                ResetChaseDestination();
                 ResumeAgent();
+                TrySetImmediateDestination(repositionTarget, out _);
                 break;
 
             case OrcSubState.LeashThreat:
@@ -1416,6 +1567,9 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         agent.ResetPath();
         agent.velocity = Vector3.zero;
         agent.nextPosition = transform.position;
+        ResetChaseDestination();
+        ResetReturnDestination();
+        LogMovementDebug("StopAgent", true);
     }
 
     private void ResumeAgent()
@@ -1424,6 +1578,83 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
         agent.isStopped = false;
         agent.nextPosition = transform.position;
+        LogMovementDebug("ResumeAgent", true);
+    }
+
+    private void ResetChaseDestination()
+    {
+        hasChaseDestination = false;
+        nextChaseRepathTime = 0f;
+        lastChaseDestination = Vector3.zero;
+    }
+
+    private void ResetReturnDestination()
+    {
+        hasReturnDestination = false;
+        nextReturnRepathTime = 0f;
+        lastReturnDestination = Vector3.zero;
+    }
+
+    private void LogMovementDebug(string message, bool force = false)
+    {
+        if (!logMovementDebug)
+            return;
+
+        if (!force)
+        {
+            float interval = Mathf.Max(0.05f, movementDebugInterval);
+            if (Time.time < nextMovementDebugTime)
+                return;
+
+            nextMovementDebugTime = Time.time + interval;
+        }
+
+        string targetName = currentTarget != null ? currentTarget.name : "none";
+        float targetDistance = currentTarget != null
+            ? Vector3.Distance(transform.position, currentTarget.position)
+            : -1f;
+
+        if (agent == null)
+        {
+            Debug.Log(
+                $"OrcMovementDebug {name} | {message} | state={State}/{SubState} target={targetName} targetDist={targetDistance:0.00} agent=null {GetAnimatorDebugInfo()}",
+                this);
+            return;
+        }
+
+        Debug.Log(
+            $"OrcMovementDebug {name} | {message} | state={State}/{SubState} target={targetName} targetDist={targetDistance:0.00} " +
+            $"server={IsServer} enabled={agent.enabled} stopped={agent.isStopped} onNavMesh={agent.isOnNavMesh} " +
+            $"updatePosition={agent.updatePosition} updateRotation={agent.updateRotation} rootMotion={ShouldUseRootMotionForCurrentState()} " +
+            $"speed={agent.speed:0.00} hasPath={agent.hasPath} pending={agent.pathPending} status={agent.pathStatus} " +
+            $"remaining={agent.remainingDistance:0.00} velocity={agent.velocity.magnitude:0.00} desired={agent.desiredVelocity.magnitude:0.00} {GetAnimatorDebugInfo()}",
+            this);
+    }
+
+    private string GetAnimatorDebugInfo()
+    {
+        if (animator == null)
+            return $"leashReturn={leashReturnHomeActive} animator=null";
+
+        float animatorSpeed = 0f;
+        if (TryGetAnimatorParameter(speedHash, out AnimatorControllerParameter speedParameter) &&
+            speedParameter.type == AnimatorControllerParameterType.Float)
+        {
+            animatorSpeed = animator.GetFloat(speedHash);
+        }
+
+        bool taunting = false;
+        if (TryGetAnimatorParameter(leashThreatBoolHash, out AnimatorControllerParameter tauntParameter) &&
+            tauntParameter.type == AnimatorControllerParameterType.Bool)
+        {
+            taunting = animator.GetBool(leashThreatBoolHash);
+        }
+
+        AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+        bool inLeashThreatState = leashThreatStateHash != 0 &&
+                                  stateInfo.fullPathHash == leashThreatStateHash;
+
+        return $"leashReturn={leashReturnHomeActive} animSpeed={animatorSpeed:0.00} taunting={taunting} inTaunt={inLeashThreatState} animTransition={animator.IsInTransition(0)}";
     }
 
     private bool UpdateCurrentTargetVisibility()
@@ -1538,6 +1769,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         boundedRangedInvestigationActive = false;
         alertReturnHomeActive = false;
         lowHealthReturnHomeActive = IsHealthAtOrBelowPursueRevertRatio();
+        leashReturnHomeActive = returningFromLeashThreat;
         postLeashRangedChargeActive = false;
         campAlertHoldActive = false;
         campAlertHoldTimer = 0f;
@@ -1564,6 +1796,13 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         postLeashReturnTimer = PostLeashReturnRangedResponseDuration;
     }
 
+    private bool IsReturningHomeAfterLeashThreat()
+    {
+        return leashReturnHomeActive &&
+               State == OrcState.Patrol &&
+               SubState == OrcSubState.Return;
+    }
+
     private void ResumeLowHealthReturnHome()
     {
         CancelInvoke(nameof(EnableSelectedWeaponHitbox));
@@ -1585,6 +1824,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         lowHealthReturnHomeActive = true;
         campAlertHoldActive = false;
         campAlertHoldTimer = 0f;
+        leashReturnHomeActive = false;
         postLeashRangedChargeActive = false;
 
         if (animator != null)
@@ -1622,6 +1862,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         lowHealthReturnHomeActive = false;
         postLeashReturnActive = false;
         postLeashReturnTimer = 0f;
+        leashReturnHomeActive = false;
         postLeashRangedChargeActive = false;
         campAlertHoldActive = false;
         campAlertHoldTimer = 0f;
@@ -1665,6 +1906,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         lowHealthReturnHomeActive = false;
         campAlertHoldActive = false;
         campAlertHoldTimer = 0f;
+        leashReturnHomeActive = false;
         rangedThreatPosition = sourcePosition;
 
         if (animator != null)
@@ -1704,6 +1946,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         lowHealthReturnHomeActive = false;
         postLeashReturnActive = false;
         postLeashReturnTimer = 0f;
+        leashReturnHomeActive = false;
         postLeashRangedChargeActive = false;
         campAlertHoldActive = false;
         campAlertHoldTimer = 0f;
@@ -1743,6 +1986,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         lowHealthReturnHomeActive = false;
         postLeashReturnActive = false;
         postLeashReturnTimer = 0f;
+        leashReturnHomeActive = false;
         postLeashRangedChargeActive = false;
         campAlertHoldActive = false;
         campAlertHoldTimer = 0f;
@@ -1978,6 +2222,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
     private void BeginLeashThreatAnimation()
     {
+        ApplyAnimatorSpeed(0f, true);
         SetAnimatorBoolIfPresent(leashThreatBoolHash, true);
         currentLeashThreatVariant = -1;
         PickLeashThreatVariant();
@@ -2196,7 +2441,18 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 break;
         }
 
-        animator.SetFloat(speedHash, animSpeed, 0.15f, Time.deltaTime);
+        ApplyAnimatorSpeed(animSpeed, SubState == OrcSubState.LeashThreat);
+    }
+
+    private void ApplyAnimatorSpeed(float animSpeed, bool immediate)
+    {
+        if (animator == null)
+            return;
+
+        if (immediate)
+            animator.SetFloat(speedHash, animSpeed);
+        else
+            animator.SetFloat(speedHash, animSpeed, 0.15f, Time.deltaTime);
     }
 
     private bool ShouldUseRootMotionForCurrentState()

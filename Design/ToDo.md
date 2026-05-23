@@ -3626,3 +3626,24 @@ FIX
  Berserkers now bias toward close, low-health targets while still treating
  already-dogpiled targets as less attractive. Grunts and skirmishers keep the
  existing less-contested target behavior.
+
+2026-05-22 - Orc chase movement diagnostics
+
+ROOT CAUSE
+ A berserker in the new scene entered chase/run animation but stopped
+ translating, while the same setup worked in the prior scene. The exact cause
+ was still unknown and needed runtime visibility into OrcAI state changes,
+ NavMeshAgent movement flags, destination acceptance, and root-motion mode.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Added Inspector-toggle movement diagnostics under Debug.
+     - Logged SetState, StopAgent, ResumeAgent, and throttled Approach
+       SetDestination snapshots with target, server, updatePosition,
+       root-motion, path, remaining-distance, velocity, and desired-velocity
+       values.
+
+FIX
+ Orc chase movement can now be diagnosed from the Unity Console by enabling
+ `Log Movement Debug` on the affected orc instance, without changing behavior
+ when the toggle is off.
