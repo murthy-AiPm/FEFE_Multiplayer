@@ -6199,7 +6199,8 @@ MonoBehaviour:
   animator: {fileID: 8804854363994131359}
   cam: {fileID: 0}
   swimController: {fileID: 5974085032444721806}
-  staminaController: {fileID: 0}
+  staminaController: {fileID: -6128813149110121115}
+  wingActivityTracker: {fileID: 788855867563866710}
   thrustAccelRate: 0.5
   thrustDecelRate: 0.5
   thrustMin: -1
@@ -6215,6 +6216,12 @@ MonoBehaviour:
   hoverUpKey: 32
   hoverDownKey: 306
   hoverVerticalSpeed: 4
+  highThrustBonusSpeed: 8
+  highThrustBonusStart: 0.35
+  wingFlapBonusSpeed: 5
+  wingFlapFullActivity: 180
+  bonusSpeedSmoothing: 6
+  travelDirectionMinSpeed: 1
   rollForwardSpeed: 15
   rollDuration: 1.12
   rollCooldown: 0.5
@@ -6452,6 +6459,7 @@ MonoBehaviour:
   waterEntryDepthThreshold: 0.3
   waterExitDepthThreshold: -0.5
   nearSurfaceThreshold: 1.5
+  waterExitGraceTime: 0.25
   _debugInVolume: 0
   _debugIsInWater: 0
   _debugIsNearSurface: 0
@@ -6551,6 +6559,10 @@ MonoBehaviour:
   blockAngle: 0
   blockStaminaRatio: 0
   hitStunDuration: 0.2
+  disableCollidersOnDeath: 1
+  collidersToDisableOnDeath: []
+  autoFindCollidersToDisableOnDeath: 1
+  keepTriggerCollidersOnDeath: 1
   staggerThreshold: 200
   staggerDecayRate: 50
   staggerDecayDelay: 2
@@ -6754,6 +6766,15 @@ MonoBehaviour:
   landingSound: Dragon_Landing
   takeoffSound: Dragon_Takeoff
   deathSound: Dragon_Death
+  flightWindLoopSound: Dragon_FlightWind_Loop
+  windMinSpeed: 5
+  windMaxSpeed: 35
+  windMinVolume: 0.1
+  windMaxVolume: 0.8
+  windMinPitch: 0.85
+  windMaxPitch: 1.2
+  windSmoothing: 4
+  windSpatialBlend: 0
   eatSound: Dragon_Eat
   clawSound: Dragon_Claw
   biteSound: Dragon_Bite

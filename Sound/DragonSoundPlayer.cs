@@ -36,6 +36,27 @@ public class DragonSoundPlayer : NetworkBehaviour
     [SerializeField] private string takeoffSound = "Dragon_Takeoff";
     [SerializeField] private string deathSound = "Dragon_Death";
 
+    [Header("Flight Ambience")]
+    [Tooltip("Looping wind/air sound while the local dragon is flying. Must match a SoundDatabase entry. Leave empty to disable.")]
+    [SerializeField] private string flightWindLoopSound = "Dragon_FlightWind_Loop";
+    [Tooltip("Dragon speed where wind ambience starts fading in.")]
+    [SerializeField] private float windMinSpeed = 5f;
+    [Tooltip("Dragon speed where wind ambience reaches full intensity.")]
+    [SerializeField] private float windMaxSpeed = 35f;
+    [Tooltip("Minimum ambience volume multiplier while flying.")]
+    [SerializeField] private float windMinVolume = 0.1f;
+    [Tooltip("Maximum ambience volume multiplier while flying fast.")]
+    [SerializeField] private float windMaxVolume = 0.8f;
+    [Tooltip("Pitch at minimum wind speed.")]
+    [SerializeField] private float windMinPitch = 0.85f;
+    [Tooltip("Pitch at maximum wind speed.")]
+    [SerializeField] private float windMaxPitch = 1.2f;
+    [Tooltip("How quickly wind volume and pitch follow speed.")]
+    [SerializeField] private float windSmoothing = 4f;
+    [Tooltip("0 = player-local stereo ambience, 1 = fully spatialized on the dragon.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float windSpatialBlend = 0f;
+
     [Header("Eating")]
     [SerializeField] private string eatSound = "Dragon_Eat";
 
@@ -71,6 +92,8 @@ public class DragonSoundPlayer : NetworkBehaviour
     private AudioSource _fireBreathSourceA;
     private AudioSource _fireBreathSourceB;
     private AudioSource _activeFireBreathSource;
+    private AudioSource _flightWindSource;
+    private float _flightWindBaseVolume = 1f;
     private float _lastWingFlapTime = -999f;
     private float _lastFootstepTime = -999f;
 
@@ -81,12 +104,19 @@ public class DragonSoundPlayer : NetworkBehaviour
         if (wingActivityTracker == null) wingActivityTracker = GetComponent<DragonWingActivityTracker>();
     }
 
+    private void OnDisable()
+    {
+        StopFireBreathLoop();
+        StopFlightWindLoop();
+    }
+
     private void Update()
     {
         if (!IsOwner) return;
         if (ProximitySoundManager.Instance == null) return;
 
         UpdateFlightStateTransitions();
+        UpdateFlightWindLoop(Time.deltaTime);
 
         if (_isBreathingFire)
             UpdateFireBreathCrossfade();
@@ -171,6 +201,7 @@ public class DragonSoundPlayer : NetworkBehaviour
     {
         if (ProximitySoundManager.Instance == null) return;
         StopFireBreathLoop();
+        StopFlightWindLoop();
         ProximitySoundManager.Instance.PlaySound(deathSound, transform.position);
     }
 
@@ -300,6 +331,70 @@ public class DragonSoundPlayer : NetworkBehaviour
 
     // ─── Animation Event Handler ───
 
+    // Flight wind loop
+    private void UpdateFlightWindLoop(float dt)
+    {
+        if (string.IsNullOrEmpty(flightWindLoopSound)) return;
+
+        bool flying = IsFlying();
+        if (flying && _flightWindSource == null)
+            StartFlightWindLoop();
+
+        if (_flightWindSource == null) return;
+
+        float speed = flying && flightController != null ? flightController.Velocity.magnitude : 0f;
+        float speedT = Mathf.InverseLerp(windMinSpeed, windMaxSpeed, speed);
+        float targetVolume = flying
+            ? Mathf.Lerp(windMinVolume, windMaxVolume, speedT) * _flightWindBaseVolume
+            : 0f;
+        float targetPitch = Mathf.Lerp(windMinPitch, windMaxPitch, speedT);
+        float follow = 1f - Mathf.Exp(-Mathf.Max(0f, windSmoothing) * dt);
+
+        _flightWindSource.volume = Mathf.Lerp(_flightWindSource.volume, targetVolume, follow);
+        _flightWindSource.pitch = Mathf.Lerp(_flightWindSource.pitch, targetPitch, follow);
+
+        if (!_flightWindSource.isPlaying && _flightWindSource.clip != null)
+            _flightWindSource.Play();
+
+        if (!flying && _flightWindSource.volume <= 0.01f)
+            StopFlightWindLoop();
+    }
+
+    private void StartFlightWindLoop()
+    {
+        var db = ProximitySoundManager.Instance?.Database;
+        if (db == null) return;
+
+        var entry = db.GetSound(flightWindLoopSound);
+        if (entry == null) return;
+
+        var clip = entry.GetRandomClip();
+        if (clip == null) return;
+
+        _flightWindSource = gameObject.AddComponent<AudioSource>();
+        _flightWindSource.clip = clip;
+        _flightWindSource.loop = true;
+        _flightWindSource.playOnAwake = false;
+        _flightWindSource.spatialBlend = windSpatialBlend;
+        _flightWindSource.rolloffMode = AudioRolloffMode.Logarithmic;
+        _flightWindSource.outputAudioMixerGroup = ProximitySoundManager.Instance?.GetMixerGroup(entry.category);
+        db.GetDistanceForSound(entry, out float minDist, out float maxDist);
+        _flightWindSource.minDistance = minDist;
+        _flightWindSource.maxDistance = maxDist;
+        _flightWindBaseVolume = entry.GetRandomVolume();
+        _flightWindSource.volume = 0f;
+        _flightWindSource.pitch = windMinPitch;
+        _flightWindSource.Play();
+    }
+
+    private void StopFlightWindLoop()
+    {
+        if (_flightWindSource == null) return;
+        Destroy(_flightWindSource);
+        _flightWindSource = null;
+    }
+
+    // Animation Event Handler
     /// <summary>
     /// Called by animation events. Add an event in the animation clip with:
     ///   Function: PlaySound

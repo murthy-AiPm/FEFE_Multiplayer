@@ -20,6 +20,8 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private DragonSwimController swimController;
     [Tooltip("Optional — when set, FlightThrust is clamped to MaxFlightThrust at zero stamina, and EnterFlight is blocked when wings are broken.")]
     [SerializeField] private DragonStaminaController staminaController;
+    [Tooltip("Optional — adds speed only when the animated wings are actually flapping.")]
+    [SerializeField] private DragonWingActivityTracker wingActivityTracker;
 
     [Header("Root Motion Flight")]
     [Tooltip("Rate thrust ramps UP per second while W is held.")]
@@ -51,6 +53,20 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private KeyCode hoverDownKey = KeyCode.LeftControl;
     [Tooltip("Vertical speed (m/s) applied while hover up/down keys are held.")]
     [SerializeField] private float hoverVerticalSpeed = 4f;
+
+    [Header("Flight Speed Assist")]
+    [Tooltip("Extra forward speed (m/s) at full positive thrust. This is added on top of root motion so high-thrust clips feel faster than glide clips.")]
+    [SerializeField] private float highThrustBonusSpeed = 8f;
+    [Tooltip("Thrust must exceed this value before high-thrust bonus speed starts blending in.")]
+    [SerializeField] private float highThrustBonusStart = 0.35f;
+    [Tooltip("Extra speed (m/s) at full wing activity. Only applies when DragonWingActivityTracker says the wings are flapping.")]
+    [SerializeField] private float wingFlapBonusSpeed = 5f;
+    [Tooltip("Wing activity, in deg/sec, that maps to full wing-flap bonus speed.")]
+    [SerializeField] private float wingFlapFullActivity = 180f;
+    [Tooltip("Smoothing for the added flight speed. Higher = snappier acceleration/deceleration.")]
+    [SerializeField] private float bonusSpeedSmoothing = 6f;
+    [Tooltip("Minimum rigidbody speed before roll/boost uses actual travel direction instead of transform.forward.")]
+    [SerializeField] private float travelDirectionMinSpeed = 1f;
 
     [Header("Roll")]
     [Tooltip("Forward speed (m/s) applied during a roll, since roll clips are in-place.")]
@@ -103,11 +119,13 @@ public class DragonFlightController : NetworkBehaviour
     public bool IsDiving => false;
     public bool IsGrounded => groundingSystem != null && groundingSystem.IsGrounded;
     public Vector3 Velocity => currentVelocity;
+    public Vector3 TravelDirection => GetTravelDirection();
 
     public float FlightThrust => _rmThrust;
     public float FlightYaw => _rmYaw;
     public float FlightPitch => _rmPitch;
     public float FlightRoll => _rmRoll;
+    public float BonusFlightSpeed => _bonusFlightSpeed;
 
     // ─── Private State ───────────────────────────────────
 
@@ -125,6 +143,7 @@ public class DragonFlightController : NetworkBehaviour
     private float _rollTimeRemaining;
     private float _rollCooldownRemaining;
     private float _rollExitBlendRemaining;
+    private float _bonusFlightSpeed;
     private bool _inputPaused;
     private bool _wasPauseMenuPaused;
 
@@ -162,6 +181,8 @@ public class DragonFlightController : NetworkBehaviour
             rb = GetComponent<Rigidbody>();
         if (staminaController == null)
             staminaController = GetComponent<DragonStaminaController>();
+        if (wingActivityTracker == null)
+            wingActivityTracker = GetComponent<DragonWingActivityTracker>();
 
         thrustHash        = Animator.StringToHash("Thrust");
         yawHash           = Animator.StringToHash("Yaw");
@@ -307,6 +328,7 @@ public class DragonFlightController : NetworkBehaviour
         _rollTimeRemaining = 0f;
         _rollCooldownRemaining = 0f;
         _rollExitBlendRemaining = 0f;
+        _bonusFlightSpeed = 0f;
 
         // Clear animator flight params
         if (animator != null)
@@ -410,15 +432,17 @@ public class DragonFlightController : NetworkBehaviour
                 float duration = Mathf.Max(rollDuration, 0.0001f);
                 float t = Mathf.Clamp01(1f - (_rollTimeRemaining / duration));
                 float dirSign = _rmRoll;
+                Vector3 travelForward = GetTravelDirection();
+                Vector3 travelRight = GetTravelRight(travelForward);
 
                 float rightVel = rollLateralDistance * (Mathf.PI / (2f * duration))
                                  * Mathf.Sin(Mathf.PI * t) * dirSign;
                 float upVel = rollArcHeight * (Mathf.PI / duration)
                               * Mathf.Sin(2f * Mathf.PI * t);
 
-                Vector3 displacement = (transform.forward * rollForwardSpeed
-                                      + transform.right   * rightVel
-                                      + Vector3.up        * upVel) * dt;
+                Vector3 displacement = (travelForward * rollForwardSpeed
+                                      + travelRight   * rightVel
+                                      + Vector3.up    * upVel) * dt;
                 ApplyMovement(displacement);
             }
 
@@ -436,7 +460,7 @@ public class DragonFlightController : NetworkBehaviour
                 float taper = rollExitBlendTime > 0f
                     ? _rollExitBlendRemaining / rollExitBlendTime
                     : 0f;
-                ApplyMovement(transform.forward * rollForwardSpeed * taper * dt);
+                ApplyMovement(GetTravelDirection() * rollForwardSpeed * taper * dt);
                 _rollExitBlendRemaining -= dt;
             }
 
@@ -507,6 +531,8 @@ public class DragonFlightController : NetworkBehaviour
             if (vertical != 0f)
                 ApplyMovement(Vector3.up * vertical * hoverVerticalSpeed * dt);
         }
+
+        UpdateBonusFlightSpeed(dt);
     }
 
     // ─── Free-Fall Crash Detection ───────────────────
@@ -643,6 +669,42 @@ public class DragonFlightController : NetworkBehaviour
             rb.MovePosition(rb.position + displacement);
         else
             transform.position += displacement;
+    }
+
+    private void UpdateBonusFlightSpeed(float dt)
+    {
+        float thrustT = Mathf.InverseLerp(highThrustBonusStart, thrustMax, Mathf.Max(0f, _rmThrust));
+        float wingT = 0f;
+
+        if (wingActivityTracker != null && wingActivityTracker.IsFlapping)
+            wingT = Mathf.Clamp01(wingActivityTracker.WingActivity / Mathf.Max(wingFlapFullActivity, 0.0001f));
+
+        float targetBonus = thrustT * Mathf.Max(0f, highThrustBonusSpeed)
+                          + wingT * Mathf.Max(0f, wingFlapBonusSpeed);
+        _bonusFlightSpeed = Mathf.MoveTowards(_bonusFlightSpeed, targetBonus, bonusSpeedSmoothing * dt * Mathf.Max(targetBonus, _bonusFlightSpeed, 1f));
+
+        if (_bonusFlightSpeed > 0.01f)
+            ApplyMovement(GetTravelDirection() * _bonusFlightSpeed * dt);
+    }
+
+    private Vector3 GetTravelDirection()
+    {
+        if (rb != null)
+        {
+            Vector3 velocity = rb.linearVelocity;
+            if (velocity.sqrMagnitude >= travelDirectionMinSpeed * travelDirectionMinSpeed)
+                return velocity.normalized;
+        }
+
+        return transform.forward;
+    }
+
+    private Vector3 GetTravelRight(Vector3 travelForward)
+    {
+        Vector3 right = Vector3.Cross(Vector3.up, travelForward);
+        if (right.sqrMagnitude < 0.0001f)
+            right = transform.right;
+        return right.normalized;
     }
 
     private void ApplyRotation(Quaternion targetRotation)
