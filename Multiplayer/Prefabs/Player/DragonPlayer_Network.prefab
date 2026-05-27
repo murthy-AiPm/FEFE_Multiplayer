@@ -6012,6 +6012,7 @@ GameObject:
   - component: {fileID: -6128813149110121115}
   - component: {fileID: 788855867563866710}
   - component: {fileID: 7568906060964172617}
+  - component: {fileID: 689361508993416249}
   m_Layer: 3
   m_Name: DragonPlayer_Network
   m_TagString: Untagged
@@ -6103,7 +6104,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1353946614
+  GlobalObjectIdHash: 48177541
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -6995,3 +6996,117 @@ MonoBehaviour:
   debugAmplitude: 0
   debugFrequency: 0
   debugDutch: 0
+--- !u!114 &689361508993416249
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9190477138144183562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e432944f9e0b4479ac7261aa33b1daf8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DragonFlightAtmosphereEffects
+  flightController: {fileID: 358013097769894201}
+  atmosphereVolume: {fileID: 0}
+  autoAtmosphereProfile: {fileID: 11400000, guid: ab9f250deb8540ac812895834fe710fe, type: 2}
+  autoCreateAtmosphereVolume: 1
+  autoAtmosphereVolumeIsGlobal: 1
+  autoAtmosphereVolumePriority: 10
+  windGushParticles:
+  - {fileID: 0}
+  altitudeRayOrigin: {fileID: 3423531768416006098}
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  highAltitudeStart: 40
+  highAltitudeFull: 200
+  altitudeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  showAltitudeDebug: 1
+  minEffectSpeed: 8
+  maxEffectSpeed: 45
+  speedCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  multiplyAltitudeBySpeed: 1
+  smoothing: 4
+  forceEffectForTuning: 1
+  forcedEffectStrength: 1
+  driveVolumeWeight: 1
+  maxVolumeWeight: 1
+  driveWindParticles: 1
+  autoCreateWindParticles: 1
+  autoWindParticleName: Auto_WindGushParticles
+  autoWindParticleParent: {fileID: 0}
+  preferMainCameraForAutoWindParticles: 1
+  autoWindParticleLocalPosition: {x: 0, y: 0, z: 3}
+  autoWindParticleConeAngle: 10
+  autoWindParticleConeRadius: 1.8
+  autoWindParticleLifetime: {x: 0.35, y: 0.8}
+  autoWindParticleStartSpeed: {x: 8, y: 22}
+  autoWindParticleStartSize: {x: 0.01, y: 0.04}
+  autoWindParticleColor: {r: 0.75, g: 0.9, b: 1, a: 0.22}
+  autoWindParticleMaxParticles: 400
+  autoWindParticleLengthScale: 3
+  autoWindParticleVelocityScale: 0.4
+  minEmissionRate: 0
+  maxEmissionRate: 80
+  minSimulationSpeed: 0.5
+  maxSimulationSpeed: 2.5
+  stopParticlesWhenInactive: 1
+  debugAltitude: -1
+  debugSpeed: 0
+  debugAltitudeT: 0
+  debugSpeedT: 0
+  debugEffectT: 0
+  debugHasAtmosphereVolume: 0
+  debugHasAtmosphereProfile: 0
+  debugWindParticleCount: 0
+  debugVolumeWeight: 0
+  debugEmissionRate: 0
+  debugSimulationSpeed: 0
