@@ -484,7 +484,7 @@ MonoBehaviour:
     - {fileID: 8300000, guid: cc514bdde5bded94985ccea6bdb32d99, type: 3}
     - {fileID: 8300000, guid: 0eabd65dd714af84791b5fbe9e8b8a21, type: 3}
     - {fileID: 8300000, guid: 69558834d279c8d469f4643a26593cee, type: 3}
-    volume: {x: 0.8, y: 1}
+    volume: {x: 0.091778204, y: 0.23441689}
     pitch: {x: 0.8817774, y: 1.2367144}
     overrideDistance: 0
     customMinDistance: 0
@@ -841,6 +841,41 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 8a42266be58db4c518b5d4e47cc0f780, type: 3}
     volume: {x: 0.8, y: 1}
     pitch: {x: 0.95, y: 1.05}
+    overrideDistance: 0
+    customMinDistance: 0
+    customMaxDistance: 0
+    overrideRolloff: 0
+    customRolloffMode: 0
+    customRolloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - soundName: Dragon_FlightWind_Loop
+    category: 1
+    clips:
+    - {fileID: 8300000, guid: b61a804d641650f4fbce1355bf341f24, type: 3}
+    volume: {x: 0.86118543, y: 1}
+    pitch: {x: 0.79703635, y: 1.0652966}
     overrideDistance: 0
     customMinDistance: 0
     customMaxDistance: 0

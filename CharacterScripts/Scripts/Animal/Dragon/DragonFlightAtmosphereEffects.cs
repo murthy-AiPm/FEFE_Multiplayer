@@ -7,6 +7,14 @@ using UnityEngine.Rendering;
 /// </summary>
 public class DragonFlightAtmosphereEffects : MonoBehaviour
 {
+    private enum SpeedInputSource
+    {
+        RigidbodyVelocity,
+        FlightThrust,
+        BonusFlightSpeed,
+        ThrustPlusBonus
+    }
+
     [Header("References")]
     [SerializeField] private DragonFlightController flightController;
     [Tooltip("Optional local/global Volume with lens distortion, chromatic aberration, vignette, etc. Script drives weight only.")]
@@ -32,9 +40,20 @@ public class DragonFlightAtmosphereEffects : MonoBehaviour
     [SerializeField] private bool showAltitudeDebug;
 
     [Header("Speed Input")]
-    [SerializeField] private float minEffectSpeed = 8f;
-    [SerializeField] private float maxEffectSpeed = 45f;
-    [Tooltip("Maps normalized speed (0 at Min, 1 at Max) to effect strength.")]
+    [Tooltip("Which dragon flight value should drive atmosphere strength. Thrust Plus Bonus usually matches perceived dragon speed best.")]
+    [SerializeField] private SpeedInputSource speedInputSource = SpeedInputSource.ThrustPlusBonus;
+    [Tooltip("Uses source-aware ranges below instead of the legacy Min/Max Effect Speed values.")]
+    [SerializeField] private bool useRecommendedSpeedRange = true;
+    [Tooltip("Source value where speed-based atmosphere begins when Recommended Speed Range is off.")]
+    [SerializeField] private float minEffectSpeed = 0.1f;
+    [Tooltip("Source value where speed-based atmosphere reaches full strength when Recommended Speed Range is off.")]
+    [SerializeField] private float maxEffectSpeed = 10f;
+    [Header("Recommended Speed Ranges")]
+    [SerializeField] private Vector2 rigidbodyVelocityRange = new Vector2(8f, 45f);
+    [SerializeField] private Vector2 flightThrustRange = new Vector2(0.05f, 1f);
+    [SerializeField] private Vector2 bonusFlightSpeedRange = new Vector2(0.1f, 8f);
+    [SerializeField] private Vector2 thrustPlusBonusRange = new Vector2(0.1f, 8f);
+    [Tooltip("Maps normalized speed source (0 at Min, 1 at Max) to effect strength.")]
     [SerializeField] private AnimationCurve speedCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     [Header("Effect Mix")]
@@ -85,6 +104,11 @@ public class DragonFlightAtmosphereEffects : MonoBehaviour
     [Header("Debug Readout")]
     [SerializeField] private float debugAltitude = -1f;
     [SerializeField] private float debugSpeed;
+    [SerializeField] private float debugRigidbodySpeed;
+    [SerializeField] private float debugFlightThrust;
+    [SerializeField] private float debugBonusFlightSpeed;
+    [SerializeField] private float debugActiveMinSpeed;
+    [SerializeField] private float debugActiveMaxSpeed;
     [SerializeField] private float debugAltitudeT;
     [SerializeField] private float debugSpeedT;
     [SerializeField] private float debugEffectT;
@@ -119,6 +143,10 @@ public class DragonFlightAtmosphereEffects : MonoBehaviour
         forcedEffectStrength = Mathf.Clamp01(forcedEffectStrength);
         highAltitudeFull = Mathf.Max(highAltitudeStart + 0.01f, highAltitudeFull);
         maxEffectSpeed = Mathf.Max(minEffectSpeed + 0.01f, maxEffectSpeed);
+        rigidbodyVelocityRange = ClampRange(rigidbodyVelocityRange);
+        flightThrustRange = ClampRange(flightThrustRange);
+        bonusFlightSpeedRange = ClampRange(bonusFlightSpeedRange);
+        thrustPlusBonusRange = ClampRange(thrustPlusBonusRange);
         autoWindParticleMaxParticles = Mathf.Max(1, autoWindParticleMaxParticles);
         UpdateDebugSetupState();
     }
@@ -186,14 +214,77 @@ public class DragonFlightAtmosphereEffects : MonoBehaviour
 
     private float GetSpeedT()
     {
-        debugSpeed = flightController != null ? flightController.Velocity.magnitude : 0f;
-        float normalized = Mathf.InverseLerp(minEffectSpeed, maxEffectSpeed, debugSpeed);
+        UpdateFlightSpeedDebugValues();
+        debugSpeed = GetSpeedInputValue();
+        Vector2 activeRange = GetActiveSpeedRange();
+        debugActiveMinSpeed = activeRange.x;
+        debugActiveMaxSpeed = activeRange.y;
+        float normalized = Mathf.InverseLerp(activeRange.x, activeRange.y, debugSpeed);
         return Mathf.Clamp01(speedCurve.Evaluate(normalized));
+    }
+
+    private void UpdateFlightSpeedDebugValues()
+    {
+        if (flightController == null)
+        {
+            debugRigidbodySpeed = 0f;
+            debugFlightThrust = 0f;
+            debugBonusFlightSpeed = 0f;
+            return;
+        }
+
+        debugRigidbodySpeed = flightController.Velocity.magnitude;
+        debugFlightThrust = Mathf.Max(0f, flightController.FlightThrust);
+        debugBonusFlightSpeed = Mathf.Max(0f, flightController.BonusFlightSpeed);
+    }
+
+    private float GetSpeedInputValue()
+    {
+        switch (speedInputSource)
+        {
+            case SpeedInputSource.FlightThrust:
+                return debugFlightThrust;
+            case SpeedInputSource.BonusFlightSpeed:
+                return debugBonusFlightSpeed;
+            case SpeedInputSource.ThrustPlusBonus:
+                return debugFlightThrust + debugBonusFlightSpeed;
+            case SpeedInputSource.RigidbodyVelocity:
+            default:
+                return debugRigidbodySpeed;
+        }
+    }
+
+    private Vector2 GetActiveSpeedRange()
+    {
+        if (!useRecommendedSpeedRange)
+            return ClampRange(new Vector2(minEffectSpeed, maxEffectSpeed));
+
+        switch (speedInputSource)
+        {
+            case SpeedInputSource.FlightThrust:
+                return ClampRange(flightThrustRange);
+            case SpeedInputSource.BonusFlightSpeed:
+                return ClampRange(bonusFlightSpeedRange);
+            case SpeedInputSource.ThrustPlusBonus:
+                return ClampRange(thrustPlusBonusRange);
+            case SpeedInputSource.RigidbodyVelocity:
+            default:
+                return ClampRange(rigidbodyVelocityRange);
+        }
+    }
+
+    private Vector2 ClampRange(Vector2 range)
+    {
+        range.x = Mathf.Max(0f, range.x);
+        range.y = Mathf.Max(range.x + 0.01f, range.y);
+        return range;
     }
 
     private void ApplyEffects(float effectT)
     {
         effectT = Mathf.Clamp01(effectT);
+        if (effectT < 0.0001f)
+            effectT = 0f;
 
         if (driveVolumeWeight && atmosphereVolume != null)
         {

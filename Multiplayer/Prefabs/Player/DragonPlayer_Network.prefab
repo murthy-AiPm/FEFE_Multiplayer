@@ -7019,9 +7019,9 @@ MonoBehaviour:
   altitudeRayOrigin: {fileID: 3423531768416006098}
   groundMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 1
   highAltitudeStart: 40
-  highAltitudeFull: 200
+  highAltitudeFull: 120
   altitudeCurve:
     serializedVersion: 2
     m_Curve:
@@ -7075,12 +7075,12 @@ MonoBehaviour:
     m_RotationOrder: 4
   multiplyAltitudeBySpeed: 1
   smoothing: 4
-  forceEffectForTuning: 1
+  forceEffectForTuning: 0
   forcedEffectStrength: 1
   driveVolumeWeight: 1
   maxVolumeWeight: 1
-  driveWindParticles: 1
-  autoCreateWindParticles: 1
+  driveWindParticles: 0
+  autoCreateWindParticles: 0
   autoWindParticleName: Auto_WindGushParticles
   autoWindParticleParent: {fileID: 0}
   preferMainCameraForAutoWindParticles: 1
