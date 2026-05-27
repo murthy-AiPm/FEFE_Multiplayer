@@ -6239,6 +6239,34 @@ MonoBehaviour:
   highThrustBonusStart: 0.35
   wingFlapBonusSpeed: 5
   wingFlapFullActivity: 180
+  usePitchSpeedModifier: 1
+  divePitchBonusSpeed: 6
+  climbPitchSpeedPenalty: 4
+  pitchSpeedCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  minPitchModifiedBonusSpeed: 0
   bonusSpeedSmoothing: 6
   travelDirectionMinSpeed: 1
   rollForwardSpeed: 15
@@ -6937,12 +6965,31 @@ MonoBehaviour:
   speedFrequencyAdd: 1
   lowAltitudeFrequencyAdd: 0.8
   smoothing: 5
+  gateAirEffectsByThrust: 0
+  minThrustForAirEffects: 0.1
+  thrustGateBlendRange: 0
+  disableNoiseBelowThrust: 1
+  gateLeanByThrust: 0
+  enableAccelerationPulse: 0
+  accelerationThreshold: 8
+  fullPulseAcceleration: 28
+  pulseAmplitudeAdd: 0.5
+  pulseFrequencyAdd: 0.9
+  pulseFovKick: 2
+  pulseDecaySpeed: 3
   driveFov: 1
-  speedFovKick: 6
+  speedFovKick: 120
   lowAltitudeFovKick: 2
+  driveDutchLean: 1
+  yawLeanDegrees: -4
+  rollLeanDegrees: -6
+  leanSmoothing: 7
   debugSpeed: 0
   debugAltitude: -1
   debugSpeedT: 0
   debugLowAltitudeT: 0
+  debugThrustGateT: 0
+  debugPulseT: 0
   debugAmplitude: 0
   debugFrequency: 0
+  debugDutch: 0

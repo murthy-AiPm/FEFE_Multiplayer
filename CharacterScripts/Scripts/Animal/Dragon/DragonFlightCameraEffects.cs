@@ -39,23 +39,64 @@ public class DragonFlightCameraEffects : NetworkBehaviour
     [SerializeField] private float lowAltitudeFrequencyAdd = 0.8f;
     [SerializeField] private float smoothing = 5f;
 
+    [Header("Thrust Gate")]
+    [Tooltip("Scales all noise/FOV/pulse air effects, including Base Amplitude, to zero when positive thrust is below Min Thrust For Air Effects.")]
+    [SerializeField] private bool gateAirEffectsByThrust = true;
+    [Tooltip("Positive FlightThrust value where air effects begin. 0.1 = 10% thrust.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float minThrustForAirEffects = 0.1f;
+    [Tooltip("Blend range above Min Thrust For Air Effects. 0 = hard cutoff, 0.1 = fade in over the next 10% thrust.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float thrustGateBlendRange = 0.1f;
+    [Tooltip("When below the thrust gate, disable Cinemachine noise components entirely instead of only setting gains to 0.")]
+    [SerializeField] private bool disableNoiseBelowThrust = true;
+    [Tooltip("Also scales Dutch lean to zero below the thrust gate. Leave off if you like lean at low thrust.")]
+    [SerializeField] private bool gateLeanByThrust;
+
+    [Header("Acceleration Pulse")]
+    [SerializeField] private bool enableAccelerationPulse = false;
+    [Tooltip("Speed increase in m/s^2 required before the air-pressure pulse starts.")]
+    [SerializeField] private float accelerationThreshold = 8f;
+    [Tooltip("Speed increase in m/s^2 that maps to full pulse strength.")]
+    [SerializeField] private float fullPulseAcceleration = 28f;
+    [SerializeField] private float pulseAmplitudeAdd = 0.5f;
+    [SerializeField] private float pulseFrequencyAdd = 0.9f;
+    [SerializeField] private float pulseFovKick = 2f;
+    [SerializeField] private float pulseDecaySpeed = 3f;
+
     [Header("FOV Output")]
     [SerializeField] private bool driveFov = true;
     [SerializeField] private float speedFovKick = 6f;
     [SerializeField] private float lowAltitudeFovKick = 2f;
+
+    [Header("Camera Lean")]
+    [SerializeField] private bool driveDutchLean = true;
+    [Tooltip("Camera roll degrees at full yaw input. Negative values invert the lean.")]
+    [SerializeField] private float yawLeanDegrees = -4f;
+    [Tooltip("Camera roll degrees at full roll input. Negative values invert the lean.")]
+    [SerializeField] private float rollLeanDegrees = -6f;
+    [SerializeField] private float leanSmoothing = 7f;
 
     [Header("Debug Readout")]
     [SerializeField] private float debugSpeed;
     [SerializeField] private float debugAltitude = -1f;
     [SerializeField] private float debugSpeedT;
     [SerializeField] private float debugLowAltitudeT;
+    [SerializeField] private float debugThrustGateT;
+    [SerializeField] private float debugPulseT;
     [SerializeField] private float debugAmplitude;
     [SerializeField] private float debugFrequency;
+    [SerializeField] private float debugDutch;
 
     private float[] _baseFovs;
+    private float[] _baseDutch;
+    private bool[] _baseNoiseEnabled;
     private float _currentAmplitude;
     private float _currentFrequency;
     private float _currentFovKick;
+    private float _currentDutch;
+    private float _lastSpeed;
+    private float _pulseT;
 
     private void Awake()
     {
@@ -69,21 +110,23 @@ public class DragonFlightCameraEffects : NetworkBehaviour
             noiseComponents = GetComponentsInChildren<CinemachineBasicMultiChannelPerlin>(true);
 
         CacheBaseFovs();
+        CacheBaseNoiseState();
         _currentAmplitude = baseAmplitude;
         _currentFrequency = baseFrequency;
         _currentFovKick = 0f;
-        ApplyEffects(baseAmplitude, baseFrequency, 0f);
+        _currentDutch = 0f;
+        ApplyEffects(baseAmplitude, baseFrequency, 0f, 0f, true);
     }
 
     public override void OnNetworkSpawn()
     {
         if (!IsOwner)
-            ApplyEffects(baseAmplitude, baseFrequency, 0f);
+            ApplyEffects(baseAmplitude, baseFrequency, 0f, 0f, true);
     }
 
     private void OnDisable()
     {
-        ApplyEffects(baseAmplitude, baseFrequency, 0f);
+        ApplyEffects(baseAmplitude, baseFrequency, 0f, 0f, true);
     }
 
     private void LateUpdate()
@@ -93,28 +136,53 @@ public class DragonFlightCameraEffects : NetworkBehaviour
         bool inFlight = flightController != null && flightController.IsFlightMode;
         float speedT = applyOnlyInFlight && !inFlight ? 0f : GetSpeedT(inFlight);
         float lowAltitudeT = applyOnlyInFlight && !inFlight ? 0f : GetLowAltitudeT();
+        float thrustGateT = applyOnlyInFlight && !inFlight ? 0f : GetThrustGateT();
+        float airGateT = gateAirEffectsByThrust ? thrustGateT : 1f;
+        bool airNoiseEnabled = !gateAirEffectsByThrust || airGateT > 0f;
+        float leanGateT = gateLeanByThrust ? thrustGateT : 1f;
+        float pulseT = (applyOnlyInFlight && !inFlight ? 0f : UpdateAccelerationPulse(inFlight)) * airGateT;
+        float targetDutch = (applyOnlyInFlight && !inFlight ? 0f : GetTargetDutch()) * leanGateT;
 
-        float targetAmplitude = baseAmplitude
-                              + speedT * speedAmplitudeAdd
-                              + lowAltitudeT * lowAltitudeAmplitudeAdd;
-        float targetFrequency = baseFrequency
-                              + speedT * speedFrequencyAdd
-                              + lowAltitudeT * lowAltitudeFrequencyAdd;
+        float ungatedAmplitude = baseAmplitude
+                               + speedT * speedAmplitudeAdd
+                               + lowAltitudeT * lowAltitudeAmplitudeAdd
+                               + pulseT * pulseAmplitudeAdd;
+        float ungatedFrequency = baseFrequency
+                               + speedT * speedFrequencyAdd
+                               + lowAltitudeT * lowAltitudeFrequencyAdd
+                               + pulseT * pulseFrequencyAdd;
+        float targetAmplitude = ungatedAmplitude * airGateT;
+        float targetFrequency = ungatedFrequency * airGateT;
         float targetFovKick = driveFov
-            ? speedT * speedFovKick + lowAltitudeT * lowAltitudeFovKick
+            ? (speedT * speedFovKick + lowAltitudeT * lowAltitudeFovKick) * airGateT + pulseT * pulseFovKick
             : 0f;
 
-        float follow = 1f - Mathf.Exp(-Mathf.Max(0f, smoothing) * Time.deltaTime);
-        _currentAmplitude = Mathf.Lerp(_currentAmplitude, targetAmplitude, follow);
-        _currentFrequency = Mathf.Lerp(_currentFrequency, targetFrequency, follow);
-        _currentFovKick = Mathf.Lerp(_currentFovKick, targetFovKick, follow);
+        if (gateAirEffectsByThrust && airGateT <= 0f)
+        {
+            _currentAmplitude = targetAmplitude;
+            _currentFrequency = targetFrequency;
+            _currentFovKick = targetFovKick;
+        }
+        else
+        {
+            float follow = 1f - Mathf.Exp(-Mathf.Max(0f, smoothing) * Time.deltaTime);
+            _currentAmplitude = Mathf.Lerp(_currentAmplitude, targetAmplitude, follow);
+            _currentFrequency = Mathf.Lerp(_currentFrequency, targetFrequency, follow);
+            _currentFovKick = Mathf.Lerp(_currentFovKick, targetFovKick, follow);
+        }
 
-        ApplyEffects(_currentAmplitude, _currentFrequency, _currentFovKick);
+        float leanFollow = 1f - Mathf.Exp(-Mathf.Max(0f, leanSmoothing) * Time.deltaTime);
+        _currentDutch = Mathf.Lerp(_currentDutch, targetDutch, leanFollow);
+
+        ApplyEffects(_currentAmplitude, _currentFrequency, _currentFovKick, _currentDutch, airNoiseEnabled);
 
         debugSpeedT = speedT;
         debugLowAltitudeT = lowAltitudeT;
+        debugThrustGateT = thrustGateT;
+        debugPulseT = pulseT;
         debugAmplitude = _currentAmplitude;
         debugFrequency = _currentFrequency;
+        debugDutch = _currentDutch;
     }
 
     private float GetSpeedT(bool inFlight)
@@ -125,6 +193,58 @@ public class DragonFlightCameraEffects : NetworkBehaviour
 
         float normalized = Mathf.InverseLerp(minSpeed, maxSpeed, debugSpeed);
         return Mathf.Clamp01(speedCurve.Evaluate(normalized));
+    }
+
+    private float UpdateAccelerationPulse(bool inFlight)
+    {
+        if (!enableAccelerationPulse)
+        {
+            _lastSpeed = debugSpeed;
+            _pulseT = 0f;
+            return 0f;
+        }
+
+        if (!inFlight)
+        {
+            _lastSpeed = debugSpeed;
+            _pulseT = Mathf.MoveTowards(_pulseT, 0f, pulseDecaySpeed * Time.deltaTime);
+            return _pulseT;
+        }
+
+        float acceleration = (debugSpeed - _lastSpeed) / Mathf.Max(Time.deltaTime, 0.0001f);
+        _lastSpeed = debugSpeed;
+
+        if (acceleration > accelerationThreshold)
+        {
+            float pulse = Mathf.InverseLerp(accelerationThreshold, fullPulseAcceleration, acceleration);
+            _pulseT = Mathf.Max(_pulseT, Mathf.Clamp01(pulse));
+        }
+
+        _pulseT = Mathf.MoveTowards(_pulseT, 0f, pulseDecaySpeed * Time.deltaTime);
+        return _pulseT;
+    }
+
+    private float GetThrustGateT()
+    {
+        if (flightController == null) return 0f;
+
+        float positiveThrust = Mathf.Clamp01(flightController.FlightThrust);
+        if (thrustGateBlendRange <= 0.0001f)
+            return positiveThrust >= minThrustForAirEffects ? 1f : 0f;
+
+        return Mathf.InverseLerp(
+            minThrustForAirEffects,
+            Mathf.Clamp01(minThrustForAirEffects + thrustGateBlendRange),
+            positiveThrust);
+    }
+
+    private float GetTargetDutch()
+    {
+        if (!driveDutchLean || flightController == null) return 0f;
+
+        float yawLean = Mathf.Clamp(flightController.FlightYaw, -1f, 1f) * yawLeanDegrees;
+        float rollLean = Mathf.Clamp(flightController.FlightRoll, -1f, 1f) * rollLeanDegrees;
+        return yawLean + rollLean;
     }
 
     private float GetLowAltitudeT()
@@ -154,33 +274,73 @@ public class DragonFlightCameraEffects : NetworkBehaviour
         if (cameras == null)
         {
             _baseFovs = System.Array.Empty<float>();
+            _baseDutch = System.Array.Empty<float>();
             return;
         }
 
         _baseFovs = new float[cameras.Length];
+        _baseDutch = new float[cameras.Length];
         for (int i = 0; i < cameras.Length; i++)
-            _baseFovs[i] = cameras[i] != null ? cameras[i].Lens.FieldOfView : 0f;
+        {
+            if (cameras[i] == null)
+            {
+                _baseFovs[i] = 0f;
+                _baseDutch[i] = 0f;
+                continue;
+            }
+
+            _baseFovs[i] = cameras[i].Lens.FieldOfView;
+            _baseDutch[i] = cameras[i].Lens.Dutch;
+        }
     }
 
-    private void ApplyEffects(float amplitude, float frequency, float fovKick)
+    private void CacheBaseNoiseState()
+    {
+        if (noiseComponents == null)
+        {
+            _baseNoiseEnabled = System.Array.Empty<bool>();
+            return;
+        }
+
+        _baseNoiseEnabled = new bool[noiseComponents.Length];
+        for (int i = 0; i < noiseComponents.Length; i++)
+            _baseNoiseEnabled[i] = noiseComponents[i] != null && noiseComponents[i].enabled;
+    }
+
+    private void ApplyEffects(float amplitude, float frequency, float fovKick, float dutch, bool airNoiseEnabled)
     {
         if (noiseComponents != null)
         {
             for (int i = 0; i < noiseComponents.Length; i++)
             {
                 if (noiseComponents[i] == null) continue;
+
+                bool baseEnabled = _baseNoiseEnabled == null || i >= _baseNoiseEnabled.Length || _baseNoiseEnabled[i];
+                bool enabledNow = baseEnabled && (!disableNoiseBelowThrust || airNoiseEnabled);
+                noiseComponents[i].enabled = enabledNow;
+
+                if (!enabledNow)
+                {
+                    noiseComponents[i].AmplitudeGain = 0f;
+                    noiseComponents[i].FrequencyGain = 0f;
+                    continue;
+                }
+
                 noiseComponents[i].AmplitudeGain = amplitude;
                 noiseComponents[i].FrequencyGain = frequency;
             }
         }
 
-        if (!driveFov || cameras == null || _baseFovs == null) return;
+        if (cameras == null || _baseFovs == null || _baseDutch == null) return;
 
-        int count = Mathf.Min(cameras.Length, _baseFovs.Length);
+        int count = Mathf.Min(Mathf.Min(cameras.Length, _baseFovs.Length), _baseDutch.Length);
         for (int i = 0; i < count; i++)
         {
             if (cameras[i] == null) continue;
-            cameras[i].Lens.FieldOfView = _baseFovs[i] + fovKick;
+            if (driveFov)
+                cameras[i].Lens.FieldOfView = _baseFovs[i] + fovKick;
+            if (driveDutchLean)
+                cameras[i].Lens.Dutch = _baseDutch[i] + dutch;
         }
     }
 }
