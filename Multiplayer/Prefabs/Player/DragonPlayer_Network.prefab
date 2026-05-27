@@ -1253,6 +1253,7 @@ GameObject:
   - component: {fileID: 9036942650903576649}
   - component: {fileID: 5500801073010298693}
   - component: {fileID: 1267928899909584338}
+  - component: {fileID: 1379702450625878935}
   - component: {fileID: 7426552004687102680}
   m_Layer: 12
   m_Name: FlightCam
@@ -1411,6 +1412,23 @@ MonoBehaviour:
     Time: 0
     Smoothing: 0
     IgnoreY: 0
+--- !u!114 &1379702450625878935
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2560130988734915919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68bb026fafb42b14791938953eaace77, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineBasicMultiChannelPerlin
+  NoiseProfile: {fileID: 11400000, guid: a973c28cb81f4e942ac546fe3730fa3d, type: 2}
+  PivotOffset: {x: 0, y: 0, z: 0}
+  AmplitudeGain: 1
+  FrequencyGain: 1
+  m_NoiseOffsets: {x: 0, y: 0, z: 0}
 --- !u!114 &7426552004687102680
 MonoBehaviour:
   m_ObjectHideFlags: 0
