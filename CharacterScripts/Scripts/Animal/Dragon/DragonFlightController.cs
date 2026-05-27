@@ -63,6 +63,16 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private float wingFlapBonusSpeed = 5f;
     [Tooltip("Wing activity, in deg/sec, that maps to full wing-flap bonus speed.")]
     [SerializeField] private float wingFlapFullActivity = 180f;
+    [Tooltip("If true, nose-down pitch adds speed and nose-up pitch subtracts speed from the root-motion assist.")]
+    [SerializeField] private bool usePitchSpeedModifier = true;
+    [Tooltip("Extra speed (m/s) added at full nose-down pitch (_rmPitch = -1).")]
+    [SerializeField] private float divePitchBonusSpeed = 6f;
+    [Tooltip("Speed (m/s) subtracted at full nose-up pitch (_rmPitch = 1).")]
+    [SerializeField] private float climbPitchSpeedPenalty = 4f;
+    [Tooltip("Shapes how pitch magnitude maps to speed change. X is abs pitch 0..1, Y is strength 0..1.")]
+    [SerializeField] private AnimationCurve pitchSpeedCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    [Tooltip("Lowest allowed total bonus speed after climb pitch penalty. Keep at 0 to prevent the modifier from adding reverse movement.")]
+    [SerializeField] private float minPitchModifiedBonusSpeed = 0f;
     [Tooltip("Smoothing for the added flight speed. Higher = snappier acceleration/deceleration.")]
     [SerializeField] private float bonusSpeedSmoothing = 6f;
     [Tooltip("Minimum rigidbody speed before roll/boost uses actual travel direction instead of transform.forward.")]
@@ -681,10 +691,31 @@ public class DragonFlightController : NetworkBehaviour
 
         float targetBonus = thrustT * Mathf.Max(0f, highThrustBonusSpeed)
                           + wingT * Mathf.Max(0f, wingFlapBonusSpeed);
+        targetBonus += GetPitchSpeedModifier();
+        targetBonus = Mathf.Max(minPitchModifiedBonusSpeed, targetBonus);
         _bonusFlightSpeed = Mathf.MoveTowards(_bonusFlightSpeed, targetBonus, bonusSpeedSmoothing * dt * Mathf.Max(targetBonus, _bonusFlightSpeed, 1f));
 
         if (_bonusFlightSpeed > 0.01f)
             ApplyMovement(GetTravelDirection() * _bonusFlightSpeed * dt);
+    }
+
+    private float GetPitchSpeedModifier()
+    {
+        if (!usePitchSpeedModifier) return 0f;
+
+        if (_rmPitch < -0.001f)
+        {
+            float t = Mathf.Clamp01(pitchSpeedCurve.Evaluate(Mathf.Abs(_rmPitch)));
+            return t * Mathf.Max(0f, divePitchBonusSpeed);
+        }
+
+        if (_rmPitch > 0.001f)
+        {
+            float t = Mathf.Clamp01(pitchSpeedCurve.Evaluate(_rmPitch));
+            return -t * Mathf.Max(0f, climbPitchSpeedPenalty);
+        }
+
+        return 0f;
     }
 
     private Vector3 GetTravelDirection()
