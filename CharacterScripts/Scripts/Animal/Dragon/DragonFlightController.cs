@@ -63,6 +63,9 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private float wingFlapBonusSpeed = 5f;
     [Tooltip("Wing activity, in deg/sec, that maps to full wing-flap bonus speed.")]
     [SerializeField] private float wingFlapFullActivity = 180f;
+    [Tooltip("Positive FlightThrust required before wing-flap bonus speed can add movement. Keeps animated wing motion from creeping the dragon at zero thrust.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float minThrustForWingFlapBonus = 0.1f;
     [Tooltip("If true, nose-down pitch adds speed and nose-up pitch subtracts speed from the root-motion assist.")]
     [SerializeField] private bool usePitchSpeedModifier = true;
     [Tooltip("Extra speed (m/s) added at full nose-down pitch (_rmPitch = -1).")]
@@ -73,6 +76,9 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private AnimationCurve pitchSpeedCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
     [Tooltip("Lowest allowed total bonus speed after climb pitch penalty. Keep at 0 to prevent the modifier from adding reverse movement.")]
     [SerializeField] private float minPitchModifiedBonusSpeed = 0f;
+    [Tooltip("Positive FlightThrust required before dive pitch bonus speed can add movement. Climb penalty can still reduce speed below this value.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float minThrustForDivePitchBonus = 0.1f;
     [Tooltip("Smoothing for the added flight speed. Higher = snappier acceleration/deceleration.")]
     [SerializeField] private float bonusSpeedSmoothing = 6f;
     [Tooltip("Minimum rigidbody speed before roll/boost uses actual travel direction instead of transform.forward.")]
@@ -686,7 +692,7 @@ public class DragonFlightController : NetworkBehaviour
         float thrustT = Mathf.InverseLerp(highThrustBonusStart, thrustMax, Mathf.Max(0f, _rmThrust));
         float wingT = 0f;
 
-        if (wingActivityTracker != null && wingActivityTracker.IsFlapping)
+        if (_rmThrust >= minThrustForWingFlapBonus && wingActivityTracker != null && wingActivityTracker.IsFlapping)
             wingT = Mathf.Clamp01(wingActivityTracker.WingActivity / Mathf.Max(wingFlapFullActivity, 0.0001f));
 
         float targetBonus = thrustT * Mathf.Max(0f, highThrustBonusSpeed)
@@ -705,6 +711,8 @@ public class DragonFlightController : NetworkBehaviour
 
         if (_rmPitch < -0.001f)
         {
+            if (_rmThrust < minThrustForDivePitchBonus) return 0f;
+
             float t = Mathf.Clamp01(pitchSpeedCurve.Evaluate(Mathf.Abs(_rmPitch)));
             return t * Mathf.Max(0f, divePitchBonusSpeed);
         }
