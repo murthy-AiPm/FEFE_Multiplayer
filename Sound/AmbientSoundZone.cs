@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // ─────────────────────────────────────────────────────────
@@ -37,17 +38,30 @@ public class AmbientSoundZone : MonoBehaviour
     [Range(0.8f, 1.2f)]
     [SerializeField] private float pitchMax = 1.05f;
 
+    [Header("Debug")]
+    [SerializeField] private bool debugLogs;
+
+    [Header("Safety Checks")]
+    [Tooltip("How often to verify tracked local occupants are still inside the zone. Catches respawn/teleport cases where OnTriggerExit does not fire.")]
+    [SerializeField] private float occupantCheckInterval = 0.25f;
+
+    [Tooltip("Extra tolerance around the trigger when checking whether a tracked occupant has left by teleport/respawn.")]
+    [SerializeField] private float containmentPadding = 1f;
+
     // ─── State ───
     private AudioSource _source;
+    private Collider _zoneCollider;
     private float _targetVolume;
     private float _currentVolume;
-    private int _insideCount;  // counts colliders currently inside, not just bool
+    private float _occupantCheckTimer;
+    private readonly Dictionary<Transform, int> _insideRoots = new Dictionary<Transform, int>();
+    private static readonly List<Transform> s_rootsToRemove = new List<Transform>();
 
     private void Awake()
     {
         // Ensure collider is trigger
-        var col = GetComponent<Collider>();
-        col.isTrigger = true;
+        _zoneCollider = GetComponent<Collider>();
+        _zoneCollider.isTrigger = true;
 
         // Create audio source
         _source = gameObject.AddComponent<AudioSource>();
@@ -65,6 +79,8 @@ public class AmbientSoundZone : MonoBehaviour
     {
         if (_source == null || ambientClip == null) return;
 
+        UpdateTrackedOccupants();
+
         // Smooth fade
         _currentVolume = Mathf.MoveTowards(_currentVolume, _targetVolume, (maxVolume / fadeDuration) * Time.deltaTime);
         _source.volume = _currentVolume;
@@ -80,19 +96,25 @@ public class AmbientSoundZone : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!IsLocalPlayerOrMount(other)) return;
+        bool accepted = IsLocalPlayerOrMount(other);
+        if (debugLogs)
+            Debug.Log($"[AmbientSoundZone] ENTER zone={name} other={other.name} root={other.transform.root.name} layer={LayerMask.LayerToName(other.gameObject.layer)} accepted={accepted}");
 
-        _insideCount++;
-        _targetVolume = maxVolume;
+        if (!accepted) return;
+
+        RegisterOccupant(other.transform.root);
+
+        if (debugLogs)
+            Debug.Log($"[AmbientSoundZone] FADE IN zone={name} occupants={_insideRoots.Count} targetVolume={_targetVolume:F2}");
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (!IsLocalPlayerOrMount(other)) return;
+        bool accepted = IsLocalPlayerOrMount(other);
+        if (debugLogs)
+            Debug.Log($"[AmbientSoundZone] EXIT zone={name} other={other.name} root={other.transform.root.name} layer={LayerMask.LayerToName(other.gameObject.layer)} accepted={accepted}");
 
-        _insideCount = Mathf.Max(0, _insideCount - 1);
-        if (_insideCount == 0)
-            _targetVolume = 0f;
+        UnregisterOccupant(other.transform.root);
     }
 
     private bool IsLocalPlayerOrMount(Collider col)
@@ -102,6 +124,15 @@ public class AmbientSoundZone : MonoBehaviour
         // Arrows and other projectiles will never have this component.
         var playerMove = col.GetComponentInParent<ClientPlayerMove>();
         if (playerMove != null && playerMove.IsOwner) return true;
+
+        var newPlayerDriver = col.GetComponentInParent<ClientAuthoritativePlayerDriver>();
+        if (newPlayerDriver != null && newPlayerDriver.IsOwner) return true;
+
+        var dragonFlight = col.GetComponentInParent<DragonFlightController>();
+        if (dragonFlight != null && dragonFlight.IsOwner) return true;
+
+        var dragonGround = col.GetComponentInParent<DragonGroundController>();
+        if (dragonGround != null && dragonGround.IsOwner) return true;
 
         // ── Mounted horse check ──
         var mountable = col.GetComponentInParent<MountableEntity>();
@@ -116,6 +147,100 @@ public class AmbientSoundZone : MonoBehaviour
     }
 
     // ─── Public API ───
+
+    private void RegisterOccupant(Transform root)
+    {
+        if (root == null) return;
+
+        _insideRoots.TryGetValue(root, out int count);
+        _insideRoots[root] = count + 1;
+        _targetVolume = maxVolume;
+    }
+
+    private void UnregisterOccupant(Transform root)
+    {
+        if (root == null) return;
+        if (!_insideRoots.TryGetValue(root, out int count)) return;
+
+        if (count <= 1)
+            _insideRoots.Remove(root);
+        else
+            _insideRoots[root] = count - 1;
+
+        RefreshTargetVolume();
+    }
+
+    private void UpdateTrackedOccupants()
+    {
+        _occupantCheckTimer -= Time.deltaTime;
+        if (_occupantCheckTimer > 0f) return;
+
+        _occupantCheckTimer = Mathf.Max(0.05f, occupantCheckInterval);
+        if (_insideRoots.Count == 0) return;
+
+        s_rootsToRemove.Clear();
+        foreach (var pair in _insideRoots)
+        {
+            Transform root = pair.Key;
+            if (root == null || !root.gameObject.activeInHierarchy || !IsInsideZone(root.position) || !IsTrackedRootStillLocalOccupant(root))
+                s_rootsToRemove.Add(root);
+        }
+
+        for (int i = 0; i < s_rootsToRemove.Count; i++)
+        {
+            Transform root = s_rootsToRemove[i];
+            _insideRoots.Remove(root);
+
+            if (debugLogs)
+                Debug.Log($"[AmbientSoundZone] PRUNE zone={name} root={(root != null ? root.name : "null")} occupants={_insideRoots.Count}");
+        }
+
+        RefreshTargetVolume();
+    }
+
+    private bool IsTrackedRootStillLocalOccupant(Transform root)
+    {
+        if (root == null) return false;
+
+        var playerMove = root.GetComponentInChildren<ClientPlayerMove>();
+        if (playerMove != null && playerMove.IsOwner) return true;
+
+        var newPlayerDriver = root.GetComponentInChildren<ClientAuthoritativePlayerDriver>();
+        if (newPlayerDriver != null && newPlayerDriver.IsOwner) return true;
+
+        var dragonFlight = root.GetComponentInChildren<DragonFlightController>();
+        if (dragonFlight != null && dragonFlight.IsOwner) return true;
+
+        var dragonGround = root.GetComponentInChildren<DragonGroundController>();
+        if (dragonGround != null && dragonGround.IsOwner) return true;
+
+        var mountable = root.GetComponentInChildren<MountableEntity>();
+        if (mountable != null && mountable.IsMounted)
+        {
+            var nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm != null && mountable.RiderId == nm.LocalClientId)
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool IsInsideZone(Vector3 position)
+    {
+        if (_zoneCollider == null) return false;
+        if (_zoneCollider.bounds.Contains(position)) return true;
+
+        Vector3 closest = _zoneCollider.ClosestPoint(position);
+        return (closest - position).sqrMagnitude <= containmentPadding * containmentPadding;
+    }
+
+    private void RefreshTargetVolume()
+    {
+        _targetVolume = _insideRoots.Count > 0 ? maxVolume : 0f;
+
+        if (debugLogs && _insideRoots.Count == 0)
+            Debug.Log($"[AmbientSoundZone] FADE OUT zone={name}");
+    }
 
     public void FadeIn()
     {

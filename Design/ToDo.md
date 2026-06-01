@@ -3686,7 +3686,47 @@ FILES CHANGED
        vertical swim intent, and fast-swim state to remote animation holders.
 
 FIX
- Defenders now enter a humanoid swim state when submerged by `AnimalSwimSystem`.
- Any equipped weapon is forced back to slot 0, combat actions are rejected in
- water, local land locomotion is suppressed, and remote players receive the
- same swim animation state for Animancer blending.
+Defenders now enter a humanoid swim state when submerged by `AnimalSwimSystem`.
+Any equipped weapon is forced back to slot 0, combat actions are rejected in
+water, local land locomotion is suppressed, and remote players receive the
+same swim animation state for Animancer blending.
+
+2026-05-28 - Ambient wind zone local player detection
+
+ROOT CAUSE
+ Ambient wind zones only recognized the legacy `ClientPlayerMove` component
+ when filtering trigger entries for the local player. Current humanoid network
+ prefabs use `ClientAuthoritativePlayerDriver`, so the zone trigger could fire
+ but still reject the player as non-local.
+
+FILES CHANGED
+ ~ Sound/AmbientSoundZone.cs
+     - Added an Inspector `debugLogs` toggle for trigger enter/exit and fade
+       state diagnostics.
+     - Accepted `ClientAuthoritativePlayerDriver.IsOwner` as a valid local
+       player match alongside the legacy `ClientPlayerMove` path.
+
+FIX
+ Ambient sound zones now work with the current network player prefabs and can
+ be debugged from the Unity Console by enabling `Debug Logs` on the zone.
+
+2026-05-28 - Ambient wind zone respawn cleanup and dragon support
+
+ROOT CAUSE
+ Ambient zones used a simple trigger enter/exit counter. Respawning or
+ teleporting out of a zone can skip `OnTriggerExit`, leaving the local ambient
+ loop faded in at the new location. The local-player filter also did not
+ explicitly accept the dragon controllers.
+
+FILES CHANGED
+ ~ Sound/AmbientSoundZone.cs
+     - Replaced the raw inside counter with tracked local occupant roots.
+     - Added a periodic, Inspector-tweakable safety check that prunes tracked
+       occupants whose root has moved outside the trigger bounds.
+     - Accepted owner dragon controllers (`DragonFlightController` and
+       `DragonGroundController`) for ambient zone entry.
+
+FIX
+ Ambient wind now fades out after respawn/teleport when the local player leaves
+ the zone without a trigger exit. The same zone filtering supports defenders,
+ mounted horses, and the dragon player.
