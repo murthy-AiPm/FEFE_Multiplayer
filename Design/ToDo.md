@@ -3730,3 +3730,24 @@ FIX
  Ambient wind now fades out after respawn/teleport when the local player leaves
  the zone without a trigger exit. The same zone filtering supports defenders,
  mounted horses, and the dragon player.
+
+2026-06-08 - Dragon HUD owner-only visibility
+
+ROOT CAUSE
+ The dragon network prefab's screen-space HUD used `DragonUI`, which subscribed
+ directly to the prefab `VitalManager` and updated while active on every peer.
+ Unlike the knight prefab's `PlayerHUD`, it had no parent `NetworkObject`
+ ownership gate, so a client dragon's HUD could render on the host.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Animal/Dragon/DragonUI.cs
+     - Added a serialized parent `NetworkObject` dependency with auto-find.
+     - Disabled the HUD GameObject once the parent object is spawned and not
+       owned locally, including an Update fallback for spawn timing.
+ ~ Multiplayer/Prefabs/Player/DragonPlayer_Network.prefab
+     - Wired `DragonUI.networkObject` to the root `NetworkObject`.
+
+FIX
+ Dragon HUD canvases now follow the same local-owner-only visibility rule as
+ the humanoid `PlayerHUD`, preventing client dragon UI from appearing on the
+ host or other non-owning peers.

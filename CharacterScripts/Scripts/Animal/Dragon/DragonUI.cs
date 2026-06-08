@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -17,6 +18,8 @@ public class DragonUI : MonoBehaviour
     [Header("Dependencies")]
     [Tooltip("Optional. If unset, you must call BindVitalManager() at runtime.")]
     [SerializeField] private VitalManager vitalManager;
+    [Tooltip("Parent NetworkObject used to show this HUD only for the local owner.")]
+    [SerializeField] private NetworkObject networkObject;
 
     [Header("Fills")]
     [Tooltip("Horizontal stamina fill. Image type = Filled.")]
@@ -42,9 +45,16 @@ public class DragonUI : MonoBehaviour
 
     private void OnEnable()
     {
+        if (networkObject == null)
+            networkObject = GetComponentInParent<NetworkObject>();
         if (vitalManager != null) Subscribe(vitalManager);
         if (dragonAnimatorController == null)
             dragonAnimatorController = GetComponentInParent<DragonAnimatorController>();
+    }
+
+    private void Start()
+    {
+        DisableForRemoteOwner();
     }
 
     private void OnDisable()
@@ -54,6 +64,8 @@ public class DragonUI : MonoBehaviour
 
     private void Update()
     {
+        if (DisableForRemoteOwner()) return;
+
         UpdateThrustText();
 
         // VitalManager.OnNetworkSpawn populates _vitals later than DragonUI.OnEnable,
@@ -78,6 +90,20 @@ public class DragonUI : MonoBehaviour
         if (pct == _lastThrustPercent) return;
         _lastThrustPercent = pct;
         thrustText.text = string.Format(thrustFormat, pct);
+    }
+
+    private bool DisableForRemoteOwner()
+    {
+        if (networkObject == null)
+            networkObject = GetComponentInParent<NetworkObject>();
+
+        if (networkObject != null && networkObject.IsSpawned && !networkObject.IsOwner)
+        {
+            gameObject.SetActive(false);
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>Wire a VitalManager at runtime (e.g. for a HUD that lives outside the dragon prefab).</summary>

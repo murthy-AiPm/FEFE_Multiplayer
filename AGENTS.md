@@ -38,8 +38,8 @@ might invalidate an in-flight playtest build.
   - `CharacterScripts/Scripts/Ballista` — ballista weapon + arrows.
   - `Sound` — sound database, per-character sound players, surface detection, ambient zones.
   - `Multiplayer/Scripts/Networking/{Client,Host,Server,Shared}` — split by ownership role.
-- `design/ToDo.md` is an append-only session log. **Tail-read it before appending.**
-  New entries go at the bottom of the file. Each entry: date header, root cause, files changed, fix.
+- `design/ToDo.md` is an append-only session log. **Only update it when the user explicitly asks.**
+  Tail-read it before appending. New entries go at the bottom of the file. Each entry: date header, root cause, files changed, fix.
 - All other `.md` docs live under `design/` (ARCHITECTURE, FEFE_Design, FEFE_NPC_Architecture, ToDo).
   Only `AGENTS.md` stays at the `Assets/FEFE/` root so Codex auto-loads it each session.
   New `.md` files go in `design/` by default.
@@ -134,7 +134,7 @@ One line per class. Behavior detail lives in `design/ARCHITECTURE.md`.
 - **Base classes stay clean.** Dragon/horse-specific behavior belongs in `DragonXController` / `HorseXController`, never in `AnimalXController`. When the base needs an extension point, add a `protected virtual` hook (see `OnAnimatorMove` and `TurnAngle` protections in `AnimalGroundController`).
 - **Follow existing patterns.** Before inventing a new approach, find how the codebase already does it. The bullet-decal ground-fire fix (10th-April) is the canonical example: matching the familiar pattern beat the invented one.
 - **Git as safety net.** Expect to revert to clean commits when an approach fails. Keep changes scoped so a revert doesn't take unrelated work with it.
-- **Append to `design/ToDo.md` at the end of every session.** Root cause, files changed, fix description. Future sessions read this for context.
+- **Do not update `design/ToDo.md` by default.** Append to it only when the user explicitly asks for a ToDo/session-log entry. Root cause, files changed, fix description. Future sessions read this for context.
 
 ## Networking patterns
 

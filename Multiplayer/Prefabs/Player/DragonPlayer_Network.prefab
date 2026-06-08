@@ -2852,6 +2852,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DragonUI
   vitalManager: {fileID: -7962891897276758031}
+  networkObject: {fileID: -5407344593502133865}
   staminaFill: {fileID: 4658080929140386506}
   headFill: {fileID: 8136215975000767807}
   wingsFill: {fileID: 2760335378714426461}
