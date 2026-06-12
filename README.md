@@ -4,7 +4,11 @@
 
 The project began as **FEFE_Multiplayer**, a broader asymmetric siege prototype, and is now evolving into a tighter playtestable game loop built around equipment-based teamwork, castle defense, and a player-controlled dragon.
 
-<img width="695" height="382" alt="image" src="https://github.com/user-attachments/assets/02a48d32-2b28-4084-aeb4-e0ff8485fdea" />
+
+
+https://github.com/user-attachments/assets/05c018e5-be55-4011-a0fa-061e8c52bea1
+
+
 
 ## Why This Project Matters
 
