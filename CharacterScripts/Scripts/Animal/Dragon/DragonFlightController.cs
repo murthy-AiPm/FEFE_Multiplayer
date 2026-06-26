@@ -43,6 +43,12 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private bool enableMouseYaw = true;
     [Tooltip("Camera-vs-dragon yaw angle that maps to full flight yaw. Lower = stronger camera turning.")]
     [SerializeField] private float cameraYawAngleForFullTurn = 35f;
+    [Tooltip("Positive FlightThrust required before camera yaw steering begins. 0.05 = 5% thrust.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float minThrustForCameraYaw = 0.05f;
+    [Tooltip("Blend range above Min Thrust For Camera Yaw. 0 = hard cutoff, 0.05 = fade in over the next 5% thrust.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float cameraYawThrustGateBlendRange = 0.05f;
     [Tooltip("Invert the camera yaw contribution.")]
     [SerializeField] private bool invertMouseYaw = false;
     [SerializeField] private bool invertY = false;
@@ -398,15 +404,6 @@ public class DragonFlightController : NetworkBehaviour
             cam = Camera.main?.transform;
 
         float horizontal = Input.GetAxisRaw(horizontalAxis);
-        float cameraYaw = 0f;
-        if (enableMouseYaw && cam != null)
-        {
-            float yawDelta = Mathf.DeltaAngle(transform.eulerAngles.y, cam.eulerAngles.y);
-            if (invertMouseYaw)
-                yawDelta = -yawDelta;
-
-            cameraYaw = Mathf.Clamp(yawDelta / Mathf.Max(cameraYawAngleForFullTurn, 0.0001f), -1f, 1f);
-        }
 
         // ── Thrust (hold-to-ramp: W accelerates, S decelerates, release freezes value) ──
         if (Input.GetKey(KeyCode.W))
@@ -420,6 +417,24 @@ public class DragonFlightController : NetworkBehaviour
         _rmThrust = Mathf.Clamp(_rmThrust, thrustMin, maxThrustForFrame);
 
         // ── Yaw ──
+        float cameraYaw = 0f;
+        if (enableMouseYaw && cam != null)
+        {
+            float yawDelta = Mathf.DeltaAngle(transform.eulerAngles.y, cam.eulerAngles.y);
+            if (invertMouseYaw)
+                yawDelta = -yawDelta;
+
+            float positiveThrust = Mathf.Clamp01(_rmThrust);
+            float yawGateT = cameraYawThrustGateBlendRange <= 0.0001f
+                ? (positiveThrust >= minThrustForCameraYaw ? 1f : 0f)
+                : Mathf.InverseLerp(
+                    minThrustForCameraYaw,
+                    Mathf.Clamp01(minThrustForCameraYaw + cameraYawThrustGateBlendRange),
+                    positiveThrust);
+
+            cameraYaw = Mathf.Clamp(yawDelta / Mathf.Max(cameraYawAngleForFullTurn, 0.0001f), -1f, 1f) * yawGateT;
+        }
+
         float targetYaw = Mathf.Clamp(horizontal + cameraYaw, -1f, 1f);
         _rmYaw = Mathf.MoveTowards(_rmYaw, targetYaw, yawSmoothing * dt);
         if (Mathf.Abs(targetYaw) < 0.01f && Mathf.Abs(_rmYaw) < 0.02f)

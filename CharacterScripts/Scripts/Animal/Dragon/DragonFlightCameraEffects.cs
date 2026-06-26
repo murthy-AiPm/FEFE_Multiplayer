@@ -50,8 +50,6 @@ public class DragonFlightCameraEffects : NetworkBehaviour
     [SerializeField] private float thrustGateBlendRange = 0.1f;
     [Tooltip("When below the thrust gate, disable Cinemachine noise components entirely instead of only setting gains to 0.")]
     [SerializeField] private bool disableNoiseBelowThrust = true;
-    [Tooltip("Also scales Dutch lean to zero below the thrust gate. Leave off if you like lean at low thrust.")]
-    [SerializeField] private bool gateLeanByThrust;
 
     [Header("Acceleration Pulse")]
     [SerializeField] private bool enableAccelerationPulse = false;
@@ -75,6 +73,12 @@ public class DragonFlightCameraEffects : NetworkBehaviour
     [SerializeField] private float yawLeanDegrees = -4f;
     [Tooltip("Camera roll degrees at full roll input. Negative values invert the lean.")]
     [SerializeField] private float rollLeanDegrees = -6f;
+    [Tooltip("Positive FlightThrust required before camera lean begins. 0.45 = 45% thrust.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float minThrustForLean = 0.45f;
+    [Tooltip("Blend range above Min Thrust For Lean. 0 = hard cutoff, 0.05 = fade in over the next 5% thrust.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float leanThrustGateBlendRange = 0.05f;
     [SerializeField] private float leanSmoothing = 7f;
 
     [Header("Debug Readout")]
@@ -83,6 +87,7 @@ public class DragonFlightCameraEffects : NetworkBehaviour
     [SerializeField] private float debugSpeedT;
     [SerializeField] private float debugLowAltitudeT;
     [SerializeField] private float debugThrustGateT;
+    [SerializeField] private float debugLeanThrustGateT;
     [SerializeField] private float debugPulseT;
     [SerializeField] private float debugAmplitude;
     [SerializeField] private float debugFrequency;
@@ -139,7 +144,7 @@ public class DragonFlightCameraEffects : NetworkBehaviour
         float thrustGateT = applyOnlyInFlight && !inFlight ? 0f : GetThrustGateT();
         float airGateT = gateAirEffectsByThrust ? thrustGateT : 1f;
         bool airNoiseEnabled = !gateAirEffectsByThrust || airGateT > 0f;
-        float leanGateT = gateLeanByThrust ? thrustGateT : 1f;
+        float leanGateT = applyOnlyInFlight && !inFlight ? 0f : GetLeanThrustGateT();
         float pulseT = (applyOnlyInFlight && !inFlight ? 0f : UpdateAccelerationPulse(inFlight)) * airGateT;
         float targetDutch = (applyOnlyInFlight && !inFlight ? 0f : GetTargetDutch()) * leanGateT;
 
@@ -179,6 +184,7 @@ public class DragonFlightCameraEffects : NetworkBehaviour
         debugSpeedT = speedT;
         debugLowAltitudeT = lowAltitudeT;
         debugThrustGateT = thrustGateT;
+        debugLeanThrustGateT = leanGateT;
         debugPulseT = pulseT;
         debugAmplitude = _currentAmplitude;
         debugFrequency = _currentFrequency;
@@ -235,6 +241,20 @@ public class DragonFlightCameraEffects : NetworkBehaviour
         return Mathf.InverseLerp(
             minThrustForAirEffects,
             Mathf.Clamp01(minThrustForAirEffects + thrustGateBlendRange),
+            positiveThrust);
+    }
+
+    private float GetLeanThrustGateT()
+    {
+        if (flightController == null) return 0f;
+
+        float positiveThrust = Mathf.Clamp01(flightController.FlightThrust);
+        if (leanThrustGateBlendRange <= 0.0001f)
+            return positiveThrust >= minThrustForLean ? 1f : 0f;
+
+        return Mathf.InverseLerp(
+            minThrustForLean,
+            Mathf.Clamp01(minThrustForLean + leanThrustGateBlendRange),
             positiveThrust);
     }
 

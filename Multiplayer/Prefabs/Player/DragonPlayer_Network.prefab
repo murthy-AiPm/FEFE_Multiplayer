@@ -6229,6 +6229,11 @@ MonoBehaviour:
   yawSmoothing: 5
   pitchSmoothSpeed: 3
   horizontalAxis: Horizontal
+  enableMouseYaw: 1
+  cameraYawAngleForFullTurn: 35
+  minThrustForCameraYaw: 0.05
+  cameraYawThrustGateBlendRange: 0.05
+  invertMouseYaw: 0
   invertY: 0
   pauseInputKey: 112
   pitchStabilizeKey: 304
@@ -6973,7 +6978,6 @@ MonoBehaviour:
   minThrustForAirEffects: 0.1
   thrustGateBlendRange: 0
   disableNoiseBelowThrust: 1
-  gateLeanByThrust: 0
   enableAccelerationPulse: 0
   accelerationThreshold: 8
   fullPulseAcceleration: 28
@@ -6987,12 +6991,15 @@ MonoBehaviour:
   driveDutchLean: 1
   yawLeanDegrees: -4
   rollLeanDegrees: -6
+  minThrustForLean: 0.36
+  leanThrustGateBlendRange: 0.05
   leanSmoothing: 7
   debugSpeed: 0
   debugAltitude: -1
   debugSpeedT: 0
   debugLowAltitudeT: 0
   debugThrustGateT: 0
+  debugLeanThrustGateT: 0
   debugPulseT: 0
   debugAmplitude: 0
   debugFrequency: 0
@@ -7048,8 +7055,14 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   showAltitudeDebug: 1
+  speedInputSource: 3
+  useRecommendedSpeedRange: 1
   minEffectSpeed: 8
   maxEffectSpeed: 45
+  rigidbodyVelocityRange: {x: 8, y: 45}
+  flightThrustRange: {x: 0.05, y: 1}
+  bonusFlightSpeedRange: {x: 0.1, y: 8}
+  thrustPlusBonusRange: {x: 0.1, y: 8}
   speedCurve:
     serializedVersion: 2
     m_Curve:
@@ -7102,6 +7115,11 @@ MonoBehaviour:
   stopParticlesWhenInactive: 1
   debugAltitude: -1
   debugSpeed: 0
+  debugRigidbodySpeed: 0
+  debugFlightThrust: 0
+  debugBonusFlightSpeed: 0
+  debugActiveMinSpeed: 0
+  debugActiveMaxSpeed: 0
   debugAltitudeT: 0
   debugSpeedT: 0
   debugEffectT: 0
