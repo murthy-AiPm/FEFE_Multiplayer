@@ -39,6 +39,12 @@ public class DragonFlightController : NetworkBehaviour
 
     [Header("Input")]
     [SerializeField] private string horizontalAxis = "Horizontal";
+    [Tooltip("When enabled, camera yaw relative to the dragon adds to flight yaw.")]
+    [SerializeField] private bool enableMouseYaw = true;
+    [Tooltip("Camera-vs-dragon yaw angle that maps to full flight yaw. Lower = stronger camera turning.")]
+    [SerializeField] private float cameraYawAngleForFullTurn = 35f;
+    [Tooltip("Invert the camera yaw contribution.")]
+    [SerializeField] private bool invertMouseYaw = false;
     [SerializeField] private bool invertY = false;
     [SerializeField] private KeyCode pauseInputKey = KeyCode.P;
     [Tooltip("Hold to lock flight pitch to zero (fly level) for fire strafing runs.")]
@@ -388,7 +394,19 @@ public class DragonFlightController : NetworkBehaviour
 
         if (_inputPaused) return;
 
+        if (cam == null)
+            cam = Camera.main?.transform;
+
         float horizontal = Input.GetAxisRaw(horizontalAxis);
+        float cameraYaw = 0f;
+        if (enableMouseYaw && cam != null)
+        {
+            float yawDelta = Mathf.DeltaAngle(transform.eulerAngles.y, cam.eulerAngles.y);
+            if (invertMouseYaw)
+                yawDelta = -yawDelta;
+
+            cameraYaw = Mathf.Clamp(yawDelta / Mathf.Max(cameraYawAngleForFullTurn, 0.0001f), -1f, 1f);
+        }
 
         // ── Thrust (hold-to-ramp: W accelerates, S decelerates, release freezes value) ──
         if (Input.GetKey(KeyCode.W))
@@ -402,7 +420,7 @@ public class DragonFlightController : NetworkBehaviour
         _rmThrust = Mathf.Clamp(_rmThrust, thrustMin, maxThrustForFrame);
 
         // ── Yaw ──
-        float targetYaw = Mathf.Clamp(horizontal, -1f, 1f);
+        float targetYaw = Mathf.Clamp(horizontal + cameraYaw, -1f, 1f);
         _rmYaw = Mathf.MoveTowards(_rmYaw, targetYaw, yawSmoothing * dt);
         if (Mathf.Abs(targetYaw) < 0.01f && Mathf.Abs(_rmYaw) < 0.02f)
             _rmYaw = 0f;
