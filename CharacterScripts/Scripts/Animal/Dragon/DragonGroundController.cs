@@ -170,7 +170,14 @@ public class DragonGroundController : AnimalGroundController
             else
                 rb.linearVelocity = Vector3.zero;
 
-            rb.MoveRotation(rb.rotation * animator.deltaRotation);
+            Quaternion targetRotation = rb.rotation * animator.deltaRotation;
+            float hardTurnYawDelta = flightController != null
+                ? flightController.ConsumeHardTurnYawDelta()
+                : 0f;
+            if (Mathf.Abs(hardTurnYawDelta) > 0.0001f)
+                targetRotation = Quaternion.AngleAxis(hardTurnYawDelta, Vector3.up) * targetRotation;
+
+            rb.MoveRotation(targetRotation);
             return;
         }
 

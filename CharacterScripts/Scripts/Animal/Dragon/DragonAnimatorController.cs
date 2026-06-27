@@ -29,6 +29,8 @@ public class DragonAnimatorController : AnimalAnimatorController
     private int yawHash;
     private int flightPitchHash;
     private int flightRollHash;
+    private int flightHardTurnHash;
+    private bool hasFlightHardTurnParameter;
     private int isRoarHash;
 
     // ─── Animator Parameter Hashes (Swim) ────────────────
@@ -58,6 +60,8 @@ public class DragonAnimatorController : AnimalAnimatorController
     private NetworkVariable<float> netFlightPitch = new NetworkVariable<float>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<float> netFlightRoll = new NetworkVariable<float>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<float> netFlightHardTurn = new NetworkVariable<float>(
         default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     // ─── NetworkVariables (Swim) ──────────────────────────
@@ -98,6 +102,11 @@ public class DragonAnimatorController : AnimalAnimatorController
         yawHash           = Animator.StringToHash("Yaw");
         flightPitchHash   = Animator.StringToHash("Pitch");
         flightRollHash    = Animator.StringToHash("Roll");
+        string hardTurnParameter = flightController != null
+            ? flightController.HardTurnAnimatorParameter
+            : "HardTurn";
+        flightHardTurnHash = Animator.StringToHash(hardTurnParameter);
+        hasFlightHardTurnParameter = HasAnimatorFloatParameter(flightHardTurnHash);
 
         // Cache combat hashes
         isRoarHash        = Animator.StringToHash("IsRoar");
@@ -127,6 +136,8 @@ public class DragonAnimatorController : AnimalAnimatorController
                 animator.SetFloat(yawHash, netFlightYaw.Value);
                 animator.SetFloat(flightPitchHash, netFlightPitch.Value);
                 animator.SetFloat(flightRollHash, netFlightRoll.Value);
+                if (hasFlightHardTurnParameter)
+                    animator.SetFloat(flightHardTurnHash, netFlightHardTurn.Value);
             }
             else if (netIsSwimming.Value)
             {
@@ -175,6 +186,8 @@ public class DragonAnimatorController : AnimalAnimatorController
             animator.SetFloat(yawHash, netFlightYaw.Value);
             animator.SetFloat(flightPitchHash, netFlightPitch.Value);
             animator.SetFloat(flightRollHash, netFlightRoll.Value);
+            if (hasFlightHardTurnParameter)
+                animator.SetFloat(flightHardTurnHash, netFlightHardTurn.Value);
         }
 
         // ─── Swim params ─────────────────────────────────
@@ -182,6 +195,14 @@ public class DragonAnimatorController : AnimalAnimatorController
         animator.SetFloat(swimSpeedHash,      netSwimSpeed.Value);
         animator.SetFloat(swimTurnHash,       netSwimTurn.Value);
         animator.SetFloat(swimVerticalHash,   netSwimVertical.Value);
+
+        if (flightController != null)
+        {
+            float hardTurnDirection = isDead
+                ? 0f
+                : (IsOwner ? flightController.FlightHardTurn : netFlightHardTurn.Value);
+            flightController.ApplyHardTurnVisualRoll(hardTurnDirection, Time.deltaTime);
+        }
     }
 
     protected override void UpdateNetworkVariables()
@@ -240,6 +261,12 @@ public class DragonAnimatorController : AnimalAnimatorController
         if (flightRoll == 0f && netFlightRoll.Value != 0f)
             netFlightRoll.Value = 0f;
 
+        float flightHardTurn = flightController.FlightHardTurn;
+        if (Mathf.Abs(netFlightHardTurn.Value - flightHardTurn) > FLOAT_EPSILON)
+            netFlightHardTurn.Value = flightHardTurn;
+        if (flightHardTurn == 0f && netFlightHardTurn.Value != 0f)
+            netFlightHardTurn.Value = 0f;
+
         // ─── Swim variables ──────────────────────────────
         if (swimController != null)
         {
@@ -266,5 +293,18 @@ public class DragonAnimatorController : AnimalAnimatorController
             if (animator != null)
                 animator.SetFloat(Animator.StringToHash("ForwardSpeed"), fwdSpeed);
         }
+    }
+
+    private bool HasAnimatorFloatParameter(int parameterHash)
+    {
+        if (animator == null) return false;
+
+        foreach (AnimatorControllerParameter parameter in animator.parameters)
+        {
+            if (parameter.nameHash == parameterHash && parameter.type == AnimatorControllerParameterType.Float)
+                return true;
+        }
+
+        return false;
     }
 }

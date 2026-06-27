@@ -1356,8 +1356,8 @@ MonoBehaviour:
   HorizontalAxis:
     Value: 5.7109113
     Center: 0
-    Range: {x: -45, y: 45}
-    Wrap: 0
+    Range: {x: -180, y: 180}
+    Wrap: 1
     Recentering:
       Enabled: 0
       Wait: 1
@@ -1837,7 +1837,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -2912,7 +2912,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -6234,9 +6234,86 @@ MonoBehaviour:
   minThrustForCameraYaw: 0.05
   cameraYawThrustGateBlendRange: 0.05
   invertMouseYaw: 0
+  enableHardTurns: 0
+  hardTurnAnimatorParameter: HardTurn
+  hardTurnAngle: 90
+  hardTurnDuration: 0.75
+  hardTurnCooldown: 0.25
+  hardTurnInputThreshold: 0.5
+  hardTurnMinThrust: 0
+  hardTurnYawCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  hardTurnCameraYawRecoveryTime: 0.35
+  hardTurnVisualRollTransform: {fileID: 0}
+  hardTurnVisualRollAngle: 43.9
+  hardTurnVisualRollCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.2
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.8
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  invertHardTurnVisualRoll: 0
   invertY: 0
   pauseInputKey: 112
-  pitchStabilizeKey: 304
+  attitudeLockKey: 304
   rollLeftKey: 113
   rollRightKey: 101
   hoverUpKey: 32
@@ -6671,11 +6748,11 @@ MonoBehaviour:
   neck2Bone: {fileID: 142127849840715812}
   neck3Bone: {fileID: 7040834288271894113}
   neck4Bone: {fileID: 4736920305905838227}
-  neckYawWeight: 0.3
-  neck1YawWeight: 0.3
-  neck2YawWeight: 0.3
-  neck3YawWeight: 0.3
-  neck4YawWeight: 1
+  neckYawWeight: 0.15
+  neck1YawWeight: 0.15
+  neck2YawWeight: 0.15
+  neck3YawWeight: 0.15
+  neck4YawWeight: 0.45
   fireBreathVFXPrefab: {fileID: 793755792036113438, guid: 8e4d4ead1c6f9c84da15c1be3e9dea0c, type: 3}
   fireBreathSpawnPoint: {fileID: 1664271699964925404}
   fireVFXRotationSmoothing: 10
@@ -6695,8 +6772,8 @@ MonoBehaviour:
   spineWeight: 1
   spine1Weight: 0
   spine2Weight: 0
-  flightYawAnimCompensation: -30
-  maxHeadAngle: 80
+  flightYawAnimCompensation: -90
+  maxHeadAngle: 180
   maxHeadPitch: 80
   headTurnSpeed: 200
   headReturnSpeed: 150

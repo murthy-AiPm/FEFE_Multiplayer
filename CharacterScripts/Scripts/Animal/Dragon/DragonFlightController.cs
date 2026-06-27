@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using Unity.Netcode;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// Dragon flight controller — root motion flight only.
@@ -37,6 +38,21 @@ public class DragonFlightController : NetworkBehaviour
     [Tooltip("How fast pitch smoothly moves to target value (per second).")]
     [SerializeField] private float pitchSmoothSpeed = 3f;
 
+    [Header("Takeoff Thrust Ramp")]
+    [Tooltip("Smoothly accelerates from Initial Thrust to Target Thrust after a ground takeoff.")]
+    [SerializeField] private bool enableTakeoffThrustRamp = true;
+    [Tooltip("Flight thrust applied when the ground takeoff enters flight mode.")]
+    [Range(-1f, 1f)]
+    [SerializeField] private float takeoffInitialThrust = 0.2f;
+    [Tooltip("Flight thrust reached at the end of the automatic takeoff ramp.")]
+    [Range(-1f, 1f)]
+    [SerializeField] private float takeoffTargetThrust = 1f;
+    [Tooltip("Seconds taken to reach Target Thrust. Pressing W or S cancels the ramp.")]
+    [Min(0.01f)]
+    [SerializeField] private float takeoffThrustRampDuration = 1.5f;
+    [Tooltip("Shapes acceleration over the normalized takeoff ramp time.")]
+    [SerializeField] private AnimationCurve takeoffThrustRampCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
     [Header("Input")]
     [SerializeField] private string horizontalAxis = "Horizontal";
     [Tooltip("When enabled, camera yaw relative to the dragon adds to flight yaw.")]
@@ -51,10 +67,51 @@ public class DragonFlightController : NetworkBehaviour
     [SerializeField] private float cameraYawThrustGateBlendRange = 0.05f;
     [Tooltip("Invert the camera yaw contribution.")]
     [SerializeField] private bool invertMouseYaw = false;
+
+    [Header("Hard Turn")]
+    [Tooltip("When enabled, the Horizontal axis starts dedicated hard left/right turns instead of contributing to normal yaw.")]
+    [SerializeField] private bool enableHardTurns = true;
+    [Tooltip("Float parameter used to select the hard-turn animation. -1 = left, 0 = inactive, 1 = right.")]
+    [SerializeField] private string hardTurnAnimatorParameter = "HardTurn";
+    [Tooltip("Total world-space heading change produced by one hard turn.")]
+    [Range(0f, 180f)]
+    [SerializeField] private float hardTurnAngle = 90f;
+    [Tooltip("Time in seconds for code to apply the full hard-turn heading change. Match this to the animation's turning section.")]
+    [Min(0.01f)]
+    [SerializeField] private float hardTurnDuration = 0.75f;
+    [Tooltip("Delay after a hard turn before another can begin.")]
+    [Min(0f)]
+    [SerializeField] private float hardTurnCooldown = 0.25f;
+    [Tooltip("Absolute Horizontal axis value required to start a hard turn. The axis must be released before another turn can start.")]
+    [Range(0.01f, 1f)]
+    [SerializeField] private float hardTurnInputThreshold = 0.5f;
+    [Tooltip("Minimum positive thrust required to start a hard turn. Set to 0 to allow hard turns while hovering or gliding.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float hardTurnMinThrust = 0f;
+    [Tooltip("Shapes how the scripted heading rotation is distributed over the hard-turn duration.")]
+    [SerializeField] private AnimationCurve hardTurnYawCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    [Tooltip("How long normal camera yaw remains neutral after the hard turn, allowing the follow camera to settle behind the new heading.")]
+    [Min(0f)]
+    [SerializeField] private float hardTurnCameraYawRecoveryTime = 0.35f;
+    [Tooltip("Visual model pivot used for hard-turn banking. Defaults to the child named Dragon; do not assign the Rigidbody root.")]
+    [SerializeField] private Transform hardTurnVisualRollTransform;
+    [Tooltip("Maximum visual body bank during a hard turn.")]
+    [Range(0f, 180f)]
+    [SerializeField] private float hardTurnVisualRollAngle = 90f;
+    [Tooltip("Visual bank over normalized hard-turn time. Default rolls in, holds at 90 degrees, then rolls out.")]
+    [SerializeField] private AnimationCurve hardTurnVisualRollCurve = new AnimationCurve(
+        new Keyframe(0f, 0f),
+        new Keyframe(0.2f, 1f),
+        new Keyframe(0.8f, 1f),
+        new Keyframe(1f, 0f));
+    [Tooltip("Reverses the visual bank direction without changing the actual heading turn.")]
+    [SerializeField] private bool invertHardTurnVisualRoll = false;
+
     [SerializeField] private bool invertY = false;
     [SerializeField] private KeyCode pauseInputKey = KeyCode.P;
-    [Tooltip("Hold to lock flight pitch to zero (fly level) for fire strafing runs.")]
-    [SerializeField] private KeyCode pitchStabilizeKey = KeyCode.RightControl;
+    [Tooltip("Hold to preserve the dragon's current pitch and yaw steering values. Hard turns are blocked while held.")]
+    [FormerlySerializedAs("pitchStabilizeKey")]
+    [SerializeField] private KeyCode attitudeLockKey = KeyCode.LeftShift;
     [Tooltip("Roll left key.")]
     [SerializeField] private KeyCode rollLeftKey = KeyCode.Q;
     [Tooltip("Roll right key.")]
@@ -153,6 +210,8 @@ public class DragonFlightController : NetworkBehaviour
     public float FlightYaw => _rmYaw;
     public float FlightPitch => _rmPitch;
     public float FlightRoll => _rmRoll;
+    public float FlightHardTurn => _hardTurnDirection;
+    public string HardTurnAnimatorParameter => hardTurnAnimatorParameter;
     public float BonusFlightSpeed => _bonusFlightSpeed;
 
     // ─── Private State ───────────────────────────────────
@@ -168,20 +227,36 @@ public class DragonFlightController : NetworkBehaviour
     private float _rmPitch;
     private float _rmPitchTarget;
     private float _rmRoll;
+    private bool _takeoffThrustRampActive;
+    private float _takeoffThrustRampElapsed;
     private float _rollTimeRemaining;
     private float _rollCooldownRemaining;
     private float _rollExitBlendRemaining;
+    private float _hardTurnDirection;
+    private float _hardTurnElapsed;
+    private float _hardTurnCooldownRemaining;
+    private float _hardTurnCameraYawRecoveryRemaining;
+    private float _pendingHardTurnYawDelta;
+    private bool _hardTurnInputWasPressed;
+    private float _visualHardTurnDirection;
+    private float _visualHardTurnElapsed;
+    private float _lastAppliedHardTurnVisualRoll;
     private float _bonusFlightSpeed;
     private bool _inputPaused;
     private bool _wasPauseMenuPaused;
+    private bool _attitudeLockActive;
+    private float _lockedPitch;
+    private float _lockedYaw;
 
     // Animator hashes
     private int thrustHash;
     private int yawHash;
     private int pitchHash;
     private int rollHash;
+    private int hardTurnHash;
     private int flightModeHash;
     private int diveCrashLandHash;
+    private bool hasHardTurnAnimatorParameter;
     private KeyCode exitFlightKey = KeyCode.C;
 
     private bool _diveCrashTriggered;
@@ -211,13 +286,17 @@ public class DragonFlightController : NetworkBehaviour
             staminaController = GetComponent<DragonStaminaController>();
         if (wingActivityTracker == null)
             wingActivityTracker = GetComponent<DragonWingActivityTracker>();
+        if (hardTurnVisualRollTransform == null)
+            hardTurnVisualRollTransform = transform.Find("Dragon");
 
         thrustHash        = Animator.StringToHash("Thrust");
         yawHash           = Animator.StringToHash("Yaw");
         pitchHash         = Animator.StringToHash("Pitch");
         rollHash          = Animator.StringToHash("Roll");
+        hardTurnHash      = Animator.StringToHash(hardTurnAnimatorParameter);
         flightModeHash    = Animator.StringToHash("FlightMode");
         diveCrashLandHash = Animator.StringToHash("DiveCrashLand");
+        hasHardTurnAnimatorParameter = HasAnimatorFloatParameter(hardTurnHash);
 
         isActive = false;
         isHoverMode = false;
@@ -230,8 +309,15 @@ public class DragonFlightController : NetworkBehaviour
         if (rb != null) rb.useGravity = false;
     }
 
+    private void OnDisable()
+    {
+        RemoveHardTurnVisualRoll();
+    }
+
     private void Update()
     {
+        RemoveHardTurnVisualRoll();
+
         if (!IsOwner) return;
 
         // Pause menu (Esc): zero thrust/pitch/yaw on entry so the dragon hovers
@@ -244,6 +330,9 @@ public class DragonFlightController : NetworkBehaviour
             _rmPitch = 0f;
             _rmPitchTarget = 0f;
             _rmYaw = 0f;
+            _takeoffThrustRampActive = false;
+            _takeoffThrustRampElapsed = 0f;
+            ResetAttitudeLock();
             if (animator != null)
             {
                 animator.SetFloat(thrustHash, 0f);
@@ -266,7 +355,7 @@ public class DragonFlightController : NetworkBehaviour
             if (Input.GetKeyDown(exitFlightKey) && !IsSwimmingActive()
                 && groundingSystem != null && !groundingSystem.IsGrounded)
             {
-                EnterFlight();
+                EnterFlight(false);
                 return;
             }
 
@@ -300,10 +389,10 @@ public class DragonFlightController : NetworkBehaviour
     // ─── Public API ──────────────────────────────────────
 
     /// <summary>
-    /// Enter flight mode. Called from ground takeoff and from free-fall re-entry.
-    /// Levels the dragon, suspends ground alignment, starts at full thrust.
+    /// Enter flight mode. Ground takeoff uses a smooth thrust ramp by default;
+    /// free-fall re-entry can bypass it for immediate recovery thrust.
     /// </summary>
-    public void EnterFlight()
+    public void EnterFlight(bool smoothTakeoffThrust = true)
     {
         // Don't enter flight while swimming
         if (IsSwimmingActive()) return;
@@ -311,7 +400,13 @@ public class DragonFlightController : NetworkBehaviour
         if (staminaController != null && staminaController.WingsBroken) return;
         isActive = true;
         isHoverMode = false;
-        _rmThrust = 1f;
+        _takeoffThrustRampActive = smoothTakeoffThrust && enableTakeoffThrustRamp;
+        _takeoffThrustRampElapsed = 0f;
+        _rmThrust = _takeoffThrustRampActive
+            ? Mathf.Clamp(takeoffInitialThrust, thrustMin, thrustMax)
+            : thrustMax;
+        ResetHardTurn();
+        ResetAttitudeLock();
 
         // Suspend ground alignment so slope tilt doesn't carry into flight
         if (groundAlignment != null)
@@ -353,9 +448,13 @@ public class DragonFlightController : NetworkBehaviour
         _rmPitch = 0f;
         _rmPitchTarget = 0f;
         _rmRoll = 0;
+        _takeoffThrustRampActive = false;
+        _takeoffThrustRampElapsed = 0f;
         _rollTimeRemaining = 0f;
         _rollCooldownRemaining = 0f;
         _rollExitBlendRemaining = 0f;
+        ResetHardTurn();
+        ResetAttitudeLock();
         _bonusFlightSpeed = 0f;
 
         // Clear animator flight params
@@ -366,6 +465,8 @@ public class DragonFlightController : NetworkBehaviour
             animator.SetFloat(yawHash, 0f);
             animator.SetFloat(pitchHash, 0f);
             animator.SetFloat(rollHash, 0f);
+            if (hasHardTurnAnimatorParameter)
+                animator.SetFloat(hardTurnHash, 0f);
             animator.applyRootMotion = true;
         }
 
@@ -404,21 +505,48 @@ public class DragonFlightController : NetworkBehaviour
             cam = Camera.main?.transform;
 
         float horizontal = Input.GetAxisRaw(horizontalAxis);
+        UpdateAttitudeLock();
 
         // ── Thrust (hold-to-ramp: W accelerates, S decelerates, release freezes value) ──
-        if (Input.GetKey(KeyCode.W))
+        bool accelerateHeld = Input.GetKey(KeyCode.W);
+        bool decelerateHeld = Input.GetKey(KeyCode.S);
+        if (accelerateHeld || decelerateHeld)
+            _takeoffThrustRampActive = false;
+
+        if (accelerateHeld)
             _rmThrust += thrustAccelRate * dt;
-        if (Input.GetKey(KeyCode.S))
+        if (decelerateHeld)
             _rmThrust -= thrustDecelRate * dt;
+
+        if (_takeoffThrustRampActive)
+        {
+            float duration = Mathf.Max(0.01f, takeoffThrustRampDuration);
+            _takeoffThrustRampElapsed = Mathf.Min(_takeoffThrustRampElapsed + dt, duration);
+            float normalizedTime = _takeoffThrustRampElapsed / duration;
+            float rampT = takeoffThrustRampCurve != null && takeoffThrustRampCurve.length > 0
+                ? Mathf.Clamp01(takeoffThrustRampCurve.Evaluate(normalizedTime))
+                : normalizedTime;
+            float initialThrust = Mathf.Clamp(takeoffInitialThrust, thrustMin, thrustMax);
+            float targetThrust = Mathf.Clamp(takeoffTargetThrust, thrustMin, thrustMax);
+            _rmThrust = Mathf.Lerp(initialThrust, targetThrust, rampT);
+
+            if (_takeoffThrustRampElapsed >= duration)
+                _takeoffThrustRampActive = false;
+        }
+
         // Stamina exhaustion caps high-thrust — dragon falls to glide/cruise speed when empty.
         float maxThrustForFrame = staminaController != null
             ? Mathf.Min(thrustMax, staminaController.MaxFlightThrust)
             : thrustMax;
         _rmThrust = Mathf.Clamp(_rmThrust, thrustMin, maxThrustForFrame);
 
+        bool suppressCameraYaw = UpdateHardTurn(_attitudeLockActive ? 0f : horizontal, dt);
+        if (_attitudeLockActive)
+            _hardTurnInputWasPressed = Mathf.Abs(horizontal) >= hardTurnInputThreshold;
+
         // ── Yaw ──
         float cameraYaw = 0f;
-        if (enableMouseYaw && cam != null)
+        if (!suppressCameraYaw && !_attitudeLockActive && enableMouseYaw && cam != null)
         {
             float yawDelta = Mathf.DeltaAngle(transform.eulerAngles.y, cam.eulerAngles.y);
             if (invertMouseYaw)
@@ -435,17 +563,21 @@ public class DragonFlightController : NetworkBehaviour
             cameraYaw = Mathf.Clamp(yawDelta / Mathf.Max(cameraYawAngleForFullTurn, 0.0001f), -1f, 1f) * yawGateT;
         }
 
-        float targetYaw = Mathf.Clamp(horizontal + cameraYaw, -1f, 1f);
-        _rmYaw = Mathf.MoveTowards(_rmYaw, targetYaw, yawSmoothing * dt);
-        if (Mathf.Abs(targetYaw) < 0.01f && Mathf.Abs(_rmYaw) < 0.02f)
+        float targetYaw = cameraYaw;
+        if (suppressCameraYaw)
             _rmYaw = 0f;
-
-        // ── Pitch (driven from camera angle — dragon follows where camera looks) ──
-        if (Input.GetKey(pitchStabilizeKey))
+        else if (_attitudeLockActive)
+            _rmYaw = _lockedYaw;
+        else
         {
-            // Pitch stabilized — fly level, ignore camera pitch
-            _rmPitchTarget = 0f;
+            _rmYaw = Mathf.MoveTowards(_rmYaw, targetYaw, yawSmoothing * dt);
+            if (Mathf.Abs(targetYaw) < 0.01f && Mathf.Abs(_rmYaw) < 0.02f)
+                _rmYaw = 0f;
         }
+
+        // ── Pitch (driven from camera angle unless attitude lock is held) ──
+        if (_attitudeLockActive)
+            _rmPitchTarget = _lockedPitch;
         else if (cam != null)
         {
             float camPitch = cam.eulerAngles.x;
@@ -461,7 +593,9 @@ public class DragonFlightController : NetworkBehaviour
             float climbCap = staminaController.MaxClimbPitch;
             if (_rmPitchTarget > climbCap) _rmPitchTarget = climbCap;
         }
-        _rmPitch = Mathf.MoveTowards(_rmPitch, _rmPitchTarget, pitchSmoothSpeed * dt);
+        _rmPitch = _attitudeLockActive
+            ? _rmPitchTarget
+            : Mathf.MoveTowards(_rmPitch, _rmPitchTarget, pitchSmoothSpeed * dt);
 
         // ── Roll (one-shot, locked for rollDuration, then cooldown; forward
         //   movement applied since roll clips are in-place) ──
@@ -563,6 +697,8 @@ public class DragonFlightController : NetworkBehaviour
             animator.SetFloat(yawHash, _rmYaw);
             animator.SetFloat(pitchHash, _rmPitch);
             animator.SetFloat(rollHash, _rmRoll);
+            if (hasHardTurnAnimatorParameter)
+                animator.SetFloat(hardTurnHash, _hardTurnDirection);
             animator.applyRootMotion = true;
         }
 
@@ -582,6 +718,167 @@ public class DragonFlightController : NetworkBehaviour
         }
 
         UpdateBonusFlightSpeed(dt);
+    }
+
+    private void UpdateAttitudeLock()
+    {
+        bool lockHeld = Input.GetKey(attitudeLockKey);
+
+        if (lockHeld && !_attitudeLockActive)
+        {
+            _attitudeLockActive = true;
+            _lockedPitch = _rmPitch;
+            _lockedYaw = _rmYaw;
+        }
+        else if (!lockHeld && _attitudeLockActive)
+        {
+            ResetAttitudeLock();
+        }
+    }
+
+    private void ResetAttitudeLock()
+    {
+        _attitudeLockActive = false;
+        _lockedPitch = 0f;
+        _lockedYaw = 0f;
+    }
+
+    private bool UpdateHardTurn(float horizontal, float dt)
+    {
+        _pendingHardTurnYawDelta = 0f;
+
+        if (_hardTurnCooldownRemaining > 0f)
+            _hardTurnCooldownRemaining = Mathf.Max(0f, _hardTurnCooldownRemaining - dt);
+        if (_hardTurnCameraYawRecoveryRemaining > 0f)
+            _hardTurnCameraYawRecoveryRemaining = Mathf.Max(0f, _hardTurnCameraYawRecoveryRemaining - dt);
+
+        bool inputPressed = Mathf.Abs(horizontal) >= hardTurnInputThreshold;
+
+        if (!enableHardTurns)
+        {
+            _hardTurnInputWasPressed = inputPressed;
+            ResetHardTurnMotion();
+            return false;
+        }
+
+        if (_hardTurnDirection == 0f && !_hardTurnInputWasPressed && inputPressed
+            && _hardTurnCooldownRemaining <= 0f
+            && Mathf.Clamp01(_rmThrust) >= hardTurnMinThrust)
+        {
+            _hardTurnDirection = Mathf.Sign(horizontal);
+            _hardTurnElapsed = 0f;
+            _hardTurnCameraYawRecoveryRemaining = 0f;
+        }
+
+        _hardTurnInputWasPressed = inputPressed;
+        bool wasActiveThisFrame = _hardTurnDirection != 0f;
+
+        if (wasActiveThisFrame)
+        {
+            float duration = Mathf.Max(0.01f, hardTurnDuration);
+            float previousT = Mathf.Clamp01(_hardTurnElapsed / duration);
+            _hardTurnElapsed = Mathf.Min(_hardTurnElapsed + dt, duration);
+            float currentT = Mathf.Clamp01(_hardTurnElapsed / duration);
+
+            float previousProgress = EvaluateHardTurnProgress(previousT);
+            float currentProgress = EvaluateHardTurnProgress(currentT);
+            _pendingHardTurnYawDelta = (currentProgress - previousProgress)
+                                     * hardTurnAngle
+                                     * _hardTurnDirection;
+
+            if (_hardTurnElapsed >= duration)
+            {
+                _hardTurnDirection = 0f;
+                _hardTurnCooldownRemaining = hardTurnCooldown;
+                _hardTurnCameraYawRecoveryRemaining = hardTurnCameraYawRecoveryTime;
+            }
+        }
+
+        return wasActiveThisFrame || _hardTurnCameraYawRecoveryRemaining > 0f;
+    }
+
+    private float EvaluateHardTurnProgress(float t)
+    {
+        if (hardTurnYawCurve == null || hardTurnYawCurve.length == 0)
+            return t;
+
+        float start = hardTurnYawCurve.Evaluate(0f);
+        float end = hardTurnYawCurve.Evaluate(1f);
+        if (Mathf.Abs(end - start) < 0.0001f)
+            return t;
+
+        return Mathf.Clamp01((hardTurnYawCurve.Evaluate(t) - start) / (end - start));
+    }
+
+    public float ConsumeHardTurnYawDelta()
+    {
+        float yawDelta = _pendingHardTurnYawDelta;
+        _pendingHardTurnYawDelta = 0f;
+        return yawDelta;
+    }
+
+    public void ApplyHardTurnVisualRoll(float hardTurnDirection, float dt)
+    {
+        if (hardTurnVisualRollTransform == null) return;
+
+        float direction = Mathf.Abs(hardTurnDirection) >= 0.5f
+            ? Mathf.Sign(hardTurnDirection)
+            : 0f;
+
+        if (direction != 0f)
+        {
+            if (_visualHardTurnDirection != direction)
+            {
+                _visualHardTurnDirection = direction;
+                _visualHardTurnElapsed = 0f;
+            }
+            else
+            {
+                _visualHardTurnElapsed += dt;
+            }
+
+            float duration = Mathf.Max(0.01f, hardTurnDuration);
+            float normalizedTime = Mathf.Clamp01(_visualHardTurnElapsed / duration);
+            float rollT = hardTurnVisualRollCurve != null && hardTurnVisualRollCurve.length > 0
+                ? Mathf.Clamp01(hardTurnVisualRollCurve.Evaluate(normalizedTime))
+                : normalizedTime;
+            float rollDirection = invertHardTurnVisualRoll ? -direction : direction;
+            _lastAppliedHardTurnVisualRoll = rollDirection * hardTurnVisualRollAngle * rollT;
+        }
+        else
+        {
+            _visualHardTurnDirection = 0f;
+            _visualHardTurnElapsed = 0f;
+            _lastAppliedHardTurnVisualRoll = 0f;
+        }
+
+        hardTurnVisualRollTransform.localRotation *=
+            Quaternion.AngleAxis(_lastAppliedHardTurnVisualRoll, Vector3.forward);
+    }
+
+    private void RemoveHardTurnVisualRoll()
+    {
+        if (hardTurnVisualRollTransform == null || Mathf.Abs(_lastAppliedHardTurnVisualRoll) < 0.0001f)
+            return;
+
+        hardTurnVisualRollTransform.localRotation *=
+            Quaternion.Inverse(Quaternion.AngleAxis(_lastAppliedHardTurnVisualRoll, Vector3.forward));
+        _lastAppliedHardTurnVisualRoll = 0f;
+    }
+
+    private void ResetHardTurn()
+    {
+        ResetHardTurnMotion();
+        _hardTurnCooldownRemaining = 0f;
+        _hardTurnInputWasPressed = false;
+    }
+
+    private void ResetHardTurnMotion()
+    {
+        _hardTurnDirection = 0f;
+        _hardTurnElapsed = 0f;
+        _hardTurnCameraYawRecoveryRemaining = 0f;
+        _pendingHardTurnYawDelta = 0f;
     }
 
     // ─── Free-Fall Crash Detection ───────────────────
@@ -785,6 +1082,19 @@ public class DragonFlightController : NetworkBehaviour
             rb.MoveRotation(targetRotation);
         else
             transform.rotation = targetRotation;
+    }
+
+    private bool HasAnimatorFloatParameter(int parameterHash)
+    {
+        if (animator == null) return false;
+
+        foreach (AnimatorControllerParameter parameter in animator.parameters)
+        {
+            if (parameter.nameHash == parameterHash && parameter.type == AnimatorControllerParameterType.Float)
+                return true;
+        }
+
+        return false;
     }
 
     private static float NormalizePitch(float xDegrees)
