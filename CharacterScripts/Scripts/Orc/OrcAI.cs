@@ -114,6 +114,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     [SerializeField] private int outOfViewRangedAlertReturnThreshold = 2;
     [Tooltip("Seconds allowed between out-of-view ranged alerts before the count resets.")]
     [SerializeField] private float outOfViewRangedAlertWindow = 4f;
+    [Tooltip("How long a ranged reaction suppresses the normal damage-driven stagger state change.")]
+    [SerializeField] private float rangedReactionStaggerSuppressTime = 0.25f;
 
     [Header("Patrol")]
     [SerializeField] private OrcPatrolMode patrolMode = OrcPatrolMode.Wander;
@@ -140,6 +142,10 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     [SerializeField] private float preferredCombatDistance = 2.2f;
     [SerializeField] private float repositionDistance = 1.4f;
     [SerializeField] private float repositionDuration = 0.7f;
+    [Tooltip("Sideways influence applied when choosing a combat reposition destination.")]
+    [SerializeField] private float repositionSideBias = 0.6f;
+    [Tooltip("Keeps the NavMeshAgent's internal position caught up while root motion drives the transform.")]
+    [SerializeField] private float rootMotionAgentCatchupSpeed = 100f;
     [Tooltip("Minimum seconds between immediate path refreshes. Prevents constantly replacing the active NavMesh path.")]
     [SerializeField] private float chaseRepathInterval = 0.2f;
     [Tooltip("Refresh the chase destination immediately once the target has moved this far from the last requested destination.")]
@@ -195,6 +201,10 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     [SerializeField] private float attackCancelFade = 0.08f;
     [Tooltip("After an attack finishes, hold real Block during the attack cooldown.")]
     [SerializeField] private bool blockDuringAttackCooldown = true;
+
+    [Header("Combat Reactions")]
+    [Tooltip("How long the orc remains in the stagger substate.")]
+    [SerializeField] private float staggerDuration = 0.45f;
 
     [Header("Block")]
     [Range(0f, 1f)]
@@ -634,7 +644,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     {
         if (!IsServer || !ShouldUseRootMotionForCurrentState() || animator == null || agent == null) return;
 
-        agent.speed = 100f;
+        agent.speed = rootMotionAgentCatchupSpeed;
         Vector3 rootPosition = animator.rootPosition;
 
         Vector3 rayOrigin = rootPosition + Vector3.up * 0.5f;
@@ -1337,7 +1347,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (Random.value < 0.5f)
             side = -side;
 
-        Vector3 desired = transform.position + (away.normalized + side * 0.6f).normalized * preferredCombatDistance;
+        Vector3 desired = transform.position +
+                          (away.normalized + side * repositionSideBias).normalized * preferredCombatDistance;
         if (NavMesh.SamplePosition(desired, out NavMeshHit hit, preferredCombatDistance, NavMesh.AllAreas))
             repositionTarget = hit.position;
         else
@@ -1546,7 +1557,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 break;
 
             case OrcSubState.Stagger:
-                stateTimer = 0.45f;
+                stateTimer = staggerDuration;
                 StopAgent();
                 DisableWeaponHitbox();
                 if (animator != null)
@@ -2107,7 +2118,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             CanSeeRangedAttackerFromHit(attacker))
         {
             directRangedHitPriorityTimer = directRangedHitPriorityDuration;
-            suppressDamageReceivedStateChangeTimer = 0.25f;
+            suppressDamageReceivedStateChangeTimer = rangedReactionStaggerSuppressTime;
             BeginPursueRangedAttacker(attacker);
             postLeashRangedChargeActive = true;
             return true;
@@ -3343,7 +3354,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (directHit && squad != null &&
             squad.HandleMemberDirectRangedHit(this, sourcePosition, attackerObject))
         {
-            suppressDamageReceivedStateChangeTimer = 0.25f;
+            suppressDamageReceivedStateChangeTimer = rangedReactionStaggerSuppressTime;
             return;
         }
 
@@ -3361,7 +3372,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             if (directAttackerVisible)
             {
                 directRangedHitPriorityTimer = directRangedHitPriorityDuration;
-                suppressDamageReceivedStateChangeTimer = 0.25f;
+                suppressDamageReceivedStateChangeTimer = rangedReactionStaggerSuppressTime;
                 BeginPursueRangedAttacker(directAttacker);
             }
 
@@ -3376,7 +3387,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             directRangedHitPriorityTimer = directRangedHitPriorityDuration;
         }
 
-        suppressDamageReceivedStateChangeTimer = 0.25f;
+        suppressDamageReceivedStateChangeTimer = rangedReactionStaggerSuppressTime;
 
         Transform attacker = attackerObject != null ? attackerObject.transform : null;
         bool attackerVisible =
