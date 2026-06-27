@@ -680,7 +680,9 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         {
             var col = _separationBuffer[i];
             if (col == null || col.transform == transform || col.isTrigger) continue;
-            if (col.GetComponentInParent<OrcAI>() == null && col.GetComponentInParent<BearAI>() == null) continue;
+            OrcAI nearbyOrc = col.GetComponentInParent<OrcAI>();
+            if (nearbyOrc == this) continue;
+            if (nearbyOrc == null && col.GetComponentInParent<BearAI>() == null) continue;
 
             Vector3 away = rootPosition - col.transform.position;
             away.y = 0f;
