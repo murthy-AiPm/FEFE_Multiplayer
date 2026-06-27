@@ -73,6 +73,21 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         LeashThreat
     }
 
+    // What the orc is doing while it is not in active melee combat. Mutually
+    // exclusive by construction; replaces the old parallel disengage flags.
+    private enum ReturnActivity
+    {
+        None,
+        Home,
+        LeashReturn,
+        LowHealthHome,
+        MoveToInvestigate,
+        SearchInvestigate,
+        AlertReturnHome,
+        RangedGuard,
+        CampAlertHold
+    }
+
     private const float LeashThreatHitGraceDuration = 0.5f;
     private const float PostLeashReturnRangedResponseDuration = 8f;
 
@@ -158,6 +173,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     [SerializeField] private bool requireCompleteNavMeshPath;
     [Tooltip("If the agent ends up off the NavMesh (e.g. root motion pushed it over an edge), warp it back to the nearest NavMesh point within this radius.")]
     [SerializeField] private float agentOffMeshRecoverRadius = 5f;
+    [Tooltip("Spawn/home points are often authored slightly off the baked NavMesh. Snap the recorded home/original position onto the NavMesh within this radius so the orc can always path home.")]
+    [SerializeField] private float homeSnapSampleRadius = 10f;
 
     [Header("Utility")]
     [SerializeField] private float decisionInterval = 0.2f;
@@ -351,17 +368,11 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private float nextReturnRepathTime;
     private bool hasChaseDestination;
     private bool hasReturnDestination;
-    private bool movingToLastKnownPosition;
-    private bool searchingLastKnownPosition;
-    private bool rangedHitGuardActive;
-    private bool rangedInvestigationActive;
-    private bool boundedRangedInvestigationActive;
-    private bool alertReturnHomeActive;
-    private bool campAlertHoldActive;
+    private ReturnActivity returnActivity = ReturnActivity.None;
+    private bool investigateFromRanged;
+    private bool investigateBounded;
     private bool ignoreHomePursueDistanceAfterLeashHarassment;
-    private bool lowHealthReturnHomeActive;
     private bool postLeashReturnActive;
-    private bool leashReturnHomeActive;
     private bool postLeashRangedChargeActive;
     private Vector3 repositionTarget;
     private Vector3 lastChaseDestination;
@@ -389,9 +400,9 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     public bool IsAlive => State != OrcState.Dead;
     public bool HasCombatTarget => currentTarget != null && IsTargetAlive(currentTarget);
     public bool IsRangedInvestigationActive =>
-        rangedInvestigationActive ||
-        boundedRangedInvestigationActive ||
-        alertReturnHomeActive;
+        ((returnActivity == ReturnActivity.MoveToInvestigate ||
+          returnActivity == ReturnActivity.SearchInvestigate) && investigateFromRanged) ||
+        returnActivity == ReturnActivity.AlertReturnHome;
 
     public bool IsDefenseInvincible => false;
 
@@ -412,7 +423,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (!CanAcceptServerCoordination()) return;
 
         RememberOriginalPosition();
-        homePosition = home;
+        homePosition = SnapToNavMesh(home);
         hasExternalHomeAnchor = true;
     }
 
@@ -466,22 +477,10 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     {
         if (!CanAcceptServerCoordination() || !IsAlive || currentTarget != null) return;
 
-        CancelInvoke(nameof(EnableSelectedWeaponHitbox));
-        DisableWeaponHitbox();
-        UnregisterAttacker();
+        EnterReturnActivity(ReturnActivity.CampAlertHold);
 
-        activeAttack = null;
-        attackHitboxWindowStarted = false;
-        postAttackBlockActive = false;
-        nextBlockDuration = -1f;
         awarenessTarget = null;
         targetAwareness = 0f;
-        movingToLastKnownPosition = false;
-        searchingLastKnownPosition = false;
-        rangedHitGuardActive = false;
-        rangedInvestigationActive = false;
-        boundedRangedInvestigationActive = false;
-        alertReturnHomeActive = false;
 
         Vector3 direction = threatPosition - transform.position;
         direction.y = 0f;
@@ -490,15 +489,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (direction.sqrMagnitude < 0.001f)
             direction = transform.forward;
 
-        campAlertHoldActive = true;
         campAlertHoldTimer = Mathf.Max(0.1f, duration);
         campAlertLookPosition = transform.position + direction.normalized;
-
-        if (animator != null)
-        {
-            animator.ResetTrigger(attackHash);
-            animator.SetBool(blockHash, false);
-        }
 
         SetState(OrcState.Patrol, OrcSubState.Idle);
         RotateToward(campAlertLookPosition - transform.position);
@@ -524,9 +516,20 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (hasOriginalPosition)
             return;
 
-        originalPosition = transform.position;
+        originalPosition = SnapToNavMesh(transform.position);
         originalRotation = transform.rotation;
         hasOriginalPosition = true;
+    }
+
+    // Spawn/home points are often authored slightly off the baked NavMesh. The agent
+    // auto-snaps onto the mesh at spawn, but a raw off-mesh home point can't be sampled
+    // later, so the orc can never path home. Snap it onto the mesh once, up front.
+    private Vector3 SnapToNavMesh(Vector3 position)
+    {
+        if (NavMesh.SamplePosition(position, out NavMeshHit hit, homeSnapSampleRadius, NavMesh.AllAreas))
+            return hit.position;
+
+        return position;
     }
 
     public override void OnNetworkSpawn()
@@ -535,7 +538,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
         RememberOriginalPosition();
         if (!hasExternalHomeAnchor)
-            homePosition = transform.position;
+            homePosition = SnapToNavMesh(transform.position);
         if (IsServer && !_serverOrcs.Contains(this))
             _serverOrcs.Add(this);
 
@@ -765,22 +768,27 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     {
         RefreshLowHealthReturnHomeMode();
 
-        if (lowHealthReturnHomeActive && TryBeginLowHealthMeleeDefense())
+        if (returnActivity == ReturnActivity.LowHealthHome && TryBeginLowHealthMeleeDefense())
             return;
 
-        bool canAcquireTarget = !lowHealthReturnHomeActive &&
-                                !IsReturningHomeAfterLeashThreat() &&
+        bool canAcquireTarget = returnActivity != ReturnActivity.LowHealthHome &&
                                 (SubState != OrcSubState.Return ||
-                                 movingToLastKnownPosition ||
-                                 searchingLastKnownPosition ||
-                                 rangedInvestigationActive ||
-                                 alertReturnHomeActive ||
+                                 returnActivity == ReturnActivity.MoveToInvestigate ||
+                                 returnActivity == ReturnActivity.AlertReturnHome ||
+                                 IsReturningHomeAfterLeashThreat() ||
                                  IsSelfInsidePursueRadius());
         Transform target = canAcquireTarget ? FindNearestDetectedTarget() : null;
         if (target != null)
         {
             bool targetInsideInvestigationRadius = IsPositionInsideInvestigationRadius(target.position);
             bool targetInsidePursueRadius = IsTargetInsidePursueRadius(target);
+
+            if (IsReturningHomeAfterLeashThreat() &&
+                !targetInsidePursueRadius &&
+                !IsSelfInsidePursueRadius())
+            {
+                return;
+            }
 
             if (ShouldIgnoreVisibleTargetAfterLeashRevert(targetInsidePursueRadius))
                 return;
@@ -793,20 +801,14 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 return;
             }
 
+            EnterReturnActivity(ReturnActivity.None);
+
             currentTarget = target;
-            campAlertHoldActive = false;
             campAlertHoldTimer = 0f;
             outOfViewRangedAlertCount = 0;
             outOfViewRangedAlertTimer = 0f;
-            movingToLastKnownPosition = false;
-            searchingLastKnownPosition = false;
-            rangedInvestigationActive = false;
-            boundedRangedInvestigationActive = false;
-            alertReturnHomeActive = false;
-            lowHealthReturnHomeActive = false;
             postLeashReturnActive = false;
             postLeashReturnTimer = 0f;
-            leashReturnHomeActive = false;
             postLeashRangedChargeActive = false;
             lastKnownTargetPosition = target.position;
             loseSightTimer = loseSightGraceTime;
@@ -818,27 +820,25 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         {
             case OrcSubState.Idle:
                 stateTimer -= Time.deltaTime;
-                if (searchingLastKnownPosition)
+                if (returnActivity == ReturnActivity.SearchInvestigate)
                     RotateToward(rangedThreatPosition - transform.position);
 
-                if (campAlertHoldActive)
+                if (returnActivity == ReturnActivity.CampAlertHold)
                 {
                     campAlertHoldTimer -= Time.deltaTime;
                     RotateToward(campAlertLookPosition - transform.position);
                     if (campAlertHoldTimer > 0f)
                         return;
 
-                    campAlertHoldActive = false;
+                    returnActivity = ReturnActivity.None;
                     stateTimer = 0f;
                 }
 
                 if (stateTimer <= 0f)
                 {
-                    if (searchingLastKnownPosition)
+                    if (returnActivity == ReturnActivity.SearchInvestigate)
                     {
-                        searchingLastKnownPosition = false;
-                        rangedInvestigationActive = false;
-                        boundedRangedInvestigationActive = false;
+                        EnterReturnActivity(ReturnActivity.Home);
                         SetState(OrcState.Patrol, OrcSubState.Return);
                         return;
                     }
@@ -880,40 +880,38 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                     agent.remainingDistance <= arrivalThreshold;
                 if (physicallyAtReturnDestination || completedAcceptedReturnPath)
                 {
-                    if (lowHealthReturnHomeActive)
+                    if (returnActivity == ReturnActivity.LowHealthHome)
                     {
-                        lowHealthReturnHomeActive = false;
+                        returnActivity = ReturnActivity.None;
                         postLeashReturnActive = false;
                         postLeashReturnTimer = 0f;
-                        leashReturnHomeActive = false;
                         postLeashRangedChargeActive = false;
                         ignoreHomePursueDistanceAfterLeashHarassment = false;
                         SetState(OrcState.Patrol, OrcSubState.Idle);
                     }
-                    else if (movingToLastKnownPosition)
+                    else if (returnActivity == ReturnActivity.MoveToInvestigate)
                     {
-                        movingToLastKnownPosition = false;
-                        searchingLastKnownPosition = true;
+                        returnActivity = ReturnActivity.SearchInvestigate;
                         SetState(OrcState.Patrol, OrcSubState.Idle);
                         stateTimer = searchDuration;
                     }
                     else
                     {
-                        bool completedAlertReturnHome = alertReturnHomeActive;
-                        alertReturnHomeActive = false;
+                        bool completedAlertReturnHome =
+                            returnActivity == ReturnActivity.AlertReturnHome;
                         outOfViewRangedAlertCount = 0;
                         outOfViewRangedAlertTimer = 0f;
 
                         if (completedAlertReturnHome && !IsAtOriginalPosition())
                         {
+                            returnActivity = ReturnActivity.Home;
                             SetState(OrcState.Patrol, OrcSubState.Return);
                             return;
                         }
 
-                        lowHealthReturnHomeActive = false;
+                        returnActivity = ReturnActivity.None;
                         postLeashReturnActive = false;
                         postLeashReturnTimer = 0f;
-                        leashReturnHomeActive = false;
                         postLeashRangedChargeActive = false;
                         ignoreHomePursueDistanceAfterLeashHarassment = false;
                         SetState(OrcState.Patrol, OrcSubState.Idle);
@@ -931,12 +929,12 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             return;
         }
 
-        if (rangedHitGuardActive && currentTarget == null)
+        if (returnActivity == ReturnActivity.RangedGuard && currentTarget == null)
         {
             Transform target = FindNearestDetectedTarget();
             if (target != null)
             {
-                rangedHitGuardActive = false;
+                returnActivity = ReturnActivity.None;
                 currentTarget = target;
                 lastKnownTargetPosition = target.position;
                 loseSightTimer = loseSightGraceTime;
@@ -948,7 +946,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             return;
         }
 
-        if (lowHealthReturnHomeActive)
+        if (returnActivity == ReturnActivity.LowHealthHome)
         {
             if (!ValidateLowHealthMeleeDefenseTarget())
                 return;
@@ -962,11 +960,11 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 return;
         }
 
-        if (!lowHealthReturnHomeActive && IsBerserker)
+        if (returnActivity != ReturnActivity.LowHealthHome && IsBerserker)
         {
             TryUpdateBerserkerPriorityTarget();
         }
-        else if (!lowHealthReturnHomeActive && detectionTimer <= 0f)
+        else if (returnActivity != ReturnActivity.LowHealthHome && detectionTimer <= 0f)
         {
             Transform betterTarget = FindLessContestedVisibleTarget();
             if (betterTarget != null && betterTarget != currentTarget)
@@ -1003,7 +1001,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
     private void UpdateApproach(float distToTarget)
     {
-        if (lowHealthReturnHomeActive && distToTarget > GetLowHealthMeleeDefenseRange())
+        if (returnActivity == ReturnActivity.LowHealthHome &&
+            distToTarget > GetLowHealthMeleeDefenseRange())
         {
             ResumeLowHealthReturnHome();
             return;
@@ -1016,7 +1015,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 return;
         }
 
-        if (lowHealthReturnHomeActive)
+        if (returnActivity == ReturnActivity.LowHealthHome)
         {
             StopAgent();
             RotateToward(currentTarget.position - transform.position);
@@ -1100,10 +1099,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             return false;
 
         if (!TrySampleNavMeshDestination(destination, out sampledDestination))
-        {
-            LogMovementDebug($"TrySetDest FAIL sampleMiss dest={destination} radius={navMeshDestinationSampleRadius} areaMask={agent.areaMask}", true);
             return false;
-        }
 
         EnsureImmediatePath();
         immediatePath.ClearCorners();
@@ -1114,10 +1110,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             usablePath = usablePath && immediatePath.status == NavMeshPathStatus.PathComplete;
 
         if (!usablePath)
-        {
-            LogMovementDebug($"TrySetDest FAIL pathUnusable calculated={calculated} status={immediatePath.status} requireComplete={requireCompleteNavMeshPath} sampled={sampledDestination}", true);
             return false;
-        }
 
         agent.isStopped = false;
         return agent.SetPath(immediatePath);
@@ -1178,14 +1171,14 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         stateTimer -= Time.deltaTime;
         if (currentTarget != null)
             RotateToward(currentTarget.position - transform.position);
-        else if (rangedHitGuardActive)
+        else if (returnActivity == ReturnActivity.RangedGuard)
             RotateToward(rangedThreatPosition - transform.position);
 
         if (stateTimer <= 0f)
         {
-            if (rangedHitGuardActive)
+            if (returnActivity == ReturnActivity.RangedGuard)
             {
-                rangedHitGuardActive = false;
+                returnActivity = ReturnActivity.Home;
                 blockCooldownTimer = blockCooldown;
                 SetState(OrcState.Patrol, OrcSubState.Return);
                 return;
@@ -1251,7 +1244,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             return true;
         }
 
-        if (!lowHealthReturnHomeActive && distToTarget < repositionDistance)
+        if (returnActivity != ReturnActivity.LowHealthHome && distToTarget < repositionDistance)
         {
             BeginReposition();
             return true;
@@ -1306,12 +1299,6 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         currentTarget = target;
         lastKnownTargetPosition = target.position;
         loseSightTimer = loseSightGraceTime;
-        movingToLastKnownPosition = false;
-        searchingLastKnownPosition = false;
-        rangedHitGuardActive = false;
-        rangedInvestigationActive = false;
-        boundedRangedInvestigationActive = false;
-        alertReturnHomeActive = false;
         SetState(OrcState.Combat, OrcSubState.Approach);
         return true;
     }
@@ -1394,26 +1381,11 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (target == null)
             return;
 
-        CancelInvoke(nameof(EnableSelectedWeaponHitbox));
-        DisableWeaponHitbox();
-        UnregisterAttacker();
+        EnterReturnActivity(ReturnActivity.None);
 
-        activeAttack = null;
-        attackHitboxWindowStarted = false;
-        postAttackBlockActive = false;
-        nextBlockDuration = -1f;
-        movingToLastKnownPosition = false;
-        searchingLastKnownPosition = false;
-        rangedHitGuardActive = false;
-        rangedInvestigationActive = false;
-        boundedRangedInvestigationActive = false;
-        alertReturnHomeActive = false;
-        lowHealthReturnHomeActive = false;
         postLeashReturnActive = false;
         postLeashReturnTimer = 0f;
-        leashReturnHomeActive = false;
         postLeashRangedChargeActive = false;
-        campAlertHoldActive = false;
         campAlertHoldTimer = 0f;
         targetAwareness = detectionTime;
         awarenessTarget = target;
@@ -1421,15 +1393,6 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         lastKnownTargetPosition = target.position;
         loseSightTimer = loseSightGraceTime;
         leashThreatHitGraceTimer = LeashThreatHitGraceDuration;
-
-        if (animator != null)
-        {
-            animator.ResetTrigger(attackHash);
-            animator.SetBool(blockHash, false);
-
-            if (SubState == OrcSubState.Attack && !string.IsNullOrEmpty(locomotionStatePath))
-                animator.CrossFade(locomotionStatePath, attackCancelFade, 0);
-        }
 
         SetState(OrcState.Combat, OrcSubState.LeashThreat);
     }
@@ -1534,7 +1497,6 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 break;
 
             case OrcSubState.Approach:
-                leashReturnHomeActive = false;
                 ResetReturnDestination();
                 ResetChaseDestination();
                 ResumeAgent();
@@ -1713,7 +1675,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private string GetAnimatorDebugInfo()
     {
         if (animator == null)
-            return $"leashReturn={leashReturnHomeActive} animator=null";
+            return $"leashReturn={returnActivity == ReturnActivity.LeashReturn} animator=null";
 
         float animatorSpeed = 0f;
         if (TryGetAnimatorParameter(speedHash, out AnimatorControllerParameter speedParameter) &&
@@ -1733,7 +1695,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         bool inLeashThreatState = leashThreatStateHash != 0 &&
                                   stateInfo.fullPathHash == leashThreatStateHash;
 
-        return $"leashReturn={leashReturnHomeActive} animSpeed={animatorSpeed:0.00} taunting={taunting} inTaunt={inLeashThreatState} animTransition={animator.IsInTransition(0)}";
+        return $"leashReturn={returnActivity == ReturnActivity.LeashReturn} animSpeed={animatorSpeed:0.00} taunting={taunting} inTaunt={inLeashThreatState} animTransition={animator.IsInTransition(0)}";
     }
 
     private bool UpdateCurrentTargetVisibility()
@@ -1788,40 +1750,42 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         return true;
     }
 
-    private void BeginSearchLastKnownPosition()
+    // Single source of truth for entering a disengage activity. Resets combat
+    // scratch and animator triggers, then leaves activity-specific data to the caller.
+    private void EnterReturnActivity(ReturnActivity activity)
     {
         CancelInvoke(nameof(EnableSelectedWeaponHitbox));
         DisableWeaponHitbox();
+        UnregisterAttacker();
 
         activeAttack = null;
         attackHitboxWindowStarted = false;
         postAttackBlockActive = false;
         nextBlockDuration = -1f;
-        targetAwareness = 0f;
-        awarenessTarget = null;
 
         if (animator != null)
         {
             animator.ResetTrigger(attackHash);
             animator.SetBool(blockHash, false);
-
             if (SubState == OrcSubState.Attack && !string.IsNullOrEmpty(locomotionStatePath))
                 animator.CrossFade(locomotionStatePath, attackCancelFade, 0);
         }
 
-        UnregisterAttacker();
+        investigateFromRanged = false;
+        investigateBounded = false;
+        returnActivity = activity;
+    }
+
+    private void BeginSearchLastKnownPosition()
+    {
+        EnterReturnActivity(ReturnActivity.MoveToInvestigate);
+
+        targetAwareness = 0f;
+        awarenessTarget = null;
         currentTarget = null;
-        movingToLastKnownPosition = true;
-        searchingLastKnownPosition = false;
-        rangedHitGuardActive = false;
-        rangedInvestigationActive = false;
-        boundedRangedInvestigationActive = false;
-        alertReturnHomeActive = false;
-        lowHealthReturnHomeActive = false;
         postLeashReturnActive = false;
         postLeashReturnTimer = 0f;
         postLeashRangedChargeActive = false;
-        campAlertHoldActive = false;
         campAlertHoldTimer = 0f;
         outOfViewRangedAlertCount = 0;
         outOfViewRangedAlertTimer = 0f;
@@ -1831,38 +1795,16 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private void HandleInvalidCombatTarget()
     {
         bool returningFromLeashThreat = SubState == OrcSubState.LeashThreat;
+        bool returningAtLowHealth = IsHealthAtOrBelowPursueRevertRatio();
+        ReturnActivity activity = returningAtLowHealth
+            ? ReturnActivity.LowHealthHome
+            : returningFromLeashThreat ? ReturnActivity.LeashReturn : ReturnActivity.Home;
+        EnterReturnActivity(activity);
 
-        CancelInvoke(nameof(EnableSelectedWeaponHitbox));
-        DisableWeaponHitbox();
-
-        activeAttack = null;
-        attackHitboxWindowStarted = false;
-        postAttackBlockActive = false;
-        nextBlockDuration = -1f;
         targetAwareness = 0f;
         awarenessTarget = null;
-        movingToLastKnownPosition = false;
-        searchingLastKnownPosition = false;
-        rangedHitGuardActive = false;
-        rangedInvestigationActive = false;
-        boundedRangedInvestigationActive = false;
-        alertReturnHomeActive = false;
-        lowHealthReturnHomeActive = IsHealthAtOrBelowPursueRevertRatio();
-        leashReturnHomeActive = returningFromLeashThreat;
         postLeashRangedChargeActive = false;
-        campAlertHoldActive = false;
         campAlertHoldTimer = 0f;
-
-        if (animator != null)
-        {
-            animator.ResetTrigger(attackHash);
-            animator.SetBool(blockHash, false);
-
-            if (SubState == OrcSubState.Attack && !string.IsNullOrEmpty(locomotionStatePath))
-                animator.CrossFade(locomotionStatePath, attackCancelFade, 0);
-        }
-
-        UnregisterAttacker();
         SetState(OrcState.Patrol, OrcSubState.Return);
 
         if (returningFromLeashThreat)
@@ -1877,45 +1819,20 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
     private bool IsReturningHomeAfterLeashThreat()
     {
-        return leashReturnHomeActive &&
+        return returnActivity == ReturnActivity.LeashReturn &&
                State == OrcState.Patrol &&
                SubState == OrcSubState.Return;
     }
 
     private void ResumeLowHealthReturnHome()
     {
-        CancelInvoke(nameof(EnableSelectedWeaponHitbox));
-        DisableWeaponHitbox();
+        EnterReturnActivity(ReturnActivity.LowHealthHome);
 
-        activeAttack = null;
-        attackHitboxWindowStarted = false;
-        postAttackBlockActive = false;
-        nextBlockDuration = -1f;
         currentTarget = null;
         targetAwareness = 0f;
         awarenessTarget = null;
-        movingToLastKnownPosition = false;
-        searchingLastKnownPosition = false;
-        rangedHitGuardActive = false;
-        rangedInvestigationActive = false;
-        boundedRangedInvestigationActive = false;
-        alertReturnHomeActive = false;
-        lowHealthReturnHomeActive = true;
-        campAlertHoldActive = false;
         campAlertHoldTimer = 0f;
-        leashReturnHomeActive = false;
         postLeashRangedChargeActive = false;
-
-        if (animator != null)
-        {
-            animator.ResetTrigger(attackHash);
-            animator.SetBool(blockHash, false);
-
-            if (SubState == OrcSubState.Attack && !string.IsNullOrEmpty(locomotionStatePath))
-                animator.CrossFade(locomotionStatePath, attackCancelFade, 0);
-        }
-
-        UnregisterAttacker();
         SetState(OrcState.Patrol, OrcSubState.Return);
     }
 
@@ -1924,26 +1841,11 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (attacker == null)
             return;
 
-        CancelInvoke(nameof(EnableSelectedWeaponHitbox));
-        DisableWeaponHitbox();
-        UnregisterAttacker();
+        EnterReturnActivity(ReturnActivity.None);
 
-        activeAttack = null;
-        attackHitboxWindowStarted = false;
-        postAttackBlockActive = false;
-        nextBlockDuration = -1f;
-        movingToLastKnownPosition = false;
-        searchingLastKnownPosition = false;
-        rangedHitGuardActive = false;
-        rangedInvestigationActive = false;
-        boundedRangedInvestigationActive = false;
-        alertReturnHomeActive = false;
-        lowHealthReturnHomeActive = false;
         postLeashReturnActive = false;
         postLeashReturnTimer = 0f;
-        leashReturnHomeActive = false;
         postLeashRangedChargeActive = false;
-        campAlertHoldActive = false;
         campAlertHoldTimer = 0f;
         targetAwareness = detectionTime;
         awarenessTarget = attacker;
@@ -1951,51 +1853,18 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         lastKnownTargetPosition = attacker.position;
         loseSightTimer = loseSightGraceTime;
 
-        if (animator != null)
-        {
-            animator.ResetTrigger(attackHash);
-            animator.SetBool(blockHash, false);
-
-            if (SubState == OrcSubState.Attack && !string.IsNullOrEmpty(locomotionStatePath))
-                animator.CrossFade(locomotionStatePath, attackCancelFade, 0);
-        }
-
         SetState(OrcState.Combat, OrcSubState.Approach);
     }
 
     private void BeginRangedHitGuard(Vector3 sourcePosition)
     {
-        CancelInvoke(nameof(EnableSelectedWeaponHitbox));
-        DisableWeaponHitbox();
-        UnregisterAttacker();
+        EnterReturnActivity(ReturnActivity.RangedGuard);
 
-        activeAttack = null;
-        attackHitboxWindowStarted = false;
-        postAttackBlockActive = false;
-        nextBlockDuration = -1f;
         currentTarget = null;
         awarenessTarget = null;
         targetAwareness = 0f;
-        movingToLastKnownPosition = false;
-        searchingLastKnownPosition = false;
-        rangedHitGuardActive = true;
-        rangedInvestigationActive = false;
-        boundedRangedInvestigationActive = false;
-        alertReturnHomeActive = false;
-        lowHealthReturnHomeActive = false;
-        campAlertHoldActive = false;
         campAlertHoldTimer = 0f;
-        leashReturnHomeActive = false;
         rangedThreatPosition = sourcePosition;
-
-        if (animator != null)
-        {
-            animator.ResetTrigger(attackHash);
-            animator.SetBool(blockHash, false);
-
-            if (SubState == OrcSubState.Attack && !string.IsNullOrEmpty(locomotionStatePath))
-                animator.CrossFade(locomotionStatePath, attackCancelFade, 0);
-        }
 
         RotateToward(sourcePosition - transform.position);
         BeginBlock(rangedHitGuardDuration, false);
@@ -2003,41 +1872,19 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
     private void BeginInvestigateRangedSource(Vector3 sourcePosition)
     {
-        CancelInvoke(nameof(EnableSelectedWeaponHitbox));
-        DisableWeaponHitbox();
-        UnregisterAttacker();
+        EnterReturnActivity(ReturnActivity.MoveToInvestigate);
 
-        activeAttack = null;
-        attackHitboxWindowStarted = false;
-        postAttackBlockActive = false;
-        nextBlockDuration = -1f;
+        investigateFromRanged = true;
+        investigateBounded = IsRangedSourceOutsideInvestigationRadius(sourcePosition);
         currentTarget = null;
         awarenessTarget = null;
         targetAwareness = 0f;
-        searchingLastKnownPosition = false;
-        rangedHitGuardActive = false;
         rangedThreatPosition = sourcePosition;
         lastKnownTargetPosition = GetRangedInvestigationDestination(sourcePosition);
-        movingToLastKnownPosition = true;
-        rangedInvestigationActive = true;
-        boundedRangedInvestigationActive = IsRangedSourceOutsideInvestigationRadius(sourcePosition);
-        alertReturnHomeActive = false;
-        lowHealthReturnHomeActive = false;
         postLeashReturnActive = false;
         postLeashReturnTimer = 0f;
-        leashReturnHomeActive = false;
         postLeashRangedChargeActive = false;
-        campAlertHoldActive = false;
         campAlertHoldTimer = 0f;
-
-        if (animator != null)
-        {
-            animator.ResetTrigger(attackHash);
-            animator.SetBool(blockHash, false);
-
-            if (SubState == OrcSubState.Attack && !string.IsNullOrEmpty(locomotionStatePath))
-                animator.CrossFade(locomotionStatePath, attackCancelFade, 0);
-        }
 
         RotateToward(sourcePosition - transform.position);
         SetState(OrcState.Patrol, OrcSubState.Return);
@@ -2045,39 +1892,18 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
     private void BeginAlertReturnHome(Vector3 spottedTargetPosition)
     {
-        CancelInvoke(nameof(EnableSelectedWeaponHitbox));
-        DisableWeaponHitbox();
-        UnregisterAttacker();
+        EnterReturnActivity(ReturnActivity.AlertReturnHome);
 
-        activeAttack = null;
-        attackHitboxWindowStarted = false;
-        postAttackBlockActive = false;
-        nextBlockDuration = -1f;
         currentTarget = null;
         awarenessTarget = null;
         targetAwareness = 0f;
-        movingToLastKnownPosition = false;
-        searchingLastKnownPosition = false;
-        rangedHitGuardActive = false;
-        rangedInvestigationActive = false;
-        boundedRangedInvestigationActive = false;
-        alertReturnHomeActive = true;
-        lowHealthReturnHomeActive = false;
         postLeashReturnActive = false;
         postLeashReturnTimer = 0f;
-        leashReturnHomeActive = false;
         postLeashRangedChargeActive = false;
-        campAlertHoldActive = false;
         campAlertHoldTimer = 0f;
         rangedThreatPosition = spottedTargetPosition;
         outOfViewRangedAlertCount = 0;
         outOfViewRangedAlertTimer = 0f;
-
-        if (animator != null)
-        {
-            animator.ResetTrigger(attackHash);
-            animator.SetBool(blockHash, false);
-        }
 
         SetState(OrcState.Patrol, OrcSubState.Return);
     }
@@ -2144,8 +1970,10 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         bool targetInsidePursueRadius,
         bool targetInsideInvestigationRadius)
     {
-        return rangedInvestigationActive &&
-               boundedRangedInvestigationActive &&
+        return (returnActivity == ReturnActivity.MoveToInvestigate ||
+                returnActivity == ReturnActivity.SearchInvestigate) &&
+               investigateFromRanged &&
+               investigateBounded &&
                !targetInsideInvestigationRadius &&
                targetInsidePursueRadius;
     }
@@ -2426,13 +2254,10 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
     private Vector3 GetCurrentReturnDestination()
     {
-        if (lowHealthReturnHomeActive)
-            return OriginalPosition;
-
-        if (movingToLastKnownPosition)
+        if (returnActivity == ReturnActivity.MoveToInvestigate)
             return lastKnownTargetPosition;
 
-        if (alertReturnHomeActive)
+        if (returnActivity == ReturnActivity.AlertReturnHome)
             return homePosition;
 
         return OriginalPosition;
@@ -2442,20 +2267,14 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     {
         if (State != OrcState.Patrol ||
             SubState != OrcSubState.Return ||
-            lowHealthReturnHomeActive ||
+            returnActivity == ReturnActivity.LowHealthHome ||
             !IsHealthAtOrBelowPursueRevertRatio())
         {
             return;
         }
 
+        EnterReturnActivity(ReturnActivity.LowHealthHome);
         currentTarget = null;
-        movingToLastKnownPosition = false;
-        searchingLastKnownPosition = false;
-        rangedHitGuardActive = false;
-        rangedInvestigationActive = false;
-        boundedRangedInvestigationActive = false;
-        alertReturnHomeActive = false;
-        lowHealthReturnHomeActive = true;
     }
 
     private bool IsAtOriginalPosition()
@@ -2468,12 +2287,12 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private void RestoreOriginalRotationWhenCalm()
     {
         if (patrolMode != OrcPatrolMode.Idle ||
-            searchingLastKnownPosition ||
-            campAlertHoldActive ||
-            rangedHitGuardActive ||
-            rangedInvestigationActive ||
-            boundedRangedInvestigationActive ||
-            alertReturnHomeActive ||
+            returnActivity == ReturnActivity.SearchInvestigate ||
+            returnActivity == ReturnActivity.CampAlertHold ||
+            returnActivity == ReturnActivity.RangedGuard ||
+            ((returnActivity == ReturnActivity.MoveToInvestigate ||
+              returnActivity == ReturnActivity.SearchInvestigate) && investigateFromRanged) ||
+            returnActivity == ReturnActivity.AlertReturnHome ||
             !IsAtOriginalPosition())
         {
             return;
@@ -2498,14 +2317,15 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             case OrcSubState.LeashThreat:
                 bool shouldDamagedWalk =
                     SubState == OrcSubState.Return &&
-                    lowHealthReturnHomeActive &&
+                    returnActivity == ReturnActivity.LowHealthHome &&
                     IsHealthAtOrBelowPursueRevertRatio();
                 bool shouldRunPatrolMovement =
                     SubState == OrcSubState.Return &&
                     !shouldDamagedWalk &&
-                    (lowHealthReturnHomeActive ||
-                     alertReturnHomeActive ||
-                     (movingToLastKnownPosition && rangedInvestigationActive));
+                    (returnActivity == ReturnActivity.LowHealthHome ||
+                     returnActivity == ReturnActivity.AlertReturnHome ||
+                     (returnActivity == ReturnActivity.MoveToInvestigate &&
+                      investigateFromRanged));
                 animSpeed = SubState == OrcSubState.LeashThreat
                     ? 0f
                     : shouldDamagedWalk ? -1f : shouldRunPatrolMovement ? 1f : 0.5f;
@@ -3408,7 +3228,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             return;
 
         RefreshLowHealthReturnHomeMode();
-        if (lowHealthReturnHomeActive)
+        if (returnActivity == ReturnActivity.LowHealthHome)
             return;
 
         if (directHit && squad != null &&
@@ -3418,7 +3238,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             return;
         }
 
-        if (alertReturnHomeActive)
+        if (returnActivity == ReturnActivity.AlertReturnHome)
         {
             if (!directHit)
                 return;
