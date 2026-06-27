@@ -1195,7 +1195,6 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private void UpdateStagger()
     {
         stateTimer -= Time.deltaTime;
-        agent.ResetPath();
         if (stateTimer <= 0f)
             SetState(currentTarget != null ? OrcState.Combat : OrcState.Patrol,
                 currentTarget != null ? OrcSubState.Approach : OrcSubState.Return);
