@@ -642,7 +642,15 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
     private void OnAnimatorMove()
     {
-        if (!IsServer || !ShouldUseRootMotionForCurrentState() || animator == null || agent == null) return;
+        if (!IsServer ||
+            !ShouldUseRootMotionForCurrentState() ||
+            animator == null ||
+            agent == null ||
+            !agent.enabled ||
+            !agent.isOnNavMesh)
+        {
+            return;
+        }
 
         agent.speed = rootMotionAgentCatchupSpeed;
         Vector3 rootPosition = animator.rootPosition;
