@@ -283,6 +283,14 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private static readonly List<OrcAI> _serverOrcs = new List<OrcAI>();
     private static int _rangedImpactAlertSequence;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        _attackerCounts.Clear();
+        _serverOrcs.Clear();
+        _rangedImpactAlertSequence = 0;
+    }
+
     private readonly Collider[] _detectionBuffer = new Collider[16];
     private readonly Collider[] _separationBuffer = new Collider[10];
     private readonly RaycastHit[] _lineOfSightHits = new RaycastHit[8];
