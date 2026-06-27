@@ -880,6 +880,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                         postLeashReturnTimer = 0f;
                         leashReturnHomeActive = false;
                         postLeashRangedChargeActive = false;
+                        ignoreHomePursueDistanceAfterLeashHarassment = false;
                         SetState(OrcState.Patrol, OrcSubState.Idle);
                     }
                     else if (movingToLastKnownPosition)
@@ -907,6 +908,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                         postLeashReturnTimer = 0f;
                         leashReturnHomeActive = false;
                         postLeashRangedChargeActive = false;
+                        ignoreHomePursueDistanceAfterLeashHarassment = false;
                         SetState(OrcState.Patrol, OrcSubState.Idle);
                     }
                 }
@@ -1584,6 +1586,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             case OrcSubState.Dead:
                 UnregisterAttacker();
                 currentTarget = null;
+                ignoreHomePursueDistanceAfterLeashHarassment = false;
                 StopAgent();
                 agent.enabled = false;
                 DisableWeaponHitbox();
