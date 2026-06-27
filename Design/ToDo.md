@@ -3751,3 +3751,35 @@ FIX
  Dragon HUD canvases now follow the same local-owner-only visibility rule as
  the humanoid `PlayerHUD`, preventing client dragon UI from appearing on the
  host or other non-owning peers.
+
+2026-06-27 - OrcAI Phase A standalone bug fixes
+
+ROOT CAUSE
+ Several independent `OrcAI` edge cases could leave harassment aggro active
+ after disengagement, write root motion through disabled/off-NavMesh agents,
+ separate an orc from its own child colliders, throw on an unassigned death
+ collider array, reset a stagger path every frame, and retain static combat
+ state when entering Play Mode without a domain reload. Four load-bearing
+ timing/movement literals also had no Inspector controls.
+
+FILES CHANGED
+ ~ CharacterScripts/Scripts/Orc/OrcAI.cs
+     - Reset leash-harassment aggro on full home/calm arrival and death.
+     - Gated `OnAnimatorMove` on an enabled agent placed on a NavMesh. Per the
+       Phase A recommendation, disabled-agent death clips do not displace the
+       corpse through root motion.
+     - Excluded this orc's child colliders from separation steering.
+     - Guarded the optional death-collider array before client iteration.
+     - Kept stagger path stopping entry-only through `StopAgent`.
+     - Reset attacker counts, the server-orc registry, and ranged-alert
+       sequence during `SubsystemRegistration` for domain-reload-free play.
+     - Serialized ranged-reaction stagger suppression, root-motion agent
+       catchup speed, stagger duration, and reposition side bias with their
+       previous literal values as defaults.
+
+FIX
+ Phase A items A1-A6 and A8 are implemented as isolated commits. A7's
+ single-hit suppression-window behavior was intentionally left unchanged.
+ OrcAI remains server-authoritative and keeps its existing public and
+ animation-event APIs. `BearAI` may share the static-lifetime issue and should
+ be reviewed separately; no BearAI or squad behavior was changed in this pass.
