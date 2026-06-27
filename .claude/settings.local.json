@@ -7,7 +7,10 @@
       "Bash(awk '/&3527948456195885263/,/^---/' \"/c/UnityProjects/FEFE_Multiplayer/Assets/FEFE/Prefabs/VFX/FireGround/GroundFirePatch.prefab\")",
       "WebFetch(domain:www.dinofracture.com)",
       "WebFetch(domain:arawn-software-publishing.gitbook.io)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(grep -rl \"f7d17f410dcaab6489c22fd05969c743\" --include=*.meta Assets)",
+      "Bash(grep -rl \"5c3b416d3198e354c9f9f5ebffb1b005\" --include=*.meta Assets)",
+      "Bash(grep -rl \"c0ddf13242263074597669d22d2384a1\" --include=*.meta Assets)"
     ]
   }
 }
