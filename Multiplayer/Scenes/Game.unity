@@ -1773,6 +1773,8 @@ MonoBehaviour:
   pitchMin: 0.95
   pitchMax: 1.05
   debugLogs: 0
+  occupantCheckInterval: 0.25
+  containmentPadding: 1
 --- !u!65 &296133308
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -54784,6 +54786,10 @@ PrefabInstance:
     - target: {fileID: 3149192390463386702, guid: 564a8d72c01ac124e8d80c8de2f55258, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 876146978
+      objectReference: {fileID: 0}
+    - target: {fileID: 6381779419303463576, guid: 564a8d72c01ac124e8d80c8de2f55258, type: 3}
+      propertyPath: logMovementDebug
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

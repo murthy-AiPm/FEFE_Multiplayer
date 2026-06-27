@@ -156,6 +156,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     [SerializeField] private float navMeshDestinationSampleRadius = 3f;
     [Tooltip("When enabled, reject partial paths. Leave off if Unity marks usable terrain-edge paths as partial.")]
     [SerializeField] private bool requireCompleteNavMeshPath;
+    [Tooltip("If the agent ends up off the NavMesh (e.g. root motion pushed it over an edge), warp it back to the nearest NavMesh point within this radius.")]
+    [SerializeField] private float agentOffMeshRecoverRadius = 5f;
 
     [Header("Utility")]
     [SerializeField] private float decisionInterval = 0.2f;
@@ -630,6 +632,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         if (!IsServer) return;
         if (State == OrcState.Dead) return;
 
+        RecoverAgentToNavMeshIfNeeded();
+
         TickTimers();
 
         switch (State)
@@ -650,12 +654,15 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
     private void OnAnimatorMove()
     {
+        // Bail only when the agent is unusable for writes (the death case disables it).
+        // Do NOT gate on isOnNavMesh: root-motion locomotion still needs to move the
+        // transform here, and the agent.nextPosition write below is what re-syncs the
+        // agent back onto the mesh when it briefly reports off-mesh (e.g. after a stop).
         if (!IsServer ||
             !ShouldUseRootMotionForCurrentState() ||
             animator == null ||
             agent == null ||
-            !agent.enabled ||
-            !agent.isOnNavMesh)
+            !agent.enabled)
         {
             return;
         }
@@ -1093,7 +1100,10 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             return false;
 
         if (!TrySampleNavMeshDestination(destination, out sampledDestination))
+        {
+            LogMovementDebug($"TrySetDest FAIL sampleMiss dest={destination} radius={navMeshDestinationSampleRadius} areaMask={agent.areaMask}", true);
             return false;
+        }
 
         EnsureImmediatePath();
         immediatePath.ClearCorners();
@@ -1104,7 +1114,10 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             usablePath = usablePath && immediatePath.status == NavMeshPathStatus.PathComplete;
 
         if (!usablePath)
+        {
+            LogMovementDebug($"TrySetDest FAIL pathUnusable calculated={calculated} status={immediatePath.status} requireComplete={requireCompleteNavMeshPath} sampled={sampledDestination}", true);
             return false;
+        }
 
         agent.isStopped = false;
         return agent.SetPath(immediatePath);
@@ -1620,6 +1633,22 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         LogMovementDebug("ResumeAgent", true);
     }
 
+    // If the agent has been stranded off the NavMesh (root motion can push it over an
+    // edge at the leash boundary), warp it back onto the nearest NavMesh point. While
+    // off-mesh, every path query fails silently and the orc is frozen in place.
+    private void RecoverAgentToNavMeshIfNeeded()
+    {
+        if (agent == null || !agent.enabled || agent.isOnNavMesh)
+            return;
+
+        float radius = Mathf.Max(0.5f, agentOffMeshRecoverRadius);
+        if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, radius, agent.areaMask))
+        {
+            agent.Warp(hit.position);
+            LogMovementDebug($"Recovered off-mesh agent to {hit.position}", true);
+        }
+    }
+
     private void ResetChaseDestination()
     {
         hasChaseDestination = false;
@@ -1657,6 +1686,17 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         {
             Debug.Log(
                 $"OrcMovementDebug {name} | {message} | state={State}/{SubState} target={targetName} targetDist={targetDistance:0.00} agent=null {GetAnimatorDebugInfo()}",
+                this);
+            return;
+        }
+
+        // isStopped / remainingDistance / velocity throw when the agent is off the NavMesh.
+        if (!agent.isOnNavMesh)
+        {
+            Debug.Log(
+                $"OrcMovementDebug {name} | {message} | state={State}/{SubState} target={targetName} targetDist={targetDistance:0.00} " +
+                $"server={IsServer} enabled={agent.enabled} onNavMesh=False updatePosition={agent.updatePosition} " +
+                $"rootMotion={ShouldUseRootMotionForCurrentState()} speed={agent.speed:0.00} (off navmesh — path/velocity unavailable) {GetAnimatorDebugInfo()}",
                 this);
             return;
         }

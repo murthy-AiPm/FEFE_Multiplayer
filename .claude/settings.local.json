@@ -6,7 +6,8 @@
       "Bash(git rm *)",
       "Bash(awk '/&3527948456195885263/,/^---/' \"/c/UnityProjects/FEFE_Multiplayer/Assets/FEFE/Prefabs/VFX/FireGround/GroundFirePatch.prefab\")",
       "WebFetch(domain:www.dinofracture.com)",
-      "WebFetch(domain:arawn-software-publishing.gitbook.io)"
+      "WebFetch(domain:arawn-software-publishing.gitbook.io)",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }
