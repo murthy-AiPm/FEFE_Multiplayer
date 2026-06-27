@@ -734,12 +734,12 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
             return;
 
         bool canAcquireTarget = !lowHealthReturnHomeActive &&
+                                !IsReturningHomeAfterLeashThreat() &&
                                 (SubState != OrcSubState.Return ||
                                  movingToLastKnownPosition ||
                                  searchingLastKnownPosition ||
                                  rangedInvestigationActive ||
                                  alertReturnHomeActive ||
-                                 IsReturningHomeAfterLeashThreat() ||
                                  IsSelfInsidePursueRadius());
         Transform target = canAcquireTarget ? FindNearestDetectedTarget() : null;
         if (target != null)
@@ -835,7 +835,15 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
                 Vector3 destination = GetCurrentReturnDestination();
                 RefreshReturnDestination(destination);
                 RotateToward(agent.desiredVelocity);
-                if (!agent.pathPending && agent.remainingDistance <= arrivalThreshold)
+                Vector3 toReturnDestination = destination - transform.position;
+                toReturnDestination.y = 0f;
+                bool physicallyAtReturnDestination =
+                    toReturnDestination.sqrMagnitude <= arrivalThreshold * arrivalThreshold;
+                bool completedAcceptedReturnPath =
+                    hasReturnDestination &&
+                    !agent.pathPending &&
+                    agent.remainingDistance <= arrivalThreshold;
+                if (physicallyAtReturnDestination || completedAcceptedReturnPath)
                 {
                     if (lowHealthReturnHomeActive)
                     {
