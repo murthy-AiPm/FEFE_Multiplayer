@@ -3477,6 +3477,9 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     [ClientRpc]
     private void DisableCollidersClientRpc()
     {
+        if (collidersToDisableOnDeath == null)
+            return;
+
         foreach (var col in collidersToDisableOnDeath)
         {
             if (col != null)
