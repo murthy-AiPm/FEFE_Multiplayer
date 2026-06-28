@@ -1,17 +1,23 @@
 {
   "permissions": {
     "allow": [
-      "Bash(awk 'NR<=1 || /^## / || /^### /' /c/UnityProjects/FEFE_Multiplayer/Assets/FEFE/CLAUDE.md)",
-      "Bash(git diff *)",
-      "Bash(git rm *)",
-      "Bash(awk '/&3527948456195885263/,/^---/' \"/c/UnityProjects/FEFE_Multiplayer/Assets/FEFE/Prefabs/VFX/FireGround/GroundFirePatch.prefab\")",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(awk:*)",
+      "Bash(echo:*)",
+      "Bash(for:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
       "WebFetch(domain:www.dinofracture.com)",
       "WebFetch(domain:arawn-software-publishing.gitbook.io)",
-      "mcp__ide__getDiagnostics",
-      "Bash(grep -rl \"f7d17f410dcaab6489c22fd05969c743\" --include=*.meta Assets)",
-      "Bash(grep -rl \"5c3b416d3198e354c9f9f5ebffb1b005\" --include=*.meta Assets)",
-      "Bash(grep -rl \"c0ddf13242263074597669d22d2384a1\" --include=*.meta Assets)",
-      "Bash(awk '/^--- !u!1 &2716097355990319793/{f=1} f{print} /^--- /{if\\(f && $0 !~ /2716097355990319793/ && NR>1\\){exit}}' OrkGrunt.prefab)"
+      "mcp__ide__getDiagnostics"
     ]
   }
 }

@@ -72,6 +72,15 @@ public class WorldHealthBar : NetworkBehaviour
     private void LateUpdate()
     {
         if (canvasRoot == null || fillImage == null || vitalManager == null) return;
+
+        // Dead entities don't show a health bar. Keep updating (don't disable the
+        // component) so it recovers if the entity respawns.
+        if (vitalManager.IsDead)
+        {
+            if (canvasRoot.activeSelf) canvasRoot.SetActive(false);
+            return;
+        }
+
         if (_mainCam == null) _mainCam = Camera.main;
         if (_mainCam == null) return;
 

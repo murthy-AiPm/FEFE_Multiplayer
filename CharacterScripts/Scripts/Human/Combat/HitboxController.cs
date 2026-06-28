@@ -125,8 +125,13 @@ public class HitboxController : MonoBehaviour
             var hit = _hitBuffer[i];
             if (hit.collider == null) continue;
 
-            // Skip zero-point hits (SphereCast overlap case — sword already inside collider)
-            if (hit.point == Vector3.zero) continue;
+            // SphereCast reports colliders the sphere already overlaps at the start with
+            // distance 0 / point (0,0,0). That is a real close-range melee hit (sword
+            // embedded in the target) — don't skip it. Resolve a usable contact point from
+            // the collider surface instead so repeated close-range swings still land.
+            Vector3 hitPoint = (hit.point == Vector3.zero || hit.distance == 0f)
+                ? hit.collider.ClosestPoint(origin)
+                : hit.point;
 
             // Resolve root GameObject for deduplication
             var hitRoot = hit.collider.attachedRigidbody != null
@@ -155,7 +160,7 @@ public class HitboxController : MonoBehaviour
             var hitInfo = new HitInfo
             {
                 hitCollider = hit.collider,
-                hitPoint = hit.point,
+                hitPoint = hitPoint,
                 hitNormal = hit.normal,
                 attackerNetObj = _ownerNetObj,
                 weaponData = _weaponData,
