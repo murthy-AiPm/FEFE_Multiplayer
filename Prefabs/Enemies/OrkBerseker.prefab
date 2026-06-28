@@ -2044,6 +2044,7 @@ GameObject:
   m_Component:
   - component: {fileID: 612935622768664460}
   - component: {fileID: 1311735214021282198}
+  - component: {fileID: 7711000000000000012}
   - component: {fileID: 3149192390463386702}
   - component: {fileID: 8190044142461982427}
   - component: {fileID: 3812225216908521717}
@@ -18814,3 +18815,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3544111342046388988, guid: d3650001ce19f954f9b474b82cf18d9d, type: 3}
   m_PrefabInstance: {fileID: 7018840010030977269}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &7711000000000000012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1230148255650891468}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c5e7a9b1d2f48609a1b2c3d4e5f6071, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  editorPose: {fileID: 7400000, guid: c0ddf13242263074597669d22d2384a1, type: 3}
+  normalizedTime: 0

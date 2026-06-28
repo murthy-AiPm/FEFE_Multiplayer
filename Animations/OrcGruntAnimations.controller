@@ -87,7 +87,7 @@ BlendTree:
   m_Name: Orc AttackIndex Tree
   m_Childs:
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: bc8c5404c00f19a4a883b859216a0bb1, type: 3}
+    m_Motion: {fileID: 7400000, guid: abd937aa8ef3ee04dada1c73833a7855, type: 3}
     m_Threshold: 0
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1.2
@@ -95,7 +95,7 @@ BlendTree:
     m_DirectBlendParameter: Blend
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: bc8c5404c00f19a4a883b859216a0bb1, type: 3}
+    m_Motion: {fileID: 7400000, guid: 0fb325624fdbcc94180e429ac8a89184, type: 3}
     m_Threshold: 1
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1.2
@@ -103,7 +103,7 @@ BlendTree:
     m_DirectBlendParameter: Blend
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: 9b4eeb3a1d5f852479c6fbeaedb89a1d, type: 3}
+    m_Motion: {fileID: 7400000, guid: 839bb44f7883ae54d940d8f53c36dfd3, type: 3}
     m_Threshold: 2
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1.2
@@ -313,11 +313,11 @@ AnimatorState:
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
   m_Motion: {fileID: 1719170840013368328}
-  m_Tag:
-  m_SpeedParameter:
-  m_MirrorParameter:
-  m_CycleOffsetParameter:
-  m_TimeParameter:
+  m_Tag: 
+  m_SpeedParameter: 
+  m_MirrorParameter: 
+  m_CycleOffsetParameter: 
+  m_TimeParameter: 
 --- !u!91 &9100000
 AnimatorController:
   m_ObjectHideFlags: 0
@@ -509,7 +509,7 @@ BlendTree:
     m_DirectBlendParameter: Blend
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: c0ddf13242263074597669d22d2384a1, type: 3}
+    m_Motion: {fileID: 7400000, guid: 22b7eab898573564796cea2aa598a7a5, type: 3}
     m_Threshold: 0
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1
@@ -517,7 +517,7 @@ BlendTree:
     m_DirectBlendParameter: Blend
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: f7d17f410dcaab6489c22fd05969c743, type: 3}
+    m_Motion: {fileID: 7400000, guid: 2f4de260009d2ab4d8b79fa5d7fcf165, type: 3}
     m_Threshold: 0.5
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1
@@ -525,7 +525,7 @@ BlendTree:
     m_DirectBlendParameter: Blend
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: 5c3b416d3198e354c9f9f5ebffb1b005, type: 3}
+    m_Motion: {fileID: 7400000, guid: abd51d17116d1c94cbcba16eaab5e5af, type: 3}
     m_Threshold: 1
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1
