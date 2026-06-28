@@ -231,6 +231,10 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private float blockChance = 0.35f;
     private float blockDuration = 0.9f;
     private float blockCooldown = 1.4f;
+    private float guardPressureThreshold = 30f;
+    private float guardPressureDecayDelay = 0.75f;
+    private float guardPressureDecayRate = 20f;
+    private float guardBreakStaggerDuration = 0.65f;
 
     [Header("Parry")]
     [Range(0f, 1f)]
@@ -338,6 +342,8 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private float decisionTimer;
     private float detectionTimer;
     private float blockCooldownTimer;
+    private float guardPressure;
+    private float guardPressureDecayTimer;
     private float parryCooldownTimer;
     private float parryActiveTimer;
     private float hitboxTimer;
@@ -587,6 +593,10 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         blockChance = archetype.blockChance;
         blockDuration = archetype.blockDuration;
         blockCooldown = archetype.blockCooldown;
+        guardPressureThreshold = archetype.guardPressureThreshold;
+        guardPressureDecayDelay = archetype.guardPressureDecayDelay;
+        guardPressureDecayRate = archetype.guardPressureDecayRate;
+        guardBreakStaggerDuration = archetype.guardBreakStaggerDuration;
         parryChance = archetype.parryChance;
         parryDuration = archetype.parryDuration;
         parryActiveWindow = archetype.parryActiveWindow;
@@ -827,6 +837,17 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         detectionTimer -= Time.deltaTime;
 
         if (blockCooldownTimer > 0f) blockCooldownTimer -= Time.deltaTime;
+        if (guardPressureDecayTimer > 0f)
+        {
+            guardPressureDecayTimer -= Time.deltaTime;
+        }
+        else if (guardPressure > 0f)
+        {
+            guardPressure = Mathf.MoveTowards(
+                guardPressure,
+                0f,
+                Mathf.Max(0f, guardPressureDecayRate) * Time.deltaTime);
+        }
         if (parryCooldownTimer > 0f) parryCooldownTimer -= Time.deltaTime;
         if (parryActiveTimer > 0f) parryActiveTimer -= Time.deltaTime;
         if (suppressDamageReceivedStateChangeTimer > 0f) suppressDamageReceivedStateChangeTimer -= Time.deltaTime;
@@ -2722,6 +2743,7 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         Vector3 hitPoint,
         NetworkObject attacker)
     {
+        bool wasBlocking = State == OrcState.Combat && SubState == OrcSubState.Block;
         RegisterSuccessfulPlayerHit(attacker, finalDamage);
 
         if (result == DamageDefenseResult.Parry)
@@ -2746,6 +2768,23 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         else if (result == DamageDefenseResult.Block)
         {
             blockCooldownTimer = blockCooldown;
+            guardPressure += Mathf.Max(0f, rawDamage);
+            guardPressureDecayTimer = Mathf.Max(0f, guardPressureDecayDelay);
+
+            if (guardPressureThreshold > 0f && guardPressure >= guardPressureThreshold)
+            {
+                guardPressure = 0f;
+                guardPressureDecayTimer = 0f;
+                postAttackBlockActive = false;
+                SetState(OrcState.Stagger, OrcSubState.Stagger);
+                stateTimer = Mathf.Max(0f, guardBreakStaggerDuration);
+            }
+        }
+        else if (result == DamageDefenseResult.None && wasBlocking)
+        {
+            // The orc was showing its block pose, but the attacker was outside
+            // the frontal defense cone. Treat that as a normal staggerable hit.
+            SetState(OrcState.Stagger, OrcSubState.Stagger);
         }
     }
 

@@ -95,6 +95,10 @@ MonoBehaviour:
   blockChance: 0.08
   blockDuration: 0.45
   blockCooldown: 2.4
+  guardPressureThreshold: 30
+  guardPressureDecayDelay: 0.75
+  guardPressureDecayRate: 20
+  guardBreakStaggerDuration: 0.65
   parryChance: 0.03
   parryDuration: 0.45
   parryActiveWindow: 0.12

@@ -70,7 +70,7 @@ MonoBehaviour:
     maxRange: 1.7
     weight: 0.9
     duration: 1.2
-    cooldown: 1.2
+    cooldown: 2
     hitboxEnableDelay: 0.25
     hitboxActiveTime: 0.3
     isHeavy: 0
@@ -81,7 +81,7 @@ MonoBehaviour:
     maxRange: 1.9
     weight: 0.55
     duration: 1.2
-    cooldown: 1.2
+    cooldown: 2.5
     hitboxEnableDelay: 0.25
     hitboxActiveTime: 0.3
     isHeavy: 1
@@ -91,10 +91,14 @@ MonoBehaviour:
   allowAnimationEventAttackCancelBeforeHitbox: 1
   allowAnimationEventAttackCancelAfterHitbox: 1
   attackCancelFade: 0.08
-  blockDuringAttackCooldown: 0
+  blockDuringAttackCooldown: 1
   blockChance: 0.35
   blockDuration: 0.45
   blockCooldown: 1.4
+  guardPressureThreshold: 10
+  guardPressureDecayDelay: 0.75
+  guardPressureDecayRate: 5
+  guardBreakStaggerDuration: 0.55
   parryChance: 0.2
   parryDuration: 0.45
   parryActiveWindow: 0.12

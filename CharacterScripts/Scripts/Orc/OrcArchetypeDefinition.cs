@@ -126,6 +126,14 @@ public class OrcArchetypeDefinition : ScriptableObject
     public float blockDuration = 0.9f;
     [Tooltip("Minimum seconds after blocking before the orc may block again.")]
     public float blockCooldown = 1.4f;
+    [Tooltip("Total blocked raw damage the orc can absorb in quick succession before its guard breaks. Set to 0 to disable guard breaks.")]
+    public float guardPressureThreshold = 30f;
+    [Tooltip("Seconds after the latest blocked hit before accumulated guard pressure begins recovering.")]
+    public float guardPressureDecayDelay = 0.75f;
+    [Tooltip("Guard pressure recovered per second after the decay delay expires.")]
+    public float guardPressureDecayRate = 20f;
+    [Tooltip("How long the orc staggers when accumulated guard pressure breaks its block.")]
+    public float guardBreakStaggerDuration = 0.65f;
 
     [Header("Parry")]
     [Range(0f, 1f)]
