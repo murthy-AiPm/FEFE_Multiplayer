@@ -92,73 +92,74 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     private const float PostLeashReturnRangedResponseDuration = 8f;
 
     [Header("Archetype")]
-    [SerializeField] private OrcArchetype archetype = OrcArchetype.Grunt;
+    [SerializeField] private OrcArchetypeDefinition archetype;
+    private OrcArchetype archetypeId = OrcArchetype.Grunt;
 
     [Header("Detection")]
     [Tooltip("Close-range awareness bubble. Targets inside this range are detected even outside the vision cone.")]
-    [SerializeField] private float closeDetectionRadius = 3f;
+    private float closeDetectionRadius = 3f;
     [Tooltip("Maximum distance for vision checks. Former detectionRadius value maps here for existing prefabs.")]
     [FormerlySerializedAs("detectionRadius")]
-    [SerializeField] private float viewDistance = 15f;
+    private float viewDistance = 15f;
     [Range(1f, 360f)]
-    [SerializeField] private float viewAngle = 110f;
-    [SerializeField] private float detectionInterval = 0.25f;
+    private float viewAngle = 110f;
+    private float detectionInterval = 0.25f;
     [Tooltip("How long a visible target must stay visible before patrol detection locks on.")]
-    [SerializeField] private float detectionTime = 0.35f;
+    private float detectionTime = 0.35f;
     [Tooltip("Seconds a combat target can be out of sight before the orc searches the last known position.")]
-    [SerializeField] private float loseSightGraceTime = 1.5f;
+    private float loseSightGraceTime = 1.5f;
     [Tooltip("Maximum chase distance from home before the orc gives up and returns.")]
     [FormerlySerializedAs("leashRadius")]
-    [SerializeField] private float pursueRadiusFromHome = 25f;
-    [SerializeField] private float searchDuration = 3f;
-    [SerializeField] private float eyeHeight = 1.7f;
-    [SerializeField] private float targetAimHeight = 1.2f;
+    private float pursueRadiusFromHome = 25f;
+    private float searchDuration = 3f;
+    private float eyeHeight = 1.7f;
+    private float targetAimHeight = 1.2f;
     [SerializeField] private LayerMask playerLayer;
     [SerializeField] private LayerMask visionObstacleMask = ~0;
 
     [Header("Ranged Alert")]
     [Tooltip("How far from home the orc will commit to pursuing a visible ranged attacker.")]
-    [SerializeField] private float investigateRadiusFromHome = 25f;
+    private float investigateRadiusFromHome = 25f;
     [Tooltip("How long the orc guards while facing a ranged hit source it cannot pursue.")]
-    [SerializeField] private float rangedHitGuardDuration = 1.5f;
+    private float rangedHitGuardDuration = 1.5f;
     [Tooltip("Missed arrows that hit this close to the orc trigger investigation.")]
-    [SerializeField] private bool reactToNearbyRangedImpacts = true;
+    private bool reactToNearbyRangedImpacts = true;
     [Tooltip("Seconds after a direct arrow hit where nearby missed-arrow impacts cannot override the direct-hit direction.")]
-    [SerializeField] private float directRangedHitPriorityDuration = 1f;
+    private float directRangedHitPriorityDuration = 1f;
     [Tooltip("How many out-of-view ranged alerts within the window make the orc run home to alert camp.")]
-    [SerializeField] private int outOfViewRangedAlertReturnThreshold = 2;
+    private int outOfViewRangedAlertReturnThreshold = 2;
     [Tooltip("Seconds allowed between out-of-view ranged alerts before the count resets.")]
-    [SerializeField] private float outOfViewRangedAlertWindow = 4f;
+    private float outOfViewRangedAlertWindow = 4f;
     [Tooltip("How long a ranged reaction suppresses the normal damage-driven stagger state change.")]
-    [SerializeField] private float rangedReactionStaggerSuppressTime = 0.25f;
+    private float rangedReactionStaggerSuppressTime = 0.25f;
 
     [Header("Patrol")]
     [SerializeField] private OrcPatrolMode patrolMode = OrcPatrolMode.Wander;
     [SerializeField] private Transform[] patrolPoints;
     [SerializeField] private bool randomizePatrolStartPoint = true;
-    [SerializeField] private Vector2 patrolWaitTimeRange = new Vector2(1f, 3f);
-    [SerializeField] private float wanderRadius = 10f;
-    [SerializeField] private float idleMinTime = 2f;
-    [SerializeField] private float idleMaxTime = 5f;
+    private Vector2 patrolWaitTimeRange = new Vector2(1f, 3f);
+    private float wanderRadius = 10f;
+    private float idleMinTime = 2f;
+    private float idleMaxTime = 5f;
     [SerializeField] private float arrivalThreshold = 1.5f;
     [Tooltip("Arrival threshold used only for authored Loop/PingPong patrol points. Keep small so route guards reach the waypoint.")]
     [SerializeField] private float patrolPointArrivalThreshold = 0.15f;
 
     [Header("Movement")]
     [Tooltip("Use animation root motion for idle/walk/run/reposition states. Leave off when locomotion clips are in-place.")]
-    [SerializeField] private bool useLocomotionRootMotion = false;
+    private bool useLocomotionRootMotion = false;
     [Tooltip("Use animation root motion for committed combat clips such as attacks, parries, staggers, and death.")]
-    [SerializeField] private bool useCombatRootMotion = true;
-    [SerializeField] private float walkSpeed = 2f;
+    private bool useCombatRootMotion = true;
+    private float walkSpeed = 2f;
     [Tooltip("NavMeshAgent speed used for the damaged walk return when health is at or below the low-health leash ratio.")]
-    [SerializeField] private float damagedWalkSpeed = 1.2f;
-    [SerializeField] private float runSpeed = 6f;
-    [SerializeField] private float rotationSpeed = 6f;
-    [SerializeField] private float preferredCombatDistance = 2.2f;
-    [SerializeField] private float repositionDistance = 1.4f;
-    [SerializeField] private float repositionDuration = 0.7f;
+    private float damagedWalkSpeed = 1.2f;
+    private float runSpeed = 6f;
+    private float rotationSpeed = 6f;
+    private float preferredCombatDistance = 2.2f;
+    private float repositionDistance = 1.4f;
+    private float repositionDuration = 0.7f;
     [Tooltip("Sideways influence applied when choosing a combat reposition destination.")]
-    [SerializeField] private float repositionSideBias = 0.6f;
+    private float repositionSideBias = 0.6f;
     [Tooltip("Keeps the NavMeshAgent's internal position caught up while root motion drives the transform.")]
     [SerializeField] private float rootMotionAgentCatchupSpeed = 100f;
     [Tooltip("Minimum seconds between immediate path refreshes. Prevents constantly replacing the active NavMesh path.")]
@@ -177,20 +178,20 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     [SerializeField] private float homeSnapSampleRadius = 10f;
 
     [Header("Utility")]
-    [SerializeField] private float decisionInterval = 0.2f;
-    [SerializeField] private float targetAttackReactDistance = 3f;
-    [SerializeField] private float frontalDefenseAngle = 130f;
+    private float decisionInterval = 0.2f;
+    private float targetAttackReactDistance = 3f;
+    private float frontalDefenseAngle = 130f;
 
     [Header("Leash Threat")]
     [Tooltip("When a visible target is outside the pursue radius, hold position and face them instead of flickering between chase and return.")]
-    [SerializeField] private bool holdVisibleThreatAtLeash = true;
+    private bool holdVisibleThreatAtLeash = true;
     [Tooltip("Rotation multiplier while holding a visible out-of-leash target.")]
-    [SerializeField] private float leashThreatFaceSpeedMultiplier = 1.25f;
+    private float leashThreatFaceSpeedMultiplier = 1.25f;
     [Tooltip("Maximum seconds to taunt a visible target at the leash boundary before returning home.")]
-    [SerializeField] private float leashThreatMaxDuration = 5f;
+    private float leashThreatMaxDuration = 5f;
     [Range(0f, 1f)]
     [Tooltip("At or below this health ratio, harassment no longer lets the orc ignore its home leash.")]
-    [SerializeField] private float lowHealthPursueRevertRatio = 0.5f;
+    private float lowHealthPursueRevertRatio = 0.5f;
     [Tooltip("Animator bool held true while the orc is taunting at the leash boundary. Leave blank to disable.")]
     [SerializeField] private string leashThreatBoolParameter = "IsTaunting";
     [Tooltip("Animator int/float parameter used by the taunt blend tree. Leave blank to disable variants.")]
@@ -198,28 +199,28 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     [Tooltip("Full Animator state path for the taunt blend tree. Used to restart the chosen taunt variant from the beginning.")]
     [SerializeField] private string leashThreatStatePath = "Base Layer.TauntBlend";
     [Tooltip("Crossfade duration used when restarting the taunt blend tree for a new variant.")]
-    [SerializeField] private float leashThreatTransitionDuration = 0.05f;
+    private float leashThreatTransitionDuration = 0.05f;
     [Tooltip("Number of taunt variants in the blend tree. Values are picked from 0 to count - 1.")]
     [SerializeField] private int leashThreatVariantCount = 1;
 
     [Header("Attacks")]
-    [SerializeField] private OrcAttackOption[] attacks =
+    private OrcAttackOption[] attacks =
     {
         new OrcAttackOption { attackIndex = 0, maxRange = 2.4f, weight = 1f }
     };
     [Tooltip("How far beyond the active attack max range the target can move before the orc cancels the attack.")]
-    [SerializeField] private float attackCancelDistanceBuffer = 1.2f;
+    private float attackCancelDistanceBuffer = 1.2f;
     [Tooltip("Seconds after a cancelled attack before the orc may choose another attack.")]
-    [SerializeField] private float attackCancelReengageDelay = 0.75f;
+    private float attackCancelReengageDelay = 0.75f;
     [Tooltip("For animation-event attacks, allow distance cancel before the first hitbox enable event.")]
-    [SerializeField] private bool allowAnimationEventAttackCancelBeforeHitbox = true;
+    private bool allowAnimationEventAttackCancelBeforeHitbox = true;
     [Tooltip("For animation-event attacks, allow distance cancel after the hitbox has opened. Cancelling immediately disables weapon hitboxes.")]
-    [SerializeField] private bool allowAnimationEventAttackCancelAfterHitbox = true;
+    private bool allowAnimationEventAttackCancelAfterHitbox = true;
     [Tooltip("Animator state path to fade to when an attack is cancelled. Existing controller uses the Locomtion typo.")]
     [SerializeField] private string locomotionStatePath = "Base Layer.Locomtion";
-    [SerializeField] private float attackCancelFade = 0.08f;
+    private float attackCancelFade = 0.08f;
     [Tooltip("After an attack finishes, hold real Block during the attack cooldown.")]
-    [SerializeField] private bool blockDuringAttackCooldown = true;
+    private bool blockDuringAttackCooldown = true;
 
     [Header("Combat Reactions")]
     [Tooltip("How long the orc remains in the stagger substate.")]
@@ -227,17 +228,17 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
 
     [Header("Block")]
     [Range(0f, 1f)]
-    [SerializeField] private float blockChance = 0.35f;
-    [SerializeField] private float blockDuration = 0.9f;
-    [SerializeField] private float blockCooldown = 1.4f;
+    private float blockChance = 0.35f;
+    private float blockDuration = 0.9f;
+    private float blockCooldown = 1.4f;
 
     [Header("Parry")]
     [Range(0f, 1f)]
-    [SerializeField] private float parryChance = 0.2f;
-    [SerializeField] private float parryDuration = 0.65f;
-    [SerializeField] private float parryActiveWindow = 0.22f;
-    [SerializeField] private float parryCooldown = 2f;
-    [SerializeField] private float parryDamage = 0f;
+    private float parryChance = 0.2f;
+    private float parryDuration = 0.65f;
+    private float parryActiveWindow = 0.22f;
+    private float parryCooldown = 2f;
+    private float parryDamage = 0f;
 
     [Header("Hitbox")]
     [Tooltip("When true, attack clips control hitbox windows through animation events. When false, OrcAI uses the attack option timing fields.")]
@@ -249,27 +250,27 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     [SerializeField] private WeaponData weaponData;
 
     [Header("Crowd Control")]
-    [SerializeField] private int maxAttackersPerTarget = 4;
+    private int maxAttackersPerTarget = 4;
 
     [Header("Berserker Targeting")]
     [Tooltip("How often a berserker evaluates visible targets while already in combat.")]
-    [SerializeField] private float berserkerTargetScanInterval = 0.35f;
+    private float berserkerTargetScanInterval = 0.35f;
     [Tooltip("Minimum time after a berserker switches targets before it may switch again.")]
-    [SerializeField] private float berserkerRetargetCooldown = 1.25f;
+    private float berserkerRetargetCooldown = 1.25f;
     [Tooltip("New target score must beat the current target by this much before the berserker switches.")]
-    [SerializeField] private float berserkerSwitchScoreMargin = 0.75f;
+    private float berserkerSwitchScoreMargin = 0.75f;
     [Tooltip("Meters-to-score multiplier. Higher values make berserkers favor closer targets more strongly.")]
-    [SerializeField] private float berserkerDistanceWeight = 1f;
+    private float berserkerDistanceWeight = 1f;
     [Tooltip("Health-ratio-to-score multiplier. Higher values make berserkers favor wounded targets more strongly.")]
-    [SerializeField] private float berserkerLowHealthWeight = 6f;
+    private float berserkerLowHealthWeight = 6f;
     [Tooltip("Per-orc score penalty for targets already engaged by other attackers.")]
-    [SerializeField] private float berserkerDogpilePenaltyWeight = 1.5f;
+    private float berserkerDogpilePenaltyWeight = 1.5f;
     [Tooltip("Score discount for the current target so berserkers do not ping-pong between similar targets.")]
-    [SerializeField] private float berserkerCurrentTargetStickiness = 0.75f;
+    private float berserkerCurrentTargetStickiness = 0.75f;
 
     [Header("Separation")]
-    [SerializeField] private float separationRadius = 1.2f;
-    [SerializeField] private float separationStrength = 2f;
+    private float separationRadius = 1.2f;
+    private float separationStrength = 2f;
 
     [Header("Gravity")]
     [SerializeField] private float gravityStrength = 20f;
@@ -388,10 +389,10 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
     public OrcState State { get; private set; } = OrcState.Patrol;
     public OrcSubState SubState { get; private set; } = OrcSubState.Idle;
 
-    public OrcArchetype Archetype => archetype;
-    public bool IsGrunt => archetype == OrcArchetype.Grunt;
-    public bool IsBerserker => archetype == OrcArchetype.Berserker;
-    public bool IsSkirmisher => archetype == OrcArchetype.Skirmisher;
+    public OrcArchetype Archetype => archetypeId;
+    public bool IsGrunt => archetypeId == OrcArchetype.Grunt;
+    public bool IsBerserker => archetypeId == OrcArchetype.Berserker;
+    public bool IsSkirmisher => archetypeId == OrcArchetype.Skirmisher;
     public OrcSquadController Squad => squad;
     public Transform CurrentTarget => currentTarget;
     public Vector3 OriginalPosition => hasOriginalPosition ? originalPosition : transform.position;
@@ -532,8 +533,107 @@ public class OrcAI : NetworkBehaviour, IDamageDefenseProvider
         return position;
     }
 
+    private void ApplyArchetype()
+    {
+        if (archetype == null) return;
+
+        archetypeId = archetype.archetype;
+        closeDetectionRadius = archetype.closeDetectionRadius;
+        viewDistance = archetype.viewDistance;
+        viewAngle = archetype.viewAngle;
+        detectionInterval = archetype.detectionInterval;
+        detectionTime = archetype.detectionTime;
+        loseSightGraceTime = archetype.loseSightGraceTime;
+        pursueRadiusFromHome = archetype.pursueRadiusFromHome;
+        searchDuration = archetype.searchDuration;
+        eyeHeight = archetype.eyeHeight;
+        targetAimHeight = archetype.targetAimHeight;
+        investigateRadiusFromHome = archetype.investigateRadiusFromHome;
+        rangedHitGuardDuration = archetype.rangedHitGuardDuration;
+        reactToNearbyRangedImpacts = archetype.reactToNearbyRangedImpacts;
+        directRangedHitPriorityDuration = archetype.directRangedHitPriorityDuration;
+        outOfViewRangedAlertReturnThreshold = archetype.outOfViewRangedAlertReturnThreshold;
+        outOfViewRangedAlertWindow = archetype.outOfViewRangedAlertWindow;
+        rangedReactionStaggerSuppressTime = archetype.rangedReactionStaggerSuppressTime;
+        useLocomotionRootMotion = archetype.useLocomotionRootMotion;
+        useCombatRootMotion = archetype.useCombatRootMotion;
+        walkSpeed = archetype.walkSpeed;
+        damagedWalkSpeed = archetype.damagedWalkSpeed;
+        runSpeed = archetype.runSpeed;
+        rotationSpeed = archetype.rotationSpeed;
+        preferredCombatDistance = archetype.preferredCombatDistance;
+        repositionDistance = archetype.repositionDistance;
+        repositionDuration = archetype.repositionDuration;
+        repositionSideBias = archetype.repositionSideBias;
+        wanderRadius = archetype.wanderRadius;
+        idleMinTime = archetype.idleMinTime;
+        idleMaxTime = archetype.idleMaxTime;
+        patrolWaitTimeRange = archetype.patrolWaitTimeRange;
+        decisionInterval = archetype.decisionInterval;
+        targetAttackReactDistance = archetype.targetAttackReactDistance;
+        frontalDefenseAngle = archetype.frontalDefenseAngle;
+        holdVisibleThreatAtLeash = archetype.holdVisibleThreatAtLeash;
+        leashThreatFaceSpeedMultiplier = archetype.leashThreatFaceSpeedMultiplier;
+        leashThreatMaxDuration = archetype.leashThreatMaxDuration;
+        lowHealthPursueRevertRatio = archetype.lowHealthPursueRevertRatio;
+        leashThreatTransitionDuration = archetype.leashThreatTransitionDuration;
+        attacks = CloneAttacks(archetype.attacks);
+        attackCancelDistanceBuffer = archetype.attackCancelDistanceBuffer;
+        attackCancelReengageDelay = archetype.attackCancelReengageDelay;
+        allowAnimationEventAttackCancelBeforeHitbox = archetype.allowAnimationEventAttackCancelBeforeHitbox;
+        allowAnimationEventAttackCancelAfterHitbox = archetype.allowAnimationEventAttackCancelAfterHitbox;
+        attackCancelFade = archetype.attackCancelFade;
+        blockDuringAttackCooldown = archetype.blockDuringAttackCooldown;
+        blockChance = archetype.blockChance;
+        blockDuration = archetype.blockDuration;
+        blockCooldown = archetype.blockCooldown;
+        parryChance = archetype.parryChance;
+        parryDuration = archetype.parryDuration;
+        parryActiveWindow = archetype.parryActiveWindow;
+        parryCooldown = archetype.parryCooldown;
+        parryDamage = archetype.parryDamage;
+        maxAttackersPerTarget = archetype.maxAttackersPerTarget;
+        berserkerTargetScanInterval = archetype.berserkerTargetScanInterval;
+        berserkerRetargetCooldown = archetype.berserkerRetargetCooldown;
+        berserkerSwitchScoreMargin = archetype.berserkerSwitchScoreMargin;
+        berserkerDistanceWeight = archetype.berserkerDistanceWeight;
+        berserkerLowHealthWeight = archetype.berserkerLowHealthWeight;
+        berserkerDogpilePenaltyWeight = archetype.berserkerDogpilePenaltyWeight;
+        berserkerCurrentTargetStickiness = archetype.berserkerCurrentTargetStickiness;
+        separationRadius = archetype.separationRadius;
+        separationStrength = archetype.separationStrength;
+    }
+
+    private static OrcAttackOption[] CloneAttacks(OrcAttackOption[] src)
+    {
+        if (src == null) return null;
+
+        var copy = new OrcAttackOption[src.Length];
+        for (int i = 0; i < src.Length; i++)
+        {
+            var a = src[i];
+            copy[i] = a == null ? null : new OrcAttackOption
+            {
+                name = a.name,
+                attackIndex = a.attackIndex,
+                minRange = a.minRange,
+                maxRange = a.maxRange,
+                weight = a.weight,
+                duration = a.duration,
+                cooldown = a.cooldown,
+                hitboxEnableDelay = a.hitboxEnableDelay,
+                hitboxActiveTime = a.hitboxActiveTime,
+                isHeavy = a.isHeavy,
+                hitboxSelection = a.hitboxSelection
+            };
+        }
+
+        return copy;
+    }
+
     public override void OnNetworkSpawn()
     {
+        ApplyArchetype();
         base.OnNetworkSpawn();
 
         RememberOriginalPosition();

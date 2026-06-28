@@ -7240,64 +7240,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be6f6f016cc2a4c48adb0e374e330d96, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpawnPoint
---- !u!1001 &1320198293
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 1302186489207832, guid: d31d29bd659534649b718966cbf37289, type: 3}
-      propertyPath: m_Name
-      value: OrkDestroyer2
-      objectReference: {fileID: 0}
-    - target: {fileID: 4191930812522720, guid: d31d29bd659534649b718966cbf37289, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 127.75545
-      objectReference: {fileID: 0}
-    - target: {fileID: 4191930812522720, guid: d31d29bd659534649b718966cbf37289, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 200.01831
-      objectReference: {fileID: 0}
-    - target: {fileID: 4191930812522720, guid: d31d29bd659534649b718966cbf37289, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 466.49576
-      objectReference: {fileID: 0}
-    - target: {fileID: 4191930812522720, guid: d31d29bd659534649b718966cbf37289, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4191930812522720, guid: d31d29bd659534649b718966cbf37289, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4191930812522720, guid: d31d29bd659534649b718966cbf37289, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4191930812522720, guid: d31d29bd659534649b718966cbf37289, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4191930812522720, guid: d31d29bd659534649b718966cbf37289, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4191930812522720, guid: d31d29bd659534649b718966cbf37289, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4191930812522720, guid: d31d29bd659534649b718966cbf37289, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects:
-    - {fileID: 1675247013400080, guid: d31d29bd659534649b718966cbf37289, type: 3}
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: d31d29bd659534649b718966cbf37289, type: 3}
 --- !u!1 &1322759419
 GameObject:
   m_ObjectHideFlags: 0
@@ -19521,6 +19463,67 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!1001 &1309000068384708287
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2716097355990319793, guid: 87d4a64a363bf7249890e6410ae660b9, type: 3}
+      propertyPath: m_Name
+      value: OrkGrunt
+      objectReference: {fileID: 0}
+    - target: {fileID: 5652793396140190649, guid: 87d4a64a363bf7249890e6410ae660b9, type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 3048894004
+      objectReference: {fileID: 0}
+    - target: {fileID: 6433390370864756301, guid: 87d4a64a363bf7249890e6410ae660b9, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 94.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 6433390370864756301, guid: 87d4a64a363bf7249890e6410ae660b9, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 200.31
+      objectReference: {fileID: 0}
+    - target: {fileID: 6433390370864756301, guid: 87d4a64a363bf7249890e6410ae660b9, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 450.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6433390370864756301, guid: 87d4a64a363bf7249890e6410ae660b9, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6433390370864756301, guid: 87d4a64a363bf7249890e6410ae660b9, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6433390370864756301, guid: 87d4a64a363bf7249890e6410ae660b9, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6433390370864756301, guid: 87d4a64a363bf7249890e6410ae660b9, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6433390370864756301, guid: 87d4a64a363bf7249890e6410ae660b9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6433390370864756301, guid: 87d4a64a363bf7249890e6410ae660b9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6433390370864756301, guid: 87d4a64a363bf7249890e6410ae660b9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 87d4a64a363bf7249890e6410ae660b9, type: 3}
 --- !u!1 &1335415992867335647
 GameObject:
   m_ObjectHideFlags: 0
@@ -54783,13 +54786,21 @@ PrefabInstance:
       propertyPath: m_Name
       value: OrkBerseker
       objectReference: {fileID: 0}
+    - target: {fileID: 1813358253092623320, guid: 564a8d72c01ac124e8d80c8de2f55258, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3149192390463386702, guid: 564a8d72c01ac124e8d80c8de2f55258, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 876146978
       objectReference: {fileID: 0}
     - target: {fileID: 6381779419303463576, guid: 564a8d72c01ac124e8d80c8de2f55258, type: 3}
-      propertyPath: logMovementDebug
+      propertyPath: showGizmos
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6381779419303463576, guid: 564a8d72c01ac124e8d80c8de2f55258, type: 3}
+      propertyPath: logMovementDebug
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -76058,5 +76069,5 @@ SceneRoots:
   - {fileID: 962005302}
   - {fileID: 1213607317}
   - {fileID: 1013012257}
-  - {fileID: 1320198293}
   - {fileID: 5881650818128827491}
+  - {fileID: 1309000068384708287}

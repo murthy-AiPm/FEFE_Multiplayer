@@ -1,0 +1,112 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c0a1b2c3d4e4f5a6b7c8d9e0f1a2b3c, type: 3}
+  m_Name: Berserker
+  m_EditorClassIdentifier: Assembly-CSharp::OrcArchetypeDefinition
+  archetype: 1
+  closeDetectionRadius: 4
+  viewDistance: 35
+  viewAngle: 110
+  detectionInterval: 0.25
+  detectionTime: 0.35
+  loseSightGraceTime: 1.5
+  pursueRadiusFromHome: 30
+  searchDuration: 3
+  eyeHeight: 1.7
+  targetAimHeight: 1.2
+  investigateRadiusFromHome: 35
+  rangedHitGuardDuration: 1.5
+  reactToNearbyRangedImpacts: 1
+  directRangedHitPriorityDuration: 1
+  outOfViewRangedAlertReturnThreshold: 2
+  outOfViewRangedAlertWindow: 4
+  rangedReactionStaggerSuppressTime: 0.25
+  useLocomotionRootMotion: 0
+  useCombatRootMotion: 1
+  walkSpeed: 2
+  damagedWalkSpeed: 1.2
+  runSpeed: 5
+  rotationSpeed: 5
+  preferredCombatDistance: 1.45
+  repositionDistance: 0.85
+  repositionDuration: 0.45
+  repositionSideBias: 0.6
+  wanderRadius: 10
+  idleMinTime: 2
+  idleMaxTime: 5
+  patrolWaitTimeRange: {x: 1, y: 3}
+  decisionInterval: 0.12
+  targetAttackReactDistance: 2.5
+  frontalDefenseAngle: 100
+  holdVisibleThreatAtLeash: 1
+  leashThreatFaceSpeedMultiplier: 1.25
+  leashThreatMaxDuration: 5
+  lowHealthPursueRevertRatio: 0.25
+  leashThreatTransitionDuration: 0.05
+  attacks:
+  - name: Double Chop
+    attackIndex: 0
+    minRange: 0
+    maxRange: 1.45
+    weight: 1.2
+    duration: 0.9
+    cooldown: 0.65
+    hitboxEnableDelay: 0.25
+    hitboxActiveTime: 0.3
+    isHeavy: 0
+    hitboxSelection: 2
+  - name: Crossing Sweep
+    attackIndex: 1
+    minRange: 0
+    maxRange: 1.7
+    weight: 0.9
+    duration: 1.05
+    cooldown: 0.85
+    hitboxEnableDelay: 0.25
+    hitboxActiveTime: 0.3
+    isHeavy: 0
+    hitboxSelection: 2
+  - name: Heavy Overhead
+    attackIndex: 2
+    minRange: 0.35
+    maxRange: 1.9
+    weight: 0.55
+    duration: 1.35
+    cooldown: 1.15
+    hitboxEnableDelay: 0.25
+    hitboxActiveTime: 0.3
+    isHeavy: 1
+    hitboxSelection: 2
+  attackCancelDistanceBuffer: 1
+  attackCancelReengageDelay: 0.75
+  allowAnimationEventAttackCancelBeforeHitbox: 1
+  allowAnimationEventAttackCancelAfterHitbox: 1
+  attackCancelFade: 0.08
+  blockDuringAttackCooldown: 0
+  blockChance: 0.08
+  blockDuration: 0.45
+  blockCooldown: 2.4
+  parryChance: 0.03
+  parryDuration: 0.45
+  parryActiveWindow: 0.12
+  parryCooldown: 3.5
+  parryDamage: 0
+  maxAttackersPerTarget: 5
+  berserkerTargetScanInterval: 0.35
+  berserkerRetargetCooldown: 1.25
+  berserkerSwitchScoreMargin: 0.75
+  berserkerDistanceWeight: 1
+  berserkerLowHealthWeight: 6
+  berserkerDogpilePenaltyWeight: 1.5
+  berserkerCurrentTargetStickiness: 0.75
+  separationRadius: 1.2
+  separationStrength: 2

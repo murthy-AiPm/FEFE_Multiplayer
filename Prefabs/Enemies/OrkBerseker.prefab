@@ -2273,7 +2273,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OrcAI
   ShowTopMostFoldoutHeaderGroup: 1
-  archetype: 1
+  archetype: {fileID: 11400000, guid: 1a3d5f7092b4c6e8f0123456789abcde, type: 2}
   closeDetectionRadius: 4
   viewDistance: 35
   viewAngle: 110
